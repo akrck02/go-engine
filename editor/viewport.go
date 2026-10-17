@@ -10,6 +10,7 @@ import (
 	"github.com/akrck02/go-renderer/scene"
 
 	"github.com/akrck02/go-engine/engine"
+	"github.com/akrck02/go-engine/scenes"
 	"github.com/akrck02/go-engine/shapes"
 	"github.com/akrck02/go-engine/space"
 )
@@ -152,10 +153,16 @@ func (view *viewport) step(editor *Editor, state *input.State, seconds float64) 
 	world := editor.Scene.World()
 	view.attach(world)
 	mouseTaken := view.followMouse(editor, state)
-	if mouseTaken {
+	switch {
+	case mouseTaken:
 		view.orbit.Update(nil, seconds, &view.camera)
-	} else {
+	case view.mode == ViewIsometric:
+		view.orbit.Update(view.isometricInput(state), seconds, &view.camera)
+	default:
 		view.orbit.Update(state, seconds, &view.camera)
+	}
+	if view.mode == ViewIsometric {
+		view.fixIsometricAngle()
 	}
 	view.camera.OrthographicHeight = 0
 	switch view.mode {
@@ -278,12 +285,32 @@ func (view *viewport) frame(chosen *engine.Node) {
 	view.orbit.Distance = math.Max(size*1.8, 2)
 }
 
-// setMode changes how the editor's camera shows the scene; isometric turns it to the classic angle.
+// setMode changes how the editor's camera shows the scene; isometric turns it to the classic angle,
+// which it keeps.
 func (view *viewport) setMode(mode ViewMode) {
 	view.mode = mode
 	if mode == ViewIsometric {
-		view.orbit.Yaw, view.orbit.Pitch = math.Pi/4, space.Radians(35.264389682754654)
+		view.fixIsometricAngle()
 	}
+}
+
+// fixIsometricAngle keeps the isometric view at its angle: 45° round, looking down 35.26°.
+func (view *viewport) fixIsometricAngle() {
+	view.orbit.Yaw, view.orbit.Pitch = math.Pi/4, space.Radians(-scenes.IsometricAngles[0])
+}
+
+// isometricInput is the input for the camera in the isometric view, whose angle does not turn: a
+// drag with the left button pans, as a drag with the right one does (the camera pans with Shift
+// held), and the arrows are left out (they turn it).
+func (view *viewport) isometricInput(state *input.State) *input.State {
+	fixed := state.Unclaimed()
+	if fixed.Button(input.MouseLeft) {
+		fixed.SetKey(input.KeyShift, true)
+	}
+	for _, arrow := range []input.Key{input.KeyUp, input.KeyDown, input.KeyLeft, input.KeyRight} {
+		fixed.SetKey(arrow, false)
+	}
+	return &fixed
 }
 
 // play moves the scene played in the view on a frame, with the keys and the mouse the interface

@@ -164,3 +164,16 @@ func TestA2DSceneTakesSquaresAndSpritesAndIsPickedFromTheFront(t *testing.T) {
 		t.Fatalf("the camera at the origin was not picked: %v", picked)
 	}
 }
+
+func TestASceneTurnsFrom3DTo2DAndBack(t *testing.T) {
+	editor := open(t)
+	editor.SetMode(scenes.Mode2D)
+	cube, _ := editor.Scene.Find("Cube")
+	if !editor.Scene.Is2D() || editor.Saved || cube.Bounds().Size().Z > 0.1 {
+		t.Fatal("the scene did not turn 2D")
+	}
+	editor.SetMode(scenes.Mode3D)
+	if editor.Scene.Is2D() || cube.Bounds().Size().Z < 0.9 {
+		t.Fatal("the scene did not turn 3D again")
+	}
+}

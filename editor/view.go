@@ -91,6 +91,9 @@ func (view *View) Build(context *ui.Context) {
 		view.applyTheme(context, found && kept == "dark" || !found && (view.DarkByDefault || window.SystemPrefersDark()))
 	}
 	view.Editor.TakeEvents()
+	if _, playing := view.Editor.PlayingHere(); playing {
+		context.RequestFrame(0) // the game moves on every frame, input or not
+	}
 	if view.Editor.Running() {
 		context.RequestFrame(250e6) // the status line follows the game's output
 	}
@@ -444,9 +447,17 @@ func (view *View) middle(context *ui.Context) {
 	}
 	context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Height: ui.Grow(), Padding: ui.Pad(8)}, func() {
 		context.Frame(ui.Layout{Padding: ui.PadXY(6, 4), Gap: 6, AlignY: ui.Center}, ui.Look{Fill: context.Theme.Surface, Radius: 8, Shadow: true}, func() {
+			dimensions := 0
 			if view.Editor.Scene.Is2D() {
-				context.Text("2D", ui.TextStyle{Weight: draw2d.Medium})
-			} else {
+				dimensions = 1
+			}
+			context.Box(ui.Layout{Width: ui.Fixed(110)}, func() {
+				if context.Tabs("Dimensions", &dimensions, "3D", "2D") {
+					view.Editor.SetMode([]scenes.Mode{scenes.Mode3D, scenes.Mode2D}[dimensions])
+				}
+			})
+			context.Tooltip("Whether the scene is 3D (shapes and models) or 2D (sprites and flat shapes)")
+			if !view.Editor.Scene.Is2D() {
 				mode := int(view.viewport.mode)
 				context.Box(ui.Layout{Width: ui.Fixed(330)}, func() {
 					if context.Tabs("View", &mode, "Perspective", "Orthographic", "Isometric") {
@@ -473,7 +484,11 @@ func (view *View) middle(context *ui.Context) {
 			return
 		}
 		context.Spacer()
-		context.Text("Drag to turn · right-drag to pan · scroll to zoom · click to choose · drag the chosen to move it",
+		hint := "Drag to turn · right-drag to pan · scroll to zoom · click to choose · drag the chosen to move it"
+		if view.viewport.mode == ViewIsometric {
+			hint = "Isometric is a fixed angle: drag to pan · scroll to zoom · click to choose · drag the chosen to move it"
+		}
+		context.Text(hint,
 			ui.TextStyle{Color: context.Theme.InkQuiet, Size: context.Theme.SmallTextSize})
 	})
 }
@@ -794,7 +809,7 @@ func (view *View) cameraInspector(context *ui.Context, node *engine.Node, settin
 			editor.Changed()
 		}
 		if settings.Projection == scenes.Isometric {
-			note(context, "An isometric camera looks down at 35.26°; turn it round with its rotation's Y.")
+			note(context, "An isometric camera always looks from the classic angle, 45° round and 35.26° down; its rotation is not used, only its position and the height it sees.")
 		}
 	}
 	if context.Checkbox("The scene is seen through this camera", &settings.Main) {

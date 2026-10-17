@@ -48,10 +48,10 @@ engine's code and its documentation as for any other module.
 |---|---|
 | Toolbar | The scene (and new 3D or 2D ones), **Save** (Ctrl+S), **Play**/**Stop** in the view, the game in a window of its own, **Reload code**, **Open project** (in Zed), **Build** for this computer or the Nintendo 3DS, and dark or light mode |
 | Left | The scene's nodes as a tree: add, duplicate (Ctrl+D), delete, reorder, hang a node from the one above or take it out. Below, the **assets**: the project's `assets` folder as a tree, read again every few seconds; whatever is copied there (from the file manager, from Zed) shows. Click a model to place it in a 3D scene, a picture to place it as a sprite in a 2D scene |
-| Middle | The view. In 3D: drag to turn, right-drag to pan, scroll to zoom; perspective, orthographic or isometric. In 2D: drag the background to move, scroll to zoom. In both, click a node to choose it and drag the chosen one to move it; F frames it |
+| Middle | The view, with a switch that makes the scene 3D or 2D. In 3D: drag to turn, right-drag to pan, scroll to zoom; perspective, orthographic or isometric (a fixed angle: dragging pans). In 2D: drag the background to move, scroll to zoom. In both, click a node to choose it and drag the chosen one to move it; F frames it |
 | Right | The inspector: name, transform, shape and colour, model or sprite, camera, and behaviours with their fields; with nothing chosen, the scene (sky, pixels per metre in 2D) |
 
-**Play** plays a copy of the scene in the view, with the project's code, through the scene's main
+**Play** plays a copy of the scene in the view, drawing every frame while it plays,, with the project's code, through the scene's main
 camera; Escape or **Stop** goes back to the scene as it was. The button beside it builds the game
 and plays it in its own window instead; its output shows in the status line. **Build** writes the
 program into `build/`, with `THIRD_PARTY_NOTICES.md` beside it (for the 3DS it needs
@@ -73,7 +73,8 @@ program into `build/`, with `THIRD_PARTY_NOTICES.md` beside it (for the 3DS it n
   <img alt="The 2D scene on a 3DS emulator's top screen" src="images/3ds-2d.png" width="200">
 </p>
 
-A scene is 3D or 2D (`"mode": "2d"` in its file; **New 2D scene** in the editor). A 2D scene has
+A scene is 3D or 2D (`"mode": "2d"` in its file; the **3D | 2D** switch over the view, or **New 2D
+scene**). A 2D scene has
 the same coordinates, in metres with Y up, seen from the front by an orthographic camera: its
 **Height seen** is how many metres fit from top to bottom.
 
@@ -106,7 +107,9 @@ red, Y green, Z blue.
 </p>
 
 **Isometric** is an orthographic camera looking down 35.264° from 45° round, so the three axes
-look the same length; a camera node set to isometric keeps that angle and may only turn round.
+look the same length. It is a fixed angle: the editor's isometric view only pans and zooms, and a
+camera node set to isometric always looks from it, whatever its rotation (its position and the
+height it sees still count).
 **Orthographic** has no perspective at all, for side and top views. Both see a height of the world
 in metres, set on the camera.
 

@@ -105,6 +105,23 @@ func (editor *Editor) Select(node *engine.Node) { editor.Selected = node }
 // Kinds of node the editor adds.
 var Kinds = []string{"Empty", "Cube", "Sphere", "Plane", "Cylinder", "Camera"}
 
+// SetMode makes the scene shown 3D or 2D.
+func (editor *Editor) SetMode(mode scenes.Mode) {
+	if editor.Scene.Mode == mode || (mode == scenes.Mode3D && !editor.Scene.Is2D()) {
+		return
+	}
+	editor.Scene.SetMode(mode)
+	if mode == scenes.Mode2D && editor.Scene.PixelsPerMetre == 0 {
+		editor.Scene.PixelsPerMetre = scenes.DefaultPixelsPerMetre
+	}
+	editor.Changed()
+	if mode == scenes.Mode2D {
+		editor.say("The scene is 2D: sprites and flat shapes, seen from the front; models are not shown", false)
+		return
+	}
+	editor.say("The scene is 3D", false)
+}
+
 // Kinds2D are the kinds of node the editor adds to a 2D scene.
 var Kinds2D = []string{"Empty", "Square", "Circle", "Camera"}
 

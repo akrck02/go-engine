@@ -150,6 +150,19 @@ func (node *Node) Describe() scenes.Node {
 // rounded drops the last digits that turning angles into a rotation and back leaves behind.
 func rounded(degrees float64) float64 { return math.Round(degrees*1e6)/1e6 + 0 } // + 0 turns -0 into 0
 
+// SetMode makes the scene 3D or 2D: its nodes show their shapes and models in 3D, or their sprites
+// and flat shapes in 2D.
+func (owner *Scene) SetMode(mode scenes.Mode) {
+	owner.Mode = mode
+	owner.Root.Walk(func(node *Node) bool {
+		if node != owner.Root {
+			node.rebuild()
+		}
+		return true
+	})
+	owner.Sync()
+}
+
 // Find finds a node by its path from the root, as "Car/Wheel".
 func (owner *Scene) Find(path string) (*Node, bool) { return owner.Root.Find(path) }
 
@@ -242,9 +255,8 @@ func (node *Node) View() models.Camera {
 		settings = *node.camera
 	}
 	if settings.Projection == scenes.Isometric {
-		// the classic angle down, whatever way round the camera was turned
-		yaw := world.Euler().Y
-		world.Rotation = space.Euler{X: scenes.IsometricAngles[0], Y: yaw}.Rotation()
+		// always the classic angle, whatever way the node is turned: isometric is a fixed view
+		world.Rotation = space.Euler{X: scenes.IsometricAngles[0], Y: scenes.IsometricAngles[1]}.Rotation()
 	}
 	return CameraAt(world, settings)
 }
