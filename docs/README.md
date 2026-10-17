@@ -13,10 +13,17 @@ is in them through a small standard library.
 ## A project
 
 ```bash
-go run ./cmd/go-engine new ~/games/harbour "Harbour lights"   # make one
+go run ./cmd/go-engine new ~/games/harbour "Harbour lights"   # make one and open it
 go run ./cmd/go-engine ~/games/harbour                        # edit it
-cd ~/games/harbour && go run .                                # play it, as the editor's Play does
+cd ~/games/harbour && go run .                                # play it in a window of its own
 ```
+
+**The editor runs inside the game.** go-engine builds the project's game with the editor in it
+(`editor.go`, left out of builds for the 3DS and of finished ones, `-tags release`) and starts it
+in the project's folder. So the editor knows the game's behaviours, compiled in, and **Play**
+plays them right in its view. When the code changes, **Reload code** builds the game again and
+reopens the editor in it, on the same scene and node (the button stands out while the code is
+newer than the game).
 
 | File | What it is |
 |---|---|
@@ -24,6 +31,7 @@ cd ~/games/harbour && go run .                                # play it, as the 
 | `scenes/*.scene.json` | The scenes, as the editor writes them: readable, and kind to version control |
 | `assets/models/*.glb` | Imported models |
 | `main.go` | Embeds the project's files, registers the behaviours, runs the engine |
+| `editor.go` | Puts the editor in the game while it is made (go-engine adds it to older projects) |
 | `spin.go` | A first behaviour: how the code reaches a scene |
 | `.vscode/launch.json`, `.zed/tasks.json` | "Play" from Visual Studio Code and Zed; in Neovim, `:!go run .` |
 
@@ -38,20 +46,46 @@ engine's code and its documentation as for any other module.
 
 | Where | What |
 |---|---|
-| Toolbar | The scene (and new ones), **Save** (Ctrl+S), **Play**/**Stop**, **Code** (opens the project in the code editor), **Build** for this computer or the Nintendo 3DS |
-| Left | The scene's nodes as a tree: add (empty, cube, sphere, plane, cylinder, camera), duplicate (Ctrl+D), delete, reorder, hang a node from the one above or take it out. Below, the project's models: click one to place it; import a `.glb` from its path |
-| Middle | The 3D view: drag to turn, right-drag to pan, scroll to zoom; click a node to choose it, drag the chosen one to move it over the ground; F frames it. Perspective, orthographic or isometric |
-| Right | The inspector: name, transform, shape and colour, model, camera, and behaviours with their fields |
+| Toolbar | The scene (and new 3D or 2D ones), **Save** (Ctrl+S), **Play**/**Stop** in the view, the game in a window of its own, **Reload code**, **Open project** (in Zed), **Build** for this computer or the Nintendo 3DS, and dark or light mode |
+| Left | The scene's nodes as a tree: add, duplicate (Ctrl+D), delete, reorder, hang a node from the one above or take it out. Below, the **assets**: the project's `assets` folder as a tree, read again every few seconds; whatever is copied there (from the file manager, from Zed) shows. Click a model to place it in a 3D scene, a picture to place it as a sprite in a 2D scene |
+| Middle | The view. In 3D: drag to turn, right-drag to pan, scroll to zoom; perspective, orthographic or isometric. In 2D: drag the background to move, scroll to zoom. In both, click a node to choose it and drag the chosen one to move it; F frames it |
+| Right | The inspector: name, transform, shape and colour, model or sprite, camera, and behaviours with their fields; with nothing chosen, the scene (sky, pixels per metre in 2D) |
 
-**Play** saves the scene, builds the game with Go and runs it in its own window; its output shows
-in the status line. **Build** writes the program into `build/`, with `THIRD_PARTY_NOTICES.md`
-beside it (for the 3DS it needs [tinygo-3ds](https://github.com/akrck02/tinygo-3ds); set
-`$TINYGO` if it is not on the path).
+**Play** plays a copy of the scene in the view, with the project's code, through the scene's main
+camera; Escape or **Stop** goes back to the scene as it was. The button beside it builds the game
+and plays it in its own window instead; its output shows in the status line. **Build** writes the
+program into `build/`, with `THIRD_PARTY_NOTICES.md` beside it (for the 3DS it needs
+[tinygo-3ds](https://github.com/akrck02/tinygo-3ds); set `$TINYGO` if it is not on the path).
+
+<p align="center">
+  <img alt="Playing in the editor's view: the house and the spinning cube seen through the scene's camera, the inspector saying the view plays a copy" src="images/playing-in-view.png" width="560">
+</p>
 
 <p align="center">
   <img alt="The same scene played: in a window on the desktop, and on a 3DS emulator's top screen" src="images/playing.png" width="560">
   <img alt="" src="images/3ds.png" width="240">
 </p>
+
+## 2D
+
+<p align="center">
+  <img alt="The editor in dark mode on a 2D scene: a sky, a ground, a block, a sun and a pixel-art hero chosen with an orange outline, the camera's frame, the inspector with the sprite's size and its Walk behaviour" src="images/editor-2d.png" width="640">
+  <img alt="The 2D scene on a 3DS emulator's top screen" src="images/3ds-2d.png" width="200">
+</p>
+
+A scene is 3D or 2D (`"mode": "2d"` in its file; **New 2D scene** in the editor). A 2D scene has
+the same coordinates, in metres with Y up, seen from the front by an orthographic camera: its
+**Height seen** is how many metres fit from top to bottom.
+
+| | |
+|---|---|
+| Sprites | Pictures (PNG, JPEG) from the assets, as large as their pixels at the scene's **pixels per metre** (32 by default: a sprite 32 pixels high stands a metre high), times the node's scale |
+| Shapes | A cube or a plane is a square a metre across, a sphere a circle, in its colour |
+| Depth | Z: a node with a greater Z is drawn in front; with the same Z, in the scene's order |
+| Drawing | Through draw2d: in the editor's view and the desktop's window by go-ui's interface, on the 3DS on the top screen |
+
+`engine.View2D` turns points of the world into points of the screen and back, for a game's own
+drawing. Turned sprites are not drawn turned yet (draw2d draws pictures upright).
 
 ## Coordinates and scale
 
@@ -122,9 +156,11 @@ one while the game runs.
 
 ## Not yet
 
-- 2D: sprites, tile maps and the grid prototype's games on the engine.
+- 2D: turned and flipped sprites, sprite sheets and animation, tile maps, the grid prototype's
+  games on the engine.
 - Textures and materials from the models (they are drawn with their vertex colours), lights of
   one's own, sound (go-sound), a game's own interface (go-ui).
-- Moving, turning and scaling with handles in the view (the inspector and dragging over the ground
-  do it now), undo, dragging nodes in the tree, a file dialog for importing.
+- Moving, turning and scaling with handles in the view (the inspector and dragging do it now),
+  undo, dragging nodes in the tree, choosing the code editor in the editor (Open project opens Zed;
+  engine.json's codeEditor is kept for later).
 - Changing scenes while playing; physics and collisions.

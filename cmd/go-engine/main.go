@@ -1,65 +1,56 @@
-// Command go-engine is the editor. It opens a game's project folder (by default the folder it runs
-// in), or makes a new one:
+// Command go-engine opens the editor on a game's project, or makes a new project and opens it:
 //
 //	go run ./cmd/go-engine new ~/games/harbour "Harbour lights"
 //	go run ./cmd/go-engine ~/games/harbour
 //	go run ./cmd/go-engine -capture editor.png ~/games/harbour
 //
-// The game's code is written in any editor with Go's language server; the project is an ordinary
-// Go module, and `go run .` in it plays the game.
+// The editor runs inside the project's own game, so it plays the game's code in its view: this
+// command builds the game with the editor in it (into build/editor) and starts it. The game's
+// code is written in any editor with Go's language server; `go run .` in the project plays it.
 package main
 
 import (
 	"flag"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 
 	"github.com/akrck02/go-ui/window"
 
-	"github.com/akrck02/go-engine/editor"
+	"github.com/akrck02/go-engine/engine"
 	"github.com/akrck02/go-engine/project"
 )
 
 func main() {
-	options := window.Options{Width: 1440, Height: 900, MinWidth: 1000, MinHeight: 600}
-	options.RegisterFlags(flag.CommandLine)
-	choose := flag.String("select", "", "choose a node by its path when the editor opens (for captures)")
-	flag.Usage = func() {
-		output := flag.CommandLine.Output()
+	// the editor's flags, declared here too so the folder can be told from their values; they are
+	// passed on to the editor as they were given
+	flags := flag.NewFlagSet("go-engine", flag.ExitOnError)
+	var options window.Options
+	options.RegisterFlags(flags)
+	flags.String("select", "", "choose a node by its path when the editor opens (for captures)")
+	flags.Bool("play", false, "play the scene in the view when the editor opens (for captures)")
+	flags.Usage = func() {
+		output := flags.Output()
 		fmt.Fprintln(output, "usage: go-engine [flags] [project folder]")
 		fmt.Fprintln(output, "       go-engine new <folder> [name]")
-		flag.PrintDefaults()
+		flags.PrintDefaults()
 	}
-	flag.Parse()
-	opened, err := projectFromArguments(flag.Args())
+	flags.Parse(os.Args[1:])
+	positional := flags.Args()
+	passed := os.Args[1 : len(os.Args)-len(positional)]
+	opened, err := projectFrom(positional)
+	if err == nil {
+		err = edit(opened, passed)
+	}
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
-	if opened == nil {
-		return // a project was made
-	}
-	edited, err := editor.Open(opened)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
-	if *choose != "" {
-		if node, found := edited.Scene.Find(*choose); found {
-			edited.Select(node)
-		}
-	}
-	view := editor.NewView(edited)
-	if err := window.Run(view.Options(options), view.Build); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 }
 
-// projectFromArguments opens the project the arguments name, or makes one for "new" (and then
-// returns no project to open).
-func projectFromArguments(arguments []string) (*project.Project, error) {
+// projectFrom opens the project the arguments name, making it first for "new".
+func projectFrom(arguments []string) (*project.Project, error) {
 	if len(arguments) > 0 && arguments[0] == "new" {
 		if len(arguments) < 2 {
 			return nil, fmt.Errorf("usage: go-engine new <folder> [name]")
@@ -69,12 +60,8 @@ func projectFromArguments(arguments []string) (*project.Project, error) {
 		if len(arguments) > 2 {
 			name = arguments[2]
 		}
-		created, err := project.Create(folder, name)
-		if err != nil {
-			return nil, err
-		}
-		fmt.Printf("Made %s in %s. Open it with: go-engine %s\n", name, created.Folder, folder)
-		return nil, nil
+		fmt.Printf("Making %s in %s…\n", name, folder)
+		return project.Create(folder, name)
 	}
 	folder := "."
 	if len(arguments) > 0 {
@@ -85,4 +72,17 @@ func projectFromArguments(arguments []string) (*project.Project, error) {
 		return nil, fmt.Errorf("%s is not a go-engine project (%w); make one with: go-engine new <folder>", folder, err)
 	}
 	return opened, nil
+}
+
+// edit builds the project's game with the editor in it and starts it, in the project's folder.
+func edit(opened *project.Project, flags []string) error {
+	fmt.Printf("Building %s with the editor…\n", opened.Settings.Name)
+	if err := opened.BuildEditor(); err != nil {
+		return err
+	}
+	command := exec.Command(opened.EditorProgram(), flags...)
+	command.Dir = opened.Folder
+	command.Env = append(os.Environ(), engine.EditorVariable+"=1")
+	command.Stdin, command.Stdout, command.Stderr = os.Stdin, os.Stdout, os.Stderr
+	return command.Run()
 }

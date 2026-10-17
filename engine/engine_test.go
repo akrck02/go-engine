@@ -1,11 +1,15 @@
 package engine
 
 import (
+	"bytes"
+	"image"
+	"image/png"
 	"math"
 	"strings"
 	"testing"
 	"testing/fstest"
 
+	"github.com/akrck02/go-renderer/draw2d"
 	"github.com/akrck02/go-scene-builder/gltf"
 	"github.com/akrck02/go-scene-builder/mesh"
 
@@ -177,5 +181,54 @@ func TestNodesMoveFromParentToParent(t *testing.T) {
 	spinner.Remove()
 	if _, found := loaded.Find("Tower/Spinner"); found {
 		t.Fatal("the removed node is still there")
+	}
+}
+
+// flatProject is a 2D scene: a sprite 64 pixels wide and 32 high, a red square in front of it,
+// and a camera seeing 8 metres.
+func flatProject(t *testing.T) fstest.MapFS {
+	picture := image.NewNRGBA(image.Rect(0, 0, 64, 32))
+	var encoded bytes.Buffer
+	png.Encode(&encoded, picture)
+	description := &scenes.Scene{Name: "Flat", Mode: scenes.Mode2D, PixelsPerMetre: 32, Nodes: []scenes.Node{
+		{Name: "Square", Shape: "cube", Colour: "#ff0000", Position: [3]float64{0, 0, 1}, Scale: [3]float64{1, 1, 1}},
+		{Name: "Hero", Sprite: "assets/hero.png", Position: [3]float64{2, 1, 0}, Scale: [3]float64{1, 1, 1}},
+		{Name: "Eye", Position: [3]float64{2, 1, 0}, Scale: [3]float64{1, 1, 1}, Camera: &scenes.Camera{Projection: scenes.Orthographic, Height: 8}},
+	}}
+	data, _ := description.Marshal()
+	return fstest.MapFS{"scenes/flat.scene.json": {Data: data}, "assets/hero.png": {Data: encoded.Bytes()}}
+}
+
+func TestA2DSceneDrawsSpritesAtTheirSizeFurthestFirst(t *testing.T) {
+	flat, err := Load(flatProject(t), "scenes/flat.scene.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	hero, _ := flat.Find("Hero")
+	if size := hero.Bounds().Size(); math.Abs(size.X-2) > 1e-9 || math.Abs(size.Y-1) > 1e-9 {
+		t.Fatalf("a sprite of 64 × 32 pixels at 32 a metre is %v metres", size)
+	}
+	view := flat.View2D()
+	if view.Height != 8 || !view.Centre.Near(space.V(2, 1, 0), 1e-9) {
+		t.Fatalf("the camera sees %+v", view)
+	}
+	area := draw2d.Rect{Width: 800, Height: 400} // 50 pixels a metre
+	if x, y := view.ToScreen(area, space.V(3, 2, 0)); x != 450 || y != 150 {
+		t.Fatalf("a metre right and up of the centre is at %v, %v", x, y)
+	}
+	if back := view.FromScreen(area, 450, 150); !back.Near(space.V(3, 2, 0), 1e-9) {
+		t.Fatalf("the screen point came back as %v", back)
+	}
+	order := flat.drawOrder()
+	if len(order) != 2 || order[0].Name != "Hero" || order[1].Name != "Square" {
+		t.Fatalf("drawn in the order %v, %v", order[0].Name, order[1].Name)
+	}
+	var list draw2d.List
+	flat.Draw2D(&list, area, view)
+	if len(list.Commands) < 2 {
+		t.Fatalf("%d commands drawn", len(list.Commands))
+	}
+	if len(flat.World().Nodes[0].Children) != 3 || flat.World().Nodes[0].Children[0].Children != nil {
+		t.Fatal("a 2D scene made 3D geometry")
 	}
 }

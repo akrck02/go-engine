@@ -21,8 +21,9 @@ go run ./cmd/go-engine ~/games/harbour
 go test ./...
 ```
 
-**Status:** early (October 2026): an editable 3D scene, imported `.glb` models, the coordinates
-and scales, behaviours in Go, play and build for the desktop and the 3DS. Everything is in
+**Status:** early (October 2026): editable 3D and 2D scenes, `.glb` models and sprites from the
+project's assets, the coordinates and scales, behaviours in Go played in the editor's view, and
+builds for the desktop and the 3DS. Everything is in
 [docs/](docs/README.md).
 
 ## License

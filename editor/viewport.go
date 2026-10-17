@@ -44,6 +44,8 @@ type viewport struct {
 	selection *scene.Node // the edges of the chosen node's box
 	line      *scene.Mesh
 
+	flat *flatView // the view of a 2D scene
+
 	pressX, pressY float64
 	pressing       bool
 	dragging       *engine.Node
@@ -53,7 +55,7 @@ type viewport struct {
 }
 
 func newViewport() *viewport {
-	view := &viewport{orbit: camera.NewOrbit(graphics.Vec4{0, 0, 0, 1}, 14)}
+	view := &viewport{orbit: camera.NewOrbit(graphics.Vec4{0, 0, 0, 1}, 14), flat: newFlatView()}
 	view.orbit.Yaw, view.orbit.Pitch = 0.6, 0.55
 	view.orbit.MinimumDistance, view.orbit.MaximumDistance = 0.3, 500
 	view.line = shapes.Cube()
@@ -137,6 +139,16 @@ func (view *viewport) showSelection(chosen *engine.Node) {
 
 // step follows the mouse in the 3D view and places the camera; it returns what to draw.
 func (view *viewport) step(editor *Editor, state *input.State, seconds float64) (*scene.Scene, models.Camera) {
+	if played, playing := editor.PlayingHere(); playing {
+		if played.Is2D() {
+			played.Update(seconds, state)
+			return played.World(), view.camera
+		}
+		return view.play(played, state, seconds)
+	}
+	if editor.Scene.Is2D() {
+		return view.flat.step(editor, state)
+	}
 	world := editor.Scene.World()
 	view.attach(world)
 	mouseTaken := view.followMouse(editor, state)
@@ -272,4 +284,15 @@ func (view *viewport) setMode(mode ViewMode) {
 	if mode == ViewIsometric {
 		view.orbit.Yaw, view.orbit.Pitch = math.Pi/4, space.Radians(35.264389682754654)
 	}
+}
+
+// play moves the scene played in the view on a frame, with the keys and the mouse the interface
+// left, and sees it through its main camera (or the editor's, if it has none).
+func (view *viewport) play(played *engine.Scene, state *input.State, seconds float64) (*scene.Scene, models.Camera) {
+	played.Update(seconds, state)
+	if camera, found := played.MainCamera(); found {
+		return played.World(), camera.View()
+	}
+	view.orbit.Update(nil, seconds, &view.camera)
+	return played.World(), view.camera
 }

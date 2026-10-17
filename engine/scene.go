@@ -6,6 +6,7 @@ import (
 	"math"
 	"path"
 
+	"github.com/akrck02/go-renderer/draw2d"
 	"github.com/akrck02/go-renderer/graphics"
 	"github.com/akrck02/go-renderer/loaders"
 	"github.com/akrck02/go-renderer/models"
@@ -23,6 +24,10 @@ type Scene struct {
 	Name string
 	Sky  string // the background colour, "#rrggbb"; empty for a daylight sky
 	Root *Node
+	// Mode is 3D or 2D; a 2D scene draws its sprites and shapes flat (see Draw2D).
+	Mode scenes.Mode
+	// PixelsPerMetre is how many of a sprite's pixels make a metre, in a 2D scene.
+	PixelsPerMetre float64
 
 	// Editing shows what only the editor shows: a marker for cameras and empty nodes.
 	Editing bool
@@ -57,7 +62,7 @@ func Load(files fs.FS, file string) (*Scene, error) {
 // scene.
 func Build(files fs.FS, description *scenes.Scene) (*Scene, error) {
 	built := NewScene(files)
-	built.Name = description.Name
+	built.Name, built.Mode, built.PixelsPerMetre = description.Name, description.Mode, description.PixelsPerMetre
 	built.SetSky(description.Sky)
 	var firstError error
 	for _, node := range description.Nodes {
@@ -93,7 +98,7 @@ func (owner *Scene) buildNode(description scenes.Node) (*Node, error) {
 		Scale:    space.V(description.Scale[0], description.Scale[1], description.Scale[2]),
 	}
 	node.Visible = !description.Hidden
-	node.shape, node.colour, node.model = description.Shape, description.Colour, description.Model
+	node.shape, node.colour, node.model, node.sprite = description.Shape, description.Colour, description.Model, description.Sprite
 	node.camera = description.Camera
 	node.Behaviours = append([]scenes.Behaviour(nil), description.Behaviours...)
 	var firstError error
@@ -117,7 +122,7 @@ func (owner *Scene) buildNode(description scenes.Node) (*Node, error) {
 
 // Describe writes the scene back as its file keeps it.
 func (owner *Scene) Describe() *scenes.Scene {
-	description := &scenes.Scene{Name: owner.Name, Sky: owner.Sky}
+	description := &scenes.Scene{Name: owner.Name, Sky: owner.Sky, Mode: owner.Mode, PixelsPerMetre: owner.PixelsPerMetre}
 	for _, child := range owner.Root.children {
 		description.Nodes = append(description.Nodes, child.Describe())
 	}
@@ -133,7 +138,7 @@ func (node *Node) Describe() scenes.Node {
 		Rotation: [3]float64{rounded(angles.X), rounded(angles.Y), rounded(angles.Z)},
 		Scale:    [3]float64{node.Transform.Scale.X, node.Transform.Scale.Y, node.Transform.Scale.Z},
 		Hidden:   !node.Visible,
-		Shape:    node.shape, Colour: node.colour, Model: node.model, Camera: node.camera,
+		Shape:    node.shape, Colour: node.colour, Model: node.model, Sprite: node.sprite, Camera: node.camera,
 		Behaviours: append([]scenes.Behaviour(nil), node.Behaviours...),
 	}
 	for _, child := range node.children {
@@ -277,10 +282,32 @@ func CameraAt(world space.Transform, settings scenes.Camera) models.Camera {
 type assets struct {
 	files  fs.FS
 	models map[string]*scene.Scene
+	images map[string]*draw2d.Image
 }
 
 func newAssets(files fs.FS) *assets {
-	return &assets{files: files, models: map[string]*scene.Scene{}}
+	return &assets{files: files, models: map[string]*scene.Scene{}, images: map[string]*draw2d.Image{}}
+}
+
+// image reads a picture of the project's (PNG or JPEG), once.
+func (library *assets) image(file string) (*draw2d.Image, error) {
+	if picture, found := library.images[file]; found {
+		return picture, nil
+	}
+	if library.files == nil {
+		return nil, fmt.Errorf("picture %s: the scene has no files", file)
+	}
+	data, err := library.files.Open(file)
+	if err != nil {
+		return nil, err
+	}
+	defer data.Close()
+	picture, err := draw2d.DecodeImage(data)
+	if err != nil {
+		return nil, fmt.Errorf("picture %s: %w", file, err)
+	}
+	library.images[file] = picture
+	return picture, nil
 }
 
 func (library *assets) model(file string) (*scene.Scene, error) {
@@ -305,6 +332,9 @@ func (library *assets) model(file string) (*scene.Scene, error) {
 	return model, nil
 }
 
-// Forget makes the scene read a model again the next time a node shows it: after the file
-// changed.
-func (owner *Scene) Forget(model string) { delete(owner.assets.models, model) }
+// Forget makes the scene read a model or a picture again the next time a node shows it: after the
+// file changed.
+func (owner *Scene) Forget(file string) {
+	delete(owner.assets.models, file)
+	delete(owner.assets.images, file)
+}

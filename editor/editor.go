@@ -6,10 +6,12 @@ package editor
 
 import (
 	"fmt"
+	"math"
 	"os/exec"
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/akrck02/go-engine/engine"
 	"github.com/akrck02/go-engine/project"
@@ -29,6 +31,14 @@ type Editor struct {
 	Failed  bool
 
 	behaviours []project.BehaviourInfo // what the project's code defines, read again on demand
+
+	// playingHere is the scene played in the view: a copy of the one edited, made again from its
+	// description, with the game's behaviours running.
+	playingHere *engine.Scene
+
+	builtAt       time.Time // when the game the editor runs in was built
+	codeCheckedAt time.Time
+	codeChanged   bool
 
 	running  bool      // building or playing the game
 	playing  *exec.Cmd // the game, while it plays
@@ -95,10 +105,32 @@ func (editor *Editor) Select(node *engine.Node) { editor.Selected = node }
 // Kinds of node the editor adds.
 var Kinds = []string{"Empty", "Cube", "Sphere", "Plane", "Cylinder", "Camera"}
 
+// Kinds2D are the kinds of node the editor adds to a 2D scene.
+var Kinds2D = []string{"Empty", "Square", "Circle", "Camera"}
+
+// KindsHere are the kinds of node the scene shown takes.
+func (editor *Editor) KindsHere() []string {
+	if editor.Scene.Is2D() {
+		return Kinds2D
+	}
+	return Kinds
+}
+
 // Add adds a node of a kind ("Cube", "Camera"…) under the selected node's parent, after it (or at
 // the end of the scene), and selects it.
 func (editor *Editor) Add(kind string) *engine.Node {
 	description := scenes.NewNode(kind)
+	if editor.Scene.Is2D() {
+		switch kind {
+		case "Square":
+			description.Shape, description.Colour = "cube", "#c8c8c8"
+		case "Circle":
+			description.Shape, description.Colour = "sphere", "#c8c8c8"
+		case "Camera":
+			description.Camera = &scenes.Camera{Projection: scenes.Orthographic, Height: 10}
+		}
+		return editor.place(description)
+	}
 	switch kind {
 	case "Empty":
 	case "Camera":
@@ -120,6 +152,44 @@ func (editor *Editor) AddModel(model string) *engine.Node {
 	description := scenes.NewNode(base)
 	description.Model = model
 	return editor.place(description)
+}
+
+// AddSprite adds a node showing one of the project's pictures, in a 2D scene, and selects it.
+func (editor *Editor) AddSprite(picture string) *engine.Node {
+	base := picture[strings.LastIndex(picture, "/")+1:]
+	base = strings.TrimSuffix(base, base[strings.LastIndex(base, "."):])
+	description := scenes.NewNode(base)
+	description.Sprite = picture
+	return editor.place(description)
+}
+
+// PickFlat finds the node drawn on top at a point of a 2D scene: a sprite or a shape there, or
+// an empty node or a camera within a share of a metre of it.
+func (editor *Editor) PickFlat(point space.Vec3, reach float64) (*engine.Node, bool) {
+	var found *engine.Node
+	editor.Scene.Root.Walk(func(node *engine.Node) bool {
+		if node == editor.Scene.Root {
+			return true
+		}
+		if !node.Visible {
+			return false
+		}
+		box := node.Bounds()
+		if box.IsEmpty() {
+			position := node.World().Position
+			if math.Abs(position.X-point.X) <= reach && math.Abs(position.Y-point.Y) <= reach && (found == nil || found.Bounds().IsEmpty()) {
+				found = node
+			}
+			return true
+		}
+		if point.X >= box.Minimum.X && point.X <= box.Maximum.X && point.Y >= box.Minimum.Y && point.Y <= box.Maximum.Y {
+			if found == nil || found.Bounds().IsEmpty() || node.World().Position.Z >= found.World().Position.Z {
+				found = node
+			}
+		}
+		return true
+	})
+	return found, found != nil
 }
 
 func (editor *Editor) place(description scenes.Node) *engine.Node {
@@ -379,9 +449,46 @@ func FieldText(value any) string {
 	return fmt.Sprint(value)
 }
 
-// Play saves the scene, builds the game and runs it, in the background: what happens arrives
+// PlayHere plays the scene in the view, with the behaviours compiled into the game the editor runs
+// in; the scene edited stays as it was. StopHere goes back to editing.
+func (editor *Editor) PlayHere() {
+	built, err := engine.Build(editor.Project.Files(), editor.Scene.Describe())
+	if built == nil {
+		editor.say(err.Error(), true)
+		return
+	}
+	problems := built.Start()
+	editor.playingHere = built
+	switch {
+	case len(problems) > 0:
+		editor.say(problems[0].Error(), true)
+	case err != nil:
+		editor.say(err.Error(), true)
+	case len(engine.Registered()) == 0:
+		editor.say("Playing without the project's code: open the project with go-engine to play its behaviours", true)
+	default:
+		editor.say("Playing in the view: Escape or Stop goes back to editing", false)
+	}
+}
+
+// StopHere stops the play in the view.
+func (editor *Editor) StopHere() {
+	if editor.playingHere == nil {
+		return
+	}
+	editor.playingHere = nil
+	editor.say("Back to editing", false)
+}
+
+// PlayingHere is the scene played in the view, while it is.
+func (editor *Editor) PlayingHere() (*engine.Scene, bool) {
+	return editor.playingHere, editor.playingHere != nil
+}
+
+// PlayInWindow saves the scene, builds the game and runs it in a window of its own, in the
+// background: what happens arrives
 // through Events. Stop ends it.
-func (editor *Editor) Play() {
+func (editor *Editor) PlayInWindow() {
 	if editor.running {
 		return
 	}

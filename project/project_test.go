@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/akrck02/go-engine/engine"
+	"github.com/akrck02/go-engine/scenes"
 )
 
 func TestANewProjectIsAGoModuleWithAScene(t *testing.T) {
@@ -57,8 +58,8 @@ func TestModelsAreImportedAndScenesAdded(t *testing.T) {
 	if _, err := created.Import(filepath.Join(t.TempDir(), "photo.png")); err == nil {
 		t.Fatal("a picture was imported as a model")
 	}
-	file, err := created.NewScene("Second level")
-	if err != nil || file != "scenes/second-level.scene.json" {
+	file, err := created.NewScene("Second level", scenes.Mode2D)
+	if read, _ := created.ReadScene(file); err != nil || file != "scenes/second-level.scene.json" || !read.Is2D() {
 		t.Fatalf("new scene %q: %v", file, err)
 	}
 	if scenes := created.Scenes(); len(scenes) != 2 {
@@ -101,5 +102,26 @@ type NotABehaviour struct{ Value int }
 	drift := found[0]
 	if drift.Doc != "Drift moves a node slowly." || len(drift.Fields) != 2 || drift.Fields[0] != (FieldInfo{"speed", "float64", "metres a second"}) || drift.Fields[1].Name != "Label" {
 		t.Fatalf("drift: %+v", drift)
+	}
+}
+
+func TestTheAssetsTreeIsTheAssetsFolder(t *testing.T) {
+	created, err := Create(filepath.Join(t.TempDir(), "game"), "Game")
+	if err != nil {
+		t.Fatal(err)
+	}
+	os.MkdirAll(created.Path("assets/sprites/hero"), 0o755)
+	os.WriteFile(created.Path("assets/sprites/hero/idle.png"), nil, 0o644)
+	os.WriteFile(created.Path("assets/readme.txt"), nil, 0o644)
+	os.WriteFile(created.Path("assets/models/Tree.glb"), nil, 0o644)
+	tree := created.AssetTree()
+	if len(tree.Children) != 3 || tree.Children[0].Name != "models" || tree.Children[1].Name != "sprites" || tree.Children[2].Name != "readme.txt" {
+		t.Fatalf("tree: %+v", tree.Children)
+	}
+	if models := tree.Children[0].Children; len(models) != 1 || models[0].Path != "assets/models/Tree.glb" {
+		t.Fatalf("models: %+v (the .gitkeep is hidden)", models)
+	}
+	if KindOf("a/b/IDLE.PNG") != ImageAsset || KindOf("x.glb") != ModelAsset || KindOf("x.txt") != OtherAsset {
+		t.Fatal("kinds")
 	}
 }

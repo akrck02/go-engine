@@ -7,8 +7,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/akrck02/go-renderer/draw2d"
 	"github.com/akrck02/go-renderer/input"
-	ui "github.com/akrck02/go-ui"
 	"github.com/akrck02/go-ui/window"
 
 	"github.com/akrck02/go-engine/scenes"
@@ -46,6 +46,9 @@ func ReadSettings(files fs.FS) (Settings, error) {
 // Run plays a project, from its files (embedded in the game, or a folder), until its window is
 // closed: on the desktop in a window, on the Nintendo 3DS on the top screen.
 func Run(files fs.FS) error {
+	if editing() {
+		return editor()
+	}
 	settings, err := ReadSettings(files)
 	if err != nil {
 		return err
@@ -66,6 +69,7 @@ func Run(files fs.FS) error {
 // play shows a scene in a window, updating it every frame.
 func play(played *Scene, title string) error {
 	var last time.Time
+	var flat draw2d.List // a 2D scene's drawing, made again every frame
 	fallback := space.Transform{Position: space.V(0, 4, 10), Rotation: space.Euler{X: -20}.Rotation(), Scale: space.One}
 	options := window.Options{Title: title, Width: 1280, Height: 720, Continuous: true}
 	options.Scene = func(state *input.State, step float64) *window.SceneView {
@@ -77,8 +81,10 @@ func play(played *Scene, title string) error {
 			seconds = min(now.Sub(last).Seconds(), 0.1)
 		}
 		last = now
+		consoleKeys(state)
 		played.Update(seconds, state)
 		view := &window.SceneView{World: played.World()}
+		drawOver(played, state, &flat)
 		if camera, found := played.MainCamera(); found {
 			view.Camera = camera.View()
 		} else {
@@ -86,7 +92,7 @@ func play(played *Scene, title string) error {
 		}
 		return view
 	}
-	return window.Run(options, func(context *ui.Context) {})
+	return window.Run(options, interfaceFor(played))
 }
 
 // defaultCamera is how a scene with no camera is seen: in perspective, from a little above.

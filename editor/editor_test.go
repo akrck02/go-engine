@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/akrck02/go-engine/project"
+	"github.com/akrck02/go-engine/scenes"
 	"github.com/akrck02/go-engine/space"
 )
 
@@ -123,5 +124,43 @@ func TestFieldsAreReadAsTyped(t *testing.T) {
 	}
 	if FieldText(2.5) != "2.5" || FieldText(nil) != "" {
 		t.Fatal("fields written wrong")
+	}
+}
+
+func TestPlayingInTheViewLeavesTheSceneAsItWas(t *testing.T) {
+	editor := open(t)
+	editor.PlayHere()
+	played, playing := editor.PlayingHere()
+	if !playing || played == editor.Scene {
+		t.Fatal("the view does not play a copy of the scene")
+	}
+	cube, _ := played.Find("Cube")
+	cube.Transform.Position = space.V(9, 9, 9)
+	editor.StopHere()
+	if _, playing := editor.PlayingHere(); playing {
+		t.Fatal("still playing")
+	}
+	edited, _ := editor.Scene.Find("Cube")
+	if edited.Transform.Position.Near(space.V(9, 9, 9), 0) {
+		t.Fatal("playing moved the scene edited")
+	}
+}
+
+func TestA2DSceneTakesSquaresAndSpritesAndIsPickedFromTheFront(t *testing.T) {
+	editor := open(t)
+	file, err := editor.Project.NewScene("Flat", scenes.Mode2D)
+	if err != nil || editor.OpenScene(file) != nil {
+		t.Fatal(err)
+	}
+	if editor.KindsHere()[1] != "Square" {
+		t.Fatal("a 2D scene offers 3D shapes")
+	}
+	front := editor.Add("Square")
+	front.Transform.Position = space.V(0, -2.5, 1) // over the square of the starter scene
+	if picked, found := editor.PickFlat(space.V(0.2, -2.4, 0), 0.3); !found || picked != front {
+		t.Fatalf("picked %v", picked)
+	}
+	if picked, _ := editor.PickFlat(space.V(0, 0, 0), 0.3); picked == nil || picked.Name != "Camera" {
+		t.Fatalf("the camera at the origin was not picked: %v", picked)
 	}
 }

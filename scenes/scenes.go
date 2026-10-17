@@ -12,10 +12,30 @@ import (
 
 // Scene is a scene file.
 type Scene struct {
-	Name  string `json:"name"`
-	Sky   string `json:"sky,omitempty"` // the background colour, "#rrggbb"; empty is a daylight sky
-	Nodes []Node `json:"nodes"`
+	Name string `json:"name"`
+	// Mode is "3d" (the default: shapes and models in perspective, orthographic or isometric) or
+	// "2d" (sprites and flat shapes, seen from the front by an orthographic camera).
+	Mode Mode   `json:"mode,omitempty"`
+	Sky  string `json:"sky,omitempty"` // the background colour, "#rrggbb"; empty is a daylight sky
+	// PixelsPerMetre is, in a 2D scene, how many of a sprite's pixels make a metre: a sprite 32
+	// pixels high stands a metre high at 32. 0 is 32.
+	PixelsPerMetre float64 `json:"pixelsPerMetre,omitempty"`
+	Nodes          []Node  `json:"nodes"`
 }
+
+// Mode is whether a scene is 3D or 2D.
+type Mode string
+
+const (
+	Mode3D Mode = "3d"
+	Mode2D Mode = "2d"
+)
+
+// DefaultPixelsPerMetre is a 2D scene's when it does not say.
+const DefaultPixelsPerMetre = 32
+
+// Is2D tells whether the scene is 2D.
+func (scene *Scene) Is2D() bool { return scene.Mode == Mode2D }
 
 // Node is a thing in a scene, and its children, which move with it.
 type Node struct {
@@ -27,6 +47,7 @@ type Node struct {
 
 	Shape  string  `json:"shape,omitempty"`  // one of Shapes
 	Model  string  `json:"model,omitempty"`  // a model in the project, as "assets/models/tree.glb"
+	Sprite string  `json:"sprite,omitempty"` // in a 2D scene, a picture in the project, as "assets/sprites/hero.png"
 	Colour string  `json:"colour,omitempty"` // of a shape, "#rrggbb"
 	Camera *Camera `json:"camera,omitempty"`
 

@@ -58,6 +58,20 @@ func (spin *Spin) Update(context *engine.Context) {
 }
 `
 
+// editorFile installs the editor in the game, for the desktop: go-engine edits a project by
+// starting its game with the editor, so the editor plays the game's own code.
+const editorFile = `//go:build !nintendo3ds && !release
+
+package main
+
+import "github.com/akrck02/go-engine/editor"
+
+// The editor is part of the game while it is made: go-engine starts the game to edit it, and its
+// view plays the behaviours compiled here. Builds for the 3DS and finished builds (-tags release)
+// leave it out.
+func init() { editor.Install() }
+`
+
 // The code editors' settings: a task or a launch that plays the game, so it runs from the editor.
 const (
 	vscodeLaunch = `{
@@ -108,6 +122,7 @@ func Create(folder, name string) (*Project, error) {
 		"go.mod":                 module,
 		"main.go":                fmt.Sprintf(mainFile, name),
 		"spin.go":                spinFile,
+		EditorFile:               editorFile,
 		".vscode/launch.json":    vscodeLaunch,
 		".zed/tasks.json":        zedTasks,
 		".gitignore":             gitignore,
@@ -135,6 +150,17 @@ func Create(folder, name string) (*Project, error) {
 	return created, nil
 }
 
+// EditorFile is the file that installs the editor in a project's game.
+const EditorFile = "editor.go"
+
+// EnsureEditor adds editor.go to a project made before it existed; it tells whether it did.
+func (project *Project) EnsureEditor() (bool, error) {
+	if build.FileExists(project.Path(EditorFile)) {
+		return false, nil
+	}
+	return true, writeFile(project.Path(EditorFile), []byte(editorFile))
+}
+
 // modulePath is the module's name, from the game's.
 func modulePath(name string) string {
 	return "game/" + strings.ReplaceAll(build.FileName(name), "-", "")
@@ -152,4 +178,16 @@ func starterScene(name string) *scenes.Scene {
 	camera.Position, camera.Rotation = [3]float64{0, 3, 7}, [3]float64{-20, 0, 0}
 	camera.Camera = &scenes.Camera{Projection: scenes.Perspective, FieldOfView: 50, Main: true}
 	return &scenes.Scene{Name: name, Nodes: []scenes.Node{ground, cube, camera}}
+}
+
+// starterScene2D is a new 2D scene: a ground to stand on, a square, and a camera seeing ten metres.
+func starterScene2D(name string) *scenes.Scene {
+	ground := scenes.NewNode("Ground")
+	ground.Shape, ground.Colour = "cube", "#7a9a6a"
+	ground.Position, ground.Scale = [3]float64{0, -3.5, 0}, [3]float64{24, 1, 1}
+	square := scenes.NewNode("Square")
+	square.Shape, square.Colour, square.Position = "cube", "#e07a5f", [3]float64{0, -2.5, 0}
+	camera := scenes.NewNode("Camera")
+	camera.Camera = &scenes.Camera{Projection: scenes.Orthographic, Height: 10, Main: true}
+	return &scenes.Scene{Name: name, Mode: scenes.Mode2D, Sky: "#a9d6e5", PixelsPerMetre: scenes.DefaultPixelsPerMetre, Nodes: []scenes.Node{ground, square, camera}}
 }

@@ -16,6 +16,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/akrck02/go-engine/engine"
 	"github.com/akrck02/go-engine/internal/build"
@@ -101,11 +102,14 @@ func (project *Project) WriteScene(file string, scene *scenes.Scene) error {
 	return writeFile(project.Path(file), data)
 }
 
-// NewScene adds an empty scene, with a ground and a camera, and returns its file.
-func (project *Project) NewScene(name string) (string, error) {
+// NewScene adds a scene, 3D or 2D, with a ground and a camera, and returns its file.
+func (project *Project) NewScene(name string, mode scenes.Mode) (string, error) {
 	file := path.Join(ScenesFolder, build.FileName(name)+SceneSuffix)
 	if build.FileExists(project.Path(file)) {
 		return "", fmt.Errorf("%s exists already", file)
+	}
+	if mode == scenes.Mode2D {
+		return file, project.WriteScene(file, starterScene2D(name))
 	}
 	return file, project.WriteScene(file, starterScene(name))
 }
@@ -159,17 +163,64 @@ func (project *Project) PlayCommand() (*exec.Cmd, error) {
 	return command, nil
 }
 
+// Tidy brings the project's go.mod up to date with its code and with the go-engine it builds
+// against, as `go mod tidy` does: an engine of a newer version may need other versions of its
+// libraries.
+func (project *Project) Tidy() error {
+	return build.Run(project.Folder, nil, build.GoTool(), "mod", "tidy")
+}
+
+// EditorProgram is where the game built with the editor in it goes.
+func (project *Project) EditorProgram() string {
+	return project.Path(path.Join("build", "editor", build.FileName(project.Settings.Name)+"-editor"+build.ExecutableSuffix()))
+}
+
+// BuildEditor builds the game with the editor in it, for go-engine to start.
+func (project *Project) BuildEditor() error {
+	if _, err := project.EnsureEditor(); err != nil {
+		return err
+	}
+	if err := project.Tidy(); err != nil {
+		return err
+	}
+	return build.Run(project.Folder, nil, build.GoTool(), "build", "-o", project.EditorProgram(), ".")
+}
+
+// CodeChangedSince tells whether a Go file of the project changed after a time: the game the
+// editor runs in is older than its code.
+func (project *Project) CodeChangedSince(built time.Time) bool {
+	changed := false
+	fs.WalkDir(project.Files(), ".", func(file string, entry fs.DirEntry, err error) error {
+		if err != nil || changed {
+			return fs.SkipAll
+		}
+		if entry.IsDir() && (file == "build" || strings.HasPrefix(entry.Name(), ".")) && file != "." {
+			return fs.SkipDir
+		}
+		if strings.HasSuffix(file, ".go") {
+			if info, err := entry.Info(); err == nil && info.ModTime().After(built) {
+				changed = true
+			}
+		}
+		return nil
+	})
+	return changed
+}
+
 // Built is what a build made: the program, and the notices of what it carries.
 type Built struct{ Program, Notices string }
 
 // BuildDesktop builds the game for this computer into build/.
 func (project *Project) BuildDesktop() (Built, error) {
 	output := project.Path(path.Join("build", build.FileName(project.Settings.Name)+build.ExecutableSuffix()))
-	if err := build.Run(project.Folder, nil, build.GoTool(), "build", "-o", output, "."); err != nil {
+	if err := project.Tidy(); err != nil {
 		return Built{}, err
 	}
-	notices, err := writeNotices(project.Path("build"), notices.Desktop)
-	return Built{Program: output, Notices: notices}, err
+	if err := build.Run(project.Folder, nil, build.GoTool(), "build", "-tags", "release", "-o", output, "."); err != nil {
+		return Built{}, err
+	}
+	noticesFile, err := writeNotices(project.Path("build"), notices.Desktop)
+	return Built{Program: output, Notices: noticesFile}, err
 }
 
 // Build3DS builds the game for the Nintendo 3DS into build/, with TinyGo.
@@ -179,12 +230,15 @@ func (project *Project) Build3DS() (Built, error) {
 		return Built{}, err
 	}
 	output := project.Path(path.Join("build", build.FileName(project.Settings.Name)+".3dsx"))
+	if err := project.Tidy(); err != nil {
+		return Built{}, err
+	}
 	environment := []string{"GOFLAGS=-buildvcs=false", build.GoOnPath()}
 	if err := build.Run(project.Folder, environment, tinygo, "build", "-target=nintendo3ds", "-o", output, "."); err != nil {
 		return Built{}, err
 	}
-	notices, err := writeNotices(project.Path("build"), notices.Console)
-	return Built{Program: output, Notices: notices}, err
+	noticesFile, err := writeNotices(project.Path("build"), notices.Console)
+	return Built{Program: output, Notices: noticesFile}, err
 }
 
 func writeNotices(folder string, notices []byte) (string, error) {

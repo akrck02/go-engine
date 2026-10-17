@@ -36,6 +36,7 @@ type Node struct {
 	shape  string
 	colour string
 	model  string
+	sprite string
 	camera *scenes.Camera
 
 	// Behaviours are the game's code attached to the node, as the scene file keeps them; while the
@@ -208,6 +209,19 @@ func (node *Node) Colour() string { return node.colour }
 // Model is the model the node shows, by its path in the project, or "".
 func (node *Node) Model() string { return node.model }
 
+// Sprite is the picture the node shows in a 2D scene, by its path in the project, or "".
+func (node *Node) Sprite() string { return node.sprite }
+
+// SetSprite makes the node show a picture of the project's, in a 2D scene.
+func (node *Node) SetSprite(path string) error {
+	node.sprite = path
+	if path == "" {
+		return nil
+	}
+	_, err := node.scene.assets.image(path)
+	return err
+}
+
 // Camera is the node's camera settings, if it is a camera.
 func (node *Node) Camera() (*scenes.Camera, bool) { return node.camera, node.camera != nil }
 
@@ -232,6 +246,10 @@ func (node *Node) SetCamera(camera *scenes.Camera) {
 // rebuild makes the node's geometry again after what it shows changed.
 func (node *Node) rebuild() {
 	node.geometry, node.helper = nil, nil
+	if node.scene.Is2D() {
+		node.rebuildRenderChildren() // a 2D scene is drawn flat, by Draw2D
+		return
+	}
 	if node.shape != "" {
 		mesh := shapes.Mesh(node.shape, node.scene.material(node.colour))
 		if mesh != nil {
@@ -249,7 +267,7 @@ func (node *Node) rebuild() {
 func (node *Node) rebuildModel() error {
 	node.geometry, node.helper = nil, nil
 	defer node.rebuildRenderChildren()
-	if node.model == "" {
+	if node.model == "" || node.scene.Is2D() {
 		return nil
 	}
 	model, err := node.scene.assets.model(node.model)
@@ -278,6 +296,9 @@ func cloneRenderNode(original *scene.Node) *scene.Node {
 // Bounds is the box, in the world, around what the node itself shows (not its children); empty
 // for a node that shows nothing.
 func (node *Node) Bounds() space.Box {
+	if node.scene.Is2D() {
+		return node.flatBounds()
+	}
 	box := space.EmptyBox()
 	world := node.worldMatrix()
 	for _, own := range []*scene.Node{node.geometry, node.helper} {

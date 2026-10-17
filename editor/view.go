@@ -4,6 +4,7 @@ import (
 	"math"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/akrck02/go-renderer/draw2d"
 	"github.com/akrck02/go-renderer/input"
@@ -30,14 +31,21 @@ type View struct {
 	shownScene *engine.Scene
 	nameText   string
 	fieldTexts map[string]string
-	importPath string
 	sceneName  string
+
+	dark, themeSet bool
+	// DarkByDefault starts the editor dark when no mode was kept (the window's -dark).
+	DarkByDefault bool
+
+	assetTree    project.AssetEntry
+	assetsReadAt time.Time
+	openFolders  map[string]bool
 }
 
 // NewView shows an editor.
 func NewView(editor *Editor) *View {
 	editor.Wake = window.Wake
-	return &View{Editor: editor, viewport: newViewport(), fieldTexts: map[string]string{}}
+	return &View{Editor: editor, viewport: newViewport(), fieldTexts: map[string]string{}, openFolders: map[string]bool{"assets": true}}
 }
 
 // Options are the window's, with the step that shows the scene and reads what the interface
@@ -54,6 +62,12 @@ func (view *View) Options(options window.Options) window.Options {
 
 func (view *View) keys(state *input.State) {
 	editor := view.Editor
+	if _, playing := editor.PlayingHere(); playing {
+		if state.Pressed(input.KeyEscape) {
+			editor.StopHere()
+		}
+		return
+	}
 	control := state.Down(input.KeyControl)
 	switch {
 	case control && state.Pressed(input.KeyS):
@@ -63,7 +77,7 @@ func (view *View) keys(state *input.State) {
 	case state.Pressed(input.KeyDelete):
 		editor.Delete()
 	case state.Pressed(input.KeyF):
-		view.viewport.frame(editor.Selected)
+		view.frame()
 	case state.Pressed(input.KeyEscape):
 		editor.Select(nil)
 	}
@@ -71,6 +85,11 @@ func (view *View) keys(state *input.State) {
 
 // Build describes the window for a frame.
 func (view *View) Build(context *ui.Context) {
+	if !view.themeSet {
+		view.themeSet = true
+		kept, found := window.Preference(themePreference)
+		view.applyTheme(context, found && kept == "dark" || !found && (view.DarkByDefault || window.SystemPrefersDark()))
+	}
 	view.Editor.TakeEvents()
 	if view.Editor.Running() {
 		context.RequestFrame(250e6) // the status line follows the game's output
@@ -106,8 +125,11 @@ func (view *View) toolbar(context *ui.Context) {
 					view.openScene(file)
 				}
 			}
-			if context.MenuItem("plus", "New scene", "") {
-				view.newScene()
+			if context.MenuItem("box", "New 3D scene", "") {
+				view.newScene(scenes.Mode3D)
+			}
+			if context.MenuItem("square", "New 2D scene", "") {
+				view.newScene(scenes.Mode2D)
 			}
 		})
 		if context.IconButton("save", "Save") {
@@ -115,22 +137,44 @@ func (view *View) toolbar(context *ui.Context) {
 		}
 		context.Tooltip("Save the scene (Ctrl+S)")
 		context.Spacer()
-		if editor.Running() {
+		if _, playing := editor.PlayingHere(); playing {
 			if context.PrimaryIconButton("square", "Stop") {
+				editor.StopHere()
+			}
+			context.Tooltip("Back to editing (Escape)")
+		} else if context.PrimaryIconButton("play", "Play") {
+			editor.PlayHere()
+		}
+		context.Tooltip("Play the scene in the view, with the project's code")
+		if editor.Running() && editor.playing != nil {
+			if context.IconButton("square", "Window") {
 				editor.Stop()
 			}
-		} else if context.PrimaryIconButton("play", "Play") {
-			editor.Play()
+			context.Tooltip("Close the game's window")
+		} else if context.FlatIconButton("external-link", "") {
+			editor.PlayInWindow()
 		}
-		context.Tooltip("Save, build the game with Go and play it")
-		if context.IconButton("code", "Code") {
-			if opened, err := editor.Project.OpenCode(); err != nil {
+		context.Tooltip("Build the game and play it in a window of its own")
+		reload := context.FlatIconButton
+		if editor.CodeChanged() {
+			reload = context.IconButton
+		}
+		if reload("refresh-cw", "Reload code") {
+			editor.Reload()
+		}
+		if editor.CodeChanged() {
+			context.Tooltip("The project's Go code changed: build it again and reopen the editor with it")
+		} else {
+			context.Tooltip("Build the project's Go code again and reopen the editor with it")
+		}
+		if context.IconButton("folder-open", "Open project") {
+			if err := editor.Project.OpenInZed(); err != nil {
 				editor.say(err.Error(), true)
 			} else {
-				editor.say("Opened the project in "+opened, false)
+				editor.say("Opened the project in Zed", false)
 			}
 		}
-		context.Tooltip("Open the project's Go code in your editor (codeEditor in engine.json, or $VISUAL)")
+		context.Tooltip("Open the project's folder in Zed")
 		context.MenuButton("hammer", "Build", func() {
 			if context.MenuItem("monitor", "For this computer", "") {
 				editor.Run("Building for this computer…", func() (string, error) {
@@ -145,7 +189,37 @@ func (view *View) toolbar(context *ui.Context) {
 				})
 			}
 		})
+		themeIcon, themeTip := "moon", "Dark mode"
+		if view.dark {
+			themeIcon, themeTip = "sun", "Light mode"
+		}
+		if context.FlatIconButton(themeIcon, "") {
+			view.setDark(context, !view.dark)
+		}
+		context.Tooltip(themeTip)
 	})
+}
+
+// themePreference keeps the editor's light or dark mode between runs.
+const themePreference = "go-engine.theme"
+
+// setDark switches the editor between its dark and light modes, and keeps the choice.
+func (view *View) setDark(context *ui.Context, dark bool) {
+	view.applyTheme(context, dark)
+	mode := "light"
+	if dark {
+		mode = "dark"
+	}
+	window.KeepPreference(themePreference, mode)
+}
+
+func (view *View) applyTheme(context *ui.Context, dark bool) {
+	view.dark = dark
+	if dark {
+		context.Theme = ui.DarkTheme()
+		return
+	}
+	context.Theme = ui.LightTheme()
 }
 
 func (view *View) openScene(file string) {
@@ -155,15 +229,24 @@ func (view *View) openScene(file string) {
 	view.shownFor = nil
 }
 
-func (view *View) newScene() {
+func (view *View) newScene(mode scenes.Mode) {
 	editor := view.Editor
-	name := "Scene " + string(rune('0'+len(editor.Project.Scenes())+1))
-	file, err := editor.Project.NewScene(name)
+	name := "Scene " + FieldText(float64(len(editor.Project.Scenes())+1))
+	file, err := editor.Project.NewScene(name, mode)
 	if err != nil {
 		editor.say(err.Error(), true)
 		return
 	}
 	view.openScene(file)
+}
+
+// frame turns the view to the chosen node.
+func (view *View) frame() {
+	if view.Editor.Scene.Is2D() {
+		view.viewport.flat.frame(view.Editor.Selected)
+		return
+	}
+	view.viewport.frame(view.Editor.Selected)
 }
 
 // left is the scene's nodes, as a tree, over the project's models.
@@ -174,7 +257,7 @@ func (view *View) left(context *ui.Context) {
 			context.Heading("Scene")
 			context.Spacer()
 			context.MenuButton("plus", "", func() {
-				for _, kind := range Kinds {
+				for _, kind := range editor.KindsHere() {
 					if context.MenuItem(kindIcon(kind), kind, "") {
 						editor.Add(kind)
 					}
@@ -233,6 +316,10 @@ func kindIcon(kind string) string {
 		return "cylinder"
 	case "Camera":
 		return "video"
+	case "Square":
+		return "square"
+	case "Circle":
+		return "circle"
 	}
 	return "crosshair"
 }
@@ -244,53 +331,131 @@ func nodeIcon(node *engine.Node) string {
 	if node.Model() != "" {
 		return "package"
 	}
+	if node.Sprite() != "" {
+		return "image"
+	}
 	if node.Shape() != "" {
 		return kindIcon(strings.ToUpper(node.Shape()[:1]) + node.Shape()[1:])
 	}
 	return "crosshair"
 }
 
-// assets lists the project's models, to place in the scene, and imports others.
+// assets shows the project's assets folder as a tree: whatever is copied there, from the file
+// manager or the code editor, shows here. A model clicked is placed in the scene.
 func (view *View) assets(context *ui.Context) {
-	editor := view.Editor
-	layout := ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Height: ui.GrowBy(2), Padding: ui.Pad(10), Gap: 4}
+	if time.Since(view.assetsReadAt) > 2*time.Second {
+		view.assetTree, view.assetsReadAt = view.Editor.Project.AssetTree(), time.Now()
+	}
+	layout := ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Height: ui.GrowBy(2), Padding: ui.Pad(10), Gap: 1}
 	context.ScrollArea("Assets", layout, func() {
-		context.Heading("Assets")
-		models := editor.Project.Models()
-		if len(models) == 0 {
-			context.Caption("No models yet: import a .glb.")
+		context.Row(func() {
+			context.Heading("Assets")
+			context.Spacer()
+			if context.FlatIconButton("refresh-cw", "") {
+				view.assetsReadAt = time.Time{}
+			}
+			context.Tooltip("Read the assets folder again")
+		})
+		if len(view.assetTree.Children) == 0 {
+			note(context, "The assets folder is empty: copy models (.glb) and pictures (.png) into "+view.Editor.Project.Path("assets"))
 		}
-		for _, model := range models {
-			context.Push(model)
-			context.Row(func() {
-				if context.Selectable("package", path.Base(model), false) {
-					editor.AddModel(model)
-				}
-			})
-			context.Tooltip("Place " + model + " in the scene")
-			context.Pop()
-		}
-		context.Caption("Import a .glb, from its path")
-		context.TextFieldWith("Import path", &view.importPath, ui.TextFieldOptions{Placeholder: "/path/to/model.glb"})
-		if context.Button("Import") && strings.TrimSpace(view.importPath) != "" {
-			editor.Import(strings.TrimSpace(view.importPath))
-			view.importPath = ""
+		for _, child := range view.assetTree.Children {
+			view.assetNode(context, child, 0)
 		}
 	})
 }
 
+func (view *View) assetNode(context *ui.Context, entry project.AssetEntry, depth int) {
+	editor := view.Editor
+	context.Push(entry.Path)
+	defer context.Pop()
+	indent := ui.Layout{Width: ui.Grow(), Padding: ui.Padding{Left: float32(depth) * 14}}
+	if entry.Folder {
+		open := view.openFolders[entry.Path]
+		icon := "folder"
+		if open {
+			icon = "folder-open"
+		}
+		context.Box(indent, func() {
+			if context.Selectable(icon, entry.Name, false) {
+				view.openFolders[entry.Path] = !open
+			}
+		})
+		if open {
+			for _, child := range entry.Children {
+				view.assetNode(context, child, depth+1)
+			}
+		}
+		return
+	}
+	kind := project.KindOf(entry.Path)
+	context.Box(indent, func() {
+		if context.Selectable(assetIcon(kind), entry.Name, false) {
+			switch {
+			case kind == project.ModelAsset && !editor.Scene.Is2D():
+				editor.AddModel(entry.Path)
+			case kind == project.ImageAsset && editor.Scene.Is2D():
+				editor.AddSprite(entry.Path)
+			case kind == project.ModelAsset:
+				editor.say(entry.Path+": a model goes in a 3D scene", false)
+			case kind == project.ImageAsset:
+				editor.say(entry.Path+": a picture goes in a 2D scene, as a sprite", false)
+			default:
+				editor.say(entry.Path+": not something a scene shows yet", false)
+			}
+		}
+	})
+	switch kind {
+	case project.ModelAsset, project.ImageAsset:
+		context.Tooltip("Place " + entry.Path + " in the scene")
+	default:
+		context.Tooltip(entry.Path)
+	}
+}
+
+func assetIcon(kind project.AssetKind) string {
+	switch kind {
+	case project.ModelAsset:
+		return "package"
+	case project.ImageAsset:
+		return "image"
+	case project.SoundAsset:
+		return "music"
+	}
+	return "file"
+}
+
 // middle is the 3D view, seen through the window, with a strip of how to see it.
 func (view *View) middle(context *ui.Context) {
+	if played, playing := view.Editor.PlayingHere(); playing {
+		context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Height: ui.Grow(), Padding: ui.Pad(8)}, func() {
+			context.Frame(ui.Layout{Padding: ui.PadXY(10, 6), Gap: 6, AlignY: ui.Center}, ui.Look{Fill: context.Theme.Surface, Radius: 8, Shadow: true}, func() {
+				context.IconSized("play", 16, context.Theme.Positive)
+				context.Text("Playing", ui.TextStyle{Weight: draw2d.Medium})
+				context.Caption("Escape stops")
+			})
+			if played.Is2D() {
+				context.Paint(ui.Layout{Width: ui.Grow(), Height: ui.Grow()}, func(area draw2d.Rect, list *draw2d.List) {
+					paintPlaying(played, area, list)
+				})
+			}
+		})
+		return
+	}
 	context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Height: ui.Grow(), Padding: ui.Pad(8)}, func() {
 		context.Frame(ui.Layout{Padding: ui.PadXY(6, 4), Gap: 6, AlignY: ui.Center}, ui.Look{Fill: context.Theme.Surface, Radius: 8, Shadow: true}, func() {
-			mode := int(view.viewport.mode)
-			context.Box(ui.Layout{Width: ui.Fixed(330)}, func() {
-				if context.Tabs("View", &mode, "Perspective", "Orthographic", "Isometric") {
-					view.viewport.setMode(ViewMode(mode))
-				}
-			})
+			if view.Editor.Scene.Is2D() {
+				context.Text("2D", ui.TextStyle{Weight: draw2d.Medium})
+			} else {
+				mode := int(view.viewport.mode)
+				context.Box(ui.Layout{Width: ui.Fixed(330)}, func() {
+					if context.Tabs("View", &mode, "Perspective", "Orthographic", "Isometric") {
+						view.viewport.setMode(ViewMode(mode))
+					}
+				})
+			}
 			if context.FlatIconButton("scan", "") {
-				view.viewport.frame(view.Editor.Selected)
+				view.frame()
 			}
 			context.Tooltip("Frame the chosen node (F)")
 			if view.viewport.through != nil {
@@ -300,6 +465,13 @@ func (view *View) middle(context *ui.Context) {
 				context.Tooltip("Back to the editor's camera")
 			}
 		})
+		if view.Editor.Scene.Is2D() {
+			context.Paint(ui.Layout{Width: ui.Grow(), Height: ui.Grow()}, func(area draw2d.Rect, list *draw2d.List) {
+				view.viewport.flat.paint(view.Editor, area, list)
+			})
+			context.Caption("Drag the background to move · scroll to zoom · click to choose · drag the chosen to move it")
+			return
+		}
 		context.Spacer()
 		context.Text("Drag to turn · right-drag to pan · scroll to zoom · click to choose · drag the chosen to move it",
 			ui.TextStyle{Color: context.Theme.InkQuiet, Size: context.Theme.SmallTextSize})
@@ -320,6 +492,11 @@ func (view *View) inspector(context *ui.Context) {
 	bar(context, layout, func() {
 		inside := ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Height: ui.Grow(), Padding: ui.Pad(12), Gap: 6}
 		context.ScrollArea("Inspector", inside, func() {
+			if _, playing := editor.PlayingHere(); playing {
+				context.Heading("Playing")
+				note(context, "The view plays a copy of the scene with the project's code: what moves now is not saved. Stop (or Escape) goes back to editing.")
+				return
+			}
 			if editor.Selected == nil {
 				view.sceneInspector(context)
 				return
@@ -351,6 +528,17 @@ func (view *View) sceneInspector(context *ui.Context) {
 	if editor.Scene.Sky != "" && colourPicker(context, "Sky", &sky) {
 		editor.Scene.SetSky(sky)
 		editor.Changed()
+	}
+	if editor.Scene.Is2D() {
+		perMetre := editor.Scene.PixelsPerMetre
+		if perMetre <= 0 {
+			perMetre = scenes.DefaultPixelsPerMetre
+		}
+		context.Caption("Pixels of a sprite that make a metre")
+		if numberField(context, "Pixels per metre", &perMetre, numberLimits{1, 1024, 1}, "%.0f px") {
+			editor.Scene.PixelsPerMetre = perMetre
+			editor.Changed()
+		}
 	}
 	context.Separator()
 	note(context, "Coordinates: one unit is a metre; Y is up; X to the right and Z towards you (right-handed, as glTF). Rotations are in degrees: X tilts, Y turns, Z rolls.")
@@ -400,6 +588,9 @@ func (view *View) nodeInspector(context *ui.Context, node *engine.Node) {
 			}
 		}
 	}
+	if node.Sprite() != "" {
+		view.spriteInspector(context, node)
+	}
 	if settings, isCamera := node.Camera(); isCamera {
 		view.cameraInspector(context, node, settings)
 	}
@@ -419,9 +610,12 @@ func (view *View) transformInspector(context *ui.Context, node *engine.Node) {
 		editor.Scene.Sync()
 		editor.Changed()
 	}
+	if view.Editor.Scene.Is2D() {
+		note(context, "In 2D, Z is the depth: a greater Z is drawn in front. Turned sprites are not drawn turned yet.")
+	}
 	angles := node.Transform.Euler()
 	turned := space.Vec3{X: angles.X, Y: angles.Y, Z: angles.Z}
-	if vectorRow(context, "Rotation", &turned, rotationLimits, "%.0f°") {
+	if !view.Editor.Scene.Is2D() && vectorRow(context, "Rotation", &turned, rotationLimits, "%.0f°") {
 		node.Transform.SetEuler(space.Euler{X: turned.X, Y: turned.Y, Z: turned.Z})
 		editor.Scene.Sync()
 		editor.Changed()
@@ -510,7 +704,16 @@ func (view *View) shapeInspector(context *ui.Context, node *engine.Node) {
 			shape = index
 		}
 	}
-	if context.Tabs("Shape", &shape, "Cube", "Sphere", "Plane", "Cylinder") {
+	if editor.Scene.Is2D() {
+		round := 0
+		if node.Shape() == "sphere" {
+			round = 1
+		}
+		if context.Tabs("Flat shape", &round, "Square", "Circle") {
+			node.SetShape([]string{"cube", "sphere"}[round], node.Colour())
+			editor.Changed()
+		}
+	} else if context.Tabs("Shape", &shape, "Cube", "Sphere", "Plane", "Cylinder") {
 		node.SetShape(scenes.Shapes[shape], node.Colour())
 		editor.Changed()
 	}
@@ -518,6 +721,26 @@ func (view *View) shapeInspector(context *ui.Context, node *engine.Node) {
 	if colourPicker(context, "Colour", &colour) {
 		node.SetShape(node.Shape(), colour)
 		editor.Changed()
+	}
+}
+
+func (view *View) spriteInspector(context *ui.Context, node *engine.Node) {
+	editor := view.Editor
+	context.Separator()
+	context.Heading("Sprite")
+	context.Caption(node.Sprite())
+	if size := node.Bounds().Size(); size.X > 0 {
+		perMetre := editor.Scene.PixelsPerMetre
+		if perMetre <= 0 {
+			perMetre = scenes.DefaultPixelsPerMetre
+		}
+		note(context, trimmed(size.X)+" × "+trimmed(size.Y)+" m at "+trimmed(perMetre)+" pixels a metre, times its scale")
+	}
+	if context.Button("Read the picture again") {
+		editor.Scene.Forget(node.Sprite())
+		if err := node.SetSprite(node.Sprite()); err != nil {
+			editor.say(err.Error(), true)
+		}
 	}
 }
 
@@ -530,6 +753,20 @@ func (view *View) cameraInspector(context *ui.Context, node *engine.Node, settin
 		if each == settings.Projection {
 			projection = index
 		}
+	}
+	if editor.Scene.Is2D() {
+		settings.Projection = scenes.Orthographic
+		if settings.Height == 0 {
+			settings.Height = 10
+		}
+		context.Caption("Metres seen, top to bottom")
+		if numberField(context, "Height seen", &settings.Height, numberLimits{0, 1000, 0.5}, "%.1f m") {
+			editor.Changed()
+		}
+		if context.Checkbox("The scene is seen through this camera", &settings.Main) {
+			editor.Changed()
+		}
+		return
 	}
 	if context.Tabs("Projection", &projection, "Perspective", "Orthographic", "Isometric") {
 		settings.Projection = scenes.Projections[projection]
