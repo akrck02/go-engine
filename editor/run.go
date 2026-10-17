@@ -2,13 +2,13 @@ package editor
 
 import (
 	"flag"
-	"fmt"
 	"os"
 	"time"
 
 	"github.com/akrck02/go-ui/window"
 
 	"github.com/akrck02/go-engine/engine"
+	"github.com/akrck02/go-engine/failure"
 	"github.com/akrck02/go-engine/project"
 )
 
@@ -77,11 +77,11 @@ func startedAt() time.Time {
 	if err != nil {
 		return time.Now()
 	}
-	info, err := os.Stat(executable)
+	details, err := os.Stat(executable)
 	if err != nil {
 		return time.Now()
 	}
-	return info.ModTime()
+	return details.ModTime()
 }
 
 // CodeChanged tells whether the project's code changed since the game the editor runs in was
@@ -114,7 +114,7 @@ func (editor *Editor) Reload() {
 		os.Setenv(selectedVariable, selected)
 		os.Setenv(engine.EditorVariable, "1")
 		if err := restart(editor.Project.EditorProgram()); err != nil {
-			return "", fmt.Errorf("the editor could not start again: %w", err)
+			return "", failure.Wrap(RestartFailed, "", err)
 		}
 		return "", nil
 	})

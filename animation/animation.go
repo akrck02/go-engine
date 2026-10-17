@@ -2,9 +2,9 @@
 // colour fading. A Player runs tweens; each frame the game calls Update with the seconds passed,
 // and every tween writes its value where it was told to.
 //
-//	player.Vec3(&node.Transform.Position, space.V(0, 2, 0), 0.5, anim.EaseOut).
+//	player.Vector(&node.Transform.Position, space.NewVector(0, 2, 0), 0.5, animation.EaseOut).
 //		Then(func() { door.Open = true })
-package anim
+package animation
 
 import (
 	"math"
@@ -181,22 +181,22 @@ func (player *Player) Float(value *float64, target, seconds float64, easing Easi
 	return player.add(tween, easing, seconds)
 }
 
-// Vec3 moves a point (a position, a scale) to a target in some seconds.
-func (player *Player) Vec3(value *space.Vec3, target space.Vec3, seconds float64, easing Easing) *Tween {
-	var from space.Vec3
+// Vector moves a point (a position, a scale) to a target in some seconds.
+func (player *Player) Vector(value *space.Vector, target space.Vector, seconds float64, easing Easing) *Tween {
+	var from space.Vector
 	tween := &Tween{
 		start: func() { from = *value },
-		apply: func(eased float64) { *value = from.Lerp(target, eased) },
+		apply: func(eased float64) { *value = from.Toward(target, eased) },
 	}
 	return player.add(tween, easing, seconds)
 }
 
 // Rotation turns a rotation to a target in some seconds, the shorter way round.
-func (player *Player) Rotation(value *space.Quat, target space.Quat, seconds float64, easing Easing) *Tween {
-	var from space.Quat
+func (player *Player) Rotation(value *space.Rotation, target space.Rotation, seconds float64, easing Easing) *Tween {
+	var from space.Rotation
 	tween := &Tween{
 		start: func() { from = *value },
-		apply: func(eased float64) { *value = from.Slerp(target, eased) },
+		apply: func(eased float64) { *value = from.TurnToward(target, eased) },
 	}
 	return player.add(tween, easing, seconds)
 }

@@ -6,8 +6,6 @@ package project
 
 import (
 	"encoding/json"
-	"errors"
-	"fmt"
 	"io"
 	"io/fs"
 	"os"
@@ -19,9 +17,10 @@ import (
 	"time"
 
 	"github.com/akrck02/go-engine/engine"
+	"github.com/akrck02/go-engine/failure"
 	"github.com/akrck02/go-engine/internal/build"
 	"github.com/akrck02/go-engine/internal/notices"
-	"github.com/akrck02/go-engine/scenes"
+	"github.com/akrck02/go-engine/scenefile"
 )
 
 // Project is a game's folder.
@@ -82,16 +81,16 @@ func (project *Project) filesUnder(folder string, wanted func(name string) bool)
 }
 
 // ReadScene reads a scene file of the project.
-func (project *Project) ReadScene(file string) (*scenes.Scene, error) {
+func (project *Project) ReadScene(file string) (*scenefile.Scene, error) {
 	data, err := os.ReadFile(project.Path(file))
 	if err != nil {
 		return nil, err
 	}
-	return scenes.Read(data)
+	return scenefile.Read(data)
 }
 
 // WriteScene writes a scene file of the project.
-func (project *Project) WriteScene(file string, scene *scenes.Scene) error {
+func (project *Project) WriteScene(file string, scene *scenefile.Scene) error {
 	if err := scene.Check(); err != nil {
 		return err
 	}
@@ -103,12 +102,12 @@ func (project *Project) WriteScene(file string, scene *scenes.Scene) error {
 }
 
 // NewScene adds a scene, 3D or 2D, with a ground and a camera, and returns its file.
-func (project *Project) NewScene(name string, mode scenes.Mode) (string, error) {
+func (project *Project) NewScene(name string, mode scenefile.Mode) (string, error) {
 	file := path.Join(ScenesFolder, build.FileName(name)+SceneSuffix)
 	if build.FileExists(project.Path(file)) {
-		return "", fmt.Errorf("%s exists already", file)
+		return "", failure.Wrap(SceneExists, file, nil)
 	}
-	if mode == scenes.Mode2D {
+	if mode == scenefile.Mode2D {
 		return file, project.WriteScene(file, starterScene2D(name))
 	}
 	return file, project.WriteScene(file, starterScene(name))
@@ -119,7 +118,7 @@ func (project *Project) NewScene(name string, mode scenes.Mode) (string, error) 
 func (project *Project) Import(source string) (string, error) {
 	extension := strings.ToLower(filepath.Ext(source))
 	if extension != ".glb" {
-		return "", fmt.Errorf("%s: only .glb models can be imported for now (export glTF as binary .glb)", filepath.Base(source))
+		return "", failure.Wrap(ImportFormat, filepath.Base(source), nil)
 	}
 	file := path.Join(ModelsFolder, filepath.Base(source))
 	input, err := os.Open(source)
@@ -198,7 +197,7 @@ func (project *Project) CodeChangedSince(built time.Time) bool {
 			return fs.SkipDir
 		}
 		if strings.HasSuffix(file, ".go") {
-			if info, err := entry.Info(); err == nil && info.ModTime().After(built) {
+			if details, err := entry.Info(); err == nil && details.ModTime().After(built) {
 				changed = true
 			}
 		}
@@ -263,13 +262,13 @@ func (project *Project) OpenCode() (string, error) {
 		}
 	}
 	if editor == "" {
-		return "", errors.New("no code editor found: set codeEditor in engine.json (\"code\", \"zed\", \"nvim\"…) or $VISUAL")
+		return "", CodeEditorNotFound
 	}
 	words := strings.Fields(editor)
 	if isTerminalEditor(words[0]) {
 		terminal, found := findTerminal()
 		if !found {
-			return "", fmt.Errorf("%s runs in a terminal, and no terminal was found: open the project in it yourself (%s)", words[0], project.Folder)
+			return "", failure.Wrap(TerminalNotFound, words[0]+", "+project.Folder, nil)
 		}
 		words = append([]string{terminal, "-e"}, words...)
 	}

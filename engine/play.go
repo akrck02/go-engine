@@ -95,14 +95,14 @@ func (keys *Input) Axis(negative, positive Key) float64 {
 
 // Move is the direction the arrows (or WASD, or a 3DS's cross and circle pad) point, on the
 // ground: right is +X, up is Forward (-Z). Its length is at most 1.
-func (keys *Input) Move() space.Vec3 {
+func (keys *Input) Move() space.Vector {
 	x := keys.Axis(KeyLeft, KeyRight) + keys.Axis(KeyA, KeyD)
 	forward := keys.Axis(KeyDown, KeyUp) + keys.Axis(KeyS, KeyW)
 	if keys.state != nil {
 		x += keys.state.StickX
 		forward -= keys.state.StickY
 	}
-	direction := space.V(x, 0, -forward)
+	direction := space.NewVector(x, 0, -forward)
 	if direction.Length() > 1 {
 		direction = direction.Normalized()
 	}

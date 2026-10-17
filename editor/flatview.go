@@ -27,7 +27,7 @@ type flatView struct {
 	moved    bool
 	pressX   float64
 	pressY   float64
-	grabbed  space.Vec3 // the dragged node's position minus the point pressed
+	grabbed  space.Vector // the dragged node's position minus the point pressed
 	lastX    float64
 	lastY    float64
 }
@@ -87,7 +87,7 @@ func (flat *flatView) followMouse(editor *Editor, state *input.State) {
 		before := flat.view.FromScreen(flat.area, float32(x), float32(y))
 		flat.view.Height = math.Min(math.Max(flat.view.Height*math.Pow(0.88, state.ScrollDelta), 0.5), 2000)
 		after := flat.view.FromScreen(flat.area, float32(x), float32(y))
-		flat.view.Centre = flat.view.Centre.Add(before.Sub(after))
+		flat.view.Centre = flat.view.Centre.Add(before.Subtract(after))
 	}
 	point := flat.view.FromScreen(flat.area, float32(x), float32(y))
 	if state.ButtonPressed(input.MouseLeft) || state.ButtonPressed(input.MouseRight) || state.ButtonPressed(input.MouseMiddle) {
@@ -95,7 +95,7 @@ func (flat *flatView) followMouse(editor *Editor, state *input.State) {
 		flat.pressX, flat.pressY, flat.lastX, flat.lastY = x, y, x, y
 		if chosen := editor.Selected; state.Button(input.MouseLeft) && chosen != nil {
 			if picked, found := editor.PickFlat(point, flat.reach()); found && picked == chosen {
-				flat.dragging, flat.grabbed = chosen, chosen.World().Position.Sub(point)
+				flat.dragging, flat.grabbed = chosen, chosen.World().Position.Subtract(point)
 			}
 		}
 		if state.Button(input.MouseLeft) && flat.dragging == nil {
@@ -114,7 +114,7 @@ func (flat *flatView) followMouse(editor *Editor, state *input.State) {
 			editor.MoveTo(flat.dragging, target)
 		case flat.panning && flat.moved:
 			scale := flat.view.Height / float64(max(flat.area.Height, 1))
-			flat.view.Centre = flat.view.Centre.Add(space.V(-(x-flat.lastX)*scale, (y-flat.lastY)*scale, 0))
+			flat.view.Centre = flat.view.Centre.Add(space.NewVector(-(x-flat.lastX)*scale, (y-flat.lastY)*scale, 0))
 		}
 		flat.lastX, flat.lastY = x, y
 		return
@@ -154,7 +154,7 @@ func (flat *flatView) drawGrid() {
 		step *= 5 // far out, a line every five metres, then every twenty-five
 	}
 	for x := math.Floor(low.X/step) * step; x <= high.X; x += step {
-		screen, _ := flat.view.ToScreen(flat.area, space.V(x, 0, 0))
+		screen, _ := flat.view.ToScreen(flat.area, space.NewVector(x, 0, 0))
 		colour := flatGrid
 		if math.Mod(math.Abs(x), step*5) < 1e-9 {
 			colour = flatGridFive
@@ -165,7 +165,7 @@ func (flat *flatView) drawGrid() {
 		flat.drawing.Rectangle(draw2d.Rect{X: screen, Y: flat.area.Y, Width: 1, Height: flat.area.Height}, 0, colour, draw2d.Color{}, 0)
 	}
 	for y := math.Floor(low.Y/step) * step; y <= high.Y; y += step {
-		_, screen := flat.view.ToScreen(flat.area, space.V(0, y, 0))
+		_, screen := flat.view.ToScreen(flat.area, space.NewVector(0, y, 0))
 		colour := flatGrid
 		if math.Mod(math.Abs(y), step*5) < 1e-9 {
 			colour = flatGridFive
@@ -191,8 +191,8 @@ func (flat *flatView) drawMarks(editor *Editor) {
 			if height <= 0 {
 				height = 10
 			}
-			half := space.V(height*aspect/2, height/2, 0)
-			flat.outline(space.Box{Minimum: position.Sub(half), Maximum: position.Add(half)}, flatCamera, 1)
+			half := space.NewVector(height*aspect/2, height/2, 0)
+			flat.outline(space.Box{Minimum: position.Subtract(half), Maximum: position.Add(half)}, flatCamera, 1)
 		} else if node.Bounds().IsEmpty() {
 			x, y := flat.view.ToScreen(flat.area, position)
 			flat.drawing.Rectangle(draw2d.Rect{X: x - 5, Y: y - 5, Width: 10, Height: 10}, 5, draw2d.Color{0.95, 0.6, 0.1, 0.9}, draw2d.Color{}, 0)
@@ -206,13 +206,13 @@ func (flat *flatView) drawMarks(editor *Editor) {
 	box := chosen.Bounds()
 	if box.IsEmpty() {
 		position := chosen.World().Position
-		box = space.Box{Minimum: position.Sub(space.V(0.2, 0.2, 0)), Maximum: position.Add(space.V(0.2, 0.2, 0))}
+		box = space.Box{Minimum: position.Subtract(space.NewVector(0.2, 0.2, 0)), Maximum: position.Add(space.NewVector(0.2, 0.2, 0))}
 	}
 	flat.outline(box, flatChosen, 2)
 }
 
 func (flat *flatView) outline(box space.Box, colour draw2d.Color, width float32) {
-	left, top := flat.view.ToScreen(flat.area, space.V(box.Minimum.X, box.Maximum.Y, 0))
-	right, bottom := flat.view.ToScreen(flat.area, space.V(box.Maximum.X, box.Minimum.Y, 0))
+	left, top := flat.view.ToScreen(flat.area, space.NewVector(box.Minimum.X, box.Maximum.Y, 0))
+	right, bottom := flat.view.ToScreen(flat.area, space.NewVector(box.Maximum.X, box.Minimum.Y, 0))
 	flat.drawing.Rectangle(draw2d.Rect{X: left, Y: top, Width: right - left, Height: bottom - top}, 0, draw2d.Color{}, colour, width)
 }

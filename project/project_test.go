@@ -7,76 +7,76 @@ import (
 	"testing"
 
 	"github.com/akrck02/go-engine/engine"
-	"github.com/akrck02/go-engine/scenes"
+	"github.com/akrck02/go-engine/scenefile"
 )
 
-func TestANewProjectIsAGoModuleWithAScene(t *testing.T) {
-	folder := filepath.Join(t.TempDir(), "harbour")
+func TestANewProjectIsAGoModuleWithAScene(test *testing.T) {
+	folder := filepath.Join(test.TempDir(), "harbour")
 	created, err := Create(folder, "Harbour Lights")
 	if err != nil {
-		t.Fatal(err)
+		test.Fatal(err)
 	}
 	for _, file := range []string{"go.mod", "main.go", "spin.go", "engine.json", "scenes/main.scene.json", ".vscode/launch.json", ".zed/tasks.json"} {
 		if _, err := os.Stat(created.Path(file)); err != nil {
-			t.Errorf("%s is missing", file)
+			test.Errorf("%s is missing", file)
 		}
 	}
 	module, _ := os.ReadFile(created.Path("go.mod"))
 	if !strings.Contains(string(module), "module game/harbourlights") {
-		t.Errorf("go.mod:\n%s", module)
+		test.Errorf("go.mod:\n%s", module)
 	}
 	opened, err := Open(folder)
 	if err != nil || opened.Settings.Name != "Harbour Lights" {
-		t.Fatalf("the project did not open: %v", err)
+		test.Fatalf("the project did not open: %v", err)
 	}
 	scene, err := engine.Load(opened.Files(), opened.Settings.StartScene)
 	if err != nil {
-		t.Fatal(err)
+		test.Fatal(err)
 	}
 	if _, found := scene.MainCamera(); !found {
-		t.Fatal("the first scene has no camera")
+		test.Fatal("the first scene has no camera")
 	}
 	if _, err := Create(folder, "Again"); err == nil {
-		t.Fatal("a project was made over another")
+		test.Fatal("a project was made over another")
 	}
 }
 
-func TestModelsAreImportedAndScenesAdded(t *testing.T) {
-	created, err := Create(filepath.Join(t.TempDir(), "game"), "Game")
+func TestModelsAreImportedAndScenesAdded(test *testing.T) {
+	created, err := Create(filepath.Join(test.TempDir(), "game"), "Game")
 	if err != nil {
-		t.Fatal(err)
+		test.Fatal(err)
 	}
-	source := filepath.Join(t.TempDir(), "Boat.glb")
+	source := filepath.Join(test.TempDir(), "Boat.glb")
 	os.WriteFile(source, []byte("glTF"), 0o644)
 	imported, err := created.Import(source)
 	if err != nil || imported != "assets/models/Boat.glb" {
-		t.Fatalf("imported as %q: %v", imported, err)
+		test.Fatalf("imported as %q: %v", imported, err)
 	}
 	if models := created.Models(); len(models) != 1 || models[0] != imported {
-		t.Fatalf("models: %v", models)
+		test.Fatalf("models: %v", models)
 	}
-	if _, err := created.Import(filepath.Join(t.TempDir(), "photo.png")); err == nil {
-		t.Fatal("a picture was imported as a model")
+	if _, err := created.Import(filepath.Join(test.TempDir(), "photo.png")); err == nil {
+		test.Fatal("a picture was imported as a model")
 	}
-	file, err := created.NewScene("Second level", scenes.Mode2D)
+	file, err := created.NewScene("Second level", scenefile.Mode2D)
 	if read, _ := created.ReadScene(file); err != nil || file != "scenes/second-level.scene.json" || !read.Is2D() {
-		t.Fatalf("new scene %q: %v", file, err)
+		test.Fatalf("new scene %q: %v", file, err)
 	}
 	if scenes := created.Scenes(); len(scenes) != 2 {
-		t.Fatalf("scenes: %v", scenes)
+		test.Fatalf("scenes: %v", scenes)
 	}
 }
 
-func TestTerminalEditorsAreKnown(t *testing.T) {
+func TestTerminalEditorsAreKnown(test *testing.T) {
 	if !isTerminalEditor("/usr/bin/nvim") || isTerminalEditor("zed") {
-		t.Fatal("nvim runs in a terminal, zed does not")
+		test.Fatal("nvim runs in a terminal, zed does not")
 	}
 }
 
-func TestBehavioursAreFoundInTheProjectsCode(t *testing.T) {
-	created, err := Create(filepath.Join(t.TempDir(), "game"), "Game")
+func TestBehavioursAreFoundInTheProjectsCode(test *testing.T) {
+	created, err := Create(filepath.Join(test.TempDir(), "game"), "Game")
 	if err != nil {
-		t.Fatal(err)
+		test.Fatal(err)
 	}
 	os.WriteFile(created.Path("drift.go"), []byte(`package main
 
@@ -97,18 +97,18 @@ type NotABehaviour struct{ Value int }
 `), 0o644)
 	found := created.Behaviours()
 	if len(found) != 2 || found[0].Name != "Drift" || found[1].Name != "Spin" {
-		t.Fatalf("behaviours: %+v", found)
+		test.Fatalf("behaviours: %+v", found)
 	}
 	drift := found[0]
-	if drift.Doc != "Drift moves a node slowly." || len(drift.Fields) != 2 || drift.Fields[0] != (FieldInfo{"speed", "float64", "metres a second"}) || drift.Fields[1].Name != "Label" {
-		t.Fatalf("drift: %+v", drift)
+	if drift.Doc != "Drift moves a node slowly." || len(drift.Fields) != 2 || drift.Fields[0] != (Field{"speed", "float64", "metres a second"}) || drift.Fields[1].Name != "Label" {
+		test.Fatalf("drift: %+v", drift)
 	}
 }
 
-func TestTheAssetsTreeIsTheAssetsFolder(t *testing.T) {
-	created, err := Create(filepath.Join(t.TempDir(), "game"), "Game")
+func TestTheAssetsTreeIsTheAssetsFolder(test *testing.T) {
+	created, err := Create(filepath.Join(test.TempDir(), "game"), "Game")
 	if err != nil {
-		t.Fatal(err)
+		test.Fatal(err)
 	}
 	os.MkdirAll(created.Path("assets/sprites/hero"), 0o755)
 	os.WriteFile(created.Path("assets/sprites/hero/idle.png"), nil, 0o644)
@@ -116,12 +116,12 @@ func TestTheAssetsTreeIsTheAssetsFolder(t *testing.T) {
 	os.WriteFile(created.Path("assets/models/Tree.glb"), nil, 0o644)
 	tree := created.AssetTree()
 	if len(tree.Children) != 3 || tree.Children[0].Name != "models" || tree.Children[1].Name != "sprites" || tree.Children[2].Name != "readme.txt" {
-		t.Fatalf("tree: %+v", tree.Children)
+		test.Fatalf("tree: %+v", tree.Children)
 	}
 	if models := tree.Children[0].Children; len(models) != 1 || models[0].Path != "assets/models/Tree.glb" {
-		t.Fatalf("models: %+v (the .gitkeep is hidden)", models)
+		test.Fatalf("models: %+v (the .gitkeep is hidden)", models)
 	}
 	if KindOf("a/b/IDLE.PNG") != ImageAsset || KindOf("x.glb") != ModelAsset || KindOf("x.txt") != OtherAsset {
-		t.Fatal("kinds")
+		test.Fatal("kinds")
 	}
 }

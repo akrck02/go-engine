@@ -1,7 +1,6 @@
 package engine
 
 import (
-	"fmt"
 	"io/fs"
 	"math"
 	"path"
@@ -12,8 +11,9 @@ import (
 	"github.com/akrck02/go-renderer/models"
 	"github.com/akrck02/go-renderer/scene"
 
-	"github.com/akrck02/go-engine/anim"
-	"github.com/akrck02/go-engine/scenes"
+	"github.com/akrck02/go-engine/animation"
+	"github.com/akrck02/go-engine/failure"
+	"github.com/akrck02/go-engine/scenefile"
 	"github.com/akrck02/go-engine/shapes"
 	"github.com/akrck02/go-engine/space"
 )
@@ -25,14 +25,14 @@ type Scene struct {
 	Sky  string // the background colour, "#rrggbb"; empty for a daylight sky
 	Root *Node
 	// Mode is 3D or 2D; a 2D scene draws its sprites and shapes flat (see Draw2D).
-	Mode scenes.Mode
+	Mode scenefile.Mode
 	// PixelsPerMetre is how many of a sprite's pixels make a metre, in a 2D scene.
 	PixelsPerMetre float64
 
 	// Editing shows what only the editor shows: a marker for cameras and empty nodes.
 	Editing bool
 	// Animate runs the scene's tweens; the engine moves it on every frame.
-	Animate anim.Player
+	Animate animation.Player
 
 	world     *scene.Scene
 	assets    *assets
@@ -48,11 +48,11 @@ type Scene struct {
 func Load(files fs.FS, file string) (*Scene, error) {
 	data, err := fs.ReadFile(files, file)
 	if err != nil {
-		return nil, err
+		return nil, failure.Wrap(SceneNotFound, file, err)
 	}
-	description, err := scenes.Read(data)
+	description, err := scenefile.Read(data)
 	if err != nil {
-		return nil, fmt.Errorf("%s: %w", file, err)
+		return nil, failure.Wrap(SceneUnreadable, file, err)
 	}
 	return Build(files, description)
 }
@@ -60,7 +60,7 @@ func Load(files fs.FS, file string) (*Scene, error) {
 // Build makes a scene from its description, finding its models in a project's files. A model
 // that cannot be read leaves its node showing nothing; the first such error is returned with the
 // scene.
-func Build(files fs.FS, description *scenes.Scene) (*Scene, error) {
+func Build(files fs.FS, description *scenefile.Scene) (*Scene, error) {
 	built := NewScene(files)
 	built.Name, built.Mode, built.PixelsPerMetre = description.Name, description.Mode, description.PixelsPerMetre
 	built.SetSky(description.Sky)
@@ -86,21 +86,21 @@ func NewScene(files fs.FS) *Scene {
 
 // NewNode makes a node of the scene from a description (and its children), not yet in the scene:
 // Add it to a node.
-func (owner *Scene) NewNode(description scenes.Node) (*Node, error) {
+func (owner *Scene) NewNode(description scenefile.Node) (*Node, error) {
 	return owner.buildNode(description)
 }
 
-func (owner *Scene) buildNode(description scenes.Node) (*Node, error) {
+func (owner *Scene) buildNode(description scenefile.Node) (*Node, error) {
 	node := newNode(owner, description.Name)
 	node.Transform = space.Transform{
-		Position: space.V(description.Position[0], description.Position[1], description.Position[2]),
-		Rotation: space.Euler{X: description.Rotation[0], Y: description.Rotation[1], Z: description.Rotation[2]}.Rotation(),
-		Scale:    space.V(description.Scale[0], description.Scale[1], description.Scale[2]),
+		Position: space.NewVector(description.Position[0], description.Position[1], description.Position[2]),
+		Rotation: space.Angles{X: description.Rotation[0], Y: description.Rotation[1], Z: description.Rotation[2]}.Rotation(),
+		Scale:    space.NewVector(description.Scale[0], description.Scale[1], description.Scale[2]),
 	}
 	node.Visible = !description.Hidden
 	node.shape, node.colour, node.model, node.sprite = description.Shape, description.Colour, description.Model, description.Sprite
 	node.camera = description.Camera
-	node.Behaviours = append([]scenes.Behaviour(nil), description.Behaviours...)
+	node.Behaviours = append([]scenefile.Behaviour(nil), description.Behaviours...)
 	var firstError error
 	if node.model != "" {
 		firstError = node.rebuildModel()
@@ -121,8 +121,8 @@ func (owner *Scene) buildNode(description scenes.Node) (*Node, error) {
 }
 
 // Describe writes the scene back as its file keeps it.
-func (owner *Scene) Describe() *scenes.Scene {
-	description := &scenes.Scene{Name: owner.Name, Sky: owner.Sky, Mode: owner.Mode, PixelsPerMetre: owner.PixelsPerMetre}
+func (owner *Scene) Describe() *scenefile.Scene {
+	description := &scenefile.Scene{Name: owner.Name, Sky: owner.Sky, Mode: owner.Mode, PixelsPerMetre: owner.PixelsPerMetre}
 	for _, child := range owner.Root.children {
 		description.Nodes = append(description.Nodes, child.Describe())
 	}
@@ -130,16 +130,16 @@ func (owner *Scene) Describe() *scenes.Scene {
 }
 
 // Describe writes a node, and its children, as a scene file keeps them.
-func (node *Node) Describe() scenes.Node {
-	angles := node.Transform.Euler()
-	description := scenes.Node{
+func (node *Node) Describe() scenefile.Node {
+	angles := node.Transform.Angles()
+	description := scenefile.Node{
 		Name:     node.Name,
 		Position: [3]float64{node.Transform.Position.X, node.Transform.Position.Y, node.Transform.Position.Z},
 		Rotation: [3]float64{rounded(angles.X), rounded(angles.Y), rounded(angles.Z)},
 		Scale:    [3]float64{node.Transform.Scale.X, node.Transform.Scale.Y, node.Transform.Scale.Z},
 		Hidden:   !node.Visible,
 		Shape:    node.shape, Colour: node.colour, Model: node.model, Sprite: node.sprite, Camera: node.camera,
-		Behaviours: append([]scenes.Behaviour(nil), node.Behaviours...),
+		Behaviours: append([]scenefile.Behaviour(nil), node.Behaviours...),
 	}
 	for _, child := range node.children {
 		description.Children = append(description.Children, child.Describe())
@@ -152,7 +152,7 @@ func rounded(degrees float64) float64 { return math.Round(degrees*1e6)/1e6 + 0 }
 
 // SetMode makes the scene 3D or 2D: its nodes show their shapes and models in 3D, or their sprites
 // and flat shapes in 2D.
-func (owner *Scene) SetMode(mode scenes.Mode) {
+func (owner *Scene) SetMode(mode scenefile.Mode) {
 	owner.Mode = mode
 	owner.Root.Walk(func(node *Node) bool {
 		if node != owner.Root {
@@ -250,19 +250,19 @@ func (owner *Scene) MainCamera() (*Node, bool) {
 // View is what a camera node sees, as go-renderer's camera.
 func (node *Node) View() models.Camera {
 	world := node.World()
-	settings := scenes.Camera{Projection: scenes.Perspective}
+	settings := scenefile.Camera{Projection: scenefile.Perspective}
 	if node.camera != nil {
 		settings = *node.camera
 	}
-	if settings.Projection == scenes.Isometric {
+	if settings.Projection == scenefile.Isometric {
 		// always the classic angle, whatever way the node is turned: isometric is a fixed view
-		world.Rotation = space.Euler{X: scenes.IsometricAngles[0], Y: scenes.IsometricAngles[1]}.Rotation()
+		world.Rotation = space.Angles{X: scenefile.IsometricAngles[0], Y: scenefile.IsometricAngles[1]}.Rotation()
 	}
 	return CameraAt(world, settings)
 }
 
 // CameraAt is go-renderer's camera for a camera placed at a transform with some settings.
-func CameraAt(world space.Transform, settings scenes.Camera) models.Camera {
+func CameraAt(world space.Transform, settings scenefile.Camera) models.Camera {
 	position := world.Position
 	target := position.Add(world.Forward())
 	up := world.Up()
@@ -274,7 +274,7 @@ func CameraAt(world space.Transform, settings scenes.Camera) models.Camera {
 		Far:      2000,
 	}
 	switch settings.Projection {
-	case scenes.Orthographic, scenes.Isometric:
+	case scenefile.Orthographic, scenefile.Isometric:
 		view.OrthographicHeight = float32(settings.Height)
 		if view.OrthographicHeight <= 0 {
 			view.OrthographicHeight = 10
@@ -307,16 +307,16 @@ func (library *assets) image(file string) (*draw2d.Image, error) {
 		return picture, nil
 	}
 	if library.files == nil {
-		return nil, fmt.Errorf("picture %s: the scene has no files", file)
+		return nil, failure.Wrap(NoFiles, file, nil)
 	}
 	data, err := library.files.Open(file)
 	if err != nil {
-		return nil, err
+		return nil, failure.Wrap(PictureNotFound, file, err)
 	}
 	defer data.Close()
 	picture, err := draw2d.DecodeImage(data)
 	if err != nil {
-		return nil, fmt.Errorf("picture %s: %w", file, err)
+		return nil, failure.Wrap(PictureUnreadable, file, err)
 	}
 	library.images[file] = picture
 	return picture, nil
@@ -327,18 +327,18 @@ func (library *assets) model(file string) (*scene.Scene, error) {
 		return model, nil
 	}
 	if library.files == nil {
-		return nil, fmt.Errorf("model %s: the scene has no files", file)
+		return nil, failure.Wrap(NoFiles, file, nil)
 	}
 	if path.Ext(file) != ".glb" {
-		return nil, fmt.Errorf("model %s: only .glb models are read for now", file)
+		return nil, failure.Wrap(ModelFormat, file, nil)
 	}
 	data, err := fs.ReadFile(library.files, file)
 	if err != nil {
-		return nil, err
+		return nil, failure.Wrap(ModelNotFound, file, err)
 	}
 	model, err := loaders.ParseSceneGLB(data)
 	if err != nil {
-		return nil, fmt.Errorf("model %s: %w", file, err)
+		return nil, failure.Wrap(ModelUnreadable, file, err)
 	}
 	library.models[file] = model
 	return model, nil

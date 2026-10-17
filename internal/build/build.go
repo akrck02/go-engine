@@ -5,7 +5,6 @@ package build
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -13,6 +12,8 @@ import (
 	"regexp"
 	"runtime"
 	"strings"
+
+	"github.com/akrck02/go-engine/failure"
 )
 
 // SourceFolder is the folder of go-engine's source, which programs made by the editor build
@@ -20,11 +21,11 @@ import (
 func SourceFolder() (string, error) {
 	_, file, _, found := runtime.Caller(0)
 	if !found {
-		return "", errors.New("go-engine's source cannot be found")
+		return "", SourceNotFound
 	}
 	folder := filepath.Dir(filepath.Dir(filepath.Dir(file)))
 	if _, err := os.Stat(filepath.Join(folder, "go.mod")); err != nil {
-		return "", fmt.Errorf("go-engine's source was at %s when the editor was built, and is not there now", folder)
+		return "", failure.Wrap(SourceNotFound, folder, err)
 	}
 	return folder, nil
 }
@@ -68,7 +69,7 @@ func Output(folder string, environment []string, tool string, arguments ...strin
 	var output bytes.Buffer
 	command.Stdout, command.Stderr = &output, &output
 	if err := command.Run(); err != nil {
-		return output.String(), fmt.Errorf("%s %s: %w\n%s", filepath.Base(tool), arguments[0], err, LastLines(output.String(), 12))
+		return output.String(), failure.Wrap(ToolFailed, filepath.Base(tool)+" "+arguments[0]+": "+LastLines(output.String(), 12), err)
 	}
 	return output.String(), nil
 }
@@ -112,7 +113,7 @@ func TinyGoTool() (string, error) {
 			return tool, nil
 		}
 	}
-	return "", errors.New("building for the 3DS needs TinyGo with the nintendo3ds target (github.com/akrck02/tinygo-3ds): set $TINYGO")
+	return "", TinyGoNotFound
 }
 
 // FileExists tells whether a path exists.

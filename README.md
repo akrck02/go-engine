@@ -6,7 +6,7 @@
 A game engine in Go, with an editor, for 2D, 3D and isometric games on the desktop and the
 **Nintendo 3DS**. A game is an ordinary Go module: the editor arranges its scenes and imports its
 models, and the game's code, written in Zed, Neovim, Visual Studio Code or any editor that speaks
-Go, moves them through a small standard library (`engine`, `space`, `anim`). It is built on the
+Go, moves them through a small standard library (`engine`, `space`, `animation`). It is built on the
 author's own libraries: [go-renderer](https://github.com/akrck02/go-renderer) draws,
 [go-ui](https://github.com/akrck02/go-ui) is the editor's window, and
 [tinygo-3ds](https://github.com/akrck02/tinygo-3ds) builds for the console.

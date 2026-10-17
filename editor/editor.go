@@ -15,7 +15,7 @@ import (
 
 	"github.com/akrck02/go-engine/engine"
 	"github.com/akrck02/go-engine/project"
-	"github.com/akrck02/go-engine/scenes"
+	"github.com/akrck02/go-engine/scenefile"
 	"github.com/akrck02/go-engine/space"
 )
 
@@ -30,7 +30,7 @@ type Editor struct {
 	Message string
 	Failed  bool
 
-	behaviours []project.BehaviourInfo // what the project's code defines, read again on demand
+	behaviours []project.Behaviour // what the project's code defines, read again on demand
 
 	// playingHere is the scene played in the view: a copy of the one edited, made again from its
 	// description, with the game's behaviours running.
@@ -106,16 +106,16 @@ func (editor *Editor) Select(node *engine.Node) { editor.Selected = node }
 var Kinds = []string{"Empty", "Cube", "Sphere", "Plane", "Cylinder", "Camera"}
 
 // SetMode makes the scene shown 3D or 2D.
-func (editor *Editor) SetMode(mode scenes.Mode) {
-	if editor.Scene.Mode == mode || (mode == scenes.Mode3D && !editor.Scene.Is2D()) {
+func (editor *Editor) SetMode(mode scenefile.Mode) {
+	if editor.Scene.Mode == mode || (mode == scenefile.Mode3D && !editor.Scene.Is2D()) {
 		return
 	}
 	editor.Scene.SetMode(mode)
-	if mode == scenes.Mode2D && editor.Scene.PixelsPerMetre == 0 {
-		editor.Scene.PixelsPerMetre = scenes.DefaultPixelsPerMetre
+	if mode == scenefile.Mode2D && editor.Scene.PixelsPerMetre == 0 {
+		editor.Scene.PixelsPerMetre = scenefile.DefaultPixelsPerMetre
 	}
 	editor.Changed()
-	if mode == scenes.Mode2D {
+	if mode == scenefile.Mode2D {
 		editor.say("The scene is 2D: sprites and flat shapes, seen from the front; models are not shown", false)
 		return
 	}
@@ -136,7 +136,7 @@ func (editor *Editor) KindsHere() []string {
 // Add adds a node of a kind ("Cube", "Camera"…) under the selected node's parent, after it (or at
 // the end of the scene), and selects it.
 func (editor *Editor) Add(kind string) *engine.Node {
-	description := scenes.NewNode(kind)
+	description := scenefile.NewNode(kind)
 	if editor.Scene.Is2D() {
 		switch kind {
 		case "Square":
@@ -144,7 +144,7 @@ func (editor *Editor) Add(kind string) *engine.Node {
 		case "Circle":
 			description.Shape, description.Colour = "sphere", "#c8c8c8"
 		case "Camera":
-			description.Camera = &scenes.Camera{Projection: scenes.Orthographic, Height: 10}
+			description.Camera = &scenefile.Camera{Projection: scenefile.Orthographic, Height: 10}
 		}
 		return editor.place(description)
 	}
@@ -152,7 +152,7 @@ func (editor *Editor) Add(kind string) *engine.Node {
 	case "Empty":
 	case "Camera":
 		description.Position, description.Rotation = [3]float64{0, 3, 7}, [3]float64{-20, 0, 0}
-		description.Camera = &scenes.Camera{Projection: scenes.Perspective, FieldOfView: 50}
+		description.Camera = &scenefile.Camera{Projection: scenefile.Perspective, FieldOfView: 50}
 	default:
 		description.Shape, description.Colour = strings.ToLower(kind), "#c8c8c8"
 		if kind != "Plane" {
@@ -166,7 +166,7 @@ func (editor *Editor) Add(kind string) *engine.Node {
 func (editor *Editor) AddModel(model string) *engine.Node {
 	base := model[strings.LastIndex(model, "/")+1:]
 	base = strings.TrimSuffix(base, base[strings.LastIndex(base, "."):])
-	description := scenes.NewNode(base)
+	description := scenefile.NewNode(base)
 	description.Model = model
 	return editor.place(description)
 }
@@ -175,14 +175,14 @@ func (editor *Editor) AddModel(model string) *engine.Node {
 func (editor *Editor) AddSprite(picture string) *engine.Node {
 	base := picture[strings.LastIndex(picture, "/")+1:]
 	base = strings.TrimSuffix(base, base[strings.LastIndex(base, "."):])
-	description := scenes.NewNode(base)
+	description := scenefile.NewNode(base)
 	description.Sprite = picture
 	return editor.place(description)
 }
 
 // PickFlat finds the node drawn on top at a point of a 2D scene: a sprite or a shape there, or
 // an empty node or a camera within a share of a metre of it.
-func (editor *Editor) PickFlat(point space.Vec3, reach float64) (*engine.Node, bool) {
+func (editor *Editor) PickFlat(point space.Vector, reach float64) (*engine.Node, bool) {
 	var found *engine.Node
 	editor.Scene.Root.Walk(func(node *engine.Node) bool {
 		if node == editor.Scene.Root {
@@ -209,7 +209,7 @@ func (editor *Editor) PickFlat(point space.Vec3, reach float64) (*engine.Node, b
 	return found, found != nil
 }
 
-func (editor *Editor) place(description scenes.Node) *engine.Node {
+func (editor *Editor) place(description scenefile.Node) *engine.Node {
 	parent, at := editor.Scene.Root, len(editor.Scene.Root.Children())
 	if selected := editor.Selected; selected != nil {
 		parent, at = selected.Parent(), selected.Index()+1
@@ -305,9 +305,9 @@ func (editor *Editor) reparent(node, parent *engine.Node) {
 		parentWorld = space.NewTransform()
 	}
 	node.Transform = space.Transform{
-		Position: parentWorld.Local(world.Position),
-		Rotation: parentWorld.Rotation.Inverse().Mul(world.Rotation).Normalized(),
-		Scale:    space.V(divide(world.Scale.X, parentWorld.Scale.X), divide(world.Scale.Y, parentWorld.Scale.Y), divide(world.Scale.Z, parentWorld.Scale.Z)),
+		Position: parentWorld.FromParent(world.Position),
+		Rotation: world.Rotation.Then(parentWorld.Rotation.Inverse()).Normalized(),
+		Scale:    space.NewVector(divide(world.Scale.X, parentWorld.Scale.X), divide(world.Scale.Y, parentWorld.Scale.Y), divide(world.Scale.Z, parentWorld.Scale.Z)),
 	}
 	editor.Scene.Sync()
 	editor.Changed()
@@ -360,7 +360,7 @@ func uniqueNameExcept(parent *engine.Node, name string, except *engine.Node) str
 }
 
 // Pick finds the node a ray from the camera meets first: the one whose box it enters nearest.
-func (editor *Editor) Pick(origin, direction space.Vec3) (*engine.Node, bool) {
+func (editor *Editor) Pick(origin, direction space.Vector) (*engine.Node, bool) {
 	var nearest *engine.Node
 	best := 1e300
 	editor.Scene.Root.Walk(func(node *engine.Node) bool {
@@ -383,12 +383,12 @@ func (editor *Editor) Pick(origin, direction space.Vec3) (*engine.Node, bool) {
 }
 
 // MoveTo puts a node at a point of the world, wherever it hangs from.
-func (editor *Editor) MoveTo(node *engine.Node, world space.Vec3) {
+func (editor *Editor) MoveTo(node *engine.Node, world space.Vector) {
 	parent := node.Parent()
 	if parent == nil || parent == editor.Scene.Root {
 		node.Transform.Position = world
 	} else {
-		node.Transform.Position = parent.World().Local(world)
+		node.Transform.Position = parent.World().FromParent(world)
 	}
 	editor.Scene.Sync()
 	editor.Changed()
@@ -407,19 +407,19 @@ func (editor *Editor) Import(source string) {
 }
 
 // Behaviours are the behaviours the project's code defines, as last read.
-func (editor *Editor) Behaviours() []project.BehaviourInfo { return editor.behaviours }
+func (editor *Editor) Behaviours() []project.Behaviour { return editor.behaviours }
 
 // ReadBehaviours reads the project's code again for its behaviours: after it was edited.
 func (editor *Editor) ReadBehaviours() { editor.behaviours = editor.Project.Behaviours() }
 
-// BehaviourInfo finds what the code says of a behaviour.
-func (editor *Editor) BehaviourInfo(name string) (project.BehaviourInfo, bool) {
-	for _, info := range editor.behaviours {
-		if info.Name == name {
-			return info, true
+// Behaviour finds what the code says of a behaviour.
+func (editor *Editor) FindBehaviour(name string) (project.Behaviour, bool) {
+	for _, definition := range editor.behaviours {
+		if definition.Name == name {
+			return definition, true
 		}
 	}
-	return project.BehaviourInfo{}, false
+	return project.Behaviour{}, false
 }
 
 // AttachBehaviour gives the selected node a behaviour of the project's, its fields empty.
@@ -427,7 +427,7 @@ func (editor *Editor) AttachBehaviour(name string) {
 	if editor.Selected == nil || name == "" {
 		return
 	}
-	editor.Selected.Behaviours = append(editor.Selected.Behaviours, scenes.Behaviour{Name: name, Fields: map[string]any{}})
+	editor.Selected.Behaviours = append(editor.Selected.Behaviours, scenefile.Behaviour{Name: name, Fields: map[string]any{}})
 	editor.Changed()
 }
 

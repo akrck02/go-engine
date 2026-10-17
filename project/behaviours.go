@@ -11,33 +11,33 @@ import (
 	"strings"
 )
 
-// BehaviourInfo is a behaviour the project's code defines: a struct type with a Start or an
+// Behaviour is a behaviour the project's code defines: a struct type with a Start or an
 // Update method, as the editor offers it.
-type BehaviourInfo struct {
+type Behaviour struct {
 	Name   string
 	Doc    string // the type's comment, first sentence
 	File   string // where it is defined, in the project
-	Fields []FieldInfo
+	Fields []Field
 }
 
-// FieldInfo is a field the scene can set: an exported field, by its JSON name.
-type FieldInfo struct {
+// Field is a field the scene can set: an exported field, by its JSON name.
+type Field struct {
 	Name    string // as the scene names it: the JSON name, or the field's own
-	Type    string // as written in the code: float64, string, bool, space.Vec3…
+	Type    string // as written in the code: float64, string, bool, space.Vector…
 	Comment string
 }
 
 // Behaviours reads the project's Go files (not compiling them) and finds its behaviours, so the
 // editor can offer them while the code is being written in another editor.
-func (project *Project) Behaviours() []BehaviourInfo {
+func (project *Project) Behaviours() []Behaviour {
 	files := token.NewFileSet()
-	packages, err := parser.ParseDir(files, project.Folder, func(info fs.FileInfo) bool {
-		return !strings.HasSuffix(info.Name(), "_test.go")
+	packages, err := parser.ParseDir(files, project.Folder, func(behaviour fs.FileInfo) bool {
+		return !strings.HasSuffix(behaviour.Name(), "_test.go")
 	}, parser.ParseComments)
 	if err != nil && len(packages) == 0 {
 		return nil
 	}
-	structs := map[string]*BehaviourInfo{}
+	structs := map[string]*Behaviour{}
 	withMethods := map[string]bool{}
 	for _, parsed := range packages {
 		for path, file := range parsed.Files {
@@ -54,17 +54,17 @@ func (project *Project) Behaviours() []BehaviourInfo {
 			}
 		}
 	}
-	var found []BehaviourInfo
-	for name, info := range structs {
+	var found []Behaviour
+	for name, behaviour := range structs {
 		if withMethods[name] {
-			found = append(found, *info)
+			found = append(found, *behaviour)
 		}
 	}
 	sort.Slice(found, func(first, second int) bool { return found[first].Name < found[second].Name })
 	return found
 }
 
-func collectStructs(declaration *ast.GenDecl, file string, into map[string]*BehaviourInfo) {
+func collectStructs(declaration *ast.GenDecl, file string, into map[string]*Behaviour) {
 	for _, spec := range declaration.Specs {
 		typeSpec, isType := spec.(*ast.TypeSpec)
 		if !isType {
@@ -78,7 +78,7 @@ func collectStructs(declaration *ast.GenDecl, file string, into map[string]*Beha
 		if doc == nil {
 			doc = declaration.Doc
 		}
-		info := &BehaviourInfo{Name: typeSpec.Name.Name, Doc: firstSentence(doc.Text()), File: file}
+		behaviour := &Behaviour{Name: typeSpec.Name.Name, Doc: firstSentence(doc.Text()), File: file}
 		for _, field := range structType.Fields.List {
 			for _, name := range field.Names {
 				if !name.IsExported() {
@@ -93,10 +93,10 @@ func collectStructs(declaration *ast.GenDecl, file string, into map[string]*Beha
 						fieldName = jsonName
 					}
 				}
-				info.Fields = append(info.Fields, FieldInfo{Name: fieldName, Type: typeString(field.Type), Comment: strings.TrimSpace(field.Comment.Text())})
+				behaviour.Fields = append(behaviour.Fields, Field{Name: fieldName, Type: typeString(field.Type), Comment: strings.TrimSpace(field.Comment.Text())})
 			}
 		}
-		into[info.Name] = info
+		into[behaviour.Name] = behaviour
 	}
 }
 

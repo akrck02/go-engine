@@ -22,7 +22,7 @@ import (
 	"github.com/akrck02/go-renderer/graphics"
 	"github.com/akrck02/go-renderer/scene"
 
-	"github.com/akrck02/go-engine/scenes"
+	"github.com/akrck02/go-engine/scenefile"
 	"github.com/akrck02/go-engine/shapes"
 	"github.com/akrck02/go-engine/space"
 )
@@ -37,11 +37,11 @@ type Node struct {
 	colour string
 	model  string
 	sprite string
-	camera *scenes.Camera
+	camera *scenefile.Camera
 
 	// Behaviours are the game's code attached to the node, as the scene file keeps them; while the
 	// game runs, behaviours holds them made.
-	Behaviours []scenes.Behaviour
+	Behaviours []scenefile.Behaviour
 	behaviours []any
 
 	parent   *Node
@@ -189,7 +189,7 @@ func (node *Node) World() space.Transform {
 	if node.parent == nil {
 		return node.Transform
 	}
-	return node.parent.World().Then(node.Transform)
+	return node.parent.World().Place(node.Transform)
 }
 
 // worldMatrix is World as go-renderer's matrix, multiplied the way go-renderer walks its nodes.
@@ -223,7 +223,7 @@ func (node *Node) SetSprite(path string) error {
 }
 
 // Camera is the node's camera settings, if it is a camera.
-func (node *Node) Camera() (*scenes.Camera, bool) { return node.camera, node.camera != nil }
+func (node *Node) Camera() (*scenefile.Camera, bool) { return node.camera, node.camera != nil }
 
 // SetShape makes the node a shape of a colour ("" for no shape).
 func (node *Node) SetShape(shape, colour string) {
@@ -238,7 +238,7 @@ func (node *Node) SetModel(path string) error {
 }
 
 // SetCamera makes the node a camera, or no longer one with nil.
-func (node *Node) SetCamera(camera *scenes.Camera) {
+func (node *Node) SetCamera(camera *scenefile.Camera) {
 	node.camera = camera
 	node.rebuild()
 }
@@ -318,11 +318,11 @@ func renderBounds(node *scene.Node, parent graphics.Mat4) space.Box {
 	world := parent.Multiply(node.Transform)
 	if node.Mesh != nil && node.Mesh.VertexCount() > 0 {
 		minimum, maximum := node.Mesh.Bounds()
-		local := space.Box{Minimum: space.V(float64(minimum[0]), float64(minimum[1]), float64(minimum[2])),
-			Maximum: space.V(float64(maximum[0]), float64(maximum[1]), float64(maximum[2]))}
+		local := space.Box{Minimum: space.NewVector(float64(minimum[0]), float64(minimum[1]), float64(minimum[2])),
+			Maximum: space.NewVector(float64(maximum[0]), float64(maximum[1]), float64(maximum[2]))}
 		for _, corner := range local.Corners() {
 			point := world.Apply(graphics.Vec4{float32(corner.X), float32(corner.Y), float32(corner.Z), 1})
-			box = box.Grow(space.V(float64(point[0]), float64(point[1]), float64(point[2])))
+			box = box.Grow(space.NewVector(float64(point[0]), float64(point[1]), float64(point[2])))
 		}
 	}
 	for _, child := range node.Children {

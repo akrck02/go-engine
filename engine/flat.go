@@ -8,7 +8,7 @@ import (
 
 	"github.com/akrck02/go-renderer/draw2d"
 
-	"github.com/akrck02/go-engine/scenes"
+	"github.com/akrck02/go-engine/scenefile"
 	"github.com/akrck02/go-engine/space"
 )
 
@@ -20,20 +20,20 @@ import (
 // not drawn yet: draw2d draws pictures upright.
 
 // Is2D tells whether the scene is 2D.
-func (owner *Scene) Is2D() bool { return owner.Mode == scenes.Mode2D }
+func (owner *Scene) Is2D() bool { return owner.Mode == scenefile.Mode2D }
 
 // pixelsPerMetre is the scene's, or the default.
 func (owner *Scene) pixelsPerMetre() float64 {
 	if owner.PixelsPerMetre > 0 {
 		return owner.PixelsPerMetre
 	}
-	return scenes.DefaultPixelsPerMetre
+	return scenefile.DefaultPixelsPerMetre
 }
 
 // View2D is what a 2D camera sees: the point at the middle of the screen and how many metres fit
 // between the screen's top and bottom.
 type View2D struct {
-	Centre space.Vec3
+	Centre space.Vector
 	Height float64
 }
 
@@ -59,7 +59,7 @@ func (view View2D) scale(area draw2d.Rect) float64 {
 }
 
 // ToScreen is where a point of the world falls in an area of the screen.
-func (view View2D) ToScreen(area draw2d.Rect, point space.Vec3) (x, y float32) {
+func (view View2D) ToScreen(area draw2d.Rect, point space.Vector) (x, y float32) {
 	scale := view.scale(area)
 	x = area.X + area.Width/2 + float32((point.X-view.Centre.X)*scale)
 	y = area.Y + area.Height/2 - float32((point.Y-view.Centre.Y)*scale)
@@ -67,9 +67,9 @@ func (view View2D) ToScreen(area draw2d.Rect, point space.Vec3) (x, y float32) {
 }
 
 // FromScreen is the point of the world under a point of the screen, at Z 0.
-func (view View2D) FromScreen(area draw2d.Rect, x, y float32) space.Vec3 {
+func (view View2D) FromScreen(area draw2d.Rect, x, y float32) space.Vector {
 	scale := view.scale(area)
-	return space.V(view.Centre.X+float64(x-area.X-area.Width/2)/scale, view.Centre.Y-float64(y-area.Y-area.Height/2)/scale, 0)
+	return space.NewVector(view.Centre.X+float64(x-area.X-area.Width/2)/scale, view.Centre.Y-float64(y-area.Y-area.Height/2)/scale, 0)
 }
 
 // MetresAcross is how many metres an area shows from side to side.
@@ -85,8 +85,8 @@ func (node *Node) flatBounds() space.Box {
 		return space.EmptyBox()
 	}
 	world := node.World()
-	half := space.V(width/2, height/2, 0.005)
-	return space.Box{Minimum: world.Position.Sub(half), Maximum: world.Position.Add(half)}
+	half := space.NewVector(width/2, height/2, 0.005)
+	return space.Box{Minimum: world.Position.Subtract(half), Maximum: world.Position.Add(half)}
 }
 
 // flatSize is how large a node is drawn in a 2D scene, in metres, if it shows anything.
@@ -155,8 +155,8 @@ func (owner *Scene) drawFlat(list *draw2d.List, area draw2d.Rect, view View2D, n
 	if box.IsEmpty() {
 		return
 	}
-	left, top := view.ToScreen(area, space.V(box.Minimum.X, box.Maximum.Y, 0))
-	right, bottom := view.ToScreen(area, space.V(box.Maximum.X, box.Minimum.Y, 0))
+	left, top := view.ToScreen(area, space.NewVector(box.Minimum.X, box.Maximum.Y, 0))
+	right, bottom := view.ToScreen(area, space.NewVector(box.Maximum.X, box.Minimum.Y, 0))
 	rect := draw2d.Rect{X: left, Y: top, Width: right - left, Height: bottom - top}
 	if node.sprite != "" {
 		if picture, err := owner.assets.image(node.sprite); err == nil {

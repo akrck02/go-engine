@@ -11,7 +11,8 @@ import (
 	"github.com/akrck02/go-renderer/input"
 	"github.com/akrck02/go-ui/window"
 
-	"github.com/akrck02/go-engine/scenes"
+	"github.com/akrck02/go-engine/failure"
+	"github.com/akrck02/go-engine/scenefile"
 	"github.com/akrck02/go-engine/space"
 )
 
@@ -31,14 +32,14 @@ const SettingsFile = "engine.json"
 func ReadSettings(files fs.FS) (Settings, error) {
 	data, err := fs.ReadFile(files, SettingsFile)
 	if err != nil {
-		return Settings{}, err
+		return Settings{}, failure.Wrap(SettingsNotFound, "", err)
 	}
 	var settings Settings
 	if err := json.Unmarshal(data, &settings); err != nil {
-		return Settings{}, fmt.Errorf("%s: %w", SettingsFile, err)
+		return Settings{}, failure.Wrap(SettingsUnreadable, "", err)
 	}
 	if settings.StartScene == "" {
-		return Settings{}, fmt.Errorf("%s names no start scene", SettingsFile)
+		return Settings{}, NoStartScene
 	}
 	return settings, nil
 }
@@ -70,7 +71,7 @@ func Run(files fs.FS) error {
 func play(played *Scene, title string) error {
 	var last time.Time
 	var flat draw2d.List // a 2D scene's drawing, made again every frame
-	fallback := space.Transform{Position: space.V(0, 4, 10), Rotation: space.Euler{X: -20}.Rotation(), Scale: space.One}
+	fallback := space.Transform{Position: space.NewVector(0, 4, 10), Rotation: space.Angles{X: -20}.Rotation(), Scale: space.One}
 	options := window.Options{Title: title, Width: 1280, Height: 720, Continuous: true}
 	options.Scene = func(state *input.State, step float64) *window.SceneView {
 		// the time between frames by the input's clock: a window's step is the display's frame,
@@ -96,4 +97,4 @@ func play(played *Scene, title string) error {
 }
 
 // defaultCamera is how a scene with no camera is seen: in perspective, from a little above.
-var defaultCamera = scenes.Camera{Projection: scenes.Perspective}
+var defaultCamera = scenefile.Camera{Projection: scenefile.Perspective}

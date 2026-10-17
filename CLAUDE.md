@@ -17,9 +17,13 @@ go run ./cmd/grid-maker [game.json]             # the grid prototype
 
 ## Rules
 
+**Follow `docs/style-guide.md`**: code a junior can follow. In short: English always; whole-word
+names (only `err`, `x`, `y`, `z`, `ui` are short); one job per function, about 40 lines at most;
+early returns, no `else` after a return; every error has a code from `failure`; packages divided
+by meaning, one module. `internal/style` tests what a program can check.
+
 - **Generic only.** Never put names, places or settings from a user's own project in code,
   comments, tests, examples, docs or commit messages. The sample is made up (a lighthouse keeper).
-- **Readable code.** Full-word names, small functions, early returns, comments that say *why*.
 - **Tests with every change.** `go vet ./...` and `go test ./...` must pass before committing.
 - **What games use stays portable**: `engine`, `space`, `anim`, `scenes` and `shapes` build under
   TinyGo for the 3DS; no cgo, no `os` file system (games read their embedded files).

@@ -2,9 +2,10 @@ package engine
 
 import (
 	"encoding/json"
-	"fmt"
 	"reflect"
 	"sort"
+
+	"github.com/akrck02/go-engine/failure"
 )
 
 // A behaviour is the game's own code attached to a node: a struct of the game's, registered by
@@ -61,7 +62,7 @@ func structType(behaviour any) reflect.Type {
 func makeBehaviour(name string, fields map[string]any) (any, error) {
 	kind, found := registry[name]
 	if !found {
-		return nil, fmt.Errorf("no behaviour is registered as %q (engine.Register in the game's main)", name)
+		return nil, failure.Wrap(BehaviourUnregistered, name, nil)
 	}
 	made := reflect.New(kind).Interface()
 	if len(fields) == 0 {
@@ -72,7 +73,7 @@ func makeBehaviour(name string, fields map[string]any) (any, error) {
 		err = json.Unmarshal(data, made)
 	}
 	if err != nil {
-		return nil, fmt.Errorf("behaviour %s: %w", name, err)
+		return nil, failure.Wrap(BehaviourFields, name, err)
 	}
 	return made, nil
 }
@@ -80,9 +81,9 @@ func makeBehaviour(name string, fields map[string]any) (any, error) {
 // Behaviour finds a node's behaviour of a type, while the game runs:
 //
 //	if spin, found := engine.Behaviour[Spin](node); found { spin.Speed *= 2 }
-func Behaviour[T any](node *Node) (*T, bool) {
+func Behaviour[Wanted any](node *Node) (*Wanted, bool) {
 	for _, behaviour := range node.behaviours {
-		if found, matches := behaviour.(*T); matches {
+		if found, matches := behaviour.(*Wanted); matches {
 			return found, true
 		}
 	}

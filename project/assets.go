@@ -1,12 +1,13 @@
 package project
 
 import (
-	"errors"
 	"os"
 	"os/exec"
 	"path"
 	"sort"
 	"strings"
+
+	"github.com/akrck02/go-engine/failure"
 )
 
 // AssetEntry is a file or a folder of the project's assets, as the editor's tree shows them.
@@ -65,11 +66,11 @@ func (project *Project) assetEntry(file, name string) AssetEntry {
 		entry.Children = append(entry.Children, AssetEntry{Name: child.Name(), Path: childPath})
 	}
 	sort.SliceStable(entry.Children, func(first, second int) bool {
-		a, b := entry.Children[first], entry.Children[second]
-		if a.Folder != b.Folder {
-			return a.Folder
+		earlier, later := entry.Children[first], entry.Children[second]
+		if earlier.Folder != later.Folder {
+			return earlier.Folder
 		}
-		return strings.ToLower(a.Name) < strings.ToLower(b.Name)
+		return strings.ToLower(earlier.Name) < strings.ToLower(later.Name)
 	})
 	return entry
 }
@@ -87,5 +88,5 @@ func (project *Project) OpenInZed() error {
 			return nil
 		}
 	}
-	return errors.New("Zed was not found (zed, zeditor): install it from zed.dev, or open " + project.Folder + " yourself")
+	return failure.Wrap(ZedNotFound, project.Folder, nil)
 }

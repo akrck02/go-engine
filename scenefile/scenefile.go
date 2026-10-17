@@ -2,12 +2,13 @@
 // metres, rotation in degrees, scale), what it shows (a shape, a model from the project's assets,
 // a camera) and the behaviours the game's own Go code gives it. The editor writes these files; the
 // engine reads them.
-package scenes
+package scenefile
 
 import (
 	"encoding/json"
-	"fmt"
 	"strings"
+
+	"github.com/akrck02/go-engine/failure"
 )
 
 // Scene is a scene file.
@@ -41,7 +42,7 @@ func (scene *Scene) Is2D() bool { return scene.Mode == Mode2D }
 type Node struct {
 	Name     string     `json:"name"`
 	Position [3]float64 `json:"position"`
-	Rotation [3]float64 `json:"rotation"` // degrees: pitch (X), yaw (Y), roll (Z), as space.Euler
+	Rotation [3]float64 `json:"rotation"` // degrees: pitch (X), yaw (Y), roll (Z), as space.Angles
 	Scale    [3]float64 `json:"scale"`
 	Hidden   bool       `json:"hidden,omitempty"`
 
@@ -97,7 +98,7 @@ func NewNode(name string) Node { return Node{Name: name, Scale: [3]float64{1, 1,
 func Read(data []byte) (*Scene, error) {
 	var scene Scene
 	if err := json.Unmarshal(data, &scene); err != nil {
-		return nil, err
+		return nil, failure.Wrap(Unreadable, "", err)
 	}
 	if err := scene.Check(); err != nil {
 		return nil, err
@@ -118,13 +119,13 @@ func checkNodes(nodes []Node, parent string) error {
 		path := strings.TrimPrefix(parent+"/"+node.Name, "/")
 		switch {
 		case node.Name == "":
-			return fmt.Errorf("a node in %q has no name", parent)
+			return failure.Wrap(NodeWithoutName, "under "+parent, nil)
 		case strings.Contains(node.Name, "/"):
-			return fmt.Errorf("node %q has a slash in its name", path)
+			return failure.Wrap(SlashInName, path, nil)
 		case seen[node.Name]:
-			return fmt.Errorf("two nodes are called %q", path)
+			return failure.Wrap(SameName, path, nil)
 		case node.Shape != "" && !isShape(node.Shape):
-			return fmt.Errorf("node %q is a %q, which is not a shape", path, node.Shape)
+			return failure.Wrap(UnknownShape, path+" is a "+node.Shape, nil)
 		}
 		seen[node.Name] = true
 		if err := checkNodes(node.Children, path); err != nil {

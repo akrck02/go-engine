@@ -10,7 +10,7 @@ import (
 	"github.com/akrck02/go-renderer/scene"
 
 	"github.com/akrck02/go-engine/engine"
-	"github.com/akrck02/go-engine/scenes"
+	"github.com/akrck02/go-engine/scenefile"
 	"github.com/akrck02/go-engine/shapes"
 	"github.com/akrck02/go-engine/space"
 )
@@ -52,7 +52,7 @@ type viewport struct {
 	dragging       *engine.Node
 	dragMoved      bool
 	dragHeight     float64
-	dragOffset     space.Vec3
+	dragOffset     space.Vector
 }
 
 func newViewport() *viewport {
@@ -67,7 +67,7 @@ func newViewport() *viewport {
 }
 
 // lineNode is a thin box from one point to another along an axis, in a colour.
-func (view *viewport) lineNode(centre, size space.Vec3, colour graphics.Vec4) *scene.Node {
+func (view *viewport) lineNode(centre, size space.Vector, colour graphics.Vec4) *scene.Node {
 	mesh := *view.line
 	mesh.Material = &scene.Material{Name: "line", Kind: scene.KindUnlit, BaseColor: colour}
 	mesh.GPU = nil
@@ -102,14 +102,14 @@ func (view *viewport) makeGizmos() *scene.Node {
 		}
 		offset := float64(step)
 		gizmos.Children = append(gizmos.Children,
-			view.lineNode(space.V(offset, lift, 0), space.V(width, width, 2*gridExtent), colour),
-			view.lineNode(space.V(0, lift, offset), space.V(2*gridExtent, width, width), colour))
+			view.lineNode(space.NewVector(offset, lift, 0), space.NewVector(width, width, 2*gridExtent), colour),
+			view.lineNode(space.NewVector(0, lift, offset), space.NewVector(2*gridExtent, width, width), colour))
 	}
 	const axis = 0.03
 	gizmos.Children = append(gizmos.Children,
-		view.lineNode(space.V(0, lift, 0), space.V(2*gridExtent, axis, axis), axisX),
-		view.lineNode(space.V(0, lift, 0), space.V(axis, axis, 2*gridExtent), axisZ),
-		view.lineNode(space.V(0, 1, 0), space.V(axis, 2, axis), axisY))
+		view.lineNode(space.NewVector(0, lift, 0), space.NewVector(2*gridExtent, axis, axis), axisX),
+		view.lineNode(space.NewVector(0, lift, 0), space.NewVector(axis, axis, 2*gridExtent), axisZ),
+		view.lineNode(space.NewVector(0, 1, 0), space.NewVector(axis, 2, axis), axisY))
 	return gizmos
 }
 
@@ -122,7 +122,7 @@ func (view *viewport) showSelection(chosen *engine.Node) {
 	box := chosen.World().Position
 	bounds := chosen.Bounds()
 	if bounds.IsEmpty() {
-		bounds = space.Box{Minimum: box.Sub(space.V(0.15, 0.15, 0.15)), Maximum: box.Add(space.V(0.15, 0.15, 0.15))}
+		bounds = space.Box{Minimum: box.Subtract(space.NewVector(0.15, 0.15, 0.15)), Maximum: box.Add(space.NewVector(0.15, 0.15, 0.15))}
 	}
 	size, low, high := bounds.Size(), bounds.Minimum, bounds.Maximum
 	thick := math.Max(0.015, math.Max(size.X, math.Max(size.Y, size.Z))*0.006)
@@ -131,9 +131,9 @@ func (view *viewport) showSelection(chosen *engine.Node) {
 			y, z := low.Y+first*size.Y, low.Z+second*size.Z
 			x := low.X + first*size.X
 			view.selection.Children = append(view.selection.Children,
-				view.lineNode(space.V((low.X+high.X)/2, y, z), space.V(size.X+thick, thick, thick), chosenColor),
-				view.lineNode(space.V(x, (low.Y+high.Y)/2, low.Z+second*size.Z), space.V(thick, size.Y+thick, thick), chosenColor),
-				view.lineNode(space.V(low.X+second*size.X, y, (low.Z+high.Z)/2), space.V(thick, thick, size.Z+thick), chosenColor))
+				view.lineNode(space.NewVector((low.X+high.X)/2, y, z), space.NewVector(size.X+thick, thick, thick), chosenColor),
+				view.lineNode(space.NewVector(x, (low.Y+high.Y)/2, low.Z+second*size.Z), space.NewVector(thick, size.Y+thick, thick), chosenColor),
+				view.lineNode(space.NewVector(low.X+second*size.X, y, (low.Z+high.Z)/2), space.NewVector(thick, thick, size.Z+thick), chosenColor))
 		}
 	}
 }
@@ -237,29 +237,29 @@ func (view *viewport) followMouse(editor *Editor, state *input.State) bool {
 	return false
 }
 
-func (view *viewport) startDrag(chosen *engine.Node, origin, direction space.Vec3) {
+func (view *viewport) startDrag(chosen *engine.Node, origin, direction space.Vector) {
 	position := chosen.World().Position
 	point, onPlane := pointAtHeight(origin, direction, position.Y)
 	if !onPlane {
 		return
 	}
-	view.dragging, view.dragHeight, view.dragOffset = chosen, position.Y, position.Sub(point)
+	view.dragging, view.dragHeight, view.dragOffset = chosen, position.Y, position.Subtract(point)
 }
 
 // ray is the ray from the editor's camera through a point of the window.
-func (view *viewport) ray(state *input.State, x, y float64) (origin, direction space.Vec3, found bool) {
+func (view *viewport) ray(state *input.State, x, y float64) (origin, direction space.Vector, found bool) {
 	width, height := state.WindowWidth, state.WindowHeight
 	through, valid := camera.RayThrough(view.camera, width, height, x, y)
 	if !valid {
 		return space.Zero, space.Zero, false
 	}
-	origin = space.V(float64(through.Origin[0]), float64(through.Origin[1]), float64(through.Origin[2]))
-	direction = space.V(float64(through.Direction[0]), float64(through.Direction[1]), float64(through.Direction[2])).Normalized()
+	origin = space.NewVector(float64(through.Origin[0]), float64(through.Origin[1]), float64(through.Origin[2]))
+	direction = space.NewVector(float64(through.Direction[0]), float64(through.Direction[1]), float64(through.Direction[2])).Normalized()
 	return origin, direction, true
 }
 
 // pointAtHeight is where a ray crosses the level plane at a height.
-func pointAtHeight(origin, direction space.Vec3, height float64) (space.Vec3, bool) {
+func pointAtHeight(origin, direction space.Vector, height float64) (space.Vector, bool) {
 	if math.Abs(direction.Y) < 1e-9 {
 		return space.Zero, false
 	}
@@ -296,7 +296,7 @@ func (view *viewport) setMode(mode ViewMode) {
 
 // fixIsometricAngle keeps the isometric view at its angle: 45° round, looking down 35.26°.
 func (view *viewport) fixIsometricAngle() {
-	view.orbit.Yaw, view.orbit.Pitch = math.Pi/4, space.Radians(-scenes.IsometricAngles[0])
+	view.orbit.Yaw, view.orbit.Pitch = math.Pi/4, space.Radians(-scenefile.IsometricAngles[0])
 }
 
 // isometricInput is the input for the camera in the isometric view, whose angle does not turn: a

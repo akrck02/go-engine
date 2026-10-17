@@ -8,8 +8,9 @@ import (
 	"strings"
 
 	"github.com/akrck02/go-engine/engine"
+	"github.com/akrck02/go-engine/failure"
 	"github.com/akrck02/go-engine/internal/build"
-	"github.com/akrck02/go-engine/scenes"
+	"github.com/akrck02/go-engine/scenefile"
 )
 
 // mainFile is the game's main: it embeds the project's files and runs them.
@@ -107,7 +108,7 @@ func Create(folder, name string) (*Project, error) {
 		return nil, err
 	}
 	if entries, err := os.ReadDir(folder); err == nil && len(entries) > 0 {
-		return nil, fmt.Errorf("%s is not empty", folder)
+		return nil, failure.Wrap(FolderNotEmpty, folder, nil)
 	}
 	source, err := build.SourceFolder()
 	if err != nil {
@@ -168,26 +169,26 @@ func modulePath(name string) string {
 
 // starterScene is a new scene: a ground to stand on, a cube that spins, and a camera looking at
 // them.
-func starterScene(name string) *scenes.Scene {
-	ground := scenes.NewNode("Ground")
+func starterScene(name string) *scenefile.Scene {
+	ground := scenefile.NewNode("Ground")
 	ground.Shape, ground.Colour, ground.Scale = "plane", "#7a9a6a", [3]float64{20, 1, 20}
-	cube := scenes.NewNode("Cube")
+	cube := scenefile.NewNode("Cube")
 	cube.Shape, cube.Colour, cube.Position = "cube", "#e07a5f", [3]float64{0, 0.5, 0}
-	cube.Behaviours = []scenes.Behaviour{{Name: "Spin", Fields: map[string]any{"speed": 45}}}
-	camera := scenes.NewNode("Camera")
+	cube.Behaviours = []scenefile.Behaviour{{Name: "Spin", Fields: map[string]any{"speed": 45}}}
+	camera := scenefile.NewNode("Camera")
 	camera.Position, camera.Rotation = [3]float64{0, 3, 7}, [3]float64{-20, 0, 0}
-	camera.Camera = &scenes.Camera{Projection: scenes.Perspective, FieldOfView: 50, Main: true}
-	return &scenes.Scene{Name: name, Nodes: []scenes.Node{ground, cube, camera}}
+	camera.Camera = &scenefile.Camera{Projection: scenefile.Perspective, FieldOfView: 50, Main: true}
+	return &scenefile.Scene{Name: name, Nodes: []scenefile.Node{ground, cube, camera}}
 }
 
 // starterScene2D is a new 2D scene: a ground to stand on, a square, and a camera seeing ten metres.
-func starterScene2D(name string) *scenes.Scene {
-	ground := scenes.NewNode("Ground")
+func starterScene2D(name string) *scenefile.Scene {
+	ground := scenefile.NewNode("Ground")
 	ground.Shape, ground.Colour = "cube", "#7a9a6a"
 	ground.Position, ground.Scale = [3]float64{0, -3.5, 0}, [3]float64{24, 1, 1}
-	square := scenes.NewNode("Square")
+	square := scenefile.NewNode("Square")
 	square.Shape, square.Colour, square.Position = "cube", "#e07a5f", [3]float64{0, -2.5, 0}
-	camera := scenes.NewNode("Camera")
-	camera.Camera = &scenes.Camera{Projection: scenes.Orthographic, Height: 10, Main: true}
-	return &scenes.Scene{Name: name, Mode: scenes.Mode2D, Sky: "#a9d6e5", PixelsPerMetre: scenes.DefaultPixelsPerMetre, Nodes: []scenes.Node{ground, square, camera}}
+	camera := scenefile.NewNode("Camera")
+	camera.Camera = &scenefile.Camera{Projection: scenefile.Orthographic, Height: 10, Main: true}
+	return &scenefile.Scene{Name: name, Mode: scenefile.Mode2D, Sky: "#a9d6e5", PixelsPerMetre: scenefile.DefaultPixelsPerMetre, Nodes: []scenefile.Node{ground, square, camera}}
 }

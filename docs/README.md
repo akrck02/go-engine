@@ -8,7 +8,7 @@ is in them through a small standard library.
 | Page | What it covers |
 |---|---|
 | This page | A project, the editor, the standard library, coordinates |
-| [grid.md](grid.md) | The first prototype, a maker of grid games, kept while the engine grows |
+| [style-guide.md](style-guide.md) | How the code is written: names, functions, errors, packages and modules |
 
 ## A project
 
@@ -95,7 +95,7 @@ drawing. Turned sprites are not drawn turned yet (draw2d draws pictures upright)
 | Unit | One unit is a metre (`space.Metre`, `space.Centimetre`) |
 | Axes | Y up; X to the right; Z towards whoever looks: right-handed, as glTF and go-renderer |
 | Forward | A node with no rotation faces `space.Forward`, -Z; a camera looks that way |
-| Rotation | In degrees, as `space.Euler{X, Y, Z}`: X tilts (pitch), Y turns (yaw), Z rolls; applied roll, pitch, then yaw, so yaw is always around the world's vertical. Positive turns are counter-clockwise looking down the axis |
+| Rotation | In degrees, as `space.Angles{X, Y, Z}`: X tilts (pitch), Y turns (yaw), Z rolls; applied roll, pitch, then yaw, so yaw is always around the world's vertical. Positive turns are counter-clockwise looking down the axis |
 | Scale | Times the node's own size, per axis; shapes are a metre across, models keep the size they were made at |
 | Parents | A node's transform is relative to its parent; `node.World()` is where it is in the world |
 
@@ -118,9 +118,10 @@ in metres, set on the camera.
 | Package | What it is for |
 |---|---|
 | `engine` | The running game: `Node` (transform, children, `Find("Car/Wheel")`, `World()`, `Bounds()`), `Scene`, behaviours, `Context` (the node, the frame's `Delta`, `Time`, `Input`), cameras, `Run` |
-| `space` | `Vec3`, `Quat`, `Euler`, `Transform` (`Turn`, `Move`, `LookAt`, `Forward`, `Then`, `Local`), `Box` and rays |
-| `anim` | Tweens: `Float`, `Vec3`, `Rotation` and `Wait`, with easings, delays, loops, ping-pong and `Then` |
-| `scenes` | The scene files: read, write, check |
+| `space` | `Vector`, `Rotation`, `Angles`, `Transform` (`Turn`, `Move`, `LookAt`, `Forward`, `Place`, `ToParent`, `FromParent`), `Box` and rays |
+| `animation` | Tweens: `Float`, `Vector`, `Rotation` and `Wait`, with easings, delays, loops, ping-pong and `Then` |
+| `failure` | Error codes: every error the engine returns has one (see the [style guide](style-guide.md)) |
+| `scenefile` | The scene files: read, write, check |
 | `shapes` | Meshes of the shapes, a metre across |
 | `project` | A project's folder: create, import, build, open in a code editor, find its behaviours |
 
@@ -142,8 +143,8 @@ func (bob *Bob) Start(context *engine.Context) {
 	if camera, found := context.Find("Camera"); found {
 		context.Node.Transform.LookAt(camera.Transform.Position)
 	}
-	top := context.Node.Transform.Position.Add(space.V(0, bob.Height, 0))
-	context.Scene.Animate.Vec3(&context.Node.Transform.Position, top, bob.Seconds/2, anim.EaseInOut).PingPong()
+	top := context.Node.Transform.Position.Add(space.NewVector(0, bob.Height, 0))
+	context.Scene.Animate.Vector(&context.Node.Transform.Position, top, bob.Seconds/2, animation.EaseInOut).PingPong()
 }
 
 func (bob *Bob) Update(context *engine.Context) {

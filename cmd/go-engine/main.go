@@ -19,6 +19,7 @@ import (
 	"github.com/akrck02/go-ui/window"
 
 	"github.com/akrck02/go-engine/engine"
+	"github.com/akrck02/go-engine/failure"
 	"github.com/akrck02/go-engine/project"
 )
 
@@ -49,11 +50,14 @@ func main() {
 	}
 }
 
+// missingFolder is go-engine new without its folder.
+var missingFolder = failure.Define("go-engine.missing-folder", "usage: go-engine new <folder> [name]")
+
 // projectFrom opens the project the arguments name, making it first for "new".
 func projectFrom(arguments []string) (*project.Project, error) {
 	if len(arguments) > 0 && arguments[0] == "new" {
 		if len(arguments) < 2 {
-			return nil, fmt.Errorf("usage: go-engine new <folder> [name]")
+			return nil, missingFolder
 		}
 		folder := arguments[1]
 		name := filepath.Base(folder)
@@ -69,7 +73,7 @@ func projectFrom(arguments []string) (*project.Project, error) {
 	}
 	opened, err := project.Open(folder)
 	if err != nil {
-		return nil, fmt.Errorf("%s is not a go-engine project (%w); make one with: go-engine new <folder>", folder, err)
+		return nil, failure.Wrap(project.NotAProject, folder, err)
 	}
 	return opened, nil
 }
