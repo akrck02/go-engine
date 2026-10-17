@@ -1,102 +1,85 @@
 package editor
 
 import (
-	"path/filepath"
-	"strconv"
+	"math"
+	"path"
+	"strings"
 
 	"github.com/akrck02/go-renderer/draw2d"
 	"github.com/akrck02/go-renderer/input"
 	ui "github.com/akrck02/go-ui"
 	"github.com/akrck02/go-ui/window"
 
-	"github.com/akrck02/go-engine/export"
-	"github.com/akrck02/go-engine/game"
+	"github.com/akrck02/go-engine/engine"
+	"github.com/akrck02/go-engine/project"
+	"github.com/akrck02/go-engine/scenes"
+	"github.com/akrck02/go-engine/space"
 )
 
-// The editor's window, top to bottom: a toolbar (the title, save, play, export), then the scenes
-// and kinds on the left, the scene in the middle, the inspector on the right, and a status line.
+// The editor's window: a toolbar (the scene, save, play, code, build), the scene's nodes and the
+// project's models on the left, the 3D view in the middle, the inspector on the right, and a
+// status line.
 
-// Swatches are the colours the inspector offers, besides typing one.
-var swatches = []string{
-	"#2f4858", "#33658a", "#86bbd8", "#a9d6e5", "#cfe1b9", "#6b705c",
-	"#3d405b", "#8d99ae", "#b08968", "#f6bd60", "#e76f51", "#e63946",
-	"#ffffff", "#edede9", "#adb5bd", "#495057", "#212529", "#000000",
-}
-
-// Icons are the icons a kind may wear, a few that read well in a small cell.
-var Icons = []string{
-	"", "user", "ghost", "cat", "bug", "fish", "heart", "star", "key", "lock", "door-open", "flag",
-	"package", "box", "gem", "coins", "crown", "trophy", "lamp", "flame", "zap", "droplet", "leaf",
-	"tree-pine", "mountain", "house", "anchor", "skull", "bomb", "sword", "shield", "sun", "moon",
-}
-
-// View is the editor's window: what Run shows, and what it remembers between frames.
+// View is the editor's window and what it remembers between frames.
 type View struct {
-	Editor *Editor
+	Editor   *Editor
+	viewport *viewport
 
-	tab       int // the inspector's tab: the scene or the kind
-	nameTaken bool
-
-	canvas        game.Grid // where the scene's cells were last drawn
-	canvasShown   bool
-	wasPressing   bool
-	paintingDrag  bool // the press began on the scene: dragging paints
-	hoverColumn   int
-	hoverRow      int
-	walking       bool
-	exports       chan exportDone
-	exportRunning bool
-}
-
-type exportDone struct {
-	result export.Result
-	err    error
+	// the inspector's text fields, kept while they are typed in, for the node they were filled for
+	shownFor   *engine.Node
+	shownScene *engine.Scene
+	nameText   string
+	fieldTexts map[string]string
+	importPath string
+	sceneName  string
 }
 
 // NewView shows an editor.
 func NewView(editor *Editor) *View {
-	return &View{Editor: editor, exports: make(chan exportDone, 1), hoverColumn: -1}
+	editor.Wake = window.Wake
+	return &View{Editor: editor, viewport: newViewport(), fieldTexts: map[string]string{}}
 }
 
-// Options are the window's, with the step that reads the keys the interface leaves: the arrows
-// while playing, Ctrl+S to save, Escape to stop playing.
+// Options are the window's, with the step that shows the scene and reads what the interface
+// leaves of the mouse and the keys.
 func (view *View) Options(options window.Options) window.Options {
-	options.Title = "go-engine"
+	options.Title = "go-engine — " + view.Editor.Project.Settings.Name
 	options.Scene = func(state *input.State, seconds float64) *window.SceneView {
-		view.keys(state, seconds)
-		return nil
+		view.keys(state)
+		world, camera := view.viewport.step(view.Editor, state, seconds)
+		return &window.SceneView{World: world, Camera: camera}
 	}
 	return options
 }
 
-func (view *View) keys(state *input.State, seconds float64) {
+func (view *View) keys(state *input.State) {
 	editor := view.Editor
-	if state.Down(input.KeyControl) && state.Pressed(input.KeyS) {
+	control := state.Down(input.KeyControl)
+	switch {
+	case control && state.Pressed(input.KeyS):
 		editor.Save()
+	case control && state.Pressed(input.KeyD):
+		editor.Duplicate()
+	case state.Pressed(input.KeyDelete):
+		editor.Delete()
+	case state.Pressed(input.KeyF):
+		view.viewport.frame(editor.Selected)
+	case state.Pressed(input.KeyEscape):
+		editor.Select(nil)
 	}
-	session, playing := editor.Playing()
-	view.walking = false
-	if !playing {
-		return
-	}
-	if state.Pressed(input.KeyEscape) {
-		editor.Stop()
-		return
-	}
-	view.walking = session.Step(state, seconds)
 }
 
 // Build describes the window for a frame.
 func (view *View) Build(context *ui.Context) {
-	view.collectExport()
-	if view.walking || view.exportRunning {
-		context.RequestFrame(0)
+	view.Editor.TakeEvents()
+	if view.Editor.Running() {
+		context.RequestFrame(250e6) // the status line follows the game's output
 	}
 	context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Height: ui.Grow()}, func() {
 		view.toolbar(context)
 		context.Separator()
 		context.Box(ui.Layout{Width: ui.Grow(), Height: ui.Grow()}, func() {
-			view.sidebar(context)
+			view.left(context)
 			context.Separator()
 			view.middle(context)
 			context.Separator()
@@ -107,282 +90,583 @@ func (view *View) Build(context *ui.Context) {
 	})
 }
 
-// bar is a strip painted with the surface colour.
 func bar(context *ui.Context, layout ui.Layout, content func()) {
 	context.Frame(layout, ui.Look{Fill: context.Theme.Surface}, content)
 }
 
 func (view *View) toolbar(context *ui.Context) {
 	editor := view.Editor
-	bar(context, ui.Layout{Width: ui.Grow(), Height: ui.Fixed(48), Padding: ui.PadXY(10, 0), Gap: 8, AlignY: ui.Center}, func() {
+	bar(context, ui.Layout{Width: ui.Grow(), Height: ui.Fixed(46), Padding: ui.PadXY(10, 0), Gap: 6, AlignY: ui.Center}, func() {
 		context.IconSized("gamepad-2", 20, context.Theme.Primary)
-		context.Box(ui.Layout{Width: ui.Fixed(240)}, func() {
-			if context.TextField("Title", &editor.Game.Title) {
-				editor.changed()
+		context.Heading(editor.Project.Settings.Name)
+		context.Box(ui.Layout{Width: ui.Fixed(8)}, nil)
+		context.MenuButton("map", path.Base(strings.TrimSuffix(editor.SceneFile, ".scene.json")), func() {
+			for _, file := range editor.Project.Scenes() {
+				if context.MenuItem("map", strings.TrimSuffix(path.Base(file), ".scene.json"), "") && file != editor.SceneFile {
+					view.openScene(file)
+				}
+			}
+			if context.MenuItem("plus", "New scene", "") {
+				view.newScene()
 			}
 		})
 		if context.IconButton("save", "Save") {
 			editor.Save()
 		}
-		context.Tooltip("Save the game (Ctrl+S) to " + editor.Path)
+		context.Tooltip("Save the scene (Ctrl+S)")
 		context.Spacer()
-		if _, playing := editor.Playing(); playing {
+		if editor.Running() {
 			if context.PrimaryIconButton("square", "Stop") {
 				editor.Stop()
 			}
-			context.Tooltip("Back to editing (Escape)")
 		} else if context.PrimaryIconButton("play", "Play") {
 			editor.Play()
 		}
-		if context.IconButton("monitor", "Desktop") {
-			view.startExport(export.Desktop)
+		context.Tooltip("Save, build the game with Go and play it")
+		if context.IconButton("code", "Code") {
+			if opened, err := editor.Project.OpenCode(); err != nil {
+				editor.say(err.Error(), true)
+			} else {
+				editor.say("Opened the project in "+opened, false)
+			}
 		}
-		context.Tooltip("Export a program for this computer")
-		if context.IconButton("gamepad-2", "3DS") {
-			view.startExport(export.Nintendo3DS)
-		}
-		context.Tooltip("Export a .3dsx for the Nintendo 3DS (needs TinyGo with the nintendo3ds target)")
+		context.Tooltip("Open the project's Go code in your editor (codeEditor in engine.json, or $VISUAL)")
+		context.MenuButton("hammer", "Build", func() {
+			if context.MenuItem("monitor", "For this computer", "") {
+				editor.Run("Building for this computer…", func() (string, error) {
+					built, err := editor.Project.BuildDesktop()
+					return "Built " + built.Program, err
+				})
+			}
+			if context.MenuItem("gamepad-2", "For the Nintendo 3DS", "") {
+				editor.Run("Building for the 3DS…", func() (string, error) {
+					built, err := editor.Project.Build3DS()
+					return "Built " + built.Program, err
+				})
+			}
+		})
 	})
 }
 
-func (view *View) sidebar(context *ui.Context) {
-	layout := ui.Layout{Direction: ui.Vertical, Width: ui.Fixed(230), Height: ui.Grow(), Padding: ui.Pad(10), Gap: 4}
-	bar(context, ui.Layout{Width: ui.Fixed(230), Height: ui.Grow()}, func() {
-		context.ScrollArea("Sidebar", layout, view.sidebarContent(context))
-	})
+func (view *View) openScene(file string) {
+	if err := view.Editor.OpenScene(file); err != nil {
+		view.Editor.say(err.Error(), true)
+	}
+	view.shownFor = nil
 }
 
-// sidebarContent is the list of scenes and the palette of kinds.
-func (view *View) sidebarContent(context *ui.Context) func() {
+func (view *View) newScene() {
 	editor := view.Editor
-	return func() {
-		context.Row(func() {
-			context.Heading("Scenes")
-			context.Spacer()
-			if context.FlatIconButton("arrow-up", "") {
-				editor.MoveScene(-1)
-			}
-			context.Tooltip("Earlier in the game")
-			if context.FlatIconButton("arrow-down", "") {
-				editor.MoveScene(1)
-			}
-			context.Tooltip("Later in the game")
-			if context.FlatIconButton("plus", "") {
-				editor.AddScene()
-			}
-			context.Tooltip("Add a scene after this one")
-			if context.FlatIconButton("trash-2", "") {
-				editor.RemoveScene()
-			}
-			context.Tooltip("Remove this scene")
-		})
-		for index := range editor.Game.Scenes {
-			context.Push(sceneKey(index))
-			if context.Selectable("map", editor.Game.Scenes[index].Name, index == editor.scene) {
-				editor.chooseScene(index)
-				view.tab = 0
-			}
-			context.Pop()
-		}
-		context.Separator()
-		context.Row(func() {
-			context.Heading("Kinds")
-			context.Spacer()
-			if context.FlatIconButton("plus", "") {
-				editor.AddKind()
-				view.tab = 1
-			}
-			context.Tooltip("Add a kind of thing")
-		})
-		if context.Selectable("eraser", "Eraser", editor.brush == "") {
-			editor.ChooseBrush("")
-		}
-		for index := range editor.Game.Kinds {
-			kind := &editor.Game.Kinds[index]
-			context.Push(kind.Name)
-			context.Row(func() {
-				swatch(context, kind.Colour, 18)
-				if context.Selectable(kind.Icon, kind.Name, editor.brush == kind.Name) {
-					editor.ChooseBrush(kind.Name)
-					view.tab = 1
-				}
-			})
-			context.Pop()
-		}
-	}
-}
-
-// sceneKey scopes a scene's row by its place, so two scenes with one name stay apart.
-func sceneKey(index int) string { return "scene " + strconv.Itoa(index) }
-
-// swatch paints a square of a colour.
-func swatch(context *ui.Context, colour string, size float32) {
-	context.Paint(ui.Layout{Width: ui.Fixed(size), Height: ui.Fixed(size)}, func(area draw2d.Rect, list *draw2d.List) {
-		list.Rectangle(area, 4, draw2d.Hex(colour), context.Theme.ControlLine, 1)
-	})
-}
-
-// middle shows the scene: painted on while editing, played while playing.
-func (view *View) middle(context *ui.Context) {
-	editor := view.Editor
-	context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Height: ui.Grow()}, func() {
-		if session, playing := editor.Playing(); playing {
-			view.canvasShown = false
-			session.Bar(context)
-			context.Paint(ui.Layout{Width: ui.Grow(), Height: ui.Grow()}, func(area draw2d.Rect, list *draw2d.List) {
-				session.Draw(list, area.Inset(16))
-			})
-			return
-		}
-		view.followPointer(context)
-		context.Paint(ui.Layout{Width: ui.Grow(), Height: ui.Grow()}, func(area draw2d.Rect, list *draw2d.List) {
-			view.canvas = game.DrawScene(list, area.Inset(16), editor.Game, editor.Scene(), true)
-			view.canvasShown = true
-			if view.hoverColumn >= 0 {
-				list.Rectangle(view.canvas.CellArea(view.hoverColumn, view.hoverRow), 2, draw2d.Color{}, context.Theme.Primary, 2)
-			}
-		})
-	})
-}
-
-// followPointer paints the cells the pointer drags over, when the press began on the scene, and
-// remembers the cell under it to outline.
-func (view *View) followPointer(context *ui.Context) {
-	x, y := context.Pointer()
-	column, row, onScene := view.canvas.CellAt(x, y)
-	onScene = onScene && view.canvasShown
-	pressing := context.Pressing()
-	if pressing && !view.wasPressing {
-		view.paintingDrag = onScene
-	}
-	if !pressing {
-		view.paintingDrag = false
-	}
-	view.wasPressing = pressing
-	view.hoverColumn, view.hoverRow = -1, -1
-	if !onScene {
+	name := "Scene " + string(rune('0'+len(editor.Project.Scenes())+1))
+	file, err := editor.Project.NewScene(name)
+	if err != nil {
+		editor.say(err.Error(), true)
 		return
 	}
-	view.hoverColumn, view.hoverRow = column, row
-	if view.paintingDrag {
-		view.Editor.Paint(column, row)
+	view.openScene(file)
+}
+
+// left is the scene's nodes, as a tree, over the project's models.
+func (view *View) left(context *ui.Context) {
+	editor := view.Editor
+	bar(context, ui.Layout{Direction: ui.Vertical, Width: ui.Fixed(270), Height: ui.Grow()}, func() {
+		context.Box(ui.Layout{Width: ui.Grow(), Padding: ui.Padding{Left: 10, Top: 8, Right: 6}, AlignY: ui.Center}, func() {
+			context.Heading("Scene")
+			context.Spacer()
+			context.MenuButton("plus", "", func() {
+				for _, kind := range Kinds {
+					if context.MenuItem(kindIcon(kind), kind, "") {
+						editor.Add(kind)
+					}
+				}
+			})
+			context.Tooltip("Add a node after the chosen one")
+			view.treeButton(context, "copy", "Duplicate (Ctrl+D)", editor.Duplicate)
+			view.treeButton(context, "trash-2", "Delete (Delete)", editor.Delete)
+		})
+		context.Box(ui.Layout{Width: ui.Grow(), Padding: ui.Padding{Left: 10, Right: 6}, Gap: 2}, func() {
+			view.treeButton(context, "arrow-up", "Earlier among its siblings", editor.MoveUp)
+			view.treeButton(context, "arrow-down", "Later among its siblings", editor.MoveDown)
+			view.treeButton(context, "indent-increase", "Hang it from the node above", editor.Nest)
+			view.treeButton(context, "indent-decrease", "Hang it from its parent's parent", editor.Unnest)
+		})
+		tree := ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Height: ui.GrowBy(3), Padding: ui.PadXY(8, 4), Gap: 1}
+		context.ScrollArea("Tree", tree, func() {
+			for _, child := range editor.Scene.Root.Children() {
+				view.treeNode(context, child, 0)
+			}
+		})
+		context.Separator()
+		view.assets(context)
+	})
+}
+
+func (view *View) treeButton(context *ui.Context, icon, tip string, action func()) {
+	if context.FlatIconButton(icon, "") {
+		action()
 	}
+	context.Tooltip(tip)
+}
+
+func (view *View) treeNode(context *ui.Context, node *engine.Node, depth int) {
+	context.Push(node.Name)
+	context.Box(ui.Layout{Width: ui.Grow(), Padding: ui.Padding{Left: float32(depth) * 16}}, func() {
+		if context.Selectable(nodeIcon(node), node.Name, node == view.Editor.Selected) {
+			view.Editor.Select(node)
+		}
+	})
+	for _, child := range node.Children() {
+		view.treeNode(context, child, depth+1)
+	}
+	context.Pop()
+}
+
+func kindIcon(kind string) string {
+	switch kind {
+	case "Cube":
+		return "box"
+	case "Sphere":
+		return "circle"
+	case "Plane":
+		return "square"
+	case "Cylinder":
+		return "cylinder"
+	case "Camera":
+		return "video"
+	}
+	return "crosshair"
+}
+
+func nodeIcon(node *engine.Node) string {
+	if _, isCamera := node.Camera(); isCamera {
+		return "video"
+	}
+	if node.Model() != "" {
+		return "package"
+	}
+	if node.Shape() != "" {
+		return kindIcon(strings.ToUpper(node.Shape()[:1]) + node.Shape()[1:])
+	}
+	return "crosshair"
+}
+
+// assets lists the project's models, to place in the scene, and imports others.
+func (view *View) assets(context *ui.Context) {
+	editor := view.Editor
+	layout := ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Height: ui.GrowBy(2), Padding: ui.Pad(10), Gap: 4}
+	context.ScrollArea("Assets", layout, func() {
+		context.Heading("Assets")
+		models := editor.Project.Models()
+		if len(models) == 0 {
+			context.Caption("No models yet: import a .glb.")
+		}
+		for _, model := range models {
+			context.Push(model)
+			context.Row(func() {
+				if context.Selectable("package", path.Base(model), false) {
+					editor.AddModel(model)
+				}
+			})
+			context.Tooltip("Place " + model + " in the scene")
+			context.Pop()
+		}
+		context.Caption("Import a .glb, from its path")
+		context.TextFieldWith("Import path", &view.importPath, ui.TextFieldOptions{Placeholder: "/path/to/model.glb"})
+		if context.Button("Import") && strings.TrimSpace(view.importPath) != "" {
+			editor.Import(strings.TrimSpace(view.importPath))
+			view.importPath = ""
+		}
+	})
+}
+
+// middle is the 3D view, seen through the window, with a strip of how to see it.
+func (view *View) middle(context *ui.Context) {
+	context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Height: ui.Grow(), Padding: ui.Pad(8)}, func() {
+		context.Frame(ui.Layout{Padding: ui.PadXY(6, 4), Gap: 6, AlignY: ui.Center}, ui.Look{Fill: context.Theme.Surface, Radius: 8, Shadow: true}, func() {
+			mode := int(view.viewport.mode)
+			context.Box(ui.Layout{Width: ui.Fixed(330)}, func() {
+				if context.Tabs("View", &mode, "Perspective", "Orthographic", "Isometric") {
+					view.viewport.setMode(ViewMode(mode))
+				}
+			})
+			if context.FlatIconButton("scan", "") {
+				view.viewport.frame(view.Editor.Selected)
+			}
+			context.Tooltip("Frame the chosen node (F)")
+			if view.viewport.through != nil {
+				if context.FlatIconButton("video-off", "") {
+					view.viewport.through = nil
+				}
+				context.Tooltip("Back to the editor's camera")
+			}
+		})
+		context.Spacer()
+		context.Text("Drag to turn · right-drag to pan · scroll to zoom · click to choose · drag the chosen to move it",
+			ui.TextStyle{Color: context.Theme.InkQuiet, Size: context.Theme.SmallTextSize})
+	})
 }
 
 func (view *View) inspector(context *ui.Context) {
-	layout := ui.Layout{Direction: ui.Vertical, Width: ui.Fixed(290), Height: ui.Grow()}
+	editor := view.Editor
+	if editor.Selected != view.shownFor || editor.Scene != view.shownScene {
+		view.shownFor, view.shownScene = editor.Selected, editor.Scene
+		view.fieldTexts = map[string]string{}
+		if editor.Selected != nil {
+			view.nameText = editor.Selected.Name
+		}
+		view.sceneName = editor.Scene.Name
+	}
+	layout := ui.Layout{Direction: ui.Vertical, Width: ui.Fixed(320), Height: ui.Grow()}
 	bar(context, layout, func() {
-		context.Box(ui.Layout{Width: ui.Grow(), Padding: ui.Pad(12)}, func() {
-			context.Tabs("Inspector", &view.tab, "Scene", "Kind")
-		})
-		inside := ui.Layout{Width: ui.Grow(), Height: ui.Grow(), Padding: ui.Padding{Left: 12, Right: 12, Bottom: 12}, Gap: 8}
+		inside := ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Height: ui.Grow(), Padding: ui.Pad(12), Gap: 6}
 		context.ScrollArea("Inspector", inside, func() {
-			if view.tab == 0 {
+			if editor.Selected == nil {
 				view.sceneInspector(context)
 				return
 			}
-			view.kindInspector(context)
+			view.nodeInspector(context, editor.Selected)
 		})
 	})
 }
 
 func (view *View) sceneInspector(context *ui.Context) {
 	editor := view.Editor
-	scene := editor.Scene()
+	context.Heading("Scene")
+	context.Caption(editor.SceneFile)
 	context.Caption("Name")
-	if context.TextField("Scene name", &editor.sceneName) && editor.sceneName != "" {
-		scene.Name = editor.sceneName
-		editor.changed()
+	if context.TextField("Scene name", &view.sceneName) && strings.TrimSpace(view.sceneName) != "" {
+		editor.Scene.Name = strings.TrimSpace(view.sceneName)
+		editor.Changed()
 	}
-	width, height := float32(scene.Width), float32(scene.Height)
-	context.Caption("Size, in cells")
-	context.Row(func() {
-		widthChanged := context.NumberField("Width", &width, game.MinimumSize, game.MaximumSize, 1, "%.0f wide")
-		heightChanged := context.NumberField("Height", &height, game.MinimumSize, game.MaximumSize, 1, "%.0f high")
-		if widthChanged || heightChanged {
-			scene.Resize(int(width), int(height))
-			editor.changed()
+	context.Caption("Sky: a colour, or a daylight sky")
+	sky := editor.Scene.Sky
+	if context.Checkbox("Daylight sky", ptr(sky == "")) {
+		if sky == "" {
+			editor.Scene.SetSky("#20242c")
+		} else {
+			editor.Scene.SetSky("")
 		}
-	})
-	context.Caption("Background")
-	if colourPicker(context, "Background", &scene.Background) {
-		editor.changed()
+		editor.Changed()
 	}
-}
-
-func (view *View) kindInspector(context *ui.Context) {
-	editor := view.Editor
-	kind, found := editor.Kind()
-	if !found {
-		context.Caption("The game has no kinds yet: add one under Kinds.")
-		return
-	}
-	context.Caption("Name")
-	if context.TextField("Kind name", &editor.kindName) {
-		view.nameTaken = !editor.RenameKind(editor.kindName) && editor.kindName != kind.Name
-	}
-	if view.nameTaken {
-		context.Text("Another kind has that name", ui.TextStyle{Color: context.Theme.Warning})
-	}
-	context.Caption("Colour")
-	if colourPicker(context, "Colour", &kind.Colour) {
-		editor.changed()
-	}
-	context.Caption("Shape")
-	shape := shapeIndex(kind.Shape)
-	if context.Tabs("Shape", &shape, "Square", "Rounded", "Circle", "Small") {
-		kind.Shape = game.Shapes[shape]
-		editor.changed()
-	}
-	context.Caption("Icon")
-	context.Grid(8, func() {
-		for _, icon := range Icons {
-			context.Push("icon " + icon)
-			shown := icon
-			if shown == "" {
-				shown = "ban"
-			}
-			if context.Selectable(shown, "", kind.Icon == icon) {
-				kind.Icon = icon
-				editor.changed()
-			}
-			context.Pop()
-		}
-	})
-	context.Caption("What it does")
-	behaviours := []struct {
-		label string
-		value *bool
-	}{
-		{"The player: walks with the arrows", &kind.Player},
-		{"Solid: nothing walks into it", &kind.Solid},
-		{"Pushable: the player pushes it", &kind.Pushable},
-		{"Collectable: taken when stepped on", &kind.Collectable},
-		{"Goal: ends the scene", &kind.Goal},
-		{"Hazard: starts the scene again", &kind.Hazard},
-	}
-	for _, behaviour := range behaviours {
-		if context.Checkbox(behaviour.label, behaviour.value) {
-			editor.changed()
-		}
+	if editor.Scene.Sky != "" && colourPicker(context, "Sky", &sky) {
+		editor.Scene.SetSky(sky)
+		editor.Changed()
 	}
 	context.Separator()
-	if context.FlatIconButton("trash-2", "Remove this kind") {
-		editor.RemoveKind()
-	}
+	note(context, "Coordinates: one unit is a metre; Y is up; X to the right and Z towards you (right-handed, as glTF). Rotations are in degrees: X tilts, Y turns, Z rolls.")
+	note(context, "Choose a node in the view or in the list to see its transform.")
 }
 
-func shapeIndex(shape game.Shape) int {
-	for index, each := range game.Shapes {
-		if each == shape {
-			return index
+func ptr(value bool) *bool { return &value }
+
+// note writes a quiet text that goes on to the next line where the panel ends: a word per box, in
+// a box that wraps them.
+func note(context *ui.Context, text string) {
+	style := ui.TextStyle{Color: context.Theme.InkQuiet, Size: context.Theme.SmallTextSize}
+	context.Box(ui.Layout{Width: ui.Grow(), Wrap: true, Gap: 3}, func() {
+		for _, word := range strings.Fields(text) {
+			context.Text(word, style)
+		}
+	})
+}
+
+func (view *View) nodeInspector(context *ui.Context, node *engine.Node) {
+	editor := view.Editor
+	context.Row(func() {
+		context.IconSized(nodeIcon(node), 18, context.Theme.Primary)
+		context.Heading(node.Name)
+	})
+	context.Caption(node.Path())
+	context.Caption("Name")
+	if context.TextField("Node name", &view.nameText) {
+		editor.Rename(view.nameText)
+	}
+	if context.Checkbox("Visible", &node.Visible) {
+		editor.Scene.Sync()
+		editor.Changed()
+	}
+	view.transformInspector(context, node)
+	if node.Shape() != "" {
+		view.shapeInspector(context, node)
+	}
+	if node.Model() != "" {
+		context.Separator()
+		context.Heading("Model")
+		context.Caption(node.Model())
+		if context.Button("Read the file again") {
+			editor.Scene.Forget(node.Model())
+			if err := node.SetModel(node.Model()); err != nil {
+				editor.say(err.Error(), true)
+			}
 		}
 	}
-	return 0
+	if settings, isCamera := node.Camera(); isCamera {
+		view.cameraInspector(context, node, settings)
+	}
+	view.behaviourInspector(context, node)
 }
 
-// colourPicker offers the swatches and a field to type a colour in; it tells whether the colour
-// changed.
+// transformInspector edits where the node is, how it is turned and how large, relative to its
+// parent.
+func (view *View) transformInspector(context *ui.Context, node *engine.Node) {
+	editor := view.Editor
+	context.Separator()
+	context.Heading("Transform")
+	note(context, "Relative to its parent: position in metres, rotation in degrees, scale as times its size.")
+	position := node.Transform.Position
+	if vectorRow(context, "Position", &position, positionLimits, "%.2f") {
+		node.Transform.Position = position
+		editor.Scene.Sync()
+		editor.Changed()
+	}
+	angles := node.Transform.Euler()
+	turned := space.Vec3{X: angles.X, Y: angles.Y, Z: angles.Z}
+	if vectorRow(context, "Rotation", &turned, rotationLimits, "%.0f°") {
+		node.Transform.SetEuler(space.Euler{X: turned.X, Y: turned.Y, Z: turned.Z})
+		editor.Scene.Sync()
+		editor.Changed()
+	}
+	scale := node.Transform.Scale
+	if vectorRow(context, "Scale", &scale, scaleLimits, "%.2f×") {
+		node.Transform.Scale = scale
+		editor.Scene.Sync()
+		editor.Changed()
+	}
+	uniform := node.Transform.Scale.X
+	context.Row(func() {
+		context.Caption("All axes")
+		if numberField(context, "Uniform scale", &uniform, scaleLimits, "%.2f×") {
+			node.Transform.Scale = space.V(uniform, uniform, uniform)
+			editor.Scene.Sync()
+			editor.Changed()
+		}
+	})
+	if world := node.World().Position; node.Parent() != editor.Scene.Root {
+		context.Caption("In the world: " + formatVector(world) + " m")
+	}
+}
+
+// vectorRow edits the three axes of a vector; it tells whether one changed.
+func vectorRow(context *ui.Context, name string, value *space.Vec3, limits numberLimits, format string) bool {
+	changed := false
+	context.Caption(name)
+	context.Push(name)
+	context.Grid(3, func() {
+		axes := []struct {
+			label string
+			value *float64
+		}{{"X", &value.X}, {"Y", &value.Y}, {"Z", &value.Z}}
+		for _, axis := range axes {
+			if numberField(context, axis.label, axis.value, limits, axis.label+" "+format) {
+				changed = true
+			}
+		}
+	})
+	context.Pop()
+	return changed
+}
+
+// numberLimits are a number field's range and step. go-ui's NumberField keeps a value on the
+// steps counted from the minimum, in float32: the minimums here are whole steps, and moderate, so
+// a value read back is the value written.
+type numberLimits struct{ minimum, maximum, step float32 }
+
+var (
+	positionLimits = numberLimits{-5000, 5000, 0.05}
+	rotationLimits = numberLimits{-360, 360, 1}
+	scaleLimits    = numberLimits{0, 1000, 0.05}
+)
+
+// numberField edits a number; it tells whether it changed by at least half a step, so the
+// rounding of float32 is not taken for an edit.
+func numberField(context *ui.Context, name string, value *float64, limits numberLimits, format string) bool {
+	shown := float32(*value) + 0 // + 0: no -0 shown
+	if !context.NumberField(name, &shown, limits.minimum, limits.maximum, limits.step, format) {
+		return false
+	}
+	if math.Abs(float64(shown)-*value) < float64(limits.step)/2 {
+		return false
+	}
+	*value = math.Round(float64(shown)/float64(limits.step)) * float64(limits.step)
+	return true
+}
+
+func formatVector(vector space.Vec3) string {
+	return trimmed(vector.X) + ", " + trimmed(vector.Y) + ", " + trimmed(vector.Z)
+}
+
+func trimmed(value float64) string {
+	text := FieldText(float64(int64(value*100)) / 100)
+	return text
+}
+
+func (view *View) shapeInspector(context *ui.Context, node *engine.Node) {
+	editor := view.Editor
+	context.Separator()
+	context.Heading("Shape")
+	shape := 0
+	for index, each := range scenes.Shapes {
+		if each == node.Shape() {
+			shape = index
+		}
+	}
+	if context.Tabs("Shape", &shape, "Cube", "Sphere", "Plane", "Cylinder") {
+		node.SetShape(scenes.Shapes[shape], node.Colour())
+		editor.Changed()
+	}
+	colour := node.Colour()
+	if colourPicker(context, "Colour", &colour) {
+		node.SetShape(node.Shape(), colour)
+		editor.Changed()
+	}
+}
+
+func (view *View) cameraInspector(context *ui.Context, node *engine.Node, settings *scenes.Camera) {
+	editor := view.Editor
+	context.Separator()
+	context.Heading("Camera")
+	projection := 0
+	for index, each := range scenes.Projections {
+		if each == settings.Projection {
+			projection = index
+		}
+	}
+	if context.Tabs("Projection", &projection, "Perspective", "Orthographic", "Isometric") {
+		settings.Projection = scenes.Projections[projection]
+		if settings.Projection == scenes.Isometric {
+			node.Transform.SetEuler(space.Euler{X: scenes.IsometricAngles[0], Y: scenes.IsometricAngles[1]})
+			editor.Scene.Sync()
+		}
+		editor.Changed()
+	}
+	switch settings.Projection {
+	case scenes.Perspective:
+		if settings.FieldOfView == 0 {
+			settings.FieldOfView = 45
+		}
+		context.Caption("Field of view, top to bottom")
+		if numberField(context, "Field of view", &settings.FieldOfView, numberLimits{10, 150, 1}, "%.0f°") {
+			editor.Changed()
+		}
+	default:
+		if settings.Height == 0 {
+			settings.Height = 10
+		}
+		context.Caption("Metres seen, top to bottom")
+		if numberField(context, "Height seen", &settings.Height, numberLimits{0, 1000, 0.5}, "%.1f m") {
+			editor.Changed()
+		}
+		if settings.Projection == scenes.Isometric {
+			note(context, "An isometric camera looks down at 35.26°; turn it round with its rotation's Y.")
+		}
+	}
+	if context.Checkbox("The scene is seen through this camera", &settings.Main) {
+		editor.Changed()
+	}
+	if context.Button("Look through it") {
+		view.viewport.through = node
+	}
+}
+
+func (view *View) behaviourInspector(context *ui.Context, node *engine.Node) {
+	editor := view.Editor
+	context.Separator()
+	context.Row(func() {
+		context.Heading("Behaviours")
+		context.Spacer()
+		context.MenuButton("plus", "Add", func() {
+			for _, info := range editor.Behaviours() {
+				if context.MenuItem("code", info.Name, info.File) {
+					editor.AttachBehaviour(info.Name)
+				}
+			}
+			if context.MenuItem("refresh-cw", "Read the code again", "") {
+				editor.ReadBehaviours()
+				editor.say("Read the project's code: "+FieldText(float64(len(editor.Behaviours())))+" behaviours", false)
+			}
+		})
+	})
+	if len(node.Behaviours) == 0 {
+		note(context, "The project's Go code moves nodes through behaviours: add one, or write a type with an Update method (see spin.go).")
+	}
+	for index := range node.Behaviours {
+		behaviour := &node.Behaviours[index]
+		context.Push("behaviour " + behaviour.Name + FieldText(float64(index)))
+		look := ui.Look{Fill: context.Theme.Background, Radius: 8, Border: context.Theme.Line, BorderWidth: 1}
+		context.Frame(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Padding: ui.Pad(8), Gap: 4}, look, func() {
+			info, known := editor.BehaviourInfo(behaviour.Name)
+			context.Row(func() {
+				context.IconSized("code", 16, context.Theme.Primary)
+				context.Text(behaviour.Name, ui.TextStyle{Weight: draw2d.Bold})
+				context.Spacer()
+				if context.FlatIconButton("x", "") {
+					editor.DetachBehaviour(index)
+				}
+			})
+			if !known {
+				context.Text("Not in the project's code (yet?)", ui.TextStyle{Color: context.Theme.Warning, Size: context.Theme.SmallTextSize})
+			} else if info.Doc != "" {
+				note(context, info.Doc)
+			}
+			view.behaviourFields(context, behaviour, info.Fields)
+		})
+		context.Pop()
+	}
+}
+
+// behaviourFields edits a behaviour's fields: the ones its code declares, then any others the
+// scene holds.
+func (view *View) behaviourFields(context *ui.Context, behaviour *scenes.Behaviour, declared []projectField) {
+	shown := map[string]bool{}
+	for _, field := range declared {
+		shown[field.Name] = true
+		view.behaviourField(context, behaviour, field.Name, field.Type+fieldComment(field.Comment))
+	}
+	for name := range behaviour.Fields {
+		if !shown[name] {
+			view.behaviourField(context, behaviour, name, "not in the code")
+		}
+	}
+}
+
+func fieldComment(comment string) string {
+	if comment == "" {
+		return ""
+	}
+	return " · " + comment
+}
+
+func (view *View) behaviourField(context *ui.Context, behaviour *scenes.Behaviour, name, hint string) {
+	key := behaviour.Name + "." + name
+	text, editing := view.fieldTexts[key]
+	if !editing {
+		text = FieldText(behaviour.Fields[name])
+	}
+	context.Caption(name + " (" + hint + ")")
+	if context.TextField(key, &text) {
+		view.fieldTexts[key] = text
+		if behaviour.Fields == nil {
+			behaviour.Fields = map[string]any{}
+		}
+		if strings.TrimSpace(text) == "" {
+			delete(behaviour.Fields, name)
+		} else {
+			behaviour.Fields[name] = FieldValue(text)
+		}
+		view.Editor.Changed()
+	}
+}
+
+// projectField is a behaviour's field, as the project's code declares it.
+type projectField = project.FieldInfo
+
+// Swatches are the colours offered besides typing one.
+var swatches = []string{
+	"#e07a5f", "#f2cc8f", "#81b29a", "#3d405b", "#7a9a6a", "#c8c8c8",
+	"#264653", "#2a9d8f", "#e9c46a", "#f4a261", "#e76f51", "#20242c",
+}
+
+// colourPicker offers the swatches and a field to type a colour in; it tells whether it changed.
 func colourPicker(context *ui.Context, name string, colour *string) bool {
 	changed := false
 	context.Push(name)
@@ -393,8 +677,7 @@ func colourPicker(context *ui.Context, name string, colour *string) bool {
 			if each == *colour {
 				look.Border, look.BorderWidth = context.Theme.Primary, 3
 			}
-			looks := ui.Looks{Normal: look, Hovered: look, Pressed: look}
-			if context.Clickable("swatch", ui.Layout{Width: ui.Grow(), Height: ui.Fixed(24)}, looks, nil) {
+			if context.Clickable("swatch", ui.Layout{Width: ui.Grow(), Height: ui.Fixed(22)}, ui.Looks{Normal: look, Hovered: look, Pressed: look}, nil) {
 				*colour, changed = each, true
 			}
 			context.Pop()
@@ -412,12 +695,17 @@ func colourPicker(context *ui.Context, name string, colour *string) bool {
 
 func (view *View) statusLine(context *ui.Context) {
 	editor := view.Editor
-	bar(context, ui.Layout{Width: ui.Grow(), Height: ui.Fixed(30), Padding: ui.PadXY(10, 0), Gap: 8, AlignY: ui.Center}, func() {
+	bar(context, ui.Layout{Width: ui.Grow(), Height: ui.Fixed(28), Padding: ui.PadXY(10, 0), Gap: 8, AlignY: ui.Center}, func() {
 		style := ui.TextStyle{Color: context.Theme.InkSoft}
 		if editor.Failed {
 			style.Color = context.Theme.Danger
 		}
 		context.Text(editor.Message, style)
+		if editor.output != nil && editor.Running() {
+			if last := editor.output.Last(); last != "" {
+				context.Text("· "+last, ui.TextStyle{Color: context.Theme.InkQuiet})
+			}
+		}
 		context.Spacer()
 		if editor.Saved {
 			context.Text("Saved", ui.TextStyle{Color: context.Theme.Positive})
@@ -425,45 +713,4 @@ func (view *View) statusLine(context *ui.Context) {
 			context.Text("Unsaved changes", ui.TextStyle{Color: context.Theme.Warning})
 		}
 	})
-}
-
-// startExport builds the game's program in the background, in an exports folder next to the
-// game's file; the status line says how it went.
-func (view *View) startExport(target export.Target) {
-	if view.exportRunning {
-		return
-	}
-	editor := view.Editor
-	if err := editor.Game.Check(); err != nil {
-		editor.say(err.Error(), true)
-		return
-	}
-	data, err := editor.Game.Marshal()
-	if err != nil {
-		editor.say(err.Error(), true)
-		return
-	}
-	copied, _ := game.Read(data) // the export works on a copy, so editing goes on meanwhile
-	folder := filepath.Join(filepath.Dir(editor.Path), "exports")
-	view.exportRunning = true
-	editor.say("Exporting for "+string(target)+"…", false)
-	go func() {
-		result, err := export.Export(copied, target, folder)
-		view.exports <- exportDone{result: result, err: err}
-		window.Wake()
-	}()
-}
-
-// collectExport takes the result of an export that finished.
-func (view *View) collectExport() {
-	select {
-	case done := <-view.exports:
-		view.exportRunning = false
-		if done.err != nil {
-			view.Editor.say("Export failed: "+done.err.Error(), true)
-			return
-		}
-		view.Editor.say("Exported: "+done.result.Program, false)
-	default:
-	}
 }

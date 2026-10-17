@@ -1,6 +1,6 @@
 # Third-party notices
 
-A game exported from go-engine for the Nintendo 3DS carries this software besides the game.
+A game made with go-engine, built for the Nintendo 3DS, carries this software besides the game.
 
 Programs built for the Nintendo 3DS link the following software into the `.3dsx`. Its licenses ask that binaries carry these notices; keep this file next to any `.3dsx` you share.
 

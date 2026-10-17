@@ -10,7 +10,7 @@ import (
 	ui "github.com/akrck02/go-ui"
 	"github.com/akrck02/go-ui/window"
 
-	"github.com/akrck02/go-engine/game"
+	"github.com/akrck02/go-engine/grid/game"
 )
 
 // options are the window's, which the command line may change (RegisterFlags).

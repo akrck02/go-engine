@@ -9,8 +9,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/akrck02/go-engine/game"
-	"github.com/akrck02/go-engine/player"
+	"github.com/akrck02/go-engine/grid/game"
+	"github.com/akrck02/go-engine/grid/player"
 )
 
 func main() {

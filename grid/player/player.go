@@ -11,7 +11,7 @@ import (
 	"github.com/akrck02/go-renderer/input"
 	ui "github.com/akrck02/go-ui"
 
-	"github.com/akrck02/go-engine/game"
+	"github.com/akrck02/go-engine/grid/game"
 )
 
 // Session is a game being played: the world, the arrows held, and the texts the bar shows, kept

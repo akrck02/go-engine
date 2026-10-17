@@ -1,0 +1,93 @@
+package engine
+
+import (
+	"encoding/json"
+	"fmt"
+	"io/fs"
+	"os"
+	"time"
+
+	"github.com/akrck02/go-renderer/input"
+	ui "github.com/akrck02/go-ui"
+	"github.com/akrck02/go-ui/window"
+
+	"github.com/akrck02/go-engine/scenes"
+	"github.com/akrck02/go-engine/space"
+)
+
+// Settings are a project's, kept in its engine.json.
+type Settings struct {
+	Name       string `json:"name"`
+	StartScene string `json:"startScene"` // the scene the game opens, as "scenes/main.scene.json"
+	// CodeEditor is the command the editor opens the project's code with ("code", "zed", "nvim"…);
+	// empty tries $VISUAL, $EDITOR and the usual ones.
+	CodeEditor string `json:"codeEditor,omitempty"`
+}
+
+// SettingsFile is the settings' file in a project.
+const SettingsFile = "engine.json"
+
+// ReadSettings reads a project's settings.
+func ReadSettings(files fs.FS) (Settings, error) {
+	data, err := fs.ReadFile(files, SettingsFile)
+	if err != nil {
+		return Settings{}, err
+	}
+	var settings Settings
+	if err := json.Unmarshal(data, &settings); err != nil {
+		return Settings{}, fmt.Errorf("%s: %w", SettingsFile, err)
+	}
+	if settings.StartScene == "" {
+		return Settings{}, fmt.Errorf("%s names no start scene", SettingsFile)
+	}
+	return settings, nil
+}
+
+// Run plays a project, from its files (embedded in the game, or a folder), until its window is
+// closed: on the desktop in a window, on the Nintendo 3DS on the top screen.
+func Run(files fs.FS) error {
+	settings, err := ReadSettings(files)
+	if err != nil {
+		return err
+	}
+	played, err := Load(files, settings.StartScene)
+	if played == nil {
+		return err
+	}
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err) // a model that would not load: the rest plays
+	}
+	for _, problem := range played.Start() {
+		fmt.Fprintln(os.Stderr, problem)
+	}
+	return play(played, settings.Name)
+}
+
+// play shows a scene in a window, updating it every frame.
+func play(played *Scene, title string) error {
+	var last time.Time
+	fallback := space.Transform{Position: space.V(0, 4, 10), Rotation: space.Euler{X: -20}.Rotation(), Scale: space.One}
+	options := window.Options{Title: title, Width: 1280, Height: 720, Continuous: true}
+	options.Scene = func(state *input.State, step float64) *window.SceneView {
+		// the time between frames by the input's clock: a window's step is the display's frame,
+		// which a window drawing faster or slower than the display does not keep
+		now := state.Time()
+		seconds := step
+		if !last.IsZero() {
+			seconds = min(now.Sub(last).Seconds(), 0.1)
+		}
+		last = now
+		played.Update(seconds, state)
+		view := &window.SceneView{World: played.World()}
+		if camera, found := played.MainCamera(); found {
+			view.Camera = camera.View()
+		} else {
+			view.Camera = CameraAt(fallback, defaultCamera)
+		}
+		return view
+	}
+	return window.Run(options, func(context *ui.Context) {})
+}
+
+// defaultCamera is how a scene with no camera is seen: in perspective, from a little above.
+var defaultCamera = scenes.Camera{Projection: scenes.Perspective}

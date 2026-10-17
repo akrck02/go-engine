@@ -1,6 +1,6 @@
 # Third-party notices
 
-A game exported from go-engine for the desktop carries this software besides the game.
+A game made with go-engine, built for the desktop, carries this software besides the game.
 
 | Software | What it is | License |
 |---|---|---|

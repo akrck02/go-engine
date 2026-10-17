@@ -1,16 +1,18 @@
 # go-engine
 
-A game maker: an editor (go-ui over go-renderer) that makes grid games and exports them for the
-desktop and the Nintendo 3DS. Start with `docs/README.md`.
+A game engine in Go with an editor (go-ui over go-renderer): games are Go modules whose scenes the
+editor arranges and whose code uses the engine's standard library; they build for the desktop and
+the Nintendo 3DS. Start with `docs/README.md`.
 
 ## Commands
 
 ```bash
 go vet ./...
 go test ./...                                   # no display needed
-go run ./cmd/go-engine [game.json]              # the editor; needs a display and OpenGL 4.1
-go run ./cmd/go-engine -capture editor.png      # one frame to PNG
-go run ./cmd/play [game.json]
+go run ./cmd/go-engine new <folder> [name]      # a new project
+go run ./cmd/go-engine [folder]                 # the editor; needs a display and OpenGL 4.1
+go run ./cmd/go-engine -capture editor.png <folder>   # one frame to PNG
+go run ./cmd/grid-maker [game.json]             # the grid prototype
 ```
 
 ## Rules
@@ -19,8 +21,8 @@ go run ./cmd/play [game.json]
   comments, tests, examples, docs or commit messages. The sample is made up (a lighthouse keeper).
 - **Readable code.** Full-word names, small functions, early returns, comments that say *why*.
 - **Tests with every change.** `go vet ./...` and `go test ./...` must pass before committing.
-- **The game package stays portable**: pure Go over `draw2d`, no window, no cgo, so it runs in
-  tests, on the desktop and under TinyGo on the 3DS.
+- **What games use stays portable**: `engine`, `space`, `anim`, `scenes` and `shapes` build under
+  TinyGo for the 3DS; no cgo, no `os` file system (games read their embedded files).
 - **Use the author's libraries.** Drawing, windows and input go through go-renderer and go-ui;
   what they lack is added there (on a `feature/` branch, with the author's permission), not here.
 - **Docs live in `docs/`**, updated in the same commit as the behaviour they describe.

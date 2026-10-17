@@ -1,0 +1,310 @@
+package engine
+
+import (
+	"fmt"
+	"io/fs"
+	"math"
+	"path"
+
+	"github.com/akrck02/go-renderer/graphics"
+	"github.com/akrck02/go-renderer/loaders"
+	"github.com/akrck02/go-renderer/models"
+	"github.com/akrck02/go-renderer/scene"
+
+	"github.com/akrck02/go-engine/anim"
+	"github.com/akrck02/go-engine/scenes"
+	"github.com/akrck02/go-engine/shapes"
+	"github.com/akrck02/go-engine/space"
+)
+
+// Scene is a scene loaded from its file: a tree of nodes under a root, and what go-renderer draws
+// of it.
+type Scene struct {
+	Name string
+	Sky  string // the background colour, "#rrggbb"; empty for a daylight sky
+	Root *Node
+
+	// Editing shows what only the editor shows: a marker for cameras and empty nodes.
+	Editing bool
+	// Animate runs the scene's tweens; the engine moves it on every frame.
+	Animate anim.Player
+
+	world     *scene.Scene
+	assets    *assets
+	materials map[string]*scene.Material
+	helpers   map[string]*scene.Mesh
+	clock     float64
+	started   bool
+
+	pendingStarts []startOf // behaviours made and not started yet
+}
+
+// Load reads a scene file from a project's files.
+func Load(files fs.FS, file string) (*Scene, error) {
+	data, err := fs.ReadFile(files, file)
+	if err != nil {
+		return nil, err
+	}
+	description, err := scenes.Read(data)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", file, err)
+	}
+	return Build(files, description)
+}
+
+// Build makes a scene from its description, finding its models in a project's files. A model
+// that cannot be read leaves its node showing nothing; the first such error is returned with the
+// scene.
+func Build(files fs.FS, description *scenes.Scene) (*Scene, error) {
+	built := NewScene(files)
+	built.Name = description.Name
+	built.SetSky(description.Sky)
+	var firstError error
+	for _, node := range description.Nodes {
+		child, err := built.buildNode(node)
+		if err != nil && firstError == nil {
+			firstError = err
+		}
+		built.Root.Add(child)
+	}
+	built.Sync()
+	return built, firstError
+}
+
+// NewScene is an empty scene, whose models come from a project's files.
+func NewScene(files fs.FS) *Scene {
+	built := &Scene{world: scene.New(), assets: newAssets(files), materials: map[string]*scene.Material{}, helpers: map[string]*scene.Mesh{}}
+	built.Root = newNode(built, "")
+	built.world.Nodes = []*scene.Node{built.Root.render}
+	return built
+}
+
+// NewNode makes a node of the scene from a description (and its children), not yet in the scene:
+// Add it to a node.
+func (owner *Scene) NewNode(description scenes.Node) (*Node, error) {
+	return owner.buildNode(description)
+}
+
+func (owner *Scene) buildNode(description scenes.Node) (*Node, error) {
+	node := newNode(owner, description.Name)
+	node.Transform = space.Transform{
+		Position: space.V(description.Position[0], description.Position[1], description.Position[2]),
+		Rotation: space.Euler{X: description.Rotation[0], Y: description.Rotation[1], Z: description.Rotation[2]}.Rotation(),
+		Scale:    space.V(description.Scale[0], description.Scale[1], description.Scale[2]),
+	}
+	node.Visible = !description.Hidden
+	node.shape, node.colour, node.model = description.Shape, description.Colour, description.Model
+	node.camera = description.Camera
+	node.Behaviours = append([]scenes.Behaviour(nil), description.Behaviours...)
+	var firstError error
+	if node.model != "" {
+		firstError = node.rebuildModel()
+		if node.helper == nil && node.geometry == nil {
+			node.rebuild()
+		}
+	} else {
+		node.rebuild()
+	}
+	for _, childDescription := range description.Children {
+		child, err := owner.buildNode(childDescription)
+		if err != nil && firstError == nil {
+			firstError = err
+		}
+		node.Add(child)
+	}
+	return node, firstError
+}
+
+// Describe writes the scene back as its file keeps it.
+func (owner *Scene) Describe() *scenes.Scene {
+	description := &scenes.Scene{Name: owner.Name, Sky: owner.Sky}
+	for _, child := range owner.Root.children {
+		description.Nodes = append(description.Nodes, child.Describe())
+	}
+	return description
+}
+
+// Describe writes a node, and its children, as a scene file keeps them.
+func (node *Node) Describe() scenes.Node {
+	angles := node.Transform.Euler()
+	description := scenes.Node{
+		Name:     node.Name,
+		Position: [3]float64{node.Transform.Position.X, node.Transform.Position.Y, node.Transform.Position.Z},
+		Rotation: [3]float64{rounded(angles.X), rounded(angles.Y), rounded(angles.Z)},
+		Scale:    [3]float64{node.Transform.Scale.X, node.Transform.Scale.Y, node.Transform.Scale.Z},
+		Hidden:   !node.Visible,
+		Shape:    node.shape, Colour: node.colour, Model: node.model, Camera: node.camera,
+		Behaviours: append([]scenes.Behaviour(nil), node.Behaviours...),
+	}
+	for _, child := range node.children {
+		description.Children = append(description.Children, child.Describe())
+	}
+	return description
+}
+
+// rounded drops the last digits that turning angles into a rotation and back leaves behind.
+func rounded(degrees float64) float64 { return math.Round(degrees*1e6)/1e6 + 0 } // + 0 turns -0 into 0
+
+// Find finds a node by its path from the root, as "Car/Wheel".
+func (owner *Scene) Find(path string) (*Node, bool) { return owner.Root.Find(path) }
+
+// SetSky sets the background colour ("" for a daylight sky).
+func (owner *Scene) SetSky(colour string) {
+	owner.Sky = colour
+	environment := scene.DefaultEnvironment()
+	if colour != "" {
+		if tint, valid := scene.ColorFromHex(colour); valid {
+			environment.SkyZenith, environment.SkyHorizon, environment.FogColor = tint, tint, tint
+			environment.Sky = &scene.Sky{}
+		}
+	}
+	owner.world.Environment = environment
+}
+
+// World is what go-renderer draws, transforms brought up to date.
+func (owner *Scene) World() *scene.Scene { return owner.world }
+
+// Sync brings what go-renderer draws up to date with the nodes' transforms.
+func (owner *Scene) Sync() { owner.Root.sync() }
+
+// Time is the seconds the scene has been playing.
+func (owner *Scene) Time() float64 { return owner.clock }
+
+// material is the shared material of a colour.
+func (owner *Scene) material(colour string) *scene.Material {
+	if colour == "" {
+		colour = "#c8c8c8"
+	}
+	if material, found := owner.materials[colour]; found {
+		return material
+	}
+	tint, valid := scene.ColorFromHex(colour)
+	if !valid {
+		tint = graphics.Vec4{0.8, 0.8, 0.8, 1}
+	}
+	material := &scene.Material{Name: colour, Kind: scene.KindLit, BaseColor: tint}
+	owner.materials[colour] = material
+	return material
+}
+
+// helperFor is the marker the editor shows for a node with nothing else to show: a small dark box
+// for a camera, a small sphere for an empty node.
+func (owner *Scene) helperFor(node *Node) *scene.Node {
+	if node.geometry != nil {
+		return nil
+	}
+	kind, colour, size := "empty", graphics.Vec4{0.95, 0.6, 0.1, 1}, float32(0.25)
+	shape := "sphere"
+	if node.camera != nil {
+		kind, colour, size, shape = "camera", graphics.Vec4{0.15, 0.15, 0.2, 1}, 0.4, "cube"
+	}
+	mesh, found := owner.helpers[kind]
+	if !found {
+		mesh = shapes.Mesh(shape, &scene.Material{Name: kind, Kind: scene.KindUnlit, BaseColor: colour})
+		owner.helpers[kind] = mesh
+	}
+	helper := &scene.Node{Name: kind, Mesh: mesh, Hidden: !owner.Editing,
+		Transform: graphics.Scale(graphics.Vec4{size, size, size, 0})}
+	return helper
+}
+
+// MainCamera is the camera the scene is seen through: the first marked Main, or the first camera.
+func (owner *Scene) MainCamera() (*Node, bool) {
+	var first, main *Node
+	owner.Root.Walk(func(node *Node) bool {
+		if node.camera == nil || main != nil {
+			return main == nil
+		}
+		if first == nil {
+			first = node
+		}
+		if node.camera.Main {
+			main = node
+		}
+		return true
+	})
+	if main != nil {
+		return main, true
+	}
+	return first, first != nil
+}
+
+// View is what a camera node sees, as go-renderer's camera.
+func (node *Node) View() models.Camera {
+	world := node.World()
+	settings := scenes.Camera{Projection: scenes.Perspective}
+	if node.camera != nil {
+		settings = *node.camera
+	}
+	if settings.Projection == scenes.Isometric {
+		// the classic angle down, whatever way round the camera was turned
+		yaw := world.Euler().Y
+		world.Rotation = space.Euler{X: scenes.IsometricAngles[0], Y: yaw}.Rotation()
+	}
+	return CameraAt(world, settings)
+}
+
+// CameraAt is go-renderer's camera for a camera placed at a transform with some settings.
+func CameraAt(world space.Transform, settings scenes.Camera) models.Camera {
+	position := world.Position
+	target := position.Add(world.Forward())
+	up := world.Up()
+	view := models.Camera{
+		Position: graphics.Vec4{float32(position.X), float32(position.Y), float32(position.Z), 1},
+		Target:   graphics.Vec4{float32(target.X), float32(target.Y), float32(target.Z), 1},
+		Up:       graphics.Vec4{float32(up.X), float32(up.Y), float32(up.Z), 0},
+		Near:     0.05,
+		Far:      2000,
+	}
+	switch settings.Projection {
+	case scenes.Orthographic, scenes.Isometric:
+		view.OrthographicHeight = float32(settings.Height)
+		if view.OrthographicHeight <= 0 {
+			view.OrthographicHeight = 10
+		}
+		view.Near = -1000 // an orthographic camera sees what is behind it as well
+	default:
+		fieldOfView := settings.FieldOfView
+		if fieldOfView <= 0 {
+			fieldOfView = 45
+		}
+		view.FieldOfView = space.Radians(fieldOfView)
+	}
+	return view
+}
+
+// assets reads a project's models, once each.
+type assets struct {
+	files  fs.FS
+	models map[string]*scene.Scene
+}
+
+func newAssets(files fs.FS) *assets {
+	return &assets{files: files, models: map[string]*scene.Scene{}}
+}
+
+func (library *assets) model(file string) (*scene.Scene, error) {
+	if model, found := library.models[file]; found {
+		return model, nil
+	}
+	if library.files == nil {
+		return nil, fmt.Errorf("model %s: the scene has no files", file)
+	}
+	if path.Ext(file) != ".glb" {
+		return nil, fmt.Errorf("model %s: only .glb models are read for now", file)
+	}
+	data, err := fs.ReadFile(library.files, file)
+	if err != nil {
+		return nil, err
+	}
+	model, err := loaders.ParseSceneGLB(data)
+	if err != nil {
+		return nil, fmt.Errorf("model %s: %w", file, err)
+	}
+	library.models[file] = model
+	return model, nil
+}
+
+// Forget makes the scene read a model again the next time a node shows it: after the file
+// changed.
+func (owner *Scene) Forget(model string) { delete(owner.assets.models, model) }

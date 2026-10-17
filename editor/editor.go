@@ -1,84 +1,83 @@
-// Package editor is go-engine's editor: a window where a game is made, scene by scene, by painting
-// things of its kinds on a grid, and played on the spot. This file holds what the editor does;
-// view.go describes its window with go-ui.
+// Package editor is go-engine's editor: a window over a project's scene, in 3D, where its nodes
+// are added, chosen with the mouse, moved, turned and scaled, given models from the project's
+// assets and the behaviours its Go code defines, and the game is played and built. This file holds
+// what the editor does; view.go draws its window with go-ui and viewport.go its 3D view.
 package editor
 
 import (
-	"errors"
 	"fmt"
-	"os"
+	"os/exec"
 	"strconv"
 	"strings"
+	"sync"
 
-	"github.com/akrck02/go-engine/game"
-	"github.com/akrck02/go-engine/player"
+	"github.com/akrck02/go-engine/engine"
+	"github.com/akrck02/go-engine/project"
+	"github.com/akrck02/go-engine/scenes"
+	"github.com/akrck02/go-engine/space"
 )
 
-// Editor is a game being made.
+// Editor is a project open in the editor, and the scene shown.
 type Editor struct {
-	Game  *game.Game
-	Path  string // where the game is kept, as JSON
-	Saved bool   // nothing changed since it was opened or saved
+	Project   *project.Project
+	SceneFile string
+	Scene     *engine.Scene
+	Selected  *engine.Node
+	Saved     bool
 
-	scene   int    // the scene shown
-	brush   string // the kind painted; "" paints nothing (the eraser)
-	kind    int    // the kind shown in the inspector
-	playing *player.Session
+	Message string
+	Failed  bool
 
-	Message string // the last thing the editor has to say: saved, exported, an error
-	Failed  bool   // the message is an error
+	behaviours []project.BehaviourInfo // what the project's code defines, read again on demand
 
-	// the inspector's fields, kept while they are typed in
-	kindName  string
-	sceneName string
+	running  bool      // building or playing the game
+	playing  *exec.Cmd // the game, while it plays
+	stopping bool      // Stop was asked: the game's end is no failure
+	output   *outputTail
+	events   chan func(editor *Editor)
+	// Wake asks the window for a frame, when background work has something to show.
+	Wake func()
 }
 
-// New edits a game kept at a path (which need not exist yet).
-func New(edited *game.Game, path string) *Editor {
-	editor := &Editor{Game: edited, Path: path, Saved: true}
-	editor.chooseKind(0)
-	editor.chooseScene(0)
-	if len(edited.Kinds) > 0 {
-		editor.brush = edited.Kinds[0].Name
-	}
-	return editor
-}
-
-// Open reads a game from a file, or starts the sample there if there is no file yet.
-func Open(path string) (*Editor, error) {
-	data, err := os.ReadFile(path)
-	if errors.Is(err, os.ErrNotExist) {
-		editor := New(game.Sample(), path)
-		editor.Saved = false
-		editor.say("A new game: the sample, to start from", false)
-		return editor, nil
-	}
-	if err != nil {
+// Open opens a project at its start scene.
+func Open(opened *project.Project) (*Editor, error) {
+	editor := &Editor{Project: opened, events: make(chan func(editor *Editor), 16)}
+	if err := editor.OpenScene(opened.Settings.StartScene); err != nil {
 		return nil, err
 	}
-	opened, err := game.Read(data)
-	if err != nil {
-		return nil, fmt.Errorf("%s: %w", path, err)
-	}
-	return New(opened, path), nil
+	editor.ReadBehaviours()
+	return editor, nil
 }
 
-// Save writes the game to its path.
-func (editor *Editor) Save() error {
-	if err := editor.Game.Check(); err != nil {
-		editor.say(err.Error(), true)
+// OpenScene shows another scene of the project.
+func (editor *Editor) OpenScene(file string) error {
+	description, err := editor.Project.ReadScene(file)
+	if err != nil {
 		return err
 	}
-	data, err := editor.Game.Marshal()
-	if err == nil {
-		err = os.WriteFile(editor.Path, data, 0o644)
+	built, err := engine.Build(editor.Project.Files(), description)
+	if built == nil {
+		return err
 	}
+	built.Editing = true
+	built.Sync()
+	editor.Scene, editor.SceneFile, editor.Selected, editor.Saved = built, file, nil, true
 	if err != nil {
+		editor.say(err.Error(), true)
+	} else {
+		editor.say("Opened "+file, false)
+	}
+	return nil
+}
+
+// Save writes the scene shown to its file.
+func (editor *Editor) Save() error {
+	if err := editor.Project.WriteScene(editor.SceneFile, editor.Scene.Describe()); err != nil {
 		editor.say(err.Error(), true)
 		return err
 	}
 	editor.Saved = true
-	editor.say("Saved to "+editor.Path, false)
+	editor.say("Saved "+editor.SceneFile, false)
 	return nil
 }
 
@@ -87,167 +86,417 @@ func (editor *Editor) say(message string, failed bool) {
 	editor.Message, editor.Failed = strings.Join(strings.Fields(message), " "), failed
 }
 
-func (editor *Editor) changed() { editor.Saved = false }
+// Changed marks the scene as changed since it was saved.
+func (editor *Editor) Changed() { editor.Saved = false }
 
-// Scene is the scene shown.
-func (editor *Editor) Scene() *game.Scene { return &editor.Game.Scenes[editor.scene] }
+// Select chooses a node (nil for none).
+func (editor *Editor) Select(node *engine.Node) { editor.Selected = node }
 
-// SceneIndex is the scene shown, from 0.
-func (editor *Editor) SceneIndex() int { return editor.scene }
+// Kinds of node the editor adds.
+var Kinds = []string{"Empty", "Cube", "Sphere", "Plane", "Cylinder", "Camera"}
 
-func (editor *Editor) chooseScene(index int) {
-	editor.scene = min(max(index, 0), len(editor.Game.Scenes)-1)
-	editor.sceneName = editor.Scene().Name
-}
-
-// Kind is the kind shown in the inspector, if the game has any.
-func (editor *Editor) Kind() (*game.Kind, bool) {
-	if editor.kind < 0 || editor.kind >= len(editor.Game.Kinds) {
-		return nil, false
-	}
-	return &editor.Game.Kinds[editor.kind], true
-}
-
-func (editor *Editor) chooseKind(index int) {
-	editor.kind = index
-	if kind, found := editor.Kind(); found {
-		editor.kindName = kind.Name
-	}
-}
-
-// Brush is the kind painted, or "" for the eraser.
-func (editor *Editor) Brush() string { return editor.brush }
-
-// ChooseBrush paints with a kind (and shows it in the inspector), or erases with "".
-func (editor *Editor) ChooseBrush(name string) {
-	editor.brush = name
-	for index, kind := range editor.Game.Kinds {
-		if kind.Name == name {
-			editor.chooseKind(index)
+// Add adds a node of a kind ("Cube", "Camera"…) under the selected node's parent, after it (or at
+// the end of the scene), and selects it.
+func (editor *Editor) Add(kind string) *engine.Node {
+	description := scenes.NewNode(kind)
+	switch kind {
+	case "Empty":
+	case "Camera":
+		description.Position, description.Rotation = [3]float64{0, 3, 7}, [3]float64{-20, 0, 0}
+		description.Camera = &scenes.Camera{Projection: scenes.Perspective, FieldOfView: 50}
+	default:
+		description.Shape, description.Colour = strings.ToLower(kind), "#c8c8c8"
+		if kind != "Plane" {
+			description.Position[1] = 0.5 // standing on the ground, not half in it
 		}
 	}
+	return editor.place(description)
 }
 
-// Paint puts the brush's kind in a cell of the scene shown, or empties it with the eraser.
-func (editor *Editor) Paint(column, row int) {
-	scene := editor.Scene()
-	index, occupied := scene.ThingAt(column, row)
-	if editor.brush == "" {
-		if occupied {
-			scene.Erase(column, row)
-			editor.changed()
+// AddModel adds a node showing one of the project's models, and selects it.
+func (editor *Editor) AddModel(model string) *engine.Node {
+	base := model[strings.LastIndex(model, "/")+1:]
+	base = strings.TrimSuffix(base, base[strings.LastIndex(base, "."):])
+	description := scenes.NewNode(base)
+	description.Model = model
+	return editor.place(description)
+}
+
+func (editor *Editor) place(description scenes.Node) *engine.Node {
+	parent, at := editor.Scene.Root, len(editor.Scene.Root.Children())
+	if selected := editor.Selected; selected != nil {
+		parent, at = selected.Parent(), selected.Index()+1
+	}
+	description.Name = uniqueName(parent, description.Name)
+	node, err := editor.Scene.NewNode(description)
+	if err != nil {
+		editor.say(err.Error(), true)
+	}
+	parent.Insert(node, at)
+	editor.Scene.Sync()
+	editor.Select(node)
+	editor.Changed()
+	return node
+}
+
+// Duplicate copies the selected node, and what hangs from it, beside it.
+func (editor *Editor) Duplicate() {
+	selected := editor.Selected
+	if selected == nil {
+		return
+	}
+	description := selected.Describe()
+	description.Name = uniqueName(selected.Parent(), description.Name)
+	node, _ := editor.Scene.NewNode(description)
+	selected.Parent().Insert(node, selected.Index()+1)
+	editor.Scene.Sync()
+	editor.Select(node)
+	editor.Changed()
+}
+
+// Delete removes the selected node and what hangs from it.
+func (editor *Editor) Delete() {
+	selected := editor.Selected
+	if selected == nil {
+		return
+	}
+	parent, index := selected.Parent(), selected.Index()
+	selected.Remove()
+	editor.Selected = nil
+	if siblings := parent.Children(); len(siblings) > 0 {
+		editor.Select(siblings[min(index, len(siblings)-1)])
+	} else if parent != editor.Scene.Root {
+		editor.Select(parent)
+	}
+	editor.Changed()
+}
+
+// MoveUp and MoveDown move the selected node among its siblings.
+func (editor *Editor) MoveUp()   { editor.moveAmongSiblings(-1) }
+func (editor *Editor) MoveDown() { editor.moveAmongSiblings(1) }
+
+func (editor *Editor) moveAmongSiblings(by int) {
+	selected := editor.Selected
+	if selected == nil {
+		return
+	}
+	to := selected.Index() + by
+	if to < 0 || to >= len(selected.Parent().Children()) {
+		return
+	}
+	selected.Parent().Insert(selected, to)
+	editor.Changed()
+}
+
+// Nest hangs the selected node from the sibling before it, keeping where it is in the world.
+func (editor *Editor) Nest() {
+	selected := editor.Selected
+	if selected == nil || selected.Index() == 0 {
+		return
+	}
+	editor.reparent(selected, selected.Parent().Children()[selected.Index()-1])
+}
+
+// Unnest hangs the selected node from its grandparent, after its parent, keeping where it is.
+func (editor *Editor) Unnest() {
+	selected := editor.Selected
+	if selected == nil || selected.Parent() == editor.Scene.Root {
+		return
+	}
+	parent := selected.Parent()
+	editor.reparent(selected, parent.Parent())
+	parent.Parent().Insert(selected, parent.Index()+1)
+}
+
+// reparent hangs a node from another, keeping where it is in the world.
+func (editor *Editor) reparent(node, parent *engine.Node) {
+	world := node.World()
+	node.Name = uniqueNameExcept(parent, node.Name, node)
+	parent.Add(node)
+	parentWorld := parent.World()
+	if parent == editor.Scene.Root {
+		parentWorld = space.NewTransform()
+	}
+	node.Transform = space.Transform{
+		Position: parentWorld.Local(world.Position),
+		Rotation: parentWorld.Rotation.Inverse().Mul(world.Rotation).Normalized(),
+		Scale:    space.V(divide(world.Scale.X, parentWorld.Scale.X), divide(world.Scale.Y, parentWorld.Scale.Y), divide(world.Scale.Z, parentWorld.Scale.Z)),
+	}
+	editor.Scene.Sync()
+	editor.Changed()
+}
+
+func divide(value, by float64) float64 {
+	if by == 0 {
+		return value
+	}
+	return value / by
+}
+
+// Rename gives the selected node a name, if no sibling has it; it tells whether it could.
+func (editor *Editor) Rename(name string) bool {
+	selected := editor.Selected
+	name = strings.TrimSpace(name)
+	if selected == nil || name == "" || strings.Contains(name, "/") {
+		return false
+	}
+	for _, sibling := range selected.Parent().Children() {
+		if sibling != selected && sibling.Name == name {
+			return false
 		}
-		return
 	}
-	if occupied && scene.Things[index].Kind == editor.brush {
-		return // already painted: dragging over it changes nothing
-	}
-	scene.Place(editor.brush, column, row)
-	editor.changed()
-}
-
-// AddScene adds an empty scene after the one shown, the same size, and shows it.
-func (editor *Editor) AddScene() {
-	shown := editor.Scene()
-	added := game.Scene{Name: editor.unusedSceneName(), Width: shown.Width, Height: shown.Height, Background: shown.Background}
-	at := editor.scene + 1
-	editor.Game.Scenes = append(editor.Game.Scenes[:at], append([]game.Scene{added}, editor.Game.Scenes[at:]...)...)
-	editor.chooseScene(at)
-	editor.changed()
-}
-
-// RemoveScene removes the scene shown; the last one stays.
-func (editor *Editor) RemoveScene() {
-	if len(editor.Game.Scenes) <= 1 {
-		editor.say("A game needs a scene", true)
-		return
-	}
-	editor.Game.Scenes = append(editor.Game.Scenes[:editor.scene], editor.Game.Scenes[editor.scene+1:]...)
-	editor.chooseScene(editor.scene)
-	editor.changed()
-}
-
-// MoveScene moves the scene shown earlier (-1) or later (+1) in the game.
-func (editor *Editor) MoveScene(by int) {
-	to := editor.scene + by
-	if to < 0 || to >= len(editor.Game.Scenes) {
-		return
-	}
-	scenes := editor.Game.Scenes
-	scenes[editor.scene], scenes[to] = scenes[to], scenes[editor.scene]
-	editor.chooseScene(to)
-	editor.changed()
-}
-
-// AddKind adds a kind that does nothing yet, and paints with it.
-func (editor *Editor) AddKind() {
-	name := editor.unusedKindName()
-	editor.Game.Kinds = append(editor.Game.Kinds, game.Kind{Name: name, Colour: "#8d99ae", Shape: game.Rounded})
-	editor.ChooseBrush(name)
-	editor.changed()
-}
-
-// RemoveKind removes the kind shown, and its things from every scene.
-func (editor *Editor) RemoveKind() {
-	kind, found := editor.Kind()
-	if !found {
-		return
-	}
-	name := kind.Name
-	editor.Game.RemoveKind(name)
-	if editor.brush == name {
-		editor.brush = ""
-	}
-	editor.chooseKind(min(editor.kind, len(editor.Game.Kinds)-1))
-	editor.changed()
-}
-
-// RenameKind renames the kind shown, if the name is free; it tells whether it could.
-func (editor *Editor) RenameKind(name string) bool {
-	kind, found := editor.Kind()
-	if !found {
-		return false
-	}
-	from := kind.Name
-	if !editor.Game.RenameKind(from, name) {
-		return false
-	}
-	if editor.brush == from {
-		editor.brush = name
-	}
-	editor.changed()
+	selected.Name = name
+	editor.Changed()
 	return true
 }
 
-func (editor *Editor) unusedKindName() string {
-	for number := len(editor.Game.Kinds) + 1; ; number++ {
-		name := "Kind " + strconv.Itoa(number)
-		if _, taken := editor.Game.Kind(name); !taken {
-			return name
+// uniqueName is a name for a new node under a parent: the name itself, or with a number.
+func uniqueName(parent *engine.Node, name string) string { return uniqueNameExcept(parent, name, nil) }
+
+func uniqueNameExcept(parent *engine.Node, name string, except *engine.Node) string {
+	taken := map[string]bool{}
+	for _, child := range parent.Children() {
+		if child != except {
+			taken[child.Name] = true
+		}
+	}
+	if !taken[name] {
+		return name
+	}
+	base := strings.TrimRight(name, " 0123456789")
+	for number := 2; ; number++ {
+		candidate := base + " " + strconv.Itoa(number)
+		if !taken[candidate] {
+			return candidate
 		}
 	}
 }
 
-func (editor *Editor) unusedSceneName() string {
-	return "Scene " + strconv.Itoa(len(editor.Game.Scenes)+1)
+// Pick finds the node a ray from the camera meets first: the one whose box it enters nearest.
+func (editor *Editor) Pick(origin, direction space.Vec3) (*engine.Node, bool) {
+	var nearest *engine.Node
+	best := 1e300
+	editor.Scene.Root.Walk(func(node *engine.Node) bool {
+		if node == editor.Scene.Root {
+			return true
+		}
+		if !node.Visible {
+			return false
+		}
+		box := node.Bounds()
+		if box.IsEmpty() {
+			return true
+		}
+		if distance, hit := box.Hit(origin, direction); hit && distance < best {
+			nearest, best = node, distance
+		}
+		return true
+	})
+	return nearest, nearest != nil
 }
 
-// Playing is the game being played, while it is.
-func (editor *Editor) Playing() (*player.Session, bool) { return editor.playing, editor.playing != nil }
+// MoveTo puts a node at a point of the world, wherever it hangs from.
+func (editor *Editor) MoveTo(node *engine.Node, world space.Vec3) {
+	parent := node.Parent()
+	if parent == nil || parent == editor.Scene.Root {
+		node.Transform.Position = world
+	} else {
+		node.Transform.Position = parent.World().Local(world)
+	}
+	editor.Scene.Sync()
+	editor.Changed()
+}
 
-// Play plays the game from the scene shown.
-func (editor *Editor) Play() {
-	if err := editor.Game.Check(); err != nil {
+// Import copies a model into the project and places it in the scene.
+func (editor *Editor) Import(source string) {
+	model, err := editor.Project.Import(source)
+	if err != nil {
 		editor.say(err.Error(), true)
 		return
 	}
-	editor.playing = player.NewSession(editor.Game)
-	editor.playing.World.Start(editor.scene)
-	editor.say("Playing: arrows walk, R starts the scene again", false)
+	editor.Scene.Forget(model)
+	editor.AddModel(model)
+	editor.say("Imported "+model, false)
 }
 
-// Stop goes back to editing.
+// Behaviours are the behaviours the project's code defines, as last read.
+func (editor *Editor) Behaviours() []project.BehaviourInfo { return editor.behaviours }
+
+// ReadBehaviours reads the project's code again for its behaviours: after it was edited.
+func (editor *Editor) ReadBehaviours() { editor.behaviours = editor.Project.Behaviours() }
+
+// BehaviourInfo finds what the code says of a behaviour.
+func (editor *Editor) BehaviourInfo(name string) (project.BehaviourInfo, bool) {
+	for _, info := range editor.behaviours {
+		if info.Name == name {
+			return info, true
+		}
+	}
+	return project.BehaviourInfo{}, false
+}
+
+// AttachBehaviour gives the selected node a behaviour of the project's, its fields empty.
+func (editor *Editor) AttachBehaviour(name string) {
+	if editor.Selected == nil || name == "" {
+		return
+	}
+	editor.Selected.Behaviours = append(editor.Selected.Behaviours, scenes.Behaviour{Name: name, Fields: map[string]any{}})
+	editor.Changed()
+}
+
+// DetachBehaviour takes a behaviour off the selected node.
+func (editor *Editor) DetachBehaviour(index int) {
+	if editor.Selected == nil || index < 0 || index >= len(editor.Selected.Behaviours) {
+		return
+	}
+	behaviours := editor.Selected.Behaviours
+	editor.Selected.Behaviours = append(behaviours[:index], behaviours[index+1:]...)
+	editor.Changed()
+}
+
+// FieldValue reads a field as typed in the inspector: a number, true or false, or else text.
+func FieldValue(typed string) any {
+	typed = strings.TrimSpace(typed)
+	if number, err := strconv.ParseFloat(typed, 64); err == nil {
+		return number
+	}
+	if typed == "true" || typed == "false" {
+		return typed == "true"
+	}
+	return typed
+}
+
+// FieldText writes a field's value for the inspector.
+func FieldText(value any) string {
+	switch typed := value.(type) {
+	case nil:
+		return ""
+	case float64:
+		return strconv.FormatFloat(typed, 'g', -1, 64)
+	case string:
+		return typed
+	}
+	return fmt.Sprint(value)
+}
+
+// Play saves the scene, builds the game and runs it, in the background: what happens arrives
+// through Events. Stop ends it.
+func (editor *Editor) Play() {
+	if editor.running {
+		return
+	}
+	if !editor.Saved && editor.Save() != nil {
+		return
+	}
+	editor.running = true
+	editor.output = &outputTail{}
+	editor.say("Building the game…", false)
+	go func() {
+		command, err := editor.Project.PlayCommand()
+		if err != nil {
+			editor.send(func(editor *Editor) { editor.running = false; editor.say("The game did not build: "+err.Error(), true) })
+			return
+		}
+		command.Stdout, command.Stderr = editor.output, editor.output
+		if err := command.Start(); err != nil {
+			editor.send(func(editor *Editor) { editor.running = false; editor.say(err.Error(), true) })
+			return
+		}
+		editor.send(func(editor *Editor) { editor.playing = command; editor.say("Playing", false) })
+		err = command.Wait()
+		editor.send(func(editor *Editor) {
+			editor.running, editor.playing = false, nil
+			if editor.stopping {
+				editor.stopping = false
+				editor.say("Stopped the game", false)
+				return
+			}
+			if last := editor.output.Last(); err != nil && last != "" {
+				editor.say("The game ended: "+last, true)
+				return
+			}
+			editor.say("The game ended", false)
+		})
+	}()
+}
+
+// Stop ends the game that is playing.
 func (editor *Editor) Stop() {
-	editor.playing = nil
-	editor.say("", false)
+	if editor.playing != nil && editor.playing.Process != nil {
+		editor.stopping = true
+		editor.playing.Process.Kill()
+	}
+}
+
+// Running tells whether the game is building or playing.
+func (editor *Editor) Running() bool { return editor.running }
+
+// Run runs a task in the background (a build), saying when it starts and how it ends.
+func (editor *Editor) Run(starting string, task func() (string, error)) {
+	if editor.running {
+		return
+	}
+	editor.running = true
+	editor.say(starting, false)
+	go func() {
+		done, err := task()
+		editor.send(func(editor *Editor) {
+			editor.running = false
+			if err != nil {
+				editor.say(err.Error(), true)
+				return
+			}
+			editor.say(done, false)
+		})
+	}()
+}
+
+// send hands a change to the editor's goroutine: the window's, which applies it in TakeEvents.
+func (editor *Editor) send(change func(editor *Editor)) {
+	editor.events <- change
+	if editor.Wake != nil {
+		editor.Wake()
+	}
+}
+
+// TakeEvents applies what background work sent since the last frame.
+func (editor *Editor) TakeEvents() {
+	for {
+		select {
+		case change := <-editor.events:
+			change(editor)
+		default:
+			return
+		}
+	}
+}
+
+// outputTail keeps the last lines a program printed.
+type outputTail struct {
+	mutex sync.Mutex
+	lines []string
+}
+
+func (tail *outputTail) Write(data []byte) (int, error) {
+	tail.mutex.Lock()
+	defer tail.mutex.Unlock()
+	for _, line := range strings.Split(strings.TrimRight(string(data), "\n"), "\n") {
+		if strings.TrimSpace(line) != "" {
+			tail.lines = append(tail.lines, line)
+		}
+	}
+	if len(tail.lines) > 200 {
+		tail.lines = tail.lines[len(tail.lines)-200:]
+	}
+	return len(data), nil
+}
+
+// Last is the last line printed.
+func (tail *outputTail) Last() string {
+	tail.mutex.Lock()
+	defer tail.mutex.Unlock()
+	if len(tail.lines) == 0 {
+		return ""
+	}
+	return tail.lines[len(tail.lines)-1]
 }

@@ -3,34 +3,32 @@
 > **Note:** this project was written with an AI assistant and is pending thorough review. See the
 > [AI disclosure](#ai-disclosure).
 
-A small game maker in Go: an editor where a game is made scene by scene, by painting things on a
-grid and saying what each kind of thing does, played on the spot and exported as a program for the
-desktop or the **Nintendo 3DS**. It is built on the author's own libraries:
-[go-renderer](https://github.com/akrck02/go-renderer) draws,
-[go-ui](https://github.com/akrck02/go-ui) is the editor's window and the games' interface, and
-[tinygo-3ds](https://github.com/akrck02/tinygo-3ds) builds for the console, as
-[go-3ds](https://github.com/akrck02/go-3ds) does.
+A game engine in Go, with an editor, for 2D, 3D and isometric games on the desktop and the
+**Nintendo 3DS**. A game is an ordinary Go module: the editor arranges its scenes and imports its
+models, and the game's code, written in Zed, Neovim, Visual Studio Code or any editor that speaks
+Go, moves them through a small standard library (`engine`, `space`, `anim`). It is built on the
+author's own libraries: [go-renderer](https://github.com/akrck02/go-renderer) draws,
+[go-ui](https://github.com/akrck02/go-ui) is the editor's window, and
+[tinygo-3ds](https://github.com/akrck02/tinygo-3ds) builds for the console.
 
 <p align="center">
-  <img alt="The editor: scenes and kinds on the left, a scene of walls, crates, oil and a lantern in the middle, the kind's inspector on the right" src="docs/images/editor.png" width="760">
+  <img alt="The editor: the scene's nodes on the left, a house imported from a .glb chosen in the 3D view, the inspector on the right" src="docs/images/editor.png" width="760">
 </p>
 
 ```bash
-go run ./cmd/go-engine            # edit game.json here (a new one starts from the sample)
-go run ./cmd/go-engine my.json
-go run ./cmd/play my.json         # play a game
+go run ./cmd/go-engine new ~/games/harbour "Harbour lights"
+go run ./cmd/go-engine ~/games/harbour
 go test ./...
 ```
 
-**Status: a minimum viable product** (October 2026): grid games of one player, walls, things to
-push, to collect, to avoid and a goal; scenes played in order. A larger design comes next.
-Everything is in [docs/](docs/README.md).
+**Status:** early (October 2026): an editable 3D scene, imported `.glb` models, the coordinates
+and scales, behaviours in Go, play and build for the desktop and the 3DS. Everything is in
+[docs/](docs/README.md).
 
 ## License
 
-MIT, in [LICENSE](LICENSE). An exported program carries other software too; its notices are
-written next to it ([export/notices-desktop.md](export/notices-desktop.md),
-[export/notices-3ds.md](export/notices-3ds.md)).
+MIT, in [LICENSE](LICENSE). A built game carries other software too; its notices are written
+next to it (see [internal/notices](internal/notices)).
 
 ## AI disclosure
 

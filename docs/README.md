@@ -1,86 +1,130 @@
 # 🎮 go-engine
 
-go-engine makes small games on a grid: a player who walks a cell at a time, and things around them
-that each do something. This page explains what a game is, how the editor makes one, and how it
-becomes a program.
+go-engine is a game engine in Go for 2D, 3D and isometric games, with an editor. A game is an
+ordinary Go module: the editor arranges its scenes and imports its assets, and the game's own
+code, written in any editor that speaks Go (Zed, Neovim, Visual Studio Code, GoLand…), moves what
+is in them through a small standard library.
 
-## A game
-
-A game is a JSON file: a **title**, its **kinds** of things and its **scenes**.
-
-| | What it is |
+| Page | What it covers |
 |---|---|
-| **Kind** | A kind of thing: a name, a colour, a shape (square, rounded, circle, small) and an icon from [Lucide](https://lucide.dev), and what it does |
-| **Scene** | A grid of 3 to 48 cells a side, with a background colour and things placed in its cells, one per cell |
-| **Thing** | A kind in a cell |
+| This page | A project, the editor, the standard library, coordinates |
+| [grid.md](grid.md) | The first prototype, a maker of grid games, kept while the engine grows |
 
-What a kind does, and a kind may do several of these at once:
+## A project
 
-| Behaviour | In play |
+```bash
+go run ./cmd/go-engine new ~/games/harbour "Harbour lights"   # make one
+go run ./cmd/go-engine ~/games/harbour                        # edit it
+cd ~/games/harbour && go run .                                # play it, as the editor's Play does
+```
+
+| File | What it is |
 |---|---|
-| Player | Walks with the arrows (the cross on the 3DS); the first one placed is the player |
-| Solid | Nothing walks into it |
-| Pushable | The player pushes it one cell, if the cell beyond is free |
-| Collectable | Taken when the player steps on it |
-| Goal | Ends the scene once everything collectable is taken; the last scene's goal wins the game |
-| Hazard | Starts the scene again |
+| `engine.json` | The project's name, the scene it starts in, and the code editor to open (`codeEditor`) |
+| `scenes/*.scene.json` | The scenes, as the editor writes them: readable, and kind to version control |
+| `assets/models/*.glb` | Imported models |
+| `main.go` | Embeds the project's files, registers the behaviours, runs the engine |
+| `spin.go` | A first behaviour: how the code reaches a scene |
+| `.vscode/launch.json`, `.zed/tasks.json` | "Play" from Visual Studio Code and Zed; in Neovim, `:!go run .` |
 
-The scenes are played in order. Holding an arrow walks: a step at once, then one every 0.15
-seconds after a short wait. R starts the scene again.
+The project's `go.mod` builds against the go-engine the editor came from, so gopls finds the
+engine's code and its documentation as for any other module.
 
 ## The editor
 
 <p align="center">
-  <img alt="The editor while playing: the scene's name, steps and things collected over the scene, Stop in the toolbar" src="images/playing.png" width="760">
+  <img alt="The editor: the scene's nodes and the assets on the left, a house imported from a .glb chosen in the 3D view with an orange box around it, the inspector on the right with its transform" src="images/editor.png" width="820">
 </p>
 
 | Where | What |
 |---|---|
-| Toolbar | The game's title, **Save** (Ctrl+S), **Play** / **Stop** (Escape), and the exports |
-| Left | The scenes (add, remove, move earlier or later) and the kinds: choosing one paints with it; the eraser empties cells |
-| Middle | The scene: press and drag to paint cells with the chosen kind |
-| Right | The inspector: the scene (name, size, background) or the kind (name, colour, shape, icon, what it does) |
-| Bottom | What the editor last did, and whether the game is saved |
+| Toolbar | The scene (and new ones), **Save** (Ctrl+S), **Play**/**Stop**, **Code** (opens the project in the code editor), **Build** for this computer or the Nintendo 3DS |
+| Left | The scene's nodes as a tree: add (empty, cube, sphere, plane, cylinder, camera), duplicate (Ctrl+D), delete, reorder, hang a node from the one above or take it out. Below, the project's models: click one to place it; import a `.glb` from its path |
+| Middle | The 3D view: drag to turn, right-drag to pan, scroll to zoom; click a node to choose it, drag the chosen one to move it over the ground; F frames it. Perspective, orthographic or isometric |
+| Right | The inspector: name, transform, shape and colour, model, camera, and behaviours with their fields |
 
-**Play** plays the game from the scene shown, in the middle of the editor, and **Stop** goes back
-to editing it as it was.
-
-## Exporting
-
-**Desktop** and **3DS** write the game's program into `exports/` next to the game's file, in a
-folder of each target's: the program, its notices (the licenses of what it carries), and in
-`source/` the small Go program that was built, which reads the game it embeds and plays it.
-
-| Target | Built with | Needs |
-|---|---|---|
-| Desktop | Go | Go and a C compiler (go-renderer opens the window with GLFW and OpenGL) |
-| Nintendo 3DS | TinyGo, `-target=nintendo3ds` | [tinygo-3ds](https://github.com/akrck02/tinygo-3ds) (set `$TINYGO` if it is not `tinygo` on the path) and devkitPro's 3DS libraries |
-
-The program is built against the go-engine source the editor was built from, so the editor must
-run from a build of this repository (`go run` or `go build` here).
+**Play** saves the scene, builds the game with Go and runs it in its own window; its output shows
+in the status line. **Build** writes the program into `build/`, with `THIRD_PARTY_NOTICES.md`
+beside it (for the 3DS it needs [tinygo-3ds](https://github.com/akrck02/tinygo-3ds); set
+`$TINYGO` if it is not on the path).
 
 <p align="center">
-  <img alt="An exported game in a 3DS emulator: the scene on the top screen, the scene's name, steps and a Restart button on the bottom one" src="images/3ds.png" width="320">
+  <img alt="The same scene played: in a window on the desktop, and on a 3DS emulator's top screen" src="images/playing.png" width="560">
+  <img alt="" src="images/3ds.png" width="240">
 </p>
 
-On the 3DS the scene is on the top screen and the bar on the bottom one, which can be touched; the
-cross walks and START ends the program. Copy the `.3dsx` to `/3ds/` on the SD card and open it from
-the Homebrew Launcher.
+## Coordinates and scale
 
-## How it is made
-
-| Package | What it holds |
+| | |
 |---|---|
-| `game` | The game's description, its rules (`World`), the walking pace (`Walker`) and its drawing into a `draw2d` list; pure Go, tested |
-| `player` | A game played in a go-ui window: the same code on the desktop and on the 3DS (`nintendo3ds.go` puts the scene on the top screen) |
-| `editor` | The editor's operations (`editor.go`, tested) and its window (`view.go`) |
-| `export` | Writing and building an exported program |
-| `cmd/go-engine`, `cmd/play` | The editor and the player |
+| Unit | One unit is a metre (`space.Metre`, `space.Centimetre`) |
+| Axes | Y up; X to the right; Z towards whoever looks: right-handed, as glTF and go-renderer |
+| Forward | A node with no rotation faces `space.Forward`, -Z; a camera looks that way |
+| Rotation | In degrees, as `space.Euler{X, Y, Z}`: X tilts (pitch), Y turns (yaw), Z rolls; applied roll, pitch, then yaw, so yaw is always around the world's vertical. Positive turns are counter-clockwise looking down the axis |
+| Scale | Times the node's own size, per axis; shapes are a metre across, models keep the size they were made at |
+| Parents | A node's transform is relative to its parent; `node.World()` is where it is in the world |
+
+The grid in the editor has one-metre cells, darker every five, and the axes in their colours: X
+red, Y green, Z blue.
+
+<p align="center">
+  <img alt="The editor's view in isometric: the house and the cube from the classic angle" src="images/editor-isometric.png" width="560">
+</p>
+
+**Isometric** is an orthographic camera looking down 35.264° from 45° round, so the three axes
+look the same length; a camera node set to isometric keeps that angle and may only turn round.
+**Orthographic** has no perspective at all, for side and top views. Both see a height of the world
+in metres, set on the camera.
+
+## The standard library
+
+| Package | What it is for |
+|---|---|
+| `engine` | The running game: `Node` (transform, children, `Find("Car/Wheel")`, `World()`, `Bounds()`), `Scene`, behaviours, `Context` (the node, the frame's `Delta`, `Time`, `Input`), cameras, `Run` |
+| `space` | `Vec3`, `Quat`, `Euler`, `Transform` (`Turn`, `Move`, `LookAt`, `Forward`, `Then`, `Local`), `Box` and rays |
+| `anim` | Tweens: `Float`, `Vec3`, `Rotation` and `Wait`, with easings, delays, loops, ping-pong and `Then` |
+| `scenes` | The scene files: read, write, check |
+| `shapes` | Meshes of the shapes, a metre across |
+| `project` | A project's folder: create, import, build, open in a code editor, find its behaviours |
+
+### Behaviours
+
+A behaviour is a struct of the game's with a `Start` or an `Update` method (or both), registered
+in `main.go`. The scene file fills its exported fields by their JSON names; the editor reads the
+project's code (without building it) to offer its behaviours and their fields, with their types
+and comments.
+
+```go
+// Bob moves its node up and down, and turns it towards the camera when it starts.
+type Bob struct {
+	Height  float64 `json:"height"`  // metres
+	Seconds float64 `json:"seconds"` // for one bob
+}
+
+func (bob *Bob) Start(context *engine.Context) {
+	if camera, found := context.Find("Camera"); found {
+		context.Node.Transform.LookAt(camera.Transform.Position)
+	}
+	top := context.Node.Transform.Position.Add(space.V(0, bob.Height, 0))
+	context.Scene.Animate.Vec3(&context.Node.Transform.Position, top, bob.Seconds/2, anim.EaseInOut).PingPong()
+}
+
+func (bob *Bob) Update(context *engine.Context) {
+	if context.Input.Pressed(engine.KeySpace) {
+		context.Node.Visible = !context.Node.Visible
+	}
+	context.Node.Transform.Move(context.Input.Move().Scale(3 * context.Delta)) // arrows, WASD, the 3DS's pad
+}
+```
+
+`engine.Behaviour[Bob](node)` finds a node's behaviour from another; `node.Attach(&Bob{…})` adds
+one while the game runs.
 
 ## Not yet
 
-- Sprites of one's own (kinds are a shape, a colour and an icon), sound and music
-  ([go-sound](https://github.com/akrck02/go-sound)), text in scenes.
-- Undo, and choosing where to save from a dialog (the path is given on the command line).
-- More than one player, things that move on their own, rules of one's own.
-- Saving progress on the console.
+- 2D: sprites, tile maps and the grid prototype's games on the engine.
+- Textures and materials from the models (they are drawn with their vertex colours), lights of
+  one's own, sound (go-sound), a game's own interface (go-ui).
+- Moving, turning and scaling with handles in the view (the inspector and dragging over the ground
+  do it now), undo, dragging nodes in the tree, a file dialog for importing.
+- Changing scenes while playing; physics and collisions.

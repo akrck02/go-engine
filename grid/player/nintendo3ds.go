@@ -11,7 +11,7 @@ import (
 	ui "github.com/akrck02/go-ui"
 	"github.com/akrck02/go-ui/window"
 
-	"github.com/akrck02/go-engine/game"
+	"github.com/akrck02/go-engine/grid/game"
 )
 
 // The top screen's size: the scene is drawn there, over an empty 3D scene, as go-ui's window
