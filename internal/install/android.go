@@ -2,6 +2,7 @@ package install
 
 import (
 	"encoding/xml"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -65,9 +66,13 @@ func (installer Installer) AndroidLicence() (string, error) {
 }
 
 // AndroidSDK installs Android's command-line tools and, with them, the packages a game's build
-// needs, once the person accepted the licence AndroidLicence gives; it returns the SDK's folder
-// (the NDK is in it).
-func (installer Installer) AndroidSDK() (string, error) {
+// needs; accepted is the licence's text the person read and accepted (AndroidLicence). sdkmanager
+// asks for each licence the packages need: it is told yes only for that one, word for word, and
+// no for any other. It returns the SDK's folder (the NDK is in it).
+func (installer Installer) AndroidSDK(accepted string) (string, error) {
+	if strings.TrimSpace(accepted) == "" {
+		return "", failure.Wrap(LicenceNotAccepted, androidLicence, nil)
+	}
 	java, err := findJava()
 	if err != nil {
 		return "", err
@@ -78,14 +83,11 @@ func (installer Installer) AndroidSDK() (string, error) {
 		return "", err
 	}
 	environment := append(os.Environ(), "JAVA_HOME="+filepath.Dir(filepath.Dir(java)))
-	answers := strings.Repeat("y\n", len(AndroidPackages)+1) // the licence was accepted in the editor
-	if err := runAndroidManager(manager, environment, answers, "--sdk_root="+sdk, "--licenses"); err != nil {
+	answers := licenceAnswers{licence: androidLicence, text: accepted}
+	if err := runAndroidManager(manager, environment, &answers, append([]string{"--sdk_root=" + sdk}, AndroidPackages...)...); err != nil {
 		return "", err
 	}
-	if err := runAndroidManager(manager, environment, "", append([]string{"--sdk_root=" + sdk}, AndroidPackages...)...); err != nil {
-		return "", err
-	}
-	return sdk, nil
+	return sdk, answers.refusal()
 }
 
 // androidRepository downloads and reads Google's repository index.
@@ -160,14 +162,26 @@ func (repository androidRepository) archiveFor(path, system string) (androidArch
 	return androidArchive{}, failure.Wrap(NoBuildForSystem, path+", on "+system, nil)
 }
 
-// runAndroidManager runs sdkmanager, giving it answers to type.
-func runAndroidManager(manager string, environment []string, answers string, arguments ...string) error {
+// runAndroidManager runs sdkmanager, answering the licences it asks about as it asks.
+func runAndroidManager(manager string, environment []string, answers *licenceAnswers, arguments ...string) error {
 	command := exec.Command(manager, arguments...)
 	command.Env = environment
-	command.Stdin = strings.NewReader(answers)
-	output, err := command.CombinedOutput()
+	output, err := command.StdoutPipe()
 	if err != nil {
-		lines := strings.Split(strings.TrimSpace(string(output)), "\n")
+		return failure.Wrap(AndroidManagerFailed, manager, err)
+	}
+	command.Stderr = command.Stdout // one stream: its questions and its errors, in order
+	input, err := command.StdinPipe()
+	if err != nil {
+		return failure.Wrap(AndroidManagerFailed, manager, err)
+	}
+	if err := command.Start(); err != nil {
+		return failure.Wrap(AndroidManagerFailed, manager, err)
+	}
+	said := answers.answer(output, input)
+	input.Close() // no more answers: a question left would read the end of its input as no
+	if err := command.Wait(); err != nil {
+		lines := strings.Split(strings.TrimSpace(said), "\n")
 		return failure.Wrap(AndroidManagerFailed, strings.Join(lines[max(len(lines)-8, 0):], "\n"), err)
 	}
 	return nil
@@ -203,4 +217,59 @@ func resolved(program string) string {
 func fileExists(path string) bool {
 	_, err := os.Stat(path)
 	return err == nil
+}
+
+// licenceAnswers answers sdkmanager's licence questions: yes to one licence, when the text it
+// shows is the text the person accepted; no to the others, which are remembered.
+type licenceAnswers struct {
+	licence, text string
+	refused       []string
+}
+
+// licenceQuestion is how sdkmanager asks, after a licence's name ("License …:") and text.
+const licenceQuestion = "Accept? (y/N):"
+
+// answer reads what sdkmanager says until it ends, answering each question; it returns what it
+// said, for errors.
+func (answers *licenceAnswers) answer(output io.Reader, input io.Writer) string {
+	var said, waiting strings.Builder
+	buffer := make([]byte, 4096)
+	for {
+		read, err := output.Read(buffer)
+		said.Write(buffer[:read])
+		waiting.Write(buffer[:read])
+		if question := waiting.String(); strings.Contains(question, licenceQuestion) {
+			asked, rest, _ := strings.Cut(question, licenceQuestion)
+			io.WriteString(input, answers.reply(asked)) // a closed input ends sdkmanager, whose error is read
+			waiting.Reset()
+			waiting.WriteString(rest)
+		}
+		if err != nil {
+			return said.String()
+		}
+	}
+}
+
+// reply is the answer to one question, from what sdkmanager said before it.
+func (answers *licenceAnswers) reply(asked string) string {
+	start := strings.LastIndex(asked, "License ")
+	if start < 0 {
+		answers.refused = append(answers.refused, "a licence with no name")
+		return "n\n"
+	}
+	name, text, _ := strings.Cut(asked[start+len("License "):], ":")
+	text = strings.ReplaceAll(text, "---------------------------------------", "")
+	if name != answers.licence || strings.Join(strings.Fields(text), " ") != strings.Join(strings.Fields(answers.text), " ") {
+		answers.refused = append(answers.refused, name)
+		return "n\n"
+	}
+	return "y\n"
+}
+
+// refusal is LicenceNotAccepted when a licence was answered no.
+func (answers *licenceAnswers) refusal() error {
+	if len(answers.refused) == 0 {
+		return nil
+	}
+	return failure.Wrap(LicenceNotAccepted, strings.Join(answers.refused, ", "), nil)
 }

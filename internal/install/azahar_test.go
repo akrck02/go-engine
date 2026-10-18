@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -52,8 +53,18 @@ func TestAzaharThatDoesNotMatchItsDigestIsRemoved(test *testing.T) {
 	server := azaharServer(test, false)
 	defer server.Close()
 	installer := Installer{Folder: test.TempDir(), AzaharLatest: server.URL + "/latest", System: "linux-amd64"}
+	working := filepath.Join(installer.Folder, "azahar", "2100.1", "azahar.AppImage")
+	if err := os.MkdirAll(filepath.Dir(working), 0o755); err != nil {
+		test.Fatal(err)
+	}
+	if err := os.WriteFile(working, []byte("the one that works"), 0o755); err != nil {
+		test.Fatal(err)
+	}
 	if _, err := installer.Azahar(); !errors.Is(err, ChecksumWrong) {
 		test.Fatalf("an AppImage with another digest gives %v", err)
+	}
+	if read, _ := os.ReadFile(working); string(read) != "the one that works" {
+		test.Fatal("a download refused replaced the Azahar that worked")
 	}
 }
 

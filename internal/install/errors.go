@@ -10,6 +10,7 @@ var (
 	PathOutside          = failure.Define("install.path-outside", "the archive names a file outside the folder it unpacks into: it was not unpacked")
 	NoBuildForSystem     = failure.Define("install.no-build-for-system", "there is no build of this tool for this system to download")
 	JavaNotFound         = failure.Define("install.java-not-found", "Android's tools need Java: install a JDK (17 or newer, as Adoptium's Temurin) and set $JAVA_HOME")
+	LicenceNotAccepted   = failure.Define("install.licence-not-accepted", "a licence the packages need was not the one read and accepted: nothing was accepted for it")
 	AndroidManagerFailed = failure.Define("install.android-manager-failed", "Android's sdkmanager could not install the packages")
 	DataFolderNotFound   = failure.Define("install.data-folder-not-found", "the folder for the user's data could not be found")
 )

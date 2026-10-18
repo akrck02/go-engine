@@ -335,7 +335,7 @@ func (project *Project) OpenCode() (string, error) {
 		if !found {
 			return "", failure.Wrap(TerminalNotFound, words[0]+", "+project.Folder, nil)
 		}
-		words = append([]string{terminal, "-e"}, words...)
+		words = append(append([]string{terminal}, terminalArguments(terminal)...), words...)
 	}
 	command := exec.Command(words[0], append(words[1:], project.Folder)...)
 	command.Dir = project.Folder
@@ -352,18 +352,6 @@ func isTerminalEditor(program string) bool {
 		return true
 	}
 	return false
-}
-
-func findTerminal() (string, bool) {
-	for _, terminal := range []string{os.Getenv("TERMINAL"), "x-terminal-emulator", "kitty", "alacritty", "wezterm", "gnome-terminal", "konsole", "xterm"} {
-		if terminal == "" {
-			continue
-		}
-		if found, err := exec.LookPath(terminal); err == nil {
-			return found, true
-		}
-	}
-	return "", false
 }
 
 func writeFile(file string, data []byte) error {

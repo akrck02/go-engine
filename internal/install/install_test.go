@@ -162,3 +162,47 @@ func TestDevkitProIsInstalledWithItsOwnManager(test *testing.T) {
 		test.Fatalf("devkitPro is installed with %v", command)
 	}
 }
+
+func TestAChainOfLinksCannotLeadOutOfTheFolder(test *testing.T) {
+	folder := test.TempDir()
+	archive := filepath.Join(folder, "chain.tar.gz")
+	tarGzip(test, archive, []tar.Header{
+		{Name: "a/l", Linkname: ".", Typeflag: tar.TypeSymlink},
+		{Name: "a/l/m", Linkname: ".", Typeflag: tar.TypeSymlink},
+		{Name: "a/l/m/evil", Mode: 0o644, Typeflag: tar.TypeReg},
+	}, []string{"", "", "x"})
+	if err := Unpack(archive, filepath.Join(folder, "out")); !errors.Is(err, PathOutside) {
+		test.Fatalf("a file written through a link gives %v", err)
+	}
+	climbing := filepath.Join(folder, "climb.tar.gz")
+	tarGzip(test, climbing, []tar.Header{{Name: "a/up", Linkname: "b/../..", Typeflag: tar.TypeSymlink}}, []string{""})
+	if err := Unpack(climbing, filepath.Join(folder, "out2")); !errors.Is(err, PathOutside) {
+		test.Fatalf("a link that climbs gives %v", err)
+	}
+}
+
+func TestAZipKeepsTheLinksOfAMacApplication(test *testing.T) {
+	if runtime.GOOS == "windows" {
+		test.Skip("links need rights on Windows")
+	}
+	folder := test.TempDir()
+	var buffer bytes.Buffer
+	writer := zip.NewWriter(&buffer)
+	header := &zip.FileHeader{Name: "Lamp.app/Versions/Current"}
+	header.SetMode(os.ModeSymlink | 0o755)
+	link, _ := writer.CreateHeader(header)
+	link.Write([]byte("A"))
+	file, _ := writer.Create("Lamp.app/Versions/A/lamp")
+	file.Write([]byte("light"))
+	writer.Close()
+	archive := filepath.Join(folder, "lamp.zip")
+	if err := os.WriteFile(archive, buffer.Bytes(), 0o644); err != nil {
+		test.Fatal(err)
+	}
+	if err := Unpack(archive, filepath.Join(folder, "out")); err != nil {
+		test.Fatal(err)
+	}
+	if read, _ := os.ReadFile(filepath.Join(folder, "out", "Lamp.app", "Versions", "Current", "lamp")); string(read) != "light" {
+		test.Fatalf("through the link the file holds %q", read)
+	}
+}

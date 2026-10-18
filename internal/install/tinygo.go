@@ -60,13 +60,10 @@ func (installer Installer) TinyGo() (string, error) {
 
 // fetchAndUnpack downloads an archive, checks it, unpacks it into a folder and removes it.
 func (installer Installer) fetchAndUnpack(link, archive, algorithm, wanted, folder string) error {
-	if err := Download(link, archive, installer.Progress); err != nil {
+	if err := DownloadChecked(link, archive, algorithm, wanted, installer.Progress); err != nil {
 		return err
 	}
-	defer os.Remove(archive) // once unpacked, or refused, the archive is of no use
-	if err := Check(archive, algorithm, wanted); err != nil {
-		return err
-	}
+	defer os.Remove(archive) // once unpacked, the archive is of no use
 	return Unpack(archive, folder)
 }
 

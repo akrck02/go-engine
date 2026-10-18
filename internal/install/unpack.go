@@ -8,6 +8,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/akrck02/go-engine/failure"
@@ -31,14 +32,32 @@ func Unpack(archive, folder string) error {
 	return err
 }
 
-// inside is where a name of an archive goes in a folder, or PathOutside.
+// inside is where a name of an archive goes in a folder, or PathOutside: a name that climbs out,
+// or one under a link the archive made (a link to a folder could lead anywhere).
 func inside(folder, name string) (string, error) {
 	place := filepath.Join(folder, filepath.FromSlash(name))
 	relative, err := filepath.Rel(folder, place)
 	if err != nil || relative == ".." || strings.HasPrefix(relative, ".."+string(filepath.Separator)) || filepath.IsAbs(name) {
 		return "", failure.Wrap(PathOutside, name, nil)
 	}
+	for parent := filepath.Dir(place); parent != folder && len(parent) > len(folder); parent = filepath.Dir(parent) {
+		if details, err := os.Lstat(parent); err == nil && details.Mode()&fs.ModeSymlink != 0 {
+			return "", failure.Wrap(PathOutside, name+": under the link "+parent, nil)
+		}
+	}
 	return place, nil
+}
+
+// makeLink makes a link of an archive: one that stays beside it, never climbing up (..) nor
+// starting from the root, so it cannot lead out of the folder.
+func makeLink(place, name, target string) error {
+	if filepath.IsAbs(target) || strings.HasPrefix(target, "/") || slices.Contains(strings.Split(filepath.ToSlash(target), "/"), "..") {
+		return failure.Wrap(PathOutside, name+" → "+target, nil)
+	}
+	if err := os.MkdirAll(filepath.Dir(place), 0o755); err != nil {
+		return err
+	}
+	return os.Symlink(target, place)
 }
 
 // unpackZip unpacks a .zip.
@@ -65,14 +84,18 @@ func unpackZipEntry(entry *zip.File, folder string) error {
 	if entry.FileInfo().IsDir() {
 		return os.MkdirAll(place, 0o755)
 	}
-	if entry.Mode()&fs.ModeSymlink != 0 {
-		return failure.Wrap(PathOutside, entry.Name+": a link, which zips of tools do not hold", nil)
-	}
 	source, err := entry.Open()
 	if err != nil {
 		return err
 	}
 	defer source.Close()
+	if entry.Mode()&fs.ModeSymlink != 0 { // a Mac's .app holds them (Versions/Current)
+		target, err := io.ReadAll(io.LimitReader(source, linkLongest))
+		if err != nil {
+			return err
+		}
+		return makeLink(place, entry.Name, string(target))
+	}
 	return writeFile(place, source, entry.Mode())
 }
 
@@ -114,16 +137,13 @@ func unpackTarEntry(header *tar.Header, reader io.Reader, folder string) error {
 	case tar.TypeReg:
 		return writeFile(place, reader, header.FileInfo().Mode())
 	case tar.TypeSymlink:
-		if _, err := inside(folder, filepath.Join(filepath.Dir(header.Name), header.Linkname)); err != nil || filepath.IsAbs(header.Linkname) {
-			return failure.Wrap(PathOutside, header.Name+" → "+header.Linkname, nil)
-		}
-		if err := os.MkdirAll(filepath.Dir(place), 0o755); err != nil {
-			return err
-		}
-		return os.Symlink(header.Linkname, place)
+		return makeLink(place, header.Name, header.Linkname)
 	}
 	return nil // other kinds (devices, pipes) are not in tools' archives
 }
+
+// linkLongest is the longest a link's target in a zip may be, in bytes: a path, not a file.
+const linkLongest = 4096
 
 // writeFile writes a file of an archive, a program if the archive says so.
 func writeFile(place string, source io.Reader, mode fs.FileMode) error {

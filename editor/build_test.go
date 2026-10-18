@@ -176,3 +176,11 @@ func TestEveryToolThatCanBeInstalledIsOne(test *testing.T) {
 		test.Errorf("%d tools, %d can be installed", len(buildToolParts), len(toolInstalls))
 	}
 }
+
+func TestNothingIsInstalledForAndroidWithoutTheLicenceRead(test *testing.T) {
+	editor := open(test)
+	editor.AcceptAndroidLicence()
+	if _, _, _, busy := editor.Installing(); busy || editor.Running() {
+		test.Fatal("Android is installed with no licence read")
+	}
+}

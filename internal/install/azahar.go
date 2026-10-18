@@ -52,7 +52,7 @@ func (installer Installer) azaharRelease() (azaharRelease, error) {
 	if link == "" {
 		link = AzaharLatest
 	}
-	response, err := http.Get(link)
+	response, err := client.Get(link)
 	if err != nil {
 		return release, failure.Wrap(DownloadFailed, link, err)
 	}
@@ -87,11 +87,7 @@ func (installer Installer) installAzahar(link, name, wanted, tag string) (string
 	folder := filepath.Join(installer.Folder, "azahar", tag)
 	file := filepath.Join(folder, name)
 	if !strings.HasSuffix(name, ".zip") {
-		if err := Download(link, file, installer.Progress); err != nil {
-			return "", err
-		}
-		if err := Check(file, SHA256, wanted); err != nil {
-			os.Remove(file) // a file that is not the one published must not run
+		if err := DownloadChecked(link, file, SHA256, wanted, installer.Progress); err != nil {
 			return "", err
 		}
 		return file, os.Chmod(file, 0o755)

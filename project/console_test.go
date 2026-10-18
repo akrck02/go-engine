@@ -40,3 +40,18 @@ func TestACommandIsQuotedForTheShell(test *testing.T) {
 		test.Fatalf("the command is quoted as %s", quoted)
 	}
 }
+
+func TestEachTerminalIsToldTheProgramItsOwnWay(test *testing.T) {
+	cases := map[string]string{"/usr/bin/gnome-terminal": "--", "/usr/bin/wezterm": "start --", "/usr/bin/kitty": "", "/usr/bin/xterm": "-e", "/usr/bin/konsole": "-e"}
+	for terminal, wanted := range cases {
+		if got := strings.Join(terminalArguments(terminal), " "); got != wanted {
+			test.Errorf("%s is told %q, not %q", terminal, got, wanted)
+		}
+	}
+}
+
+func TestATextIsQuotedForAppleScript(test *testing.T) {
+	if quoted := appleScriptQuoted(`'it'\''s' "lamp"`); quoted != `'it'\\''s' \"lamp\"` {
+		test.Fatalf("the text is quoted as %s", quoted)
+	}
+}

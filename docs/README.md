@@ -66,6 +66,12 @@ the 3DS's address. Where each of these tools is (TinyGo, devkitPro, the emulator
 SDK and NDK) is set in Build's **Tools on this computer**, kept for every project in
 `go-engine/tools.json` of the user's configuration folder; a place set there (typed, or chosen
 with **Browse**) comes before the variables, and an empty one looks for the tool as above.
+**Install** beside each tool fetches it into `go-engine/` of the user's data folder and sets its
+place: TinyGo for the 3DS from [tinygo-3ds](https://github.com/akrck02/tinygo-3ds)'s releases,
+Azahar from its latest release (each checked against the checksum published), and the Android
+SDK with its NDK through Google's own tools, once its licence, shown in a sheet, is accepted (they
+need Java, a JDK 17 or newer). devkitPro is installed by its own installer, `dkp-pacman -S 3ds-dev`,
+in a terminal where it asks for the system's password; without it, Install opens devkitPro's guide.
 Project's **Import model** copies a `.glb` chosen the same way into `assets/models`.
 
 <p align="center">

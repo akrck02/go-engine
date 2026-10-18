@@ -18,7 +18,7 @@ onto their console or phone without leaving it.
 | R3 | **Install** beside TinyGo downloads the release for this system into the user's data folder, checks it against its checksum, and sets TinyGo's place | tests with a fake server: `a release is downloaded, checked and set`, `a release that does not match its checksum is refused` |
 | R4 | **Install** beside devkitPro runs devkitPro's own installer for the 3DS (`dkp-pacman -S 3ds-dev`) in a terminal, as it asks for the system's password; without dkp-pacman, it opens devkitPro's install guide | test of the command asked for; by hand on Linux |
 | R5 | **Install** beside the Android SDK downloads Google's command-line tools and, once the person has read and accepted Android's licences in the panel, installs platform-tools, build-tools, a platform and the NDK | tests with a fake server and a fake sdkmanager |
-| R6 | **Install** beside the 3DS emulator downloads Azahar's release for this system (Linux AppImage; the page on the others) | test with a fake server |
+| R6 | **Install** beside the 3DS emulator downloads Azahar's release for this system (the AppImage on Linux, the zip of its program on a Mac and Windows), checked by the SHA-256 GitHub gives | test with a fake server |
 | R7 | The panel shows each install's progress and what it said; installs run one at a time, and the builds wait | capture |
 
 ## Out of scope

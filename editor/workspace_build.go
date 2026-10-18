@@ -310,7 +310,7 @@ func (view *View) licenceSheet(context *ui.Context) {
 		editor.DeclineAndroidLicence()
 	}
 	if accepted {
-		editor.InstallAndroid()
+		editor.AcceptAndroidLicence()
 	}
 }
 

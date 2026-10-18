@@ -26,7 +26,12 @@ func androidServer(test *testing.T, calls string) *httptest.Server {
 	if err != nil {
 		test.Fatal(err)
 	}
-	entry.Write([]byte("#!/bin/sh\necho \"$@\" >> " + calls + "\ncat >> " + calls + "\n"))
+	script := "#!/bin/sh\necho \"$@\" >> " + calls + "\n" +
+		"printf 'License android-sdk-license:\\n---------------------------------------\\nUse the lighthouse\\nkindly.\\n---------------------------------------\\nAccept? (y/N): '\n" +
+		"read answer; echo \"sdk $answer\" >> " + calls + "\n" +
+		"printf 'License android-sdk-preview-license:\\nTry the new lamp.\\nAccept? (y/N): '\n" +
+		"read answer; echo \"preview $answer\" >> " + calls + "\n"
+	entry.Write([]byte(script))
 	writer.Close()
 	tools := buffer.Bytes()
 	sum := sha1.Sum(tools)
@@ -70,15 +75,15 @@ func TestAndroidsLicenceIsReadAndItsPackagesInstalled(test *testing.T) {
 	if licence, err := installer.AndroidLicence(); err != nil || licence != "Use the lighthouse kindly." {
 		test.Fatalf("the licence reads %q, %v", licence, err)
 	}
-	sdk, err := installer.AndroidSDK()
-	if err != nil {
-		test.Fatal(err)
+	licence, _ := installer.AndroidLicence()
+	sdk, err := installer.AndroidSDK(licence)
+	if !errors.Is(err, LicenceNotAccepted) {
+		test.Fatalf("a licence not read was not refused: %v", err)
 	}
 	said, _ := os.ReadFile(calls)
-	for _, wanted := range []string{"--sdk_root=" + sdk + " --licenses\ny\n", "--sdk_root=" + sdk + " " + strings.Join(AndroidPackages, " ")} {
-		if !strings.Contains(string(said), wanted) {
-			test.Errorf("sdkmanager was not asked %q; it was asked:\n%s", wanted, said)
-		}
+	wanted := "--sdk_root=" + sdk + " " + strings.Join(AndroidPackages, " ") + "\nsdk y\npreview n\n"
+	if string(said) != wanted {
+		test.Errorf("sdkmanager was answered:\n%s\nnot:\n%s", said, wanted)
 	}
 	if _, err := os.Stat(filepath.Join(sdk, "cmdline-tools", "latest", "bin", "sdkmanager")); err != nil {
 		test.Fatalf("the command-line tools are not where sdkmanager wants them: %v", err)
@@ -88,7 +93,7 @@ func TestAndroidsLicenceIsReadAndItsPackagesInstalled(test *testing.T) {
 func TestAndroidWithoutJavaIsSaidByItsCode(test *testing.T) {
 	test.Setenv("JAVA_HOME", "")
 	test.Setenv("PATH", test.TempDir())
-	if _, err := (Installer{Folder: test.TempDir()}).AndroidSDK(); !errors.Is(err, JavaNotFound) {
+	if _, err := (Installer{Folder: test.TempDir()}).AndroidSDK("a licence"); !errors.Is(err, JavaNotFound) {
 		test.Fatalf("no Java gives %v", err)
 	}
 }
@@ -110,5 +115,28 @@ func TestEachSystemGetsItsOwnCommandLineTools(test *testing.T) {
 	}
 	if _, err := repository.archiveFor(androidCommandLine, "plan9-386"); !errors.Is(err, NoBuildForSystem) {
 		test.Errorf("a system with no tools gives %v", err)
+	}
+}
+
+func TestNothingIsInstalledWithoutTheLicenceAccepted(test *testing.T) {
+	if _, err := (Installer{Folder: test.TempDir()}).AndroidSDK(" "); !errors.Is(err, LicenceNotAccepted) {
+		test.Fatalf("no licence accepted gives %v", err)
+	}
+}
+
+func TestOnlyTheLicenceReadIsAccepted(test *testing.T) {
+	answers := licenceAnswers{licence: androidLicence, text: "Use the lighthouse kindly."}
+	cases := []struct{ asked, reply string }{
+		{"License android-sdk-license:\n---------------------------------------\nUse the lighthouse\n  kindly.\n---------------------------------------\n", "y\n"},
+		{"License android-sdk-license:\nUse the lighthouse at night.\n", "n\n"},
+		{"License android-sdk-preview-license:\nUse the lighthouse kindly.\n", "n\n"},
+	}
+	for _, each := range cases {
+		if reply := answers.reply(each.asked); reply != each.reply {
+			test.Errorf("%q is answered %q", each.asked, reply)
+		}
+	}
+	if err := answers.refusal(); !errors.Is(err, LicenceNotAccepted) {
+		test.Errorf("licences answered no give %v", err)
 	}
 }
