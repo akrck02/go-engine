@@ -13,6 +13,16 @@ import (
 // a time: the frame its animation is on. A behaviour changes the animation with Play and the way
 // the sprite faces with FaceLeft; the engine moves every animation on, frame by frame.
 
+// Sheet is the sprite sheet the node's sprite is cut into, to edit in place; a sprite shown whole
+// has none.
+func (node *Node) Sheet() (*scenefile.SpriteSheet, bool) { return node.sheet, node.sheet != nil }
+
+// SetSheet cuts the node's sprite into a sheet's frames, or shows it whole again (nil).
+func (node *Node) SetSheet(sheet *scenefile.SpriteSheet) {
+	node.sheet = sheet
+	node.playing, node.playingFor = scenefile.Animation{}, 0
+}
+
 // Play starts an animation of the node's sheet by its name. The animation already playing goes on
 // where it is, so a behaviour may ask for "walk" every frame it walks. It tells whether the sheet
 // has the animation.

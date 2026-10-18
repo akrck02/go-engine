@@ -77,8 +77,11 @@ type Camera struct {
 	// keeps it right on it.
 	Smoothing float64 `json:"smoothing,omitempty"`
 	// Bounds keep a following camera's view inside a box of the world: its lowest x and y, then its
-	// highest. Without them, the scene's tile maps make the box.
+	// highest. Without them, the scene's tile maps make the box, open above unless Ceiling.
 	Bounds *[4]float64 `json:"bounds,omitempty"`
+	// Ceiling makes the top of the tile maps a limit too, as a cave's; without it, the sky above
+	// them stays open and the camera rises with what it follows.
+	Ceiling bool `json:"ceiling,omitempty"`
 }
 
 // Projection is how a camera flattens the world.

@@ -14,12 +14,17 @@ import (
 // followedLevel is a 2D scene at 16 pixels a metre (a tile a metre): a map 20 tiles wide and 6 high
 // from (0, 6) to (20, 0), a runner, and a camera seeing 4 metres that follows it with a smoothing.
 func followedLevel(test *testing.T, smoothing float64) *Scene {
+	return followedLevelWith(test, &scenefile.Camera{Projection: scenefile.Orthographic, Height: 4, Follow: "Runner", Smoothing: smoothing})
+}
+
+// followedLevelWith is followedLevel with a camera of its own.
+func followedLevelWith(test *testing.T, camera *scenefile.Camera) *Scene {
 	description := &scenefile.Scene{Name: "Followed", Mode: scenefile.Mode2D, PixelsPerMetre: 16, Nodes: []scenefile.Node{
 		{Name: "Ground", Position: [3]float64{0, 6, 0}, Scale: [3]float64{1, 1, 1}, Tiles: &scenefile.TileMap{
 			Tileset: "assets/tiles.png", TileSize: 16, Columns: 20, Rows: 6, Tiles: make([]int, 120)}},
 		{Name: "Runner", Position: [3]float64{5, 2, 0}, Scale: [3]float64{1, 1, 1}},
 		{Name: "Camera", Position: [3]float64{5, 2, 0}, Scale: [3]float64{1, 1, 1},
-			Camera: &scenefile.Camera{Projection: scenefile.Orthographic, Height: 4, Follow: "Runner", Smoothing: smoothing}},
+			Camera: camera},
 	}}
 	built, err := Build(fstest.MapFS{"assets/tiles.png": {Data: tilesetPicture()}}, description)
 	if err != nil {
@@ -45,6 +50,29 @@ func TestTheCameraFollowsItsTargetAndStopsAtTheLevelsEdge(test *testing.T) {
 	// the view is 4 metres high and, on a square screen, 4 wide: its centre stays 2 from each edge
 	if !camera.Transform.Position.Near(space.NewVector(18, 2, 0), 1e-9) {
 		test.Fatalf("at the level's corner the camera is at %v, not at (18, 2)", camera.Transform.Position)
+	}
+}
+
+func TestTheSkyAboveTheTileMapsStaysOpen(test *testing.T) {
+	level := followedLevel(test, 0)
+	runner, _ := level.Find("Runner")
+	camera, _ := level.Find("Camera")
+	runner.Transform.Position = space.NewVector(9, 20, 0) // far above the map, whose top is at 6
+	playFor(level, 0.1)
+	if !camera.Transform.Position.Near(space.NewVector(9, 20, 0), 1e-9) {
+		test.Fatalf("above the tile maps the camera is at %v, not on the runner", camera.Transform.Position)
+	}
+}
+
+func TestACeilingKeepsTheViewUnderTheTileMapsTop(test *testing.T) {
+	level := followedLevelWith(test, &scenefile.Camera{Projection: scenefile.Orthographic, Height: 4, Follow: "Runner", Ceiling: true})
+	runner, _ := level.Find("Runner")
+	camera, _ := level.Find("Camera")
+	runner.Transform.Position = space.NewVector(9, 20, 0)
+	playFor(level, 0.1)
+	// the map's top is at 6 and the view 4 high: its centre stays 2 under it
+	if !camera.Transform.Position.Near(space.NewVector(9, 4, 0), 1e-9) {
+		test.Fatalf("under a ceiling the camera is at %v, not at (9, 4)", camera.Transform.Position)
 	}
 }
 

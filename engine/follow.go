@@ -59,13 +59,20 @@ func catchUpShare(seconds, smoothing float64) float64 {
 	return 1 - math.Exp(-seconds/smoothing)
 }
 
-// cameraBounds is the box a camera's view stays inside: its own, or the tile maps' together.
+// cameraBounds is the box a camera's view stays inside: its own, or the tile maps' together, with
+// no top unless the camera has a ceiling.
 func (owner *Scene) cameraBounds(camera *Node) (space.Box, bool) {
 	if written := camera.camera.Bounds; written != nil {
 		return space.Box{Minimum: space.NewVector(written[0], written[1], 0), Maximum: space.NewVector(written[2], written[3], 0)}, true
 	}
 	box := tileMapsBounds(owner.Root, space.EmptyBox())
-	return box, !box.IsEmpty()
+	if box.IsEmpty() {
+		return box, false
+	}
+	if !camera.camera.Ceiling {
+		box.Maximum.Y = math.Inf(1)
+	}
+	return box, true
 }
 
 // tileMapsBounds grows a box by the tile maps under a node.

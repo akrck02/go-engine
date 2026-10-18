@@ -90,7 +90,8 @@ named animations (frames, frames per second, looping), and may face left (R4).
 - A behaviour with `Touched(context, other *Node)` hears when its node's trigger begins touching
   another body (R6).
 - A camera may follow a node, with a smoothing time, kept inside the level's bounds: the tile
-  maps' extent, or bounds of its own (R5).
+  maps' extent, or bounds of its own (R5). The tile maps bound the sides and the bottom; the sky
+  above stays open, so the camera rises with a jump, unless the camera has a ceiling (a cave).
 - `context.RestartScene()` and `context.ChangeScene(file)` let a game restart a level or go to the
   next, in a window, on the 3DS and in the editor's view (R6, R7).
 
@@ -120,7 +121,7 @@ levels painted with the tile tool. No behaviour of the demo reaches into the eng
   `the camera follows its target and stops at the level's edge`
 - [x] T8 — engine: `RestartScene` and `ChangeScene`, in the window and in the editor's view ·
   `engine/`, `editor/` · R6, R7 · test: `changing scene starts the new one`
-- [ ] T9 — editor: inspector sections for bodies, sprite sheets and cameras that follow · `editor/` ·
+- [x] T9 — editor: inspector sections for bodies, sprite sheets and cameras that follow · `editor/` ·
   R3–R5 · test: `a body set in the inspector is saved`
 - [ ] T10 — editor: the tile tool (choose, paint, erase) in the 2D view · `editor/` · R3 · test:
   `painting a tile and erasing it` (and played by hand)

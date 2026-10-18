@@ -24,6 +24,14 @@ type Toucher interface {
 // stands on the floor. A node without a body, or a scene not playing, has none.
 func (node *Node) Body() (*physics.Body, bool) { return node.physicsBody, node.physicsBody != nil }
 
+// BodySettings is the body the node is given in the scene file, to edit in place; a node without
+// one has none.
+func (node *Node) BodySettings() (*scenefile.Body, bool) { return node.body, node.body != nil }
+
+// SetBodySettings gives the node a body in its scene's physics, or takes it away (nil). The body
+// is made when the scene starts.
+func (node *Node) SetBodySettings(body *scenefile.Body) { node.body = body }
+
 // Physics is the scene's physics world while it plays; nil for a 3D scene, or one not started.
 func (owner *Scene) Physics() *physics.World { return owner.physics }
 

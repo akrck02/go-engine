@@ -128,6 +128,9 @@ func (view *View) nodeInspector(context *ui.Context, node *engine.Node) {
 	if settings, isCamera := node.Camera(); isCamera {
 		view.cameraInspector(context, node, settings)
 	}
+	if editor.Scene.Is2D() {
+		view.bodyInspector(context, node)
+	}
 	view.behaviourInspector(context, node)
 }
 
@@ -276,6 +279,9 @@ func (view *View) spriteInspector(context *ui.Context, node *engine.Node) {
 			editor.say(err.Error(), true)
 		}
 	}
+	if editor.Scene.Is2D() {
+		view.sheetInspector(context, node)
+	}
 }
 
 func (view *View) cameraInspector(context *ui.Context, node *engine.Node, settings *scenefile.Camera) {
@@ -285,6 +291,7 @@ func (view *View) cameraInspector(context *ui.Context, node *engine.Node, settin
 		settings.Projection = scenefile.Orthographic
 		view.heightSeenField(context, settings)
 		view.mainCameraCheckbox(context, settings)
+		view.followInspector(context, node, settings)
 		return
 	}
 	view.projectionTabs(context, node, settings)
