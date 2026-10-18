@@ -40,6 +40,7 @@ type projectView struct {
 	name     string
 	editor   string
 	android  string // the application id on Android; empty makes one from the name
+	console  string // the 3DS's address on the network; empty looks for it
 	start    int    // the start scene, by its place among the scenes
 }
 
@@ -331,12 +332,12 @@ func (view *View) usesList(context *ui.Context) {
 func (view *View) openSettings() {
 	settings := view.Editor.Project.Settings
 	view.project.settings, view.project.name, view.project.editor = true, settings.Name, settings.CodeEditor
-	view.project.android = settings.AndroidID
+	view.project.android, view.project.console = settings.AndroidID, settings.ConsoleAddress
 	view.project.start = max(0, indexOf(view.Editor.Project.Scenes(), settings.StartScene))
 }
 
-// settingsPanel changes the project's name, the scene it starts with, its code editor and its
-// application id on Android.
+// settingsPanel changes the project's name, the scene it starts with, its code editor, its
+// application id on Android and the 3DS's address.
 func (view *View) settingsPanel(context *ui.Context) {
 	editor := view.Editor
 	settings := &editor.Project.Settings
@@ -353,9 +354,11 @@ func (view *View) settingsPanel(context *ui.Context) {
 	context.TextField("Code editor", &view.project.editor)
 	context.Caption("Android application id, as io.example.game; empty is " + editor.Project.ApplicationID())
 	context.TextField("Android id", &view.project.android)
+	context.Caption("The 3DS's address, to send the game to; empty looks for it on the network")
+	context.TextField("Console address", &view.project.console)
 	if context.PrimaryIconButton(iconSave, "Save settings") {
 		settings.Name, settings.CodeEditor = strings.TrimSpace(view.project.name), strings.TrimSpace(view.project.editor)
-		settings.AndroidID = strings.TrimSpace(view.project.android)
+		settings.AndroidID, settings.ConsoleAddress = strings.TrimSpace(view.project.android), strings.TrimSpace(view.project.console)
 		if view.project.start < len(scenes) {
 			settings.StartScene = scenes[view.project.start]
 		}

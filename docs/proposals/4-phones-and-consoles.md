@@ -52,7 +52,7 @@ with different precisions); the fix is go-renderer's, committed with the author'
 - [x] T2 — touch buttons · `engine/` · R2 · test `a finger on a touch button holds its key`
 - [x] T3 — Android build and application id · `project/`, `editor/` · R3
 - [x] T4 — play on a device through adb · `project/`, `editor/` · R4
-- [ ] T5 — send to the 3DS, open in an emulator · `project/`, `editor/` · R5
+- [x] T5 — send to the 3DS, open in an emulator · `project/`, `editor/` · R5
 - [ ] T6 — Play's two 3DS screens · `editor/` · R6
 
 ## Result

@@ -605,6 +605,22 @@ func (editor *Editor) PlayOnDevice() {
 	editor.playWith(AndroidTarget, editor.Project.PlayOnAndroid, editor.Project.StopOnAndroid)
 }
 
+// PlayInEmulator builds the game for the 3DS and opens it in an emulator; Stop closes it.
+func (editor *Editor) PlayInEmulator() {
+	editor.playWith(ConsoleTarget, editor.Project.EmulatorCommand, nil)
+}
+
+// SendToConsole builds the game for the 3DS and sends it to the console's Homebrew Launcher, in
+// the background.
+func (editor *Editor) SendToConsole() {
+	editor.Run("Sending the game to the 3DS…", func() (string, error) {
+		if err := editor.Project.SendTo3DS(); err != nil {
+			return "", err
+		}
+		return "Sent the game to the 3DS", nil
+	})
+}
+
 // PlayingOn tells where the game plays now, when it does.
 func (editor *Editor) PlayingOn() (BuildTarget, bool) {
 	return editor.playedOn, editor.playing != nil

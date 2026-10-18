@@ -71,7 +71,7 @@ func (view *View) targetCard(context *ui.Context, target BuildTarget) {
 }
 
 // playButton plays the game where the target is, or stops it there: this computer in a window,
-// Android on the device adb sees.
+// the 3DS sent to the console or in an emulator, Android on the device adb sees.
 func (view *View) playButton(context *ui.Context, target BuildTarget) {
 	editor := view.Editor
 	if playedOn, playing := editor.PlayingOn(); playing && playedOn == target {
@@ -91,6 +91,17 @@ func (view *View) playButton(context *ui.Context, target BuildTarget) {
 			editor.PlayOnDevice()
 		}
 		context.Tooltip("Build, install and start the game on the phone or emulator adb sees, with its log here")
+	case ConsoleTarget:
+		if context.IconButton(iconSend, "Send") {
+			view.build.shown = target
+			editor.SendToConsole()
+		}
+		context.Tooltip("Build and send the game to the 3DS: open the Homebrew Launcher and press Y first")
+		if context.IconButton(iconInWindow, "Emulator") {
+			view.build.shown = target
+			editor.PlayInEmulator()
+		}
+		context.Tooltip("Build the game and open it in a 3DS emulator (Azahar or Citra)")
 	}
 }
 

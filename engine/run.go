@@ -25,6 +25,8 @@ type Settings struct {
 	// AndroidID is the game's application id on Android, as io.example.game; empty makes one from
 	// its name.
 	AndroidID string `json:"androidId,omitempty"`
+	// ConsoleAddress is the 3DS's address on the network, to send the game to; empty looks for it.
+	ConsoleAddress string `json:"consoleAddress,omitempty"`
 }
 
 // SettingsFile is the settings' file in a project.
