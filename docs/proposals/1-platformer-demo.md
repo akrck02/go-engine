@@ -97,8 +97,9 @@ named animations (frames, frames per second, looping), and may face left (R4).
 
 **The demo**, `examples/platformer/`: a project like any other (its `go.mod` points at the engine
 beside it). Behaviours `Player` (walk, jump with Space or A, animations, facing), `Coin`
-(collected when touched), `Spikes` (restart the level) and `Flag` (next level); three forest
-levels painted with the tile tool. No behaviour of the demo reaches into the engine's insides
+(collected when touched), `Hazard` (spikes and water: restart the level) and `Flag` (next level);
+three forest levels: the first two converted from the reference's `World.tscn` and `World2.tscn`
+(its third is a copy of the second), the third joining them into one wider than the screen. No behaviour of the demo reaches into the engine's insides
 (R8).
 
 ## Tasks
@@ -125,7 +126,7 @@ levels painted with the tile tool. No behaviour of the demo reaches into the eng
   R3–R5 · test: `a body set in the inspector is saved`
 - [x] T10 — editor: the tile tool (choose, paint, erase) in the 2D view · `editor/` · R3 · test:
   `painting a tile and erasing it` (and played by hand)
-- [ ] T11 — the demo: project, art, `Player`, `Coin`, `Spikes`, `Flag`, three levels ·
+- [x] T11 — the demo: project, art, `Player`, `Coin`, `Hazard`, `Flag`, three levels ·
   `examples/platformer/` · R1–R8 · played in the editor, in a window and on the 3DS emulator
 - [ ] T12 — check on the 3DS: build the demo with TinyGo and play it in the emulator; the author
   plays it on the console · R7

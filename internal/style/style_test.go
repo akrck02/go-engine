@@ -11,8 +11,9 @@ import (
 	"testing"
 )
 
-// allowedShortNames are the short names the guide allows: what everyone calls them.
-var allowedShortNames = map[string]bool{"err": true, "x": true, "y": true, "z": true, "ui": true, "_": true}
+// allowedShortNames are the short names the guide allows: what everyone calls them, and Go's own
+// init, which no other name can replace.
+var allowedShortNames = map[string]bool{"err": true, "x": true, "y": true, "z": true, "ui": true, "init": true, "_": true}
 
 // shortWords are English words of one or two letters: words, not abbreviations.
 var shortWords = map[string]bool{"at": true, "by": true, "to": true, "up": true, "is": true, "of": true, "in": true,

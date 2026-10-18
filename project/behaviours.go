@@ -11,14 +11,18 @@ import (
 	"strings"
 )
 
-// Behaviour is a behaviour the project's code defines: a struct type with a Start or an
-// Update method, as the editor offers it.
+// Behaviour is a behaviour the project's code defines: a struct type with one of the methods the
+// engine calls (behaviourMethods), as the editor offers it.
 type Behaviour struct {
 	Name   string
 	Doc    string // the type's comment, first sentence
 	File   string // where it is defined, in the project
 	Fields []Field
 }
+
+// behaviourMethods are the methods the engine calls on a behaviour: engine.Starter,
+// engine.Updater and engine.Toucher.
+var behaviourMethods = map[string]bool{"Start": true, "Update": true, "Touched": true}
 
 // Field is a field the scene can set: an exported field, by its JSON name.
 type Field struct {
@@ -47,7 +51,7 @@ func (project *Project) Behaviours() []Behaviour {
 				case *ast.GenDecl:
 					collectStructs(declared, relative, structs)
 				case *ast.FuncDecl:
-					if receiver := receiverType(declared); receiver != "" && (declared.Name.Name == "Update" || declared.Name.Name == "Start") {
+					if receiver := receiverType(declared); receiver != "" && behaviourMethods[declared.Name.Name] {
 						withMethods[receiver] = true
 					}
 				}

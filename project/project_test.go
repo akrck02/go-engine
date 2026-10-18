@@ -92,14 +92,19 @@ type Drift struct {
 
 func (drift *Drift) Start(context *engine.Context) {}
 
+// Bell only hears touches.
+type Bell struct{}
+
+func (bell *Bell) Touched(context *engine.Context, other *engine.Node) {}
+
 // NotABehaviour has no Start nor Update.
 type NotABehaviour struct{ Value int }
 `), 0o644)
 	found := created.Behaviours()
-	if len(found) != 2 || found[0].Name != "Drift" || found[1].Name != "Spin" {
+	if len(found) != 3 || found[0].Name != "Bell" || found[1].Name != "Drift" || found[2].Name != "Spin" {
 		test.Fatalf("behaviours: %+v", found)
 	}
-	drift := found[0]
+	drift := found[1]
 	if drift.Doc != "Drift moves a node slowly." || len(drift.Fields) != 2 || drift.Fields[0] != (Field{"speed", "float64", "metres a second"}) || drift.Fields[1].Name != "Label" {
 		test.Fatalf("drift: %+v", drift)
 	}

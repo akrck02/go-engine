@@ -1,0 +1,4 @@
+{
+	"name": "Platformer",
+	"startScene": "scenes/forest-1.scene.json"
+}

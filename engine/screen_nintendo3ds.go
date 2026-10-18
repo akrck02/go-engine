@@ -25,15 +25,15 @@ func drawOver(played *Scene, _ *input.State, flat *draw2d.List) {
 // interfaceFor is the bottom screen's interface: nothing yet.
 func interfaceFor(func() *Scene) func(context *ui.Context) { return func(*ui.Context) {} }
 
-// consoleKeys gives the game the cross as the arrow keys, read from the console itself: go-ui's
-// window lets its interface claim the arrows (to move between its controls), and a game's player
-// walks with them whatever the bottom screen shows.
+// consoleKeys gives the game the cross as the arrow keys and A as Space, read from the console
+// itself: go-ui's window lets its interface claim the arrows and A (to move between its controls
+// and press them), and a game's player walks and jumps with them whatever the bottom screen shows.
 func consoleKeys(state *input.State) {
 	held := ctr.ReadControls().Held
 	for _, mapping := range []struct {
 		button ctr.Buttons
 		key    input.Key
-	}{{ctr.ButtonUp, input.KeyUp}, {ctr.ButtonDown, input.KeyDown}, {ctr.ButtonLeft, input.KeyLeft}, {ctr.ButtonRight, input.KeyRight}} {
+	}{{ctr.ButtonUp, input.KeyUp}, {ctr.ButtonDown, input.KeyDown}, {ctr.ButtonLeft, input.KeyLeft}, {ctr.ButtonRight, input.KeyRight}, {ctr.ButtonA, input.KeySpace}} {
 		if down := held&mapping.button != 0; down != state.Down(mapping.key) {
 			state.SetKey(mapping.key, down)
 		}

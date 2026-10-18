@@ -19,6 +19,7 @@ Code, comments, names, error codes, commit messages and documentation are in Eng
   | `err` | the error a call returned, as all Go code names it |
   | `x`, `y`, `z` | the axes' own names, for a coordinate |
   | `ui` | the name of the go-ui package when it is imported |
+  | `init` | the function Go itself runs when a package loads; no other name works |
 
 - **Short English words are words**, not abbreviations: `at`, `by`, `to`, `up`, `is` are fine.
 - **Tests** call their `*testing.T` `test`, not `t`.
