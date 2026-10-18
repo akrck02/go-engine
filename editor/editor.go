@@ -666,6 +666,13 @@ func (tail *outputTail) Write(data []byte) (int, error) {
 	return len(data), nil
 }
 
+// Lines are the lines printed, oldest first.
+func (tail *outputTail) Lines() []string {
+	tail.mutex.Lock()
+	defer tail.mutex.Unlock()
+	return append([]string(nil), tail.lines...)
+}
+
 // Last is the last line printed.
 func (tail *outputTail) Last() string {
 	tail.mutex.Lock()

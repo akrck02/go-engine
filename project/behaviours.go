@@ -14,10 +14,11 @@ import (
 // Behaviour is a behaviour the project's code defines: a struct type with one of the methods the
 // engine calls (behaviourMethods), as the editor offers it.
 type Behaviour struct {
-	Name   string
-	Doc    string // the type's comment, first sentence
-	File   string // where it is defined, in the project
-	Fields []Field
+	Name    string
+	Doc     string // the type's comment, first sentence
+	File    string // where it is defined, in the project
+	Fields  []Field
+	Methods []string // the methods the engine calls that it has: Start, Update, Touched
 }
 
 // behaviourMethods are the methods the engine calls on a behaviour: engine.Starter,
@@ -42,7 +43,7 @@ func (project *Project) Behaviours() []Behaviour {
 		return nil
 	}
 	structs := map[string]*Behaviour{}
-	withMethods := map[string]bool{}
+	withMethods := map[string][]string{}
 	for _, parsed := range packages {
 		for path, file := range parsed.Files {
 			relative, _ := filepath.Rel(project.Folder, path)
@@ -52,7 +53,7 @@ func (project *Project) Behaviours() []Behaviour {
 					collectStructs(declared, relative, structs)
 				case *ast.FuncDecl:
 					if receiver := receiverType(declared); receiver != "" && behaviourMethods[declared.Name.Name] {
-						withMethods[receiver] = true
+						withMethods[receiver] = append(withMethods[receiver], declared.Name.Name)
 					}
 				}
 			}
@@ -60,7 +61,9 @@ func (project *Project) Behaviours() []Behaviour {
 	}
 	var found []Behaviour
 	for name, behaviour := range structs {
-		if withMethods[name] {
+		if methods := withMethods[name]; len(methods) > 0 {
+			sort.Strings(methods)
+			behaviour.Methods = methods
 			found = append(found, *behaviour)
 		}
 	}

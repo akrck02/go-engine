@@ -96,7 +96,7 @@ meanings share an icon.
   back`
 - [x] T6 — Project: thumbnails, folders, filters, preview with uses, scenes, settings · `editor/`,
   `project/` · R6 · tests: `an asset's uses are found in every scene`, `settings are saved`
-- [ ] T7 — Code: behaviours, fields, uses, missing ones, rebuild and open with output · `editor/`
+- [x] T7 — Code: behaviours, fields, uses, missing ones, rebuild and open with output · `editor/`
   · R7 · tests: `a behaviour's uses are listed by scene`, `a missing behaviour is reported`
 - [ ] T8 — Build: target cards, results kept per target, logs · `editor/`, `project/` · R8 · test:
   `a build's result is kept per target`

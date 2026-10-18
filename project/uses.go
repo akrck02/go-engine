@@ -76,3 +76,30 @@ func cutFrom(file string, data []byte) string {
 	}
 	return ""
 }
+
+// BehavioursUsed are the behaviours the project's scenes give their nodes, by name, with the
+// nodes that have each.
+func (project *Project) BehavioursUsed() map[string][]Use {
+	used := map[string][]Use{}
+	for _, file := range project.Scenes() {
+		scene, err := project.ReadScene(file)
+		if err != nil {
+			continue
+		}
+		collectBehaviours(used, file, scene.Nodes, "")
+	}
+	return used
+}
+
+func collectBehaviours(used map[string][]Use, file string, nodes []scenefile.Node, parent string) {
+	for _, node := range nodes {
+		path := node.Name
+		if parent != "" {
+			path = parent + "/" + node.Name
+		}
+		for _, behaviour := range node.Behaviours {
+			used[behaviour.Name] = append(used[behaviour.Name], Use{File: file, Node: path})
+		}
+		collectBehaviours(used, file, node.Children, path)
+	}
+}
