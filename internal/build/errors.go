@@ -12,4 +12,7 @@ var (
 	ADBNotFound             = failure.Define("build.adb-not-found", "playing on an Android device needs adb, the SDK's platform-tools")
 	ThreeDSLinkNotFound     = failure.Define("build.3dslink-not-found", "sending to the 3DS needs devkitPro's 3dslink (the 3ds-dev package): set $DEVKITPRO")
 	ConsoleEmulatorNotFound = failure.Define("build.console-emulator-not-found", "no 3DS emulator found (azahar, lime3ds, citra-qt or citra): put one on the path or set $EMULATOR_3DS")
+	ToolPlaceWrong          = failure.Define("build.tool-place-wrong", "nothing is where the tool was set: change it in Build's tools, or empty it to look for the tool")
+	ToolsNotRead            = failure.Define("build.tools-not-read", "the tools' places kept on this computer could not be read")
+	ToolsNotSaved           = failure.Define("build.tools-not-saved", "the tools' places could not be kept on this computer")
 )

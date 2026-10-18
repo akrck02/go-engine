@@ -16,7 +16,7 @@ func (project *Project) SendTo3DS() error {
 	if err != nil {
 		return err
 	}
-	link, err := build.ThreeDSLinkTool()
+	link, err := project.Tools.FindThreeDSLink()
 	if err != nil {
 		return err
 	}
@@ -39,7 +39,7 @@ func (project *Project) EmulatorCommand() (*exec.Cmd, error) {
 	if err != nil {
 		return nil, err
 	}
-	emulator, err := build.ConsoleEmulator()
+	emulator, err := project.Tools.FindConsoleEmulator()
 	if err != nil {
 		return nil, err
 	}

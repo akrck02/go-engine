@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"io"
 	"io/fs"
+	"log/slog"
 	"os"
 	"os/exec"
 	"path"
@@ -27,6 +28,9 @@ import (
 type Project struct {
 	Folder   string
 	Settings engine.Settings
+	// Tools are the places of the tools that build for consoles and phones, kept on this
+	// computer for every project.
+	Tools build.Tools
 }
 
 // Folders in a project.
@@ -47,7 +51,17 @@ func Open(folder string) (*Project, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Project{Folder: folder, Settings: settings}, nil
+	return &Project{Folder: folder, Settings: settings, Tools: keptTools()}, nil
+}
+
+// keptTools are the tools' places kept on this computer; when they cannot be read, none, and the
+// builds look for the tools as if none were kept.
+func keptTools() build.Tools {
+	tools, err := build.ReadTools()
+	if err != nil {
+		slog.Warn("the tools' places kept on this computer are left out", "error", err)
+	}
+	return tools
 }
 
 // Files are the project's files, as the engine reads them.
@@ -268,7 +282,7 @@ func (project *Project) BuildDesktop() (Built, error) {
 
 // Build3DS builds the game for the Nintendo 3DS into build/, with TinyGo.
 func (project *Project) Build3DS() (Built, error) {
-	tinygo, err := build.TinyGoTool()
+	tinygo, err := project.Tools.FindTinyGo()
 	if err != nil {
 		return Built{}, err
 	}

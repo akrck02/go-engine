@@ -65,11 +65,11 @@ func (project *Project) AndroidPackage() string {
 // BuildAndroid builds the game for Android into build/, a package signed for trying (not for a
 // store), without the editor.
 func (project *Project) BuildAndroid() (Built, error) {
-	sdk, err := build.AndroidSDK()
+	sdk, err := project.Tools.FindAndroidSDK()
 	if err != nil {
 		return Built{}, err
 	}
-	ndk, err := build.AndroidNDK(sdk)
+	ndk, err := project.Tools.FindAndroidNDK(sdk)
 	if err != nil {
 		return Built{}, err
 	}
@@ -192,7 +192,7 @@ func (module moduleFile) replacedByFolder(replaced string) bool {
 // plugged in, or the emulator) and starts it. It returns the command that shows its log, not
 // started, which ends when the game does: the editor shows what it says. StopOnAndroid stops it.
 func (project *Project) PlayOnAndroid() (*exec.Cmd, error) {
-	adb, err := build.ADBTool()
+	adb, err := project.Tools.FindADB()
 	if err != nil {
 		return nil, err
 	}
@@ -235,7 +235,7 @@ func androidLogScript(identifier string) string {
 
 // StopOnAndroid stops the game on the first device adb sees.
 func (project *Project) StopOnAndroid() error {
-	adb, err := build.ADBTool()
+	adb, err := project.Tools.FindADB()
 	if err != nil {
 		return err
 	}

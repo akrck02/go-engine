@@ -99,9 +99,12 @@ func GoOnPath() string {
 	return "PATH=" + filepath.Dir(GoTool()) + string(os.PathListSeparator) + os.Getenv("PATH")
 }
 
-// TinyGoTool is the TinyGo with the nintendo3ds target: $TINYGO, tinygo on the path, or in
-// ~/go/bin.
-func TinyGoTool() (string, error) {
+// FindTinyGo finds the TinyGo with the nintendo3ds target: the one chosen, $TINYGO, tinygo on
+// the path, or in ~/go/bin.
+func (tools Tools) FindTinyGo() (string, error) {
+	if place, isChosen, err := chosen(tools.TinyGo); isChosen {
+		return place, err
+	}
 	if tool := os.Getenv("TINYGO"); tool != "" {
 		return tool, nil
 	}

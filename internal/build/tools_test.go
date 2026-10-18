@@ -18,33 +18,90 @@ func TestTheNewestNDKIsChosenByItsNumbers(test *testing.T) {
 		test.Fatal(err)
 	}
 	test.Setenv("ANDROID_NDK_HOME", "")
-	if folder, err := AndroidNDK(sdk); err != nil || filepath.Base(folder) != "27.0.12077973" {
+	if folder, err := (Tools{}).FindAndroidNDK(sdk); err != nil || filepath.Base(folder) != "27.0.12077973" {
 		test.Fatalf("the newest NDK is %q, %v", folder, err)
 	}
 }
 
-func TestMissingToolsAreSaidByTheirCodes(test *testing.T) {
+// withNoTools leaves a test with no tool to find: no variables, an empty path and home.
+func withNoTools(test *testing.T) string {
 	empty := test.TempDir()
-	for _, variable := range []string{"ANDROID_HOME", "ANDROID_SDK_ROOT", "ANDROID_NDK_HOME", "EMULATOR_3DS", "LOCALAPPDATA"} {
+	for _, variable := range []string{"ANDROID_HOME", "ANDROID_SDK_ROOT", "ANDROID_NDK_HOME", "EMULATOR_3DS", "LOCALAPPDATA", "TINYGO"} {
 		test.Setenv(variable, "")
 	}
 	test.Setenv("HOME", empty)
 	test.Setenv("PATH", empty)
 	test.Setenv("DEVKITPRO", empty)
+	return empty
+}
+
+func TestMissingToolsAreSaidByTheirCodes(test *testing.T) {
+	empty := withNoTools(test)
+	var tools Tools
 	cases := []struct {
 		name   string
 		find   func() (string, error)
 		wanted error
 	}{
-		{"the Android SDK", AndroidSDK, AndroidSDKNotFound},
-		{"the Android NDK", func() (string, error) { return AndroidNDK(empty) }, AndroidNDKNotFound},
-		{"adb", ADBTool, ADBNotFound},
-		{"3dslink", ThreeDSLinkTool, ThreeDSLinkNotFound},
-		{"a 3DS emulator", ConsoleEmulator, ConsoleEmulatorNotFound},
+		{"TinyGo", tools.FindTinyGo, TinyGoNotFound},
+		{"the Android SDK", tools.FindAndroidSDK, AndroidSDKNotFound},
+		{"the Android NDK", func() (string, error) { return tools.FindAndroidNDK(empty) }, AndroidNDKNotFound},
+		{"adb", tools.FindADB, ADBNotFound},
+		{"3dslink", tools.FindThreeDSLink, ThreeDSLinkNotFound},
+		{"a 3DS emulator", tools.FindConsoleEmulator, ConsoleEmulatorNotFound},
 	}
 	for _, each := range cases {
 		if _, err := each.find(); !errors.Is(err, each.wanted) {
 			test.Errorf("looking for %s where there is none gives %v", each.name, err)
 		}
+	}
+}
+
+func TestAToolSetInTheEditorIsUsedFirst(test *testing.T) {
+	folder := withNoTools(test)
+	program := filepath.Join(folder, "my-tinygo")
+	if err := os.WriteFile(program, nil, 0o755); err != nil {
+		test.Fatal(err)
+	}
+	test.Setenv("TINYGO", "/elsewhere/tinygo")
+	if found, err := (Tools{TinyGo: program}).FindTinyGo(); err != nil || found != program {
+		test.Fatalf("TinyGo set in the editor gives %q, %v", found, err)
+	}
+	sdk := filepath.Join(folder, "sdk")
+	if err := os.MkdirAll(filepath.Join(sdk, "platform-tools"), 0o755); err != nil {
+		test.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(sdk, "platform-tools", "adb"+ExecutableSuffix()), nil, 0o755); err != nil {
+		test.Fatal(err)
+	}
+	if found, err := (Tools{AndroidSDK: sdk}).FindADB(); err != nil || found != filepath.Join(sdk, "platform-tools", "adb"+ExecutableSuffix()) {
+		test.Fatalf("adb in the SDK set in the editor gives %q, %v", found, err)
+	}
+}
+
+func TestAToolSetWhereNothingIsIsSaidByItsCode(test *testing.T) {
+	withNoTools(test)
+	tools := Tools{TinyGo: "/nowhere/tinygo", AndroidSDK: "/nowhere/sdk", AndroidNDK: "/nowhere/ndk", DevkitPro: "/nowhere/devkitpro", ConsoleEmulator: "/nowhere/azahar"}
+	finders := []func() (string, error){tools.FindTinyGo, tools.FindAndroidSDK, tools.FindThreeDSLink, tools.FindConsoleEmulator,
+		func() (string, error) { return tools.FindAndroidNDK("/nowhere/sdk") }}
+	for _, find := range finders {
+		if _, err := find(); !errors.Is(err, ToolPlaceWrong) {
+			test.Errorf("a tool set where nothing is gives %v", err)
+		}
+	}
+}
+
+func TestTheToolsPlacesAreKeptBetweenSessions(test *testing.T) {
+	test.Setenv("XDG_CONFIG_HOME", test.TempDir())
+	test.Setenv("HOME", test.TempDir())
+	if read, err := ReadTools(); err != nil || read != (Tools{}) {
+		test.Fatalf("with nothing saved the tools are %+v, %v", read, err)
+	}
+	saved := Tools{TinyGo: "/opt/tinygo/bin/tinygo", AndroidSDK: "/opt/android"}
+	if err := saved.Save(); err != nil {
+		test.Fatal(err)
+	}
+	if read, err := ReadTools(); err != nil || read != saved {
+		test.Fatalf("the tools came back as %+v, %v", read, err)
 	}
 }

@@ -12,8 +12,12 @@ import (
 // The tools that build a game for Android and play it on a device are the Android SDK's: found in
 // the variables Android's own tools read, or where Android Studio puts them.
 
-// AndroidSDK is the Android SDK's folder: $ANDROID_HOME, $ANDROID_SDK_ROOT, or Android Studio's.
-func AndroidSDK() (string, error) {
+// FindAndroidSDK finds the Android SDK's folder: the one chosen, $ANDROID_HOME,
+// $ANDROID_SDK_ROOT, or Android Studio's.
+func (tools Tools) FindAndroidSDK() (string, error) {
+	if place, isChosen, err := chosen(tools.AndroidSDK); isChosen {
+		return place, err
+	}
 	for _, variable := range []string{"ANDROID_HOME", "ANDROID_SDK_ROOT"} {
 		if folder := os.Getenv(variable); folder != "" && FileExists(folder) {
 			return folder, nil
@@ -40,8 +44,12 @@ func androidStudioSDK() string {
 	return filepath.Join(home, "Android", "Sdk")
 }
 
-// AndroidNDK is the Android NDK's folder: $ANDROID_NDK_HOME, or the newest in the SDK.
-func AndroidNDK(sdk string) (string, error) {
+// FindAndroidNDK finds the Android NDK's folder: the one chosen, $ANDROID_NDK_HOME, or the
+// newest in the SDK.
+func (tools Tools) FindAndroidNDK(sdk string) (string, error) {
+	if place, isChosen, err := chosen(tools.AndroidNDK); isChosen {
+		return place, err
+	}
 	if folder := os.Getenv("ANDROID_NDK_HOME"); folder != "" && FileExists(folder) {
 		return folder, nil
 	}
@@ -75,9 +83,9 @@ func newerVersion(version, other string) bool {
 	return len(parts) > len(others)
 }
 
-// ADBTool is the Android Debug Bridge: the SDK's, or adb on the path.
-func ADBTool() (string, error) {
-	if sdk, err := AndroidSDK(); err == nil {
+// FindADB finds the Android Debug Bridge: the SDK's, or adb on the path.
+func (tools Tools) FindADB() (string, error) {
+	if sdk, err := tools.FindAndroidSDK(); err == nil {
 		if tool := filepath.Join(sdk, "platform-tools", "adb"+ExecutableSuffix()); FileExists(tool) {
 			return tool, nil
 		}

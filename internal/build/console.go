@@ -11,10 +11,13 @@ import (
 // devkitProFolder is where devkitPro installs itself when $DEVKITPRO is not set.
 const devkitProFolder = "/opt/devkitpro"
 
-// ThreeDSLinkTool is devkitPro's 3dslink: in $DEVKITPRO's tools, devkitPro's usual folder, or on
-// the path.
-func ThreeDSLinkTool() (string, error) {
-	devkitPro := os.Getenv("DEVKITPRO")
+// FindThreeDSLink finds devkitPro's 3dslink: in the tools of the devkitPro chosen, $DEVKITPRO's,
+// devkitPro's usual folder's, or on the path.
+func (tools Tools) FindThreeDSLink() (string, error) {
+	if _, isChosen, err := chosen(tools.DevkitPro); isChosen && err != nil {
+		return "", err
+	}
+	devkitPro := firstOf(tools.DevkitPro, os.Getenv("DEVKITPRO"))
 	if devkitPro == "" {
 		devkitPro = devkitProFolder
 	}
@@ -30,8 +33,12 @@ func ThreeDSLinkTool() (string, error) {
 // consoleEmulators are the 3DS emulators looked for on the path, the most kept up first.
 var consoleEmulators = []string{"azahar", "lime3ds", "citra-qt", "citra"}
 
-// ConsoleEmulator is a 3DS emulator: $EMULATOR_3DS, or the first of consoleEmulators on the path.
-func ConsoleEmulator() (string, error) {
+// FindConsoleEmulator finds a 3DS emulator: the one chosen, $EMULATOR_3DS, or the first of
+// consoleEmulators on the path.
+func (tools Tools) FindConsoleEmulator() (string, error) {
+	if place, isChosen, err := chosen(tools.ConsoleEmulator); isChosen {
+		return place, err
+	}
 	if tool := os.Getenv("EMULATOR_3DS"); tool != "" {
 		return tool, nil
 	}
@@ -41,4 +48,14 @@ func ConsoleEmulator() (string, error) {
 		}
 	}
 	return "", ConsoleEmulatorNotFound
+}
+
+// firstOf is the first value that is not empty.
+func firstOf(values ...string) string {
+	for _, value := range values {
+		if value != "" {
+			return value
+		}
+	}
+	return ""
 }
