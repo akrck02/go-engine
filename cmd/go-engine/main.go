@@ -31,6 +31,7 @@ func main() {
 	options.RegisterFlags(flags)
 	flags.String("select", "", "choose a node by its path when the editor opens (for captures)")
 	flags.Bool("play", false, "play the scene in the view when the editor opens (for captures)")
+	flags.Bool("3ds", false, "show the game played at the 3DS's screens (for captures)")
 	flags.String("workspace", "", "the workspace to open in: project, art, level, code, play or build (for captures)")
 	flags.Usage = func() {
 		output := flags.Output()

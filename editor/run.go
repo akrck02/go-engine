@@ -35,6 +35,7 @@ func RunHere() error {
 	choose := flags.String("select", "", "choose a node by its path when the editor opens (for captures)")
 	play := flags.Bool("play", false, "play the scene in the view when the editor opens (for captures)")
 	shown := flags.String("workspace", "", "the workspace to open in: project, art, level, code, play or build (for captures)")
+	console := flags.Bool("3ds", false, "show the game played at the 3DS's screens (for captures)")
 	if err := flags.Parse(os.Args[1:]); err != nil {
 		return err
 	}
@@ -60,6 +61,9 @@ func RunHere() error {
 	}
 	if *play {
 		edited.ShowWorkspace(PlayWorkspace)
+	}
+	if *console {
+		edited.Target = ConsoleScreen
 	}
 	if workspace, found := WorkspaceNamed(*shown); found {
 		edited.ShowWorkspace(workspace)

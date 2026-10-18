@@ -118,7 +118,7 @@ func (view *View) targetTabs(context *ui.Context) {
 			view.Editor.Target = PlayTarget(target)
 		}
 	})
-	context.Tooltip("The shape of the screen: a computer's, or the 3DS's top screen")
+	context.Tooltip("The shape of the screen: a computer's, or the 3DS's two screens")
 }
 
 // windowButton plays the game in a window of its own, or closes it.
@@ -150,10 +150,51 @@ func (view *View) stage(context *ui.Context) {
 		context.Box(ui.Layout{Width: ui.Grow(), Height: ui.Grow()}, nil)
 		return
 	}
-	aspect := view.Editor.Target.Aspect()
+	target := view.Editor.Target
+	ink := context.Theme.InkSoft
 	context.Paint(ui.Layout{Width: ui.Grow(), Height: ui.Grow()}, func(area draw2d.Rect, list *draw2d.List) {
-		paintLetterboxed(played, area, aspect, list)
+		if target == ConsoleScreen {
+			paintConsole(played, area, ink, list)
+			return
+		}
+		paintLetterboxed(played, area, target.Aspect(), list)
 	})
+}
+
+// The 3DS's screens and the gap of its hinge between them, in the console's pixels.
+const (
+	consoleTopWidth    = 400
+	consoleBottomWidth = 320
+	consoleScreenTall  = 240
+	consoleHingeTall   = 24
+	// consoleCaptionSize is the size of the bottom screen's caption, in the editor's pixels.
+	consoleCaptionSize = 14
+)
+
+// bottomScreenColor is the bottom screen's, while the game has no interface on it.
+var bottomScreenColor = draw2d.Color{0.18, 0.18, 0.2, 1}
+
+// consoleScreens are the 3DS's two screens at their shapes, as large as fit in an area: the top
+// one, and the bottom one centred under it.
+func consoleScreens(area draw2d.Rect) (top, bottom draw2d.Rect) {
+	scale := min(area.Width/consoleTopWidth, area.Height/(2*consoleScreenTall+consoleHingeTall))
+	middle := area.X + area.Width/2
+	tall := consoleScreenTall * scale
+	first := area.Y + (area.Height-(2*consoleScreenTall+consoleHingeTall)*scale)/2
+	top = draw2d.Rect{X: middle - consoleTopWidth*scale/2, Y: first, Width: consoleTopWidth * scale, Height: tall}
+	bottom = draw2d.Rect{X: middle - consoleBottomWidth*scale/2, Y: first + tall + consoleHingeTall*scale, Width: consoleBottomWidth * scale, Height: tall}
+	return top, bottom
+}
+
+// paintConsole draws a 2D scene played on the 3DS's top screen, and its bottom screen, which the
+// game's interface will have, under it.
+func paintConsole(played *engine.Scene, area draw2d.Rect, ink draw2d.Color, list *draw2d.List) {
+	list.Rectangle(area, 0, draw2d.Color{letterboxColor, letterboxColor, letterboxColor, 1}, draw2d.Color{}, 0)
+	top, bottom := consoleScreens(area)
+	paintPlaying(played, top, list)
+	list.Rectangle(bottom, 0, bottomScreenColor, ink, 1)
+	baseline := bottom.Y + bottom.Height/2 + consoleCaptionSize/3
+	list.Text("Bottom screen: the game's interface", bottom.X+consoleCaptionSize, baseline, consoleCaptionSize, draw2d.Regular, ink)
 }
 
 // paintLetterboxed draws a 2D scene played at a screen's shape, centred in an area, with bars

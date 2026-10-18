@@ -65,8 +65,8 @@ func (view *View) targetCard(context *ui.Context, target BuildTarget) {
 			if context.IconButton(iconLog, "Log") {
 				view.build.shown = target
 			}
-			view.playButton(context, target)
 		})
+		context.Row(func() { view.playButton(context, target) }) // where to try what was built
 	})
 }
 
