@@ -40,6 +40,8 @@ const (
 	iconPhone      = "smartphone"
 	iconSend       = "send"
 	iconTools      = "wrench"
+	iconBrowse     = "folder-search"
+	iconImport     = "file-input"
 	iconFound      = "circle-check"
 	iconMissing    = "circle-alert"
 	iconOutput     = "terminal"

@@ -206,7 +206,13 @@ func (view *View) toolRow(context *ui.Context, index int, found ToolFound) {
 		context.Text(found.Name, ui.TextStyle{Weight: draw2d.Bold})
 	})
 	context.Caption(found.Needs)
-	context.TextField(found.Name, buildToolParts[index].place(&view.build.tools))
+	place := buildToolParts[index].place(&view.build.tools)
+	context.Box(ui.Layout{Width: ui.Grow(), Gap: 6, AlignY: ui.Center}, func() {
+		context.Box(ui.Layout{Width: ui.Grow()}, func() { context.TextField(found.Name, place) })
+		if context.IconButton(iconBrowse, "Browse") {
+			view.browseForTool(index, found)
+		}
+	})
 	small := ui.TextStyle{Color: context.Theme.InkSoft, Size: context.Theme.SmallTextSize}
 	if found.Err != nil {
 		small.Color = context.Theme.Danger
@@ -232,4 +238,23 @@ func explained(err error) string {
 		return failed.Code.Error() + " (" + failed.Details + ")"
 	}
 	return err.Error()
+}
+
+// toolPlaces are the folders the tools are usually installed in, offered in the file picker.
+var toolPlaces = []string{"/opt", "/usr/local", "/usr/bin"}
+
+// browseForTool asks for a tool's place with the file picker, starting where it was found; the
+// place chosen is typed in its field, to check and save.
+func (view *View) browseForTool(index int, found ToolFound) {
+	part := buildToolParts[index]
+	place := part.place(&view.build.tools)
+	start := *place
+	if start == "" {
+		start = found.Found
+	}
+	options := ui.FilePickerOptions{Title: "Choose " + part.name, Folder: part.folder, Start: start, Places: toolPlaces}
+	view.pickFile(options, func(path string) {
+		*part.place(&view.build.tools) = path
+		view.Editor.LookForTools(view.build.tools)
+	})
 }

@@ -17,18 +17,19 @@ type ToolFound struct {
 // found.
 var buildToolParts = []struct {
 	name, needs string
+	folder      bool // its place is a folder, not a program
 	place       func(tools *build.Tools) *string
 	find        func(tools build.Tools) (string, error)
 }{
-	{"TinyGo", "Building for the 3DS: TinyGo with the nintendo3ds target (github.com/akrck02/tinygo-3ds), the tinygo program",
+	{"TinyGo", "Building for the 3DS: TinyGo with the nintendo3ds target (github.com/akrck02/tinygo-3ds), the tinygo program", false,
 		func(tools *build.Tools) *string { return &tools.TinyGo }, build.Tools.FindTinyGo},
-	{"devkitPro", "Sending to the 3DS with 3dslink: devkitPro's folder",
+	{"devkitPro", "Sending to the 3DS with 3dslink: devkitPro's folder", true,
 		func(tools *build.Tools) *string { return &tools.DevkitPro }, build.Tools.FindThreeDSLink},
-	{"3DS emulator", "Trying the game without a console: Azahar's or Citra's program",
+	{"3DS emulator", "Trying the game without a console: Azahar's or Citra's program", false,
 		func(tools *build.Tools) *string { return &tools.ConsoleEmulator }, build.Tools.FindConsoleEmulator},
-	{"Android SDK", "Building for Android and playing through adb: the SDK's folder (Android Studio installs it)",
+	{"Android SDK", "Building for Android and playing through adb: the SDK's folder (Android Studio installs it)", true,
 		func(tools *build.Tools) *string { return &tools.AndroidSDK }, build.Tools.FindAndroidSDK},
-	{"Android NDK", "Building for Android: one version's folder, from the SDK Manager",
+	{"Android NDK", "Building for Android: one version's folder, from the SDK Manager", true,
 		func(tools *build.Tools) *string { return &tools.AndroidNDK }, findNDK},
 }
 

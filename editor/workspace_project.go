@@ -111,6 +111,10 @@ func (view *View) projectBar(context *ui.Context) {
 				view.newScene(scenefile.Mode3D)
 			}
 		})
+		if context.IconButton(iconImport, "Import model") {
+			view.pickFile(ui.FilePickerOptions{Title: "Import a model", Suffixes: []string{".glb"}}, view.Editor.ImportModel)
+		}
+		context.Tooltip("Copy a .glb model into the project's assets/models")
 		if context.IconButton(iconSettings, "Settings") {
 			view.openSettings()
 		}

@@ -64,8 +64,9 @@ its log; on a phone the game shows touch buttons, and a 2D camera's **width** ke
 sides in view when the phone is held upright. The settings keep the Android application id and
 the 3DS's address. Where each of these tools is (TinyGo, devkitPro, the emulator, the Android
 SDK and NDK) is set in Build's **Tools on this computer**, kept for every project in
-`go-engine/tools.json` of the user's configuration folder; a place set there comes before the
-variables, and an empty one looks for the tool as above.
+`go-engine/tools.json` of the user's configuration folder; a place set there (typed, or chosen
+with **Browse**) comes before the variables, and an empty one looks for the tool as above.
+Project's **Import model** copies a `.glb` chosen the same way into `assets/models`.
 
 <p align="center">
   <img alt="Playing in the editor's view: the house and the spinning cube seen through the scene's camera, the inspector saying the view plays a copy" src="images/playing-in-view.png" width="560">

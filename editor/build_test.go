@@ -77,3 +77,33 @@ func TestTypedPlacesAreCheckedBeforeSaving(test *testing.T) {
 		test.Fatal("checking a place typed changed the tools the builds use")
 	}
 }
+
+func TestBrowsingForAToolTypesThePlaceChosen(test *testing.T) {
+	view := NewView(open(test))
+	for index, part := range buildToolParts {
+		view.browseForTool(index, ToolFound{Name: part.name})
+		if view.picking == nil || view.picking.options.Folder != part.folder {
+			test.Fatalf("browsing for %s asks for a folder (%v): %+v", part.name, part.folder, view.picking)
+		}
+		view.picking.chosen("/opt/" + part.name)
+		view.picking = nil
+		if place := *part.place(&view.build.tools); place != "/opt/"+part.name {
+			test.Fatalf("the place chosen for %s is typed as %q", part.name, place)
+		}
+	}
+	if view.Editor.Project.Tools.TinyGo == "/opt/TinyGo" {
+		test.Fatal("a place chosen is kept before it is saved")
+	}
+}
+
+func TestAModelChosenIsCopiedIntoTheProject(test *testing.T) {
+	editor := open(test)
+	model := filepath.Join(test.TempDir(), "boat.glb")
+	if err := os.WriteFile(model, []byte("glTF"), 0o644); err != nil {
+		test.Fatal(err)
+	}
+	editor.ImportModel(model)
+	if _, err := os.Stat(editor.Project.Path("assets/models/boat.glb")); err != nil {
+		test.Fatalf("the model chosen is not in the project: %v", err)
+	}
+}

@@ -34,10 +34,11 @@ type View struct {
 	emptyWorld *scene.Scene // what is drawn behind the workspaces that cover the window
 	shift      bool         // Shift was held on the last frame: a click joins the choice
 
-	art     artView     // the Art workspace's choices
-	project projectView // the Project workspace's choices
-	code    codeView    // the Code workspace's choices
-	build   buildView   // the Build workspace's choices
+	art     artView      // the Art workspace's choices
+	project projectView  // the Project workspace's choices
+	code    codeView     // the Code workspace's choices
+	build   buildView    // the Build workspace's choices
+	picking *filePicking // the file asked for, while the file picker is shown
 
 	assetTree    project.AssetEntry
 	assetsReadAt time.Time
@@ -160,6 +161,7 @@ func (view *View) Build(context *ui.Context) {
 		context.Separator()
 		view.workspaceBar(context)
 	})
+	view.filePicker(context)
 }
 
 func bar(context *ui.Context, layout ui.Layout, content func()) {

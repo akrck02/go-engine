@@ -464,6 +464,17 @@ func (editor *Editor) Import(source string) {
 	editor.say("Imported "+model, false)
 }
 
+// ImportModel copies a model into the project's assets, without placing it: the Project grid
+// shows it, to place in a scene.
+func (editor *Editor) ImportModel(source string) {
+	model, err := editor.Project.Import(source)
+	if err != nil {
+		editor.say(err.Error(), true)
+		return
+	}
+	editor.say("Imported "+model, false)
+}
+
 // Behaviours are the behaviours the project's code defines, as last read.
 func (editor *Editor) Behaviours() []project.Behaviour { return editor.behaviours }
 

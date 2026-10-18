@@ -54,5 +54,9 @@ was found or why not, with Check and Save; a file that could not be read is said
 
 **Checked.** The tests of each requirement; captures of the panel with tools found and missing.
 
-**For a person.** Set a place with a real file manager at hand: the field takes a typed path, with
-no file picker yet.
+**Then, asked by the author.** A file picker, go-ui's own (`ui.FilePicker`, feature/3ds 3183ea9,
+committed with the author's say): **Browse** beside each tool chooses a program or a folder, as
+the tool needs, and types it in its field to check and save; Project's **Import model** chooses a
+`.glb` and copies it into `assets/models`, which nothing in the editor offered before.
+
+**For a person.** Browse with a real mouse: double clicks, and going through deep folders.
