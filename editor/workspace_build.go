@@ -2,6 +2,7 @@ package editor
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/akrck02/go-renderer/draw2d"
 	ui "github.com/akrck02/go-ui"
@@ -16,6 +17,9 @@ const (
 	buildLogWidth   = 460
 	bytesInMegabyte = 1 << 20
 )
+
+// playLogRefresh is how often the log of a game playing elsewhere is shown again.
+const playLogRefresh = 250 * time.Millisecond
 
 // buildView is what the Build workspace remembers between frames.
 type buildView struct {
@@ -61,11 +65,33 @@ func (view *View) targetCard(context *ui.Context, target BuildTarget) {
 			if context.IconButton(iconLog, "Log") {
 				view.build.shown = target
 			}
-			if target == ComputerTarget && context.IconButton(iconInWindow, "Play") {
-				view.Editor.PlayInWindow()
-			}
+			view.playButton(context, target)
 		})
 	})
+}
+
+// playButton plays the game where the target is, or stops it there: this computer in a window,
+// Android on the device adb sees.
+func (view *View) playButton(context *ui.Context, target BuildTarget) {
+	editor := view.Editor
+	if playedOn, playing := editor.PlayingOn(); playing && playedOn == target {
+		if context.IconButton(iconStop, "Stop") {
+			editor.Stop()
+		}
+		return
+	}
+	switch target {
+	case ComputerTarget:
+		if context.IconButton(iconInWindow, "Play") {
+			editor.PlayInWindow()
+		}
+	case AndroidTarget:
+		if context.IconButton(iconPhone, "Play on device") {
+			view.build.shown = target
+			editor.PlayOnDevice()
+		}
+		context.Tooltip("Build, install and start the game on the phone or emulator adb sees, with its log here")
+	}
 }
 
 // buildState says how the target's last build went.
@@ -91,11 +117,23 @@ func (view *View) buildLog(context *ui.Context) {
 		context.Text(target.Name()+" · log", ui.TextStyle{Weight: draw2d.Bold})
 	})
 	result, found := view.Editor.LastBuild(target)
-	if !found {
+	if !found && view.playOutput(target) == nil {
 		note(context, "Build it to see what building says.")
 		return
 	}
-	for _, line := range result.Log {
+	for _, line := range append(result.Log, view.playOutput(target)...) {
 		context.Text(line, ui.TextStyle{Color: context.Theme.InkSoft, Size: context.Theme.SmallTextSize})
 	}
+	if playedOn, playing := view.Editor.PlayingOn(); playing && playedOn == target {
+		context.RequestFrame(playLogRefresh) // the game's log grows while it plays
+	}
+}
+
+// playOutput is what the game said, when it plays or last played on a target.
+func (view *View) playOutput(target BuildTarget) []string {
+	editor := view.Editor
+	if editor.output == nil || editor.playedOn != target {
+		return nil
+	}
+	return editor.output.Lines()
 }

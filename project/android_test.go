@@ -1,6 +1,9 @@
 package project
 
 import (
+	"os"
+	"path/filepath"
+	"runtime"
 	"slices"
 	"strings"
 	"testing"
@@ -51,5 +54,46 @@ func TestAModuleKnowsWhetherItHasTheAndroidTool(test *testing.T) {
 	}
 	if hasLine(without, "replace "+uiModule+" ") || !hasLine(with, "replace "+uiModule+" ") {
 		test.Error("go-ui's replace is not found where it is, or found where it is not")
+	}
+}
+
+func TestPlayingOnADeviceInstallsStartsAndReadsTheLog(test *testing.T) {
+	if runtime.GOOS == "windows" {
+		test.Skip("the fake adb is a shell script")
+	}
+	folder := test.TempDir()
+	calls := filepath.Join(folder, "calls")
+	adb := filepath.Join(folder, "adb")
+	script := "#!/bin/sh\necho \"$@\" >> " + calls + "\n" +
+		"if [ \"$1\" = devices ]; then printf 'List of devices attached\\nemulator-5554\\tdevice\\n'; fi\n"
+	if err := os.WriteFile(adb, []byte(script), 0o755); err != nil {
+		test.Fatal(err)
+	}
+	project := &Project{Folder: folder, Settings: engine.Settings{Name: "Harbour Lights"}}
+	logcat, err := project.playOnAndroid(adb, "/games/harbour.apk")
+	if err != nil {
+		test.Fatal(err)
+	}
+	said, _ := os.ReadFile(calls)
+	for _, wanted := range []string{"-s emulator-5554 install -r /games/harbour.apk", "-s emulator-5554 shell monkey -p io.goengine.harbourlights"} {
+		if !strings.Contains(string(said), wanted) {
+			test.Errorf("adb was not asked %q; it was asked:\n%s", wanted, said)
+		}
+	}
+	if arguments := strings.Join(logcat.Args, " "); !strings.Contains(arguments, "-s emulator-5554 logcat") {
+		test.Errorf("the log is read with %q", arguments)
+	}
+}
+
+func TestADeviceIsTheFirstReadyOneAdbLists(test *testing.T) {
+	cases := []struct{ listing, wanted string }{
+		{"List of devices attached\nR58N\tdevice\nemulator-5554\tdevice\n", "R58N"},
+		{"List of devices attached\nR58N\tunauthorized\nemulator-5554\tdevice\n", "emulator-5554"},
+		{"List of devices attached\n\n", ""},
+	}
+	for _, each := range cases {
+		if serial, _ := firstDevice(each.listing); serial != each.wanted {
+			test.Errorf("%q gives the device %q, not %q", each.listing, serial, each.wanted)
+		}
 	}
 }

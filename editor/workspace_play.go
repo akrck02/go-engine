@@ -124,7 +124,7 @@ func (view *View) targetTabs(context *ui.Context) {
 // windowButton plays the game in a window of its own, or closes it.
 func (view *View) windowButton(context *ui.Context) {
 	editor := view.Editor
-	if editor.Running() && editor.playing != nil {
+	if target, playing := editor.PlayingOn(); playing && target == ComputerTarget {
 		if context.IconButton(iconClose, "Close window") {
 			editor.Stop()
 		}

@@ -73,9 +73,10 @@ type Editor struct {
 	codeCheckedAt time.Time
 	codeChanged   bool
 
-	running  bool      // building or playing the game
-	playing  *exec.Cmd // the game, while it plays
-	stopping bool      // Stop was asked: the game's end is no failure
+	running  bool        // building or playing the game
+	playing  *exec.Cmd   // the game, while it plays
+	playedOn BuildTarget // where it plays
+	stopping bool        // Stop was asked: the game's end is no failure
 	output   *outputTail
 	events   chan func(editor *Editor)
 	// Wake asks the window for a frame, when background work has something to show.
@@ -593,20 +594,36 @@ func (editor *Editor) PlayingHere() (*engine.Scene, bool) {
 }
 
 // PlayInWindow saves the scene, builds the game and runs it in a window of its own, in the
-// background: what happens arrives
-// through Events. Stop ends it.
+// background: what happens arrives through Events. Stop ends it.
 func (editor *Editor) PlayInWindow() {
+	editor.playWith(ComputerTarget, editor.Project.PlayCommand, nil)
+}
+
+// PlayOnDevice builds the game for Android and plays it on the device adb sees, its log shown as
+// a window's output is; stopping it stops the game on the device.
+func (editor *Editor) PlayOnDevice() {
+	editor.playWith(AndroidTarget, editor.Project.PlayOnAndroid, editor.Project.StopOnAndroid)
+}
+
+// PlayingOn tells where the game plays now, when it does.
+func (editor *Editor) PlayingOn() (BuildTarget, bool) {
+	return editor.playedOn, editor.playing != nil
+}
+
+// playWith builds the game for a target and runs the command that plays it (or reads its log),
+// showing what it prints; stopped, when there is one, ends the game where the command cannot.
+func (editor *Editor) playWith(target BuildTarget, prepare func() (*exec.Cmd, error), stopped func() error) {
 	if editor.running {
 		return
 	}
 	if !editor.Saved && editor.Save() != nil {
 		return
 	}
-	editor.running = true
+	editor.running, editor.playedOn = true, target
 	editor.output = &outputTail{}
-	editor.say("Building the game…", false)
+	editor.say("Building the game for "+target.Name()+"…", false)
 	go func() {
-		command, err := editor.Project.PlayCommand()
+		command, err := prepare()
 		if err != nil {
 			editor.send(func(editor *Editor) { editor.running = false; editor.say("The game did not build: "+err.Error(), true) })
 			return
@@ -616,22 +633,30 @@ func (editor *Editor) PlayInWindow() {
 			editor.send(func(editor *Editor) { editor.running = false; editor.say(err.Error(), true) })
 			return
 		}
-		editor.send(func(editor *Editor) { editor.playing = command; editor.say("Playing", false) })
+		editor.send(func(editor *Editor) { editor.playing = command; editor.say("Playing on "+target.Name(), false) })
 		err = command.Wait()
-		editor.send(func(editor *Editor) {
-			editor.running, editor.playing = false, nil
-			if editor.stopping {
-				editor.stopping = false
-				editor.say("Stopped the game", false)
-				return
+		if stopped != nil {
+			if stopErr := stopped(); stopErr != nil {
+				editor.output.Write([]byte(stopErr.Error() + "\n")) // shown with the rest: the game may still run there
 			}
-			if last := editor.output.Last(); err != nil && last != "" {
-				editor.say("The game ended: "+last, true)
-				return
-			}
-			editor.say("The game ended", false)
-		})
+		}
+		editor.send(func(editor *Editor) { editor.ended(err) })
 	}()
+}
+
+// ended says how the game that played ended.
+func (editor *Editor) ended(err error) {
+	editor.running, editor.playing = false, nil
+	if editor.stopping {
+		editor.stopping = false
+		editor.say("Stopped the game", false)
+		return
+	}
+	if last := editor.output.Last(); err != nil && last != "" {
+		editor.say("The game ended: "+last, true)
+		return
+	}
+	editor.say("The game ended", false)
 }
 
 // Stop ends the game that is playing.
