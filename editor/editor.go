@@ -48,6 +48,8 @@ type Editor struct {
 	playLog  playLog
 	unlisten func() // stops keeping the log, while playing
 
+	art artFile // the sprite or tileset open in the Art workspace
+
 	behaviours []project.Behaviour // what the project's code defines, read again on demand
 
 	// playingHere is the scene played in the view: a copy of the one edited, made again from its

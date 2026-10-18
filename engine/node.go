@@ -232,13 +232,18 @@ func (node *Node) Model() string { return node.model }
 // Sprite is the picture the node shows in a 2D scene, by its path in the project, or "".
 func (node *Node) Sprite() string { return node.sprite }
 
-// SetSprite makes the node show a picture of the project's, in a 2D scene.
+// SetSprite makes the node show a picture of the project's, or a sprite's file, in a 2D scene.
 func (node *Node) SetSprite(path string) error {
 	node.sprite = path
 	if path == "" {
 		return nil
 	}
-	_, err := node.scene.assets.image(path)
+	if scenefile.IsSpriteFile(path) {
+		if _, err := node.scene.assets.spriteFile(path); err != nil {
+			return err
+		}
+	}
+	_, err := node.scene.assets.image(node.picture())
 	return err
 }
 

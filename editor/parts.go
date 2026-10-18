@@ -74,21 +74,21 @@ func (editor *Editor) selectedBody() (*scenefile.Body, bool) {
 	return editor.Selected.BodySettings()
 }
 
-// ResizeSheet cuts the chosen node's sprite into columns and rows of frames, at least one of each.
+// ResizeSheet cuts the picture of the sheet being edited into columns and rows of frames, at least
+// one of each: the sprite open in Art, or else the chosen node's own sheet, made if it has none.
 // The animations keep only the frames the sheet still has.
 func (editor *Editor) ResizeSheet(columns, rows int) {
-	node := editor.Selected
-	if node == nil {
-		return
+	sheet, found := editor.editedSheet()
+	if !found && editor.Selected != nil {
+		sheet, found = &scenefile.SpriteSheet{}, true
+		editor.Selected.SetSheet(sheet)
 	}
-	sheet, found := node.Sheet()
 	if !found {
-		sheet = &scenefile.SpriteSheet{}
-		node.SetSheet(sheet)
+		return
 	}
 	sheet.Columns, sheet.Rows = max(columns, 1), max(rows, 1)
 	keepFramesInside(sheet)
-	editor.Changed()
+	editor.sheetChanged()
 }
 
 // keepFramesInside drops the frames a sheet does not have from its animations; one left with none
@@ -113,18 +113,11 @@ func (editor *Editor) TakeSheet() {
 	editor.Changed()
 }
 
-func (editor *Editor) selectedSheet() (*scenefile.SpriteSheet, bool) {
-	if editor.Selected == nil {
-		return nil, false
-	}
-	return editor.Selected.Sheet()
-}
-
-// AddAnimation adds an animation of the first frame to the chosen node's sheet, with a name of its
+// AddAnimation adds an animation of the first frame to the sheet being edited, with a name of its
 // own, and tells where it is in the sheet's list (-1 without a sheet). The first one added plays
 // when the scene starts.
 func (editor *Editor) AddAnimation() int {
-	sheet, found := editor.selectedSheet()
+	sheet, found := editor.editedSheet()
 	if !found {
 		return -1
 	}
@@ -135,7 +128,7 @@ func (editor *Editor) AddAnimation() int {
 	if sheet.Start == "" {
 		sheet.Start = name
 	}
-	editor.Changed()
+	editor.sheetChanged()
 	return len(sheet.Animations) - 1
 }
 
@@ -150,7 +143,7 @@ func freeAnimationName(sheet *scenefile.SpriteSheet) string {
 	}
 }
 
-// RenameAnimation names an animation of the chosen node's sheet; it refuses an empty name or one
+// RenameAnimation names an animation of the sheet being edited; it refuses an empty name or one
 // another animation has, and tells whether it took it.
 func (editor *Editor) RenameAnimation(index int, name string) bool {
 	animation, sheet, found := editor.selectedAnimation(index)
@@ -165,7 +158,7 @@ func (editor *Editor) RenameAnimation(index int, name string) bool {
 		sheet.Start = name
 	}
 	animation.Name = name
-	editor.Changed()
+	editor.sheetChanged()
 	return true
 }
 
@@ -180,11 +173,11 @@ func (editor *Editor) SetAnimationFrames(index int, written string) error {
 		return err
 	}
 	animation.Frames = frames
-	editor.Changed()
+	editor.sheetChanged()
 	return nil
 }
 
-// RemoveAnimation takes an animation from the chosen node's sheet; if it was the one the scene
+// RemoveAnimation takes an animation from the sheet being edited; if it was the one the scene
 // starts with, the first one left starts it.
 func (editor *Editor) RemoveAnimation(index int) {
 	animation, sheet, found := editor.selectedAnimation(index)
@@ -199,11 +192,11 @@ func (editor *Editor) RemoveAnimation(index int) {
 			sheet.Start = sheet.Animations[0].Name
 		}
 	}
-	editor.Changed()
+	editor.sheetChanged()
 }
 
 func (editor *Editor) selectedAnimation(index int) (*scenefile.Animation, *scenefile.SpriteSheet, bool) {
-	sheet, found := editor.selectedSheet()
+	sheet, found := editor.editedSheet()
 	if !found || index < 0 || index >= len(sheet.Animations) {
 		return nil, nil, false
 	}
@@ -263,7 +256,7 @@ func (editor *Editor) Followable(camera *engine.Node) []string {
 // SetAnimationFramesIfChanged sets an animation's frames from what is written, when it says other
 // frames than the ones it shows; it tells why what is written cannot be.
 func (editor *Editor) SetAnimationFramesIfChanged(index int, written string, shown []int) error {
-	sheet, found := editor.selectedSheet()
+	sheet, found := editor.editedSheet()
 	if !found {
 		return nil
 	}
