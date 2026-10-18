@@ -161,11 +161,18 @@ func (view *View) applyTheme(context *ui.Context, dark bool) {
 	context.Theme = ui.LightTheme()
 }
 
-func (view *View) openScene(file string) {
+// openScene opens a scene of the project, and tells whether it is the one shown now; the scene
+// open already stays as it is, unsaved changes and all.
+func (view *View) openScene(file string) bool {
+	if file == view.Editor.SceneFile {
+		return true
+	}
 	if err := view.Editor.OpenScene(file); err != nil {
 		view.Editor.say(err.Error(), true)
+		return false
 	}
 	view.shownFor = nil
+	return true
 }
 
 func (view *View) newScene(mode scenefile.Mode) {

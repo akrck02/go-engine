@@ -105,6 +105,10 @@ func (editor *Editor) Reload() {
 	if !editor.Saved && editor.Save() != nil {
 		return
 	}
+	if err := editor.saveArtIfChanged(); err != nil {
+		editor.say(err.Error(), true)
+		return
+	}
 	editor.StopHere()
 	editor.Run("Building the project's code…", func() (string, error) {
 		if err := editor.Project.BuildEditor(); err != nil {

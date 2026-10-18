@@ -3,6 +3,7 @@ package editor
 import (
 	"context"
 	"fmt"
+	"log"
 	"log/slog"
 	"os"
 	"reflect"
@@ -161,17 +162,23 @@ func (handler logHandler) WithGroup(name string) slog.Handler {
 // logged also goes on to standard error through a handler of its own: the default one writes
 // through the log package, which a new default sends back here, round and round.
 func (editor *Editor) listenToLog() (stop func()) {
-	before := slog.Default()
+	before, writer, flags := slog.Default(), log.Writer(), log.Flags()
 	editor.playLog.clear()
 	slog.SetDefault(slog.New(logHandler{log: &editor.playLog, before: slog.NewTextHandler(os.Stderr, nil)}))
-	return func() { slog.SetDefault(before) }
+	return func() {
+		// a new default also took the log package: give it back as it was
+		slog.SetDefault(before)
+		log.SetOutput(writer)
+		log.SetFlags(flags)
+	}
 }
 
-// watchedNode is the node of the played scene the chosen node stands for.
+// watchedNode is the node of the scene playing that is watched: the one chosen in Play's tree,
+// or else the one chosen when Play started.
 func (editor *Editor) watchedNode() (*engine.Node, bool) {
 	played, playing := editor.PlayingHere()
-	if !playing || editor.Selected == nil {
+	if !playing {
 		return nil, false
 	}
-	return played.Find(editor.Selected.Path())
+	return played.Find(editor.Watched)
 }

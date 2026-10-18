@@ -36,12 +36,34 @@ func (view *View) playWorkspace(context *ui.Context) {
 	})
 }
 
-// liveTree is the scene's nodes, to choose the one watched.
+// liveTree is the nodes of the scene playing (the game may have gone on to another), to choose
+// the one watched.
 func (view *View) liveTree(context *ui.Context) {
-	context.Heading("Scene")
+	played, playing := view.Editor.PlayingHere()
+	context.Heading("Scene playing")
+	if !playing {
+		return
+	}
+	context.Caption(played.Name)
 	note(context, "Choose a node to watch it.")
-	for _, child := range view.Editor.Scene.Root.Children() {
-		view.treeNode(context, child, 0)
+	for _, child := range played.Root.Children() {
+		view.liveNode(context, child, 0)
+	}
+}
+
+// liveNode is a node of the scene playing, and those under it; choosing one watches it.
+func (view *View) liveNode(context *ui.Context, node *engine.Node, depth int) {
+	editor := view.Editor
+	context.Push(node.Name)
+	defer context.Pop()
+	watched := editor.Watched == node.Path()
+	context.Box(ui.Layout{Width: ui.Grow(), Padding: ui.Padding{Left: float32(depth) * 16}}, func() {
+		if context.Selectable(nodeIcon(node), node.Name, watched) {
+			editor.Watched = node.Path()
+		}
+	})
+	for _, child := range node.Children() {
+		view.liveNode(context, child, depth+1)
 	}
 }
 
@@ -61,7 +83,9 @@ func (view *View) transport(context *ui.Context) {
 			editor.RestartPlay()
 		}
 		context.Tooltip("Start the scene again as it is written")
-		view.targetTabs(context)
+		if played, playing := editor.PlayingHere(); playing && played.Is2D() {
+			view.targetTabs(context) // a 3D game fills the view: its shape is the window's
+		}
 		view.windowButton(context)
 		if context.IconButton(iconStop, "Stop") {
 			editor.LeavePlay()

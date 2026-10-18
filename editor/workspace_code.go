@@ -155,8 +155,8 @@ func (view *View) behaviourUses(context *ui.Context) {
 // openUse opens the scene of a use in Level, with its node chosen.
 func (view *View) openUse(use project.Use) {
 	editor := view.Editor
-	if use.File != editor.SceneFile {
-		view.openScene(use.File)
+	if !view.openScene(use.File) {
+		return
 	}
 	if node, found := editor.Scene.Find(use.Node); found {
 		editor.Select(node)

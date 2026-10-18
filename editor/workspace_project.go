@@ -257,8 +257,7 @@ func (view *View) scenePreview(context *ui.Context, file string) {
 		context.Heading(sceneName(file))
 	})
 	context.Caption(file)
-	if context.IconButton(iconScene, "Open in Level") {
-		view.openScene(file)
+	if context.IconButton(iconScene, "Open in Level") && view.openScene(file) {
 		view.showWorkspace(LevelWorkspace)
 	}
 }
@@ -293,8 +292,7 @@ func (view *View) assetActions(context *ui.Context, file string) {
 		view.showWorkspace(ArtWorkspace)
 	}
 	if project.KindOf(file) == project.ImageAsset && context.IconButton(iconArt, "Make it a sprite or a tileset") {
-		editor.CloseArt()
-		view.art.picture = file
+		view.choosePicture(file)
 		view.showWorkspace(ArtWorkspace)
 	}
 }

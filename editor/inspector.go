@@ -300,9 +300,19 @@ func (view *View) spriteInspector(context *ui.Context, node *engine.Node) {
 		note(context, "This node cuts its picture into frames itself, as scenes did before sprites had files: Art can make it a sprite of its own.")
 	}
 	if context.IconButton(iconArt, "Open in Art") {
-		view.showWorkspace(ArtWorkspace)
+		view.openNodeInArt(node)
 	}
 	context.Tooltip("Cut the picture into frames and time its animations (2)")
+}
+
+// openNodeInArt goes to Art with the node's sprite file open in it, or its picture chosen.
+func (view *View) openNodeInArt(node *engine.Node) {
+	if scenefile.IsSpriteFile(node.Sprite()) {
+		view.openArt(node.Sprite())
+	} else {
+		view.choosePicture(node.Sprite())
+	}
+	view.showWorkspace(ArtWorkspace)
 }
 
 // spriteChoices are the project's sprites first, then its pictures.

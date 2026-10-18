@@ -48,6 +48,9 @@ func (editor *Editor) SetSprite(path string) error {
 	if editor.Selected == nil {
 		return nil
 	}
+	if scenefile.IsSpriteFile(path) {
+		editor.Selected.SetSheet(nil) // a sheet of its own would hide the sprite file's
+	}
 	err := editor.Selected.SetSprite(path)
 	editor.Scene.Sync()
 	editor.Changed()

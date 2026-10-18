@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/akrck02/go-renderer/input"
+	"github.com/akrck02/go-renderer/scene"
 	ui "github.com/akrck02/go-ui"
 	"github.com/akrck02/go-ui/window"
 
@@ -30,6 +31,8 @@ type View struct {
 	// DarkByDefault starts the editor dark when no mode was kept (the window's -dark).
 	DarkByDefault bool
 
+	emptyWorld *scene.Scene // what is drawn behind the workspaces that cover the window
+
 	art     artView     // the Art workspace's choices
 	project projectView // the Project workspace's choices
 	code    codeView    // the Code workspace's choices
@@ -43,7 +46,8 @@ type View struct {
 // NewView shows an editor.
 func NewView(editor *Editor) *View {
 	editor.Wake = window.Wake
-	return &View{Editor: editor, viewport: newViewport(), fieldTexts: map[string]string{}, openFolders: map[string]bool{"assets": true}}
+	return &View{Editor: editor, viewport: newViewport(), fieldTexts: map[string]string{}, openFolders: map[string]bool{"assets": true},
+		emptyWorld: scene.New()}
 }
 
 // Options are the window's, with the step that shows the scene and reads what the interface
@@ -52,6 +56,10 @@ func (view *View) Options(options window.Options) window.Options {
 	options.Title = "go-engine — " + view.Editor.Project.Settings.Name
 	options.Scene = func(state *input.State, seconds float64) *window.SceneView {
 		view.keys(state)
+		shown := view.Editor.ShownWorkspace()
+		if shown != LevelWorkspace && shown != PlayWorkspace {
+			return &window.SceneView{World: view.emptyWorld} // the other workspaces cover the window
+		}
 		world, camera := view.viewport.step(view.Editor, state, seconds)
 		return &window.SceneView{World: world, Camera: camera}
 	}
@@ -60,19 +68,40 @@ func (view *View) Options(options window.Options) window.Options {
 
 func (view *View) keys(state *input.State) {
 	editor := view.Editor
-	if editor.ShownWorkspace() == PlayWorkspace {
-		if state.Pressed(input.KeyEscape) {
-			editor.LeavePlay()
-		}
-		return // the game has the other keys
+	if view.workspaceKeys(state) || editor.ShownWorkspace() == PlayWorkspace {
+		return // while playing, the game has the other keys
+	}
+	if state.Down(input.KeyControl) && state.Pressed(input.KeyS) {
+		editor.Save()
+		return
+	}
+	if editor.ShownWorkspace() == LevelWorkspace {
+		view.levelKeys(state)
+	}
+}
+
+// workspaceKeys change workspace with 1 to 6, and leave Play with Escape; they tell whether they
+// took a key.
+func (view *View) workspaceKeys(state *input.State) bool {
+	editor := view.Editor
+	if editor.ShownWorkspace() == PlayWorkspace && state.Pressed(input.KeyEscape) {
+		editor.LeavePlay()
+		return true
 	}
 	for _, workspace := range Workspaces {
 		if state.Pressed(workspace.Key()) {
 			view.showWorkspace(workspace)
-			return
+			return true
 		}
 	}
-	if editor.ShownWorkspace() == LevelWorkspace && editor.Scene.Is2D() && !state.Down(input.KeyControl) {
+	return false
+}
+
+// levelKeys take a tool in 2D, and act on the chosen node: duplicate, delete, frame, let go.
+func (view *View) levelKeys(state *input.State) {
+	editor := view.Editor
+	control := state.Down(input.KeyControl)
+	if editor.Scene.Is2D() && !control {
 		for _, tool := range Tools {
 			if state.Pressed(tool.Key()) {
 				editor.Tool = tool
@@ -80,10 +109,7 @@ func (view *View) keys(state *input.State) {
 			}
 		}
 	}
-	control := state.Down(input.KeyControl)
 	switch {
-	case control && state.Pressed(input.KeyS):
-		editor.Save()
 	case control && state.Pressed(input.KeyD):
 		editor.Duplicate()
 	case state.Pressed(input.KeyDelete):

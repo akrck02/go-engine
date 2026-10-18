@@ -73,8 +73,7 @@ func (view *View) artList(context *ui.Context) {
 	context.Heading("Pictures")
 	for _, picture := range pictures(view.assetTree) {
 		if context.Selectable(iconPicture, picture, picture == view.art.picture && open == "") {
-			view.Editor.CloseArt()
-			view.art.picture = picture
+			view.choosePicture(picture)
 		}
 	}
 }
@@ -97,7 +96,19 @@ func (view *View) artGroup(context *ui.Context, heading, icon string, paths []st
 	}
 }
 
+// choosePicture shows a picture to make a sprite or a tileset of, closing the file open in Art.
+func (view *View) choosePicture(picture string) {
+	if err := view.Editor.CloseArt(); err != nil {
+		view.Editor.say(err.Error(), true)
+		return
+	}
+	view.art.picture = picture
+}
+
 func (view *View) openArt(path string) {
+	if open, _, _ := view.Editor.ArtOpen(); open == path {
+		return // open already, changes and all
+	}
 	if err := view.Editor.OpenArt(path); err != nil {
 		view.Editor.say(err.Error(), true)
 		return

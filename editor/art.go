@@ -32,8 +32,12 @@ func (editor *Editor) ArtOpen() (file string, isSprite, isTileset bool) {
 // ArtSaved tells whether the file open in Art has no changes left to save.
 func (editor *Editor) ArtSaved() bool { return editor.art.path == "" || editor.art.saved }
 
-// OpenArt opens a sprite's or a tileset's file of the project in Art.
+// OpenArt opens a sprite's or a tileset's file of the project in Art; the file open before must
+// have no changes left to save.
 func (editor *Editor) OpenArt(file string) error {
+	if !editor.ArtSaved() {
+		return failure.Wrap(ArtUnsaved, editor.art.path, nil)
+	}
 	data, err := fs.ReadFile(editor.Project.Files(), file)
 	if err != nil {
 		return failure.Wrap(ArtNotFound, file, err)
@@ -45,7 +49,7 @@ func (editor *Editor) OpenArt(file string) error {
 	case scenefile.IsTilesetFile(file):
 		opened.tileset, err = scenefile.ReadTileset(data)
 	default:
-		return failure.Wrap(ArtNotFound, file+" is not a sprite's or a tileset's file", nil)
+		return failure.Wrap(ArtWrongKind, file, nil)
 	}
 	if err != nil {
 		return err
@@ -54,8 +58,14 @@ func (editor *Editor) OpenArt(file string) error {
 	return nil
 }
 
-// CloseArt closes the file open in Art, without saving it.
-func (editor *Editor) CloseArt() { editor.art = artFile{} }
+// CloseArt closes the file open in Art, which must have no changes left to save.
+func (editor *Editor) CloseArt() error {
+	if !editor.ArtSaved() {
+		return failure.Wrap(ArtUnsaved, editor.art.path, nil)
+	}
+	editor.art = artFile{}
+	return nil
+}
 
 // MakeSprite makes a picture of the project a sprite of columns and rows of frames, in a file
 // beside it ("lamp.png" makes "lamp.sprite.json"), and opens it; a sprite already made is opened.
@@ -81,6 +91,9 @@ func beside(picture, suffix string) string {
 
 // makeArt writes a new sprite or tileset and opens it, or opens the one already there.
 func (editor *Editor) makeArt(file string, made artFile) error {
+	if !editor.ArtSaved() {
+		return failure.Wrap(ArtUnsaved, editor.art.path, nil)
+	}
 	if _, err := os.Stat(editor.Project.Path(file)); err == nil {
 		return editor.OpenArt(file)
 	}
@@ -110,6 +123,14 @@ func (editor *Editor) SaveArt() error {
 	editor.Scene.Forget(editor.art.path)
 	editor.Scene.Sync()
 	return nil
+}
+
+// saveArtIfChanged saves the file open in Art when it has changes.
+func (editor *Editor) saveArtIfChanged() error {
+	if editor.ArtSaved() {
+		return nil
+	}
+	return editor.SaveArt()
 }
 
 // editedSheet is the sheet the sheet's tools change: the sprite open in Art, or else the chosen
@@ -200,7 +221,8 @@ func (editor *Editor) SetArtTileSize(pixels int) {
 
 // MakeSpriteOfNode moves the chosen node's own sheet into a sprite's file beside its picture, makes
 // the node show that file, and opens it in Art: a scene written before sprites had files of their
-// own is brought up to date one node at a time.
+// own is brought up to date one node at a time. When the file is there already (another node made
+// it), the node shows it as it is: a shared sprite is never written over.
 func (editor *Editor) MakeSpriteOfNode() (string, error) {
 	node := editor.Selected
 	if node == nil {
@@ -208,13 +230,21 @@ func (editor *Editor) MakeSpriteOfNode() (string, error) {
 	}
 	sheet, own := node.Sheet()
 	if !own || scenefile.IsSpriteFile(node.Sprite()) {
-		return "", failure.Wrap(ArtNotFound, node.Path()+" has no sheet of its own", nil)
+		return "", failure.Wrap(NoOwnSheet, node.Path(), nil)
+	}
+	if !editor.ArtSaved() {
+		return "", failure.Wrap(ArtUnsaved, editor.art.path, nil)
 	}
 	file := beside(node.Sprite(), scenefile.SpriteSuffix)
-	editor.art = artFile{path: file, sprite: &scenefile.Sprite{Picture: node.Sprite(), SpriteSheet: *sheet.Copy()}}
-	if err := editor.SaveArt(); err != nil {
-		return "", err
+	if _, err := os.Stat(editor.Project.Path(file)); err != nil {
+		editor.art = artFile{path: file, sprite: &scenefile.Sprite{Picture: node.Sprite(), SpriteSheet: *sheet.Copy()}}
+		if err := editor.SaveArt(); err != nil {
+			return "", err
+		}
 	}
 	node.SetSheet(nil)
-	return file, editor.SetSprite(file)
+	if err := editor.SetSprite(file); err != nil {
+		return "", err
+	}
+	return file, editor.OpenArt(file)
 }

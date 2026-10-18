@@ -16,6 +16,7 @@ import (
 	"github.com/akrck02/go-renderer/input"
 
 	"github.com/akrck02/go-engine/engine"
+	"github.com/akrck02/go-engine/failure"
 	"github.com/akrck02/go-engine/project"
 	"github.com/akrck02/go-engine/scenefile"
 	"github.com/akrck02/go-engine/space"
@@ -44,6 +45,7 @@ type Editor struct {
 	// shape of the screen it is shown at.
 	Paused   bool
 	stepOnce bool
+	Watched  string // the path of the node of the scene playing that Play's watch shows
 	Target   PlayTarget
 	playLog  playLog
 	unlisten func() // stops keeping the log, while playing
@@ -74,7 +76,7 @@ type Editor struct {
 
 // Open opens a project at its start scene.
 func Open(opened *project.Project) (*Editor, error) {
-	editor := &Editor{Project: opened, events: make(chan func(editor *Editor), 16), workspace: LevelWorkspace, before: LevelWorkspace,
+	editor := &Editor{Project: opened, events: make(chan func(editor *Editor), 16), workspace: LevelWorkspace, before: LevelWorkspace, Saved: true,
 		builds: map[BuildTarget]BuildResult{}, builders: map[BuildTarget]func() (project.Built, error){}}
 	if err := editor.OpenScene(opened.Settings.StartScene); err != nil {
 		return nil, err
@@ -85,6 +87,9 @@ func Open(opened *project.Project) (*Editor, error) {
 
 // OpenScene shows another scene of the project.
 func (editor *Editor) OpenScene(file string) error {
+	if !editor.Saved {
+		return failure.Wrap(UnsavedChanges, editor.SceneFile, nil)
+	}
 	description, err := editor.Project.ReadScene(file)
 	if err != nil {
 		return err
@@ -96,10 +101,12 @@ func (editor *Editor) OpenScene(file string) error {
 	built.Editing = true
 	built.Sync()
 	editor.Scene, editor.SceneFile, editor.Selected, editor.Saved = built, file, nil, true
+	editor.say("Opened "+file, false)
 	if err != nil {
 		editor.say(err.Error(), true)
-	} else {
-		editor.say("Opened "+file, false)
+	}
+	if editor.workspace == PlayWorkspace {
+		editor.PlayHere() // the game goes on in the scene opened, not the one before
 	}
 	return nil
 }
@@ -495,13 +502,17 @@ func FieldText(value any) string {
 // PlayHere plays the scene in the view, with the behaviours compiled into the game the editor runs
 // in; the scene edited stays as it was. StopHere goes back to editing.
 func (editor *Editor) PlayHere() {
-	if editor.unlisten == nil {
-		editor.unlisten = editor.listenToLog()
+	editor.Paused, editor.stepOnce, editor.Watched = false, false, ""
+	if editor.Selected != nil {
+		editor.Watched = editor.Selected.Path()
 	}
 	built, err := engine.Build(editor.Project.Files(), editor.Scene.Describe())
 	if built == nil {
 		editor.say(err.Error(), true)
 		return
+	}
+	if editor.unlisten == nil {
+		editor.unlisten = editor.listenToLog()
 	}
 	problems := built.Start()
 	editor.playingHere = built
@@ -519,14 +530,15 @@ func (editor *Editor) PlayHere() {
 
 // StopHere stops the play in the view.
 func (editor *Editor) StopHere() {
-	if editor.playingHere == nil {
-		return
-	}
-	editor.playingHere, editor.Paused = nil, false
+	editor.Paused, editor.stepOnce = false, false
 	if editor.unlisten != nil {
 		editor.unlisten()
 		editor.unlisten = nil
 	}
+	if editor.playingHere == nil {
+		return
+	}
+	editor.playingHere = nil
 	editor.say("Back to editing", false)
 }
 

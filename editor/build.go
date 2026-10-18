@@ -56,7 +56,19 @@ func (editor *Editor) LastBuild(target BuildTarget) (BuildResult, bool) {
 }
 
 // BuildFor builds the game for a target in the background; its result is kept when it ends.
+// What is built is what is on disk: the scene and the file open in Art are saved first.
 func (editor *Editor) BuildFor(target BuildTarget) {
+	if editor.running {
+		editor.say("Busy: wait for what is running to end, or stop the game", true)
+		return
+	}
+	if !editor.Saved && editor.Save() != nil {
+		return
+	}
+	if err := editor.saveArtIfChanged(); err != nil {
+		editor.say(err.Error(), true)
+		return
+	}
 	editor.Run("Building for "+target.Name()+"…", func() (string, error) {
 		result := editor.buildNow(target)
 		editor.send(func(editor *Editor) { editor.recordBuild(target, result) })
