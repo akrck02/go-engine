@@ -68,8 +68,8 @@ func (view *View) artList(context *ui.Context) {
 	view.ownSheetCard(context)
 	open, _, _ := view.Editor.ArtOpen()
 	paths := assetPaths(view.assetTree)
-	view.artGroup(context, "Sprites", iconAnimation, paths, scenefile.IsSpriteFile, open)
-	view.artGroup(context, "Tilesets", iconTileMap, paths, scenefile.IsTilesetFile, open)
+	view.artGroup(context, "Sprites", iconSprite, paths, scenefile.IsSpriteFile, open)
+	view.artGroup(context, "Tilesets", iconTileset, paths, scenefile.IsTilesetFile, open)
 	context.Heading("Pictures")
 	for _, picture := range pictures(view.assetTree) {
 		if context.Selectable(iconPicture, picture, picture == view.art.picture && open == "") {
@@ -127,7 +127,7 @@ func (view *View) ownSheetCard(context *ui.Context) {
 		return
 	}
 	note(context, node.Name+" cuts its picture into frames itself, as scenes did before sprites had files.")
-	if context.IconButton(iconAnimation, "Make it a sprite file") {
+	if context.IconButton(iconSprite, "Make it a sprite file") {
 		if _, err := view.Editor.MakeSpriteOfNode(); err != nil {
 			view.Editor.say(err.Error(), true)
 		}
@@ -310,11 +310,11 @@ func (view *View) makeArtButtons(context *ui.Context) {
 	editor := view.Editor
 	context.Heading("Make it…")
 	context.Caption(view.art.picture)
-	if context.IconButton(iconAnimation, "A sprite") {
+	if context.IconButton(iconSprite, "A sprite") {
 		view.reportArt(editor.MakeSprite(view.art.picture, 1, 1))
 	}
 	context.Tooltip("Cut it into frames and make animations of them")
-	if context.IconButton(iconTileMap, "A tileset") {
+	if context.IconButton(iconTileset, "A tileset") {
 		view.reportArt(editor.MakeTileset(view.art.picture, defaultTileSize))
 	}
 	context.Tooltip("Cut it into tiles to paint levels with")
@@ -335,7 +335,7 @@ func (view *View) reportArt(file string, err error) {
 // spriteSettings are the sprite's cut, its animations and saving it.
 func (view *View) spriteSettings(context *ui.Context, file string) {
 	editor := view.Editor
-	view.artFileHeading(context, iconAnimation, file)
+	view.artFileHeading(context, iconSprite, file)
 	sprite := editor.art.sprite
 	context.Caption("Frames across and down")
 	columns, rows := float64(sprite.Columns), float64(sprite.Rows)
@@ -354,7 +354,7 @@ func (view *View) spriteSettings(context *ui.Context, file string) {
 // tilesetSettings are the tileset's tile size, and saving it.
 func (view *View) tilesetSettings(context *ui.Context, file string) {
 	editor := view.Editor
-	view.artFileHeading(context, iconTileMap, file)
+	view.artFileHeading(context, iconTileset, file)
 	size := float64(editor.art.tileset.TileSize)
 	context.Caption("Pixels a tile, a side")
 	if numberField(context, "Tile size", &size, tileSizeLimits, "%.0f px") {
@@ -500,7 +500,7 @@ func (view *View) frameStrip(context *ui.Context, animation *scenefile.Animation
 					view.stripFrame(context, frames[frame], frame, place)
 				}
 			}
-			if context.IconButton(iconClose, "Clear") {
+			if context.IconButton(iconClear, "Clear") {
 				editor.ClearFrames(view.art.animation)
 			}
 			context.Tooltip("Take every frame out, to click them again")

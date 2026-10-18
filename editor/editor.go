@@ -52,6 +52,10 @@ type Editor struct {
 
 	art artFile // the sprite or tileset open in the Art workspace
 
+	used        map[string][]project.Use // the behaviours the saved scenes use, read now and then
+	usedAt      time.Time
+	buildOutput outputTail // what rebuilding the code said when it failed
+
 	builds   map[BuildTarget]BuildResult                   // each target's last build
 	builders map[BuildTarget]func() (project.Built, error) // how a target is built, when a test says
 
@@ -117,7 +121,7 @@ func (editor *Editor) Save() error {
 		editor.say(err.Error(), true)
 		return err
 	}
-	editor.Saved = true
+	editor.Saved, editor.used = true, nil
 	editor.say("Saved "+editor.SceneFile, false)
 	return nil
 }

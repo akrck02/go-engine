@@ -112,7 +112,7 @@ func (view *View) paletteStrip(context *ui.Context, node *engine.Node, tiles *sc
 	layout := ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Height: ui.Fixed(paletteHeight), Padding: ui.PadXY(10, 6), Gap: 4}
 	bar(context, layout, func() {
 		context.Row(func() {
-			context.IconSized(iconTileMap, 16, context.Theme.Primary)
+			context.IconSized(iconTileset, 16, context.Theme.Primary)
 			context.Text("Palette", ui.TextStyle{Weight: draw2d.Bold})
 			context.Caption(tiles.Tileset)
 			context.Spacer()

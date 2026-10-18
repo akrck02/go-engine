@@ -296,6 +296,7 @@ func (view *View) spriteInspector(context *ui.Context, node *engine.Node) {
 	if size := node.Bounds().Size(); size.X > 0 {
 		note(context, trimmed(size.X)+" × "+trimmed(size.Y)+" m, times its scale")
 	}
+	view.startsWithSelect(context, node)
 	if _, cutHere := node.Sheet(); cutHere {
 		note(context, "This node cuts its picture into frames itself, as scenes did before sprites had files: Art can make it a sprite of its own.")
 	}
@@ -303,6 +304,28 @@ func (view *View) spriteInspector(context *ui.Context, node *engine.Node) {
 		view.openNodeInArt(node)
 	}
 	context.Tooltip("Cut the picture into frames and time its animations (2)")
+}
+
+// startsWithSelect chooses the animation the node starts with: its sprite's own first one, or
+// another, so nodes that share a sprite can start differently.
+func (view *View) startsWithSelect(context *ui.Context, node *engine.Node) {
+	names := node.Animations()
+	if len(names) == 0 {
+		return
+	}
+	options := append([]string{"The sprite's own first"}, names...)
+	chosen := 0
+	if own := node.NamedStart(); own != "" {
+		chosen = max(0, indexOf(options, own))
+	}
+	context.Caption("Starts with")
+	if context.Select("Starts with", &chosen, options) {
+		name := ""
+		if chosen > 0 {
+			name = options[chosen]
+		}
+		view.Editor.SetStartsWith(name)
+	}
 }
 
 // openNodeInArt goes to Art with the node's sprite file open in it, or its picture chosen.

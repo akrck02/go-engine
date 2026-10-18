@@ -185,12 +185,14 @@ func (view *View) outputPanel(context *ui.Context) {
 	})
 }
 
-// outputLines are the lines building or playing printed, if anything ran.
+// outputLines are what rebuilding the code said when it failed, then what building or playing the
+// game printed.
 func (view *View) outputLines() []string {
-	if view.Editor.output == nil {
-		return nil
+	lines := view.Editor.buildOutput.Lines()
+	if view.Editor.output != nil {
+		lines = append(lines, view.Editor.output.Lines()...)
 	}
-	return view.Editor.output.Lines()
+	return lines
 }
 
 // rebuildButton builds the project's code again; it stands out while the code is newer than the

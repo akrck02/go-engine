@@ -8,7 +8,7 @@ import (
 )
 
 // The Level workspace's tools: what the left button does in the 2D view. The middle button always
-// moves the view, and the right one only ever erases.
+// moves the view; with a tile tool, the right one erases.
 
 // Tool is what the left button does in the 2D view.
 type Tool int
@@ -31,14 +31,14 @@ var Tools = []Tool{SelectTool, PaintTool, EraseTool, FillTool, HandTool}
 
 // toolParts are each tool's word, icon, key and what it does, in the order of Tools.
 var toolParts = []struct {
-	name, icon, does string
-	key              input.Key
+	name, icon, does, letter string
+	key                      input.Key
 }{
-	{"Select", iconSelect, "Choose a node, and drag it", input.KeyV},
-	{"Paint", iconPaint, "Paint the chosen tile map with the tile chosen in the palette", input.KeyB},
-	{"Erase", iconErase, "Take tiles off the chosen tile map", input.KeyE},
-	{"Fill", iconFill, "Paint a region of the same tile, as far as it goes", input.KeyG},
-	{"Hand", iconHand, "Move the view", input.KeyH},
+	{"Select", iconSelect, "Choose a node, and drag it", "V", input.KeyV},
+	{"Paint", iconPaint, "Paint the chosen tile map with the tile chosen in the palette", "B", input.KeyB},
+	{"Erase", iconErase, "Take tiles off the chosen tile map", "E", input.KeyE},
+	{"Fill", iconFill, "Paint a region of the same tile, as far as it goes", "G", input.KeyG},
+	{"Hand", iconHand, "Move the view", "H", input.KeyH},
 }
 
 // Name is the tool's word.
@@ -49,6 +49,9 @@ func (tool Tool) Icon() string { return toolParts[tool].icon }
 
 // Does says what the tool does, for its tooltip.
 func (tool Tool) Does() string { return toolParts[tool].does }
+
+// Letter is the tool's key, as written on it.
+func (tool Tool) Letter() string { return toolParts[tool].letter }
 
 // Key is the key that takes the tool.
 func (tool Tool) Key() input.Key { return toolParts[tool].key }

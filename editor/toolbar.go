@@ -2,6 +2,7 @@ package editor
 
 import (
 	"path"
+	"strconv"
 	"strings"
 
 	"github.com/akrck02/go-renderer/draw2d"
@@ -99,7 +100,7 @@ func (view *View) workspaceButton(context *ui.Context, workspace Workspace) {
 	}) {
 		view.showWorkspace(workspace)
 	}
-	context.Tooltip(workspace.Name() + " (" + FieldText(float64(workspace)+1) + ")")
+	context.Tooltip(workspace.Name() + " (" + strconv.Itoa(int(workspace)+1) + ")")
 }
 
 func weightFor(shown bool) draw2d.Weight {

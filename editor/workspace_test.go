@@ -74,12 +74,18 @@ func TestNoIconStandsForTwoThings(test *testing.T) {
 var iconCalls = []string{"IconButton(", "FlatIconButton(", "PrimaryIconButton(", "MenuButton(", "MenuItem(", "IconSized(", "Selectable(", "treeButton(context, "}
 
 func TestEveryIconComesFromTheIconsFile(test *testing.T) {
-	paths, _ := filepath.Glob("*.go")
+	paths, err := filepath.Glob("*.go")
+	if err != nil {
+		test.Fatal(err)
+	}
 	for _, path := range paths {
 		if path == iconsFile || strings.HasSuffix(path, "_test.go") {
 			continue
 		}
-		data, _ := os.ReadFile(path)
+		data, err := os.ReadFile(path)
+		if err != nil {
+			test.Fatal(err)
+		}
 		for number, line := range strings.Split(string(data), "\n") {
 			for _, call := range iconCalls {
 				if strings.Contains(line, call+`"`) {

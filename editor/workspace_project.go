@@ -218,9 +218,9 @@ func (view *View) assetPicture(file string) (*draw2d.Image, bool) {
 func assetIconOf(file string) string {
 	switch {
 	case scenefile.IsSpriteFile(file):
-		return iconAnimation
+		return iconSprite
 	case scenefile.IsTilesetFile(file):
-		return iconTileMap
+		return iconTileset
 	case strings.HasSuffix(file, ".scene.json"):
 		return iconScene
 	}

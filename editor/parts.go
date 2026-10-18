@@ -57,6 +57,16 @@ func (editor *Editor) SetSprite(path string) error {
 	return err
 }
 
+// SetStartsWith makes the chosen node start with an animation of its sprite; "" starts with the
+// sprite's own first one.
+func (editor *Editor) SetStartsWith(name string) {
+	if editor.Selected == nil {
+		return
+	}
+	editor.Selected.SetStartsWith(name)
+	editor.Changed()
+}
+
 // SetGravityScale sets how much gravity pulls the chosen node's body: 1 fully, 0 not at all.
 func (editor *Editor) SetGravityScale(scale float64) {
 	body, found := editor.selectedBody()

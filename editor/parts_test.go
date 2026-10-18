@@ -145,3 +145,22 @@ func TestASpriteChosenInTheInspectorIsSaved(test *testing.T) {
 		test.Fatalf("the sprite came back as %q", saved.Sprite())
 	}
 }
+
+func TestTheAnimationANodeStartsWithIsSaved(test *testing.T) {
+	editor := openFlat(test)
+	tilesetPicture(test, editor, "assets/lamp.png")
+	file, _ := editor.MakeSprite("assets/lamp.png", 3, 1)
+	flicker := editor.AddAnimation()
+	editor.RenameAnimation(flicker, "flicker")
+	editor.AddAnimation()
+	editor.SaveArt()
+	editor.SetSprite(file)
+	if names := editor.Selected.Animations(); len(names) != 2 || names[1] != "animation" {
+		test.Fatalf("the node's sprite has %v", names)
+	}
+	editor.SetStartsWith("animation")
+	again := saveAndOpenAgain(test, editor, editor.Selected.Path())
+	if again.StartsWith() != "animation" {
+		test.Fatalf("the node starts with %q", again.StartsWith())
+	}
+}

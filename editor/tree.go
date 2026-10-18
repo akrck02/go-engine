@@ -91,7 +91,7 @@ func nodeIcon(node *engine.Node) string {
 		return iconModel
 	}
 	if node.Sprite() != "" {
-		return iconPicture
+		return iconSprite
 	}
 	if node.Shape() != "" {
 		return kindIcon(strings.ToUpper(node.Shape()[:1]) + node.Shape()[1:])

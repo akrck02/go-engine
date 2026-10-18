@@ -172,3 +172,29 @@ func TestASheetOfItsOwnWinsOverItsSpritesFile(test *testing.T) {
 		test.Fatalf("the node's own sheet did not win: %v metres wide", hero.Bounds().Size().X)
 	}
 }
+
+func TestANodeStartsWithTheAnimationItNames(test *testing.T) {
+	sprite := scenefile.Sprite{Picture: "assets/hero.png", SpriteSheet: scenefile.SpriteSheet{Columns: 4, Rows: 1, Start: "walk",
+		Animations: []scenefile.Animation{
+			{Name: "walk", Frames: []int{0, 1, 2, 3}, FramesPerSecond: 4, Loop: true},
+			{Name: "rest", Frames: []int{2}, FramesPerSecond: 1},
+		}}}
+	data, _ := sprite.Marshal()
+	description := &scenefile.Scene{Name: "Walk", Mode: scenefile.Mode2D, PixelsPerMetre: 8, Nodes: []scenefile.Node{
+		{Name: "Walker", Sprite: "assets/hero.sprite.json", Scale: [3]float64{1, 1, 1}},
+		{Name: "Rester", Sprite: "assets/hero.sprite.json", Scale: [3]float64{1, 1, 1}, Animation: "rest"},
+	}}
+	built, err := Build(fstest.MapFS{"assets/hero.png": {Data: sheetPicture()}, "assets/hero.sprite.json": {Data: data}}, description)
+	if err != nil {
+		test.Fatal(err)
+	}
+	built.Start()
+	walker, _ := built.Find("Walker")
+	rester, _ := built.Find("Rester")
+	if walker.Animation() != "walk" || rester.Animation() != "rest" || rester.Frame() != 2 {
+		test.Fatalf("the walker plays %q, the rester %q on frame %d", walker.Animation(), rester.Animation(), rester.Frame())
+	}
+	if again := built.Describe(); again.Nodes[1].Animation != "rest" || again.Nodes[0].Animation != "" {
+		test.Fatal("the animation a node starts with was not written back")
+	}
+}

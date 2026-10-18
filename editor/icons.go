@@ -8,7 +8,7 @@ const (
 	// the workspaces
 	iconProject = "library-big"
 	iconArt     = "palette"
-	iconScene   = "map" // a scene, and the Level workspace that edits one
+	iconScene   = "map" // a scene (a level), which the Level workspace edits
 	iconCode    = "braces"
 	iconPlay    = "play"
 	iconBuild   = "hammer"
@@ -27,6 +27,8 @@ const (
 	iconFolder     = "folder"
 	iconOpenFolder = "folder-open"
 	iconPicture    = "image"
+	iconSprite     = "image-play" // a sprite: a node showing one, or its file
+	iconTileset    = "layout-grid"
 	iconModel      = "package"
 	iconSound      = "music"
 	iconFile       = "file"
@@ -42,8 +44,8 @@ const (
 	// nodes
 	iconEmpty     = "circle-dashed"
 	iconCube      = "box"
-	iconRound     = "circle" // a sphere, or a circle in 2D
-	iconFlat      = "square" // a plane, or a square in 2D
+	iconRound     = "circle" // a round shape: a sphere in 3D, a circle in 2D
+	iconFlat      = "square" // a flat, square shape: a plane in 3D, a square in 2D
 	iconCylinder  = "cylinder"
 	iconCamera    = "video"
 	iconTileMap   = "grid-3x3"
@@ -56,6 +58,7 @@ const (
 	iconDelete      = "trash-2"
 	iconRemove      = "circle-minus"
 	iconClose       = "x"
+	iconClear       = "list-x"
 	iconEarlier     = "arrow-up"
 	iconLater       = "arrow-down"
 	iconMakeChild   = "corner-down-right"

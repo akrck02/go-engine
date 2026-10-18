@@ -45,6 +45,7 @@ type Node struct {
 	sheet *scenefile.SpriteSheet
 	tiles *scenefile.TileMap
 
+	startWith  string              // the animation it starts with, when not its sprite's own
 	playing    scenefile.Animation // the sheet's animation playing, while the game plays
 	playingFor float64             // seconds it has played
 	facingLeft bool

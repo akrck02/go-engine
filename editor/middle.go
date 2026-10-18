@@ -2,7 +2,6 @@ package editor
 
 import (
 	"github.com/akrck02/go-renderer/draw2d"
-	"github.com/akrck02/go-renderer/input"
 	ui "github.com/akrck02/go-ui"
 
 	"github.com/akrck02/go-engine/engine"
@@ -78,21 +77,8 @@ func (view *View) toolButton(context *ui.Context, tool Tool) {
 	}) {
 		view.Editor.Tool = tool
 	}
-	context.Tooltip(tool.Name() + " (" + keyName(tool.Key()) + "): " + tool.Does())
+	context.Tooltip(tool.Name() + " (" + tool.Letter() + "): " + tool.Does())
 }
-
-// keyName is the letter of a tool's key.
-func keyName(key input.Key) string {
-	for _, tool := range Tools {
-		if tool.Key() == key {
-			return toolLetters[tool]
-		}
-	}
-	return ""
-}
-
-// toolLetters are the letters of the tools' keys, in the order of Tools.
-var toolLetters = []string{"V", "B", "E", "G", "H"}
 
 // floatingLook is the look of what floats over the view: a card with a shadow.
 func floatingLook(context *ui.Context) ui.Look {

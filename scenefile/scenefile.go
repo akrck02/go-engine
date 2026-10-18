@@ -54,7 +54,10 @@ type Node struct {
 
 	Body  *Body        `json:"body,omitempty"`  // in a 2D scene, a body in its physics
 	Sheet *SpriteSheet `json:"sheet,omitempty"` // in a 2D scene, the sprite cut into animated frames
-	Tiles *TileMap     `json:"tiles,omitempty"` // in a 2D scene, a map of tiles
+	// Animation is the animation of its sprite the node starts with, in a 2D scene; empty is the
+	// sprite's own first one. Nodes that share a sprite can start differently.
+	Animation string   `json:"animation,omitempty"`
+	Tiles     *TileMap `json:"tiles,omitempty"` // in a 2D scene, a map of tiles
 
 	Behaviours []Behaviour `json:"behaviours,omitempty"`
 	Children   []Node      `json:"children,omitempty"`

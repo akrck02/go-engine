@@ -9,7 +9,7 @@ import (
 
 // The Play workspace: the game in the middle at the shape of its screen, the controls of a player
 // over it, the scene's nodes on the left to choose one to watch, what that node is doing on the
-// right, and what the game says under it. Nothing done here is saved.
+// right, and what the game says under it. What happens while playing is not kept in the scene.
 
 // The Play workspace's measures, in pixels.
 const (

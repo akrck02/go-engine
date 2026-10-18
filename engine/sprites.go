@@ -23,6 +23,38 @@ func (node *Node) SetSheet(sheet *scenefile.SpriteSheet) {
 	node.playing, node.playingFor = scenefile.Animation{}, 0
 }
 
+// StartsWith is the animation the node plays when the scene starts: the one it names, or else its
+// sprite's own first one, or "".
+func (node *Node) StartsWith() string {
+	if node.startWith != "" {
+		return node.startWith
+	}
+	if sheet := node.frames(); sheet != nil {
+		return sheet.Start
+	}
+	return ""
+}
+
+// Animations are the names of the animations of the node's sprite, in order.
+func (node *Node) Animations() []string {
+	sheet := node.frames()
+	if sheet == nil {
+		return nil
+	}
+	names := make([]string, len(sheet.Animations))
+	for index, animation := range sheet.Animations {
+		names[index] = animation.Name
+	}
+	return names
+}
+
+// NamedStart is the animation the node itself names to start with, or "" for its sprite's own.
+func (node *Node) NamedStart() string { return node.startWith }
+
+// SetStartsWith makes the node start with an animation of its sprite; "" starts with the
+// sprite's own first one.
+func (node *Node) SetStartsWith(name string) { node.startWith = name }
+
 // Play starts an animation of the node's sheet by its name. The animation already playing goes on
 // where it is, so a behaviour may ask for "walk" every frame it walks. It tells whether the sheet
 // has the animation.
@@ -66,8 +98,8 @@ func (node *Node) FacingLeft() bool { return node.facingLeft }
 
 // startAnimations plays each sheet's first animation.
 func (owner *Scene) startAnimations(node *Node) {
-	if sheet := node.frames(); sheet != nil && sheet.Start != "" {
-		node.Play(sheet.Start)
+	if name := node.StartsWith(); name != "" {
+		node.Play(name)
 	}
 	for _, child := range node.children {
 		owner.startAnimations(child)

@@ -2,6 +2,7 @@ package editor
 
 import (
 	"flag"
+	"fmt"
 	"os"
 	"time"
 
@@ -112,6 +113,7 @@ func (editor *Editor) Reload() {
 	editor.StopHere()
 	editor.Run("Building the project's code…", func() (string, error) {
 		if err := editor.Project.BuildEditor(); err != nil {
+			fmt.Fprintln(&editor.buildOutput, err.Error()) // the Code workspace shows it
 			return "", err
 		}
 		selected := ""

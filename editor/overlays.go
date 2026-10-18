@@ -16,15 +16,17 @@ import (
 
 // Colours of the overlays.
 var (
-	solidFill      = draw2d.Color{0.25, 0.45, 0.85, 0.22}
-	solidLine      = draw2d.Color{0.25, 0.45, 0.85, 0.9}
-	movingLine     = draw2d.Color{0.2, 0.75, 0.35, 0.95}
-	triggerFill    = draw2d.Color{0.95, 0.55, 0.1, 0.18}
-	triggerLine    = draw2d.Color{0.95, 0.55, 0.1, 0.95}
-	boundsLine     = draw2d.Color{0.85, 0.2, 0.5, 0.9}
-	cellLine       = draw2d.Color{1, 1, 1, 0.25}
-	smallestCellPx = float32(6) // cells drawn smaller than this, in pixels, are not outlined
+	solidFill   = draw2d.Color{0.25, 0.45, 0.85, 0.22}
+	solidLine   = draw2d.Color{0.25, 0.45, 0.85, 0.9}
+	movingLine  = draw2d.Color{0.2, 0.75, 0.35, 0.95}
+	triggerFill = draw2d.Color{0.95, 0.55, 0.1, 0.18}
+	triggerLine = draw2d.Color{0.95, 0.55, 0.1, 0.95}
+	boundsLine  = draw2d.Color{0.85, 0.2, 0.5, 0.9}
+	cellLine    = draw2d.Color{1, 1, 1, 0.25}
 )
+
+// smallestCellPixels is the size under which a tile map's cells are not outlined: too many lines.
+const smallestCellPixels = 6
 
 // drawOverlays draws the overlays switched on, and the chosen tile map's cells.
 func (flat *flatView) drawOverlays(editor *Editor) {
@@ -90,7 +92,7 @@ func (flat *flatView) drawCells(node *engine.Node) {
 		return
 	}
 	first, last, found := flat.cellsInSight(node, tiles)
-	if !found || flat.screenRect(node.CellBox(0, 0)).Width < smallestCellPx {
+	if !found || flat.screenRect(node.CellBox(0, 0)).Width < smallestCellPixels {
 		return
 	}
 	for row := first[1]; row <= last[1]; row++ {

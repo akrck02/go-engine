@@ -1,6 +1,6 @@
 # 2. Editor workspaces: one task at a time
 
-> Status: building · Author's approval: proposal ☑ plan ☑ (2026-10-18, "sigue hasta tener todo
+> Status: done · Author's approval: proposal ☑ plan ☑ (2026-10-18, "sigue hasta tener todo
 > implementado": approved together, while away)
 
 ## Why
@@ -105,4 +105,38 @@ meanings share an icon.
 
 ## Result
 
-Not built yet.
+**Built.** Sprites and tilesets are files of their own, which the engine reads once and nodes and
+tile maps point to; a node may name the animation it starts with, so nodes that share a sprite
+start differently. The editor is six workspaces along a bottom bar (keys 1 to 6, in Play too):
+
+- Level, with a tool rail, fill, overlays, a palette in the tileset's columns and an inspector that
+  only places (with "Starts with");
+- Art, with the picture large and its cut numbered, frames clicked into animations, a preview and
+  solid tiles;
+- Play, with pause, a step, a restart, a screen's shape, a live watch of the scene playing and the
+  log;
+- Project, with thumbnails, filters, uses and settings;
+- Code, with the behaviours, their fields and methods, their uses, the missing ones and the output;
+- Build, with a card and a log per target.
+
+Icons are constants with one meaning each. The demo's coins share one sprite file and its levels
+one tileset file; it plays on the 3DS from them.
+
+**Checked.** Every task's tests pass, with the order shuffled too; each workspace was captured
+with the demo open (on the author's private progress page: docs are not written for v0.0.1); the
+demo was played in Azahar.
+
+**Review.** The reviewer's findings were fixed: the play log gives the log package back and is
+only taken when a game starts; opening a scene or an Art file over unsaved changes is refused, a
+shared sprite is never written over, builds save first; only Level and Play take the view's input;
+Play's tree is the scene playing; Open in Art opens that node's sprite; a sprite file chosen drops
+the node's own sheet; the screen's shape is offered for 2D games only; rebuilding's errors show in
+Code; Code reads the scenes at most every two seconds; sprites, tilesets and clearing have icons of
+their own; new error codes have tests.
+
+**Not done.** Undo and redo, choosing several nodes, and sharp pixel art (a go-renderer filter), as
+the proposal said. In a 3D scene, Level keeps its old view.
+
+**For a person.** Use the mouse: painting and filling, dragging in Select, clicking frames and
+tiles in Art, the palette. The tests cover the model and one simulated click; nobody has painted
+a level by hand yet.
