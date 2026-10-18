@@ -78,9 +78,9 @@ cannot find them yet. A local Go Engine's commit does not reach the `.apk` (it c
 `GOFLAGS`). Choosing among several devices, and signing for a store, were out of scope. Sending to
 a real 3DS was not tried here (no console on the network).
 
-**Needs go-renderer.** Pictures drew nothing on Android: go-renderer's GL ES shaders for sharp
-pictures (feature/3ds 3b08cd9) declare a uniform with different precisions in two stages, and the
-program does not link. The fix (a varying instead) is local, waiting for the author's say.
+**Fixed in go-renderer.** Pictures drew nothing on Android: go-renderer's GL ES shaders for
+sharp pictures (feature/3ds 3b08cd9) declared a uniform with different precisions in two stages,
+and the program did not link. feature/3ds bb1c275 passes it as a varying, with the author's say.
 
 **For a person.** Play on a real phone: the buttons' size and place under a thumb; send to the 3DS
 over the network.

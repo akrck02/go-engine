@@ -18,4 +18,4 @@ require (
 
 // go-ui asks for go-renderer v0.0.0 (it builds against a local copy); this is go-renderer's
 // feature/3ds, which draws on the desktop and on the Nintendo 3DS alike, as go-ui's feature/3ds.
-replace github.com/akrck02/go-renderer => github.com/akrck02/go-renderer v0.0.0-20261018192419-3b08cd96e5a5
+replace github.com/akrck02/go-renderer => github.com/akrck02/go-renderer v0.0.0-20261018204401-bb1c2758a1fc
