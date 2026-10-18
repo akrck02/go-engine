@@ -1,4 +1,4 @@
-// Package scenes is how a scene is kept: a JSON file of nodes, each with its transform (position in
+// Package scenefile is how a scene is kept: a JSON file of nodes, each with its transform (position in
 // metres, rotation in degrees, scale), what it shows (a shape, a model from the project's assets,
 // a camera) and the behaviours the game's own Go code gives it. The editor writes these files; the
 // engine reads them.
@@ -51,6 +51,10 @@ type Node struct {
 	Sprite string  `json:"sprite,omitempty"` // in a 2D scene, a picture in the project, as "assets/sprites/hero.png"
 	Colour string  `json:"colour,omitempty"` // of a shape, "#rrggbb"
 	Camera *Camera `json:"camera,omitempty"`
+
+	Body  *Body        `json:"body,omitempty"`  // in a 2D scene, a body in its physics
+	Sheet *SpriteSheet `json:"sheet,omitempty"` // in a 2D scene, the sprite cut into animated frames
+	Tiles *TileMap     `json:"tiles,omitempty"` // in a 2D scene, a map of tiles
 
 	Behaviours []Behaviour `json:"behaviours,omitempty"`
 	Children   []Node      `json:"children,omitempty"`
@@ -128,6 +132,9 @@ func checkNodes(nodes []Node, parent string) error {
 			return failure.Wrap(UnknownShape, path+" is a "+node.Shape, nil)
 		}
 		seen[node.Name] = true
+		if err := node.checkFlat(path); err != nil {
+			return err
+		}
 		if err := checkNodes(node.Children, path); err != nil {
 			return err
 		}

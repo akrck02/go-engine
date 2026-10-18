@@ -100,6 +100,7 @@ func (owner *Scene) buildNode(description scenefile.Node) (*Node, error) {
 	node.Visible = !description.Hidden
 	node.shape, node.colour, node.model, node.sprite = description.Shape, description.Colour, description.Model, description.Sprite
 	node.camera = description.Camera
+	node.body, node.sheet, node.tiles = description.Body.Copy(), description.Sheet.Copy(), description.Tiles.Copy()
 	node.Behaviours = append([]scenefile.Behaviour(nil), description.Behaviours...)
 	var firstError error
 	if node.model != "" {
@@ -139,6 +140,7 @@ func (node *Node) Describe() scenefile.Node {
 		Scale:    [3]float64{node.Transform.Scale.X, node.Transform.Scale.Y, node.Transform.Scale.Z},
 		Hidden:   !node.Visible,
 		Shape:    node.shape, Colour: node.colour, Model: node.model, Sprite: node.sprite, Camera: node.camera,
+		Body: node.body.Copy(), Sheet: node.sheet.Copy(), Tiles: node.tiles.Copy(),
 		Behaviours: append([]scenefile.Behaviour(nil), node.Behaviours...),
 	}
 	for _, child := range node.children {

@@ -39,6 +39,11 @@ type Node struct {
 	sprite string
 	camera *scenefile.Camera
 
+	// a 2D scene's parts, kept as the scene file has them
+	body  *scenefile.Body
+	sheet *scenefile.SpriteSheet
+	tiles *scenefile.TileMap
+
 	// Behaviours are the game's code attached to the node, as the scene file keeps them; while the
 	// game runs, behaviours holds them made.
 	Behaviours []scenefile.Behaviour
