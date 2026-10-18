@@ -45,6 +45,10 @@ type Node struct {
 	sheet *scenefile.SpriteSheet
 	tiles *scenefile.TileMap
 
+	playing    scenefile.Animation // the sheet's animation playing, while the game plays
+	playingFor float64             // seconds it has played
+	facingLeft bool
+
 	physicsBody *physics.Body   // the body in the scene's physics, while it plays
 	tileBodies  []*physics.Body // a tile map's solid boxes, while it plays
 

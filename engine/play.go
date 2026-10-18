@@ -26,6 +26,7 @@ func (owner *Scene) Start() []error {
 	}
 	owner.started = true
 	defer owner.startPhysics()
+	defer owner.startAnimations(owner.Root)
 	var problems []error
 	owner.Root.Walk(func(node *Node) bool {
 		for _, description := range node.Behaviours {
@@ -53,6 +54,7 @@ func (owner *Scene) Update(seconds float64, keys *input.State) {
 	owner.startPending()
 	owner.updateBehaviours()
 	owner.stepPhysics(seconds)
+	owner.advanceAnimations(owner.Root, seconds)
 	owner.Animate.Update(seconds)
 	owner.Sync()
 }

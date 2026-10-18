@@ -114,7 +114,7 @@ levels painted with the tile tool. No behaviour of the demo reaches into the eng
   R1, R2, R6 · test: `a node with a body falls onto a solid node`
 - [x] T5 — engine: tile maps drawn in 2D, solid tiles as merged solid bodies · `engine/` · R3 ·
   test: `solid tiles stop a body`, `a row of solid tiles is one box`
-- [ ] T6 — engine: animated sprites, `Play`, `FaceLeft` · `engine/` · R4 · test:
+- [x] T6 — engine: animated sprites, `Play`, `FaceLeft` · `engine/` · R4 · test:
   `an animation shows each frame for its time and loops`
 - [ ] T7 — engine: a camera that follows a node within bounds · `engine/` · R5 · test:
   `the camera follows its target and stops at the level's edge`

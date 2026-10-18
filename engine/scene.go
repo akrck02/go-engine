@@ -313,11 +313,12 @@ type assets struct {
 	images map[string]*draw2d.Image
 
 	tilesets map[tilesetKey][]*draw2d.Image
+	sheets   map[sheetKey][]*draw2d.Image
 }
 
 func newAssets(files fs.FS) *assets {
 	return &assets{files: files, models: map[string]*scene.Scene{}, images: map[string]*draw2d.Image{},
-		tilesets: map[tilesetKey][]*draw2d.Image{}}
+		tilesets: map[tilesetKey][]*draw2d.Image{}, sheets: map[sheetKey][]*draw2d.Image{}}
 }
 
 // image reads a picture of the project's (PNG or JPEG), once.
@@ -371,6 +372,11 @@ func (owner *Scene) Forget(file string) {
 	for key := range owner.assets.tilesets {
 		if key.file == file {
 			delete(owner.assets.tilesets, key)
+		}
+	}
+	for key := range owner.assets.sheets {
+		if key.file == file {
+			delete(owner.assets.sheets, key)
 		}
 	}
 }

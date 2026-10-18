@@ -98,11 +98,10 @@ func (node *Node) flatSize() (width, height float64, found bool) {
 	scale := node.World().Scale
 	switch {
 	case node.sprite != "":
-		picture, err := node.scene.assets.image(node.sprite)
-		if err != nil {
+		pixelsWide, pixelsHigh, found := node.scene.framePixels(node)
+		if !found {
 			return 0, 0, false
 		}
-		pixelsWide, pixelsHigh := picture.Size()
 		perMetre := node.scene.pixelsPerMetre()
 		return math.Abs(float64(pixelsWide) / perMetre * scale.X), math.Abs(float64(pixelsHigh) / perMetre * scale.Y), true
 	case node.shape != "":
@@ -169,7 +168,7 @@ func (owner *Scene) drawFlat(list *draw2d.List, area draw2d.Rect, view View2D, n
 	right, bottom := view.ToScreen(area, space.NewVector(box.Maximum.X, box.Minimum.Y, 0))
 	rect := draw2d.Rect{X: left, Y: top, Width: right - left, Height: bottom - top}
 	if node.sprite != "" {
-		if picture, err := owner.assets.image(node.sprite); err == nil {
+		if picture, found := owner.spritePicture(node); found {
 			list.Image(picture, rect, 0, draw2d.Color{1, 1, 1, 1})
 		}
 		return
