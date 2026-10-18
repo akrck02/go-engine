@@ -39,7 +39,7 @@ func floatingLook(context *ui.Context) ui.Look {
 // behind the interface).
 func (view *View) playingView(context *ui.Context, played *engine.Scene) {
 	context.Frame(ui.Layout{Padding: ui.PadXY(10, 6), Gap: 6, AlignY: ui.Center}, floatingLook(context), func() {
-		context.IconSized("play", 16, context.Theme.Positive)
+		context.IconSized(iconPlay, 16, context.Theme.Positive)
 		context.Text("Playing", ui.TextStyle{Weight: draw2d.Medium})
 		context.Caption("Escape stops")
 	})
@@ -59,7 +59,7 @@ func (view *View) viewStrip(context *ui.Context) {
 		if !view.Editor.Scene.Is2D() {
 			view.projectionSwitch(context)
 		}
-		if context.FlatIconButton("scan", "") {
+		if context.FlatIconButton(iconFrame, "") {
 			view.frame()
 		}
 		context.Tooltip("Frame the chosen node (F)")
@@ -96,7 +96,7 @@ func (view *View) leaveCameraButton(context *ui.Context) {
 	if view.viewport.through == nil {
 		return
 	}
-	if context.FlatIconButton("video-off", "") {
+	if context.FlatIconButton(iconLeaveCamera, "") {
 		view.viewport.through = nil
 	}
 	context.Tooltip("Back to the editor's camera")
@@ -122,26 +122,4 @@ func (view *View) viewHint() string {
 		return "Isometric is a fixed angle: drag to pan · scroll to zoom · click to choose · drag the chosen to move it"
 	}
 	return "Drag to turn · right-drag to pan · scroll to zoom · click to choose · drag the chosen to move it"
-}
-
-func (view *View) statusLine(context *ui.Context) {
-	editor := view.Editor
-	bar(context, ui.Layout{Width: ui.Grow(), Height: ui.Fixed(28), Padding: ui.PadXY(10, 0), Gap: 8, AlignY: ui.Center}, func() {
-		style := ui.TextStyle{Color: context.Theme.InkSoft}
-		if editor.Failed {
-			style.Color = context.Theme.Danger
-		}
-		context.Text(editor.Message, style)
-		if editor.output != nil && editor.Running() {
-			if last := editor.output.Last(); last != "" {
-				context.Text("· "+last, ui.TextStyle{Color: context.Theme.InkQuiet})
-			}
-		}
-		context.Spacer()
-		if editor.Saved {
-			context.Text("Saved", ui.TextStyle{Color: context.Theme.Positive})
-		} else {
-			context.Text("Unsaved changes", ui.TextStyle{Color: context.Theme.Warning})
-		}
-	})
 }

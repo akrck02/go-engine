@@ -17,13 +17,13 @@ func (view *View) behaviourInspector(context *ui.Context, node *engine.Node) {
 	context.Row(func() {
 		context.Heading("Behaviours")
 		context.Spacer()
-		context.MenuButton("plus", "Add", func() {
+		context.MenuButton(iconAdd, "Add", func() {
 			for _, definition := range editor.Behaviours() {
-				if context.MenuItem("code", definition.Name, definition.File) {
+				if context.MenuItem(iconCode, definition.Name, definition.File) {
 					editor.AttachBehaviour(definition.Name)
 				}
 			}
-			if context.MenuItem("refresh-cw", "Read the code again", "") {
+			if context.MenuItem(iconReadAgain, "Read the code again", "") {
 				editor.ReadBehaviours()
 				editor.say("Read the project's code: "+FieldText(float64(len(editor.Behaviours())))+" behaviours", false)
 			}
@@ -39,10 +39,10 @@ func (view *View) behaviourInspector(context *ui.Context, node *engine.Node) {
 		context.Frame(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Padding: ui.Pad(8), Gap: 4}, look, func() {
 			definition, known := editor.FindBehaviour(behaviour.Name)
 			context.Row(func() {
-				context.IconSized("code", 16, context.Theme.Primary)
+				context.IconSized(iconCode, 16, context.Theme.Primary)
 				context.Text(behaviour.Name, ui.TextStyle{Weight: draw2d.Bold})
 				context.Spacer()
-				if context.FlatIconButton("x", "") {
+				if context.FlatIconButton(iconRemove, "") {
 					editor.DetachBehaviour(index)
 				}
 			})

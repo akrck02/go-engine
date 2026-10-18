@@ -81,7 +81,7 @@ meanings share an icon.
   still work · `scenefile/`, `engine/` · R2 · tests: `a node plays the animations of the sprite it
   points to`, `a tile map takes its solid tiles from its tileset`, `a sheet of its own wins over
   its sprite's file`
-- [ ] T2 — workspaces and their bar; top bar trimmed; keys 1–6; icons as constants · `editor/` ·
+- [x] T2 — workspaces and their bar; top bar trimmed; keys 1–6; icons as constants · `editor/` ·
   R1, R9 · tests: `switching workspaces keeps the scene and the choice`, `no icon stands for two
   things`
 - [ ] T3 — Level: tool rail, fill, overlays (bodies, camera bounds, cell grid), palette as drawn,

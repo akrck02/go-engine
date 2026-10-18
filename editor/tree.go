@@ -15,7 +15,7 @@ func (view *View) left(context *ui.Context) {
 		context.Box(ui.Layout{Width: ui.Grow(), Padding: ui.Padding{Left: 10, Top: 8, Right: 6}, AlignY: ui.Center}, func() {
 			context.Heading("Scene")
 			context.Spacer()
-			context.MenuButton("plus", "", func() {
+			context.MenuButton(iconAdd, "", func() {
 				for _, kind := range editor.KindsHere() {
 					if context.MenuItem(kindIcon(kind), kind, "") {
 						editor.Add(kind)
@@ -23,14 +23,14 @@ func (view *View) left(context *ui.Context) {
 				}
 			})
 			context.Tooltip("Add a node after the chosen one")
-			view.treeButton(context, "copy", "Duplicate (Ctrl+D)", editor.Duplicate)
-			view.treeButton(context, "trash-2", "Delete (Delete)", editor.Delete)
+			view.treeButton(context, iconDuplicate, "Duplicate (Ctrl+D)", editor.Duplicate)
+			view.treeButton(context, iconDelete, "Delete (Delete)", editor.Delete)
 		})
 		context.Box(ui.Layout{Width: ui.Grow(), Padding: ui.Padding{Left: 10, Right: 6}, Gap: 2}, func() {
-			view.treeButton(context, "arrow-up", "Earlier among its siblings", editor.MoveUp)
-			view.treeButton(context, "arrow-down", "Later among its siblings", editor.MoveDown)
-			view.treeButton(context, "indent-increase", "Hang it from the node above", editor.Nest)
-			view.treeButton(context, "indent-decrease", "Hang it from its parent's parent", editor.Unnest)
+			view.treeButton(context, iconEarlier, "Earlier among its siblings", editor.MoveUp)
+			view.treeButton(context, iconLater, "Later among its siblings", editor.MoveDown)
+			view.treeButton(context, iconMakeChild, "Make it a child of the node above", editor.Nest)
+			view.treeButton(context, iconMoveOut, "Move it out, beside its parent", editor.Unnest)
 		})
 		tree := ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Height: ui.GrowBy(3), Padding: ui.PadXY(8, 4), Gap: 1}
 		context.ScrollArea("Tree", tree, func() {
@@ -66,40 +66,40 @@ func (view *View) treeNode(context *ui.Context, node *engine.Node, depth int) {
 func kindIcon(kind string) string {
 	switch kind {
 	case "Cube":
-		return "box"
+		return iconCube
 	case "Sphere":
-		return "circle"
+		return iconRound
 	case "Plane":
-		return "square"
+		return iconFlat
 	case "Cylinder":
-		return "cylinder"
+		return iconCylinder
 	case "Camera":
-		return "video"
+		return iconCamera
 	case "Square":
-		return "square"
+		return iconFlat
 	case "Circle":
-		return "circle"
+		return iconRound
 	case "Tile map":
-		return "grid-3x3"
+		return iconTileMap
 	}
-	return "crosshair"
+	return iconEmpty
 }
 
 func nodeIcon(node *engine.Node) string {
 	if _, isCamera := node.Camera(); isCamera {
-		return "video"
+		return iconCamera
 	}
 	if node.Model() != "" {
-		return "package"
+		return iconModel
 	}
 	if node.Sprite() != "" {
-		return "image"
+		return iconPicture
 	}
 	if node.Shape() != "" {
 		return kindIcon(strings.ToUpper(node.Shape()[:1]) + node.Shape()[1:])
 	}
 	if _, isTileMap := node.Tiles(); isTileMap {
-		return "grid-3x3"
+		return iconTileMap
 	}
-	return "crosshair"
+	return iconEmpty
 }

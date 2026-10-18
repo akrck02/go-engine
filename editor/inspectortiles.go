@@ -28,7 +28,7 @@ func (view *View) tileMapInspector(context *ui.Context, node *engine.Node, tiles
 	view.tileMapSizeFields(context, tiles)
 	context.Separator()
 	context.Row(func() {
-		context.IconSized("paintbrush", 16, context.Theme.Primary)
+		context.IconSized(iconPaint, 16, context.Theme.Primary)
 		context.Heading("Paint")
 	})
 	if context.Checkbox("Paint in the view", &view.Editor.PaintingTiles) {
@@ -102,7 +102,7 @@ func (view *View) tilePalette(context *ui.Context, node *engine.Node) {
 	context.Push("Palette")
 	context.Grid(8, func() {
 		view.paletteCell(context, "eraser", scenefile.EmptyTile, func() {
-			context.IconSized("eraser", 16, context.Theme.InkSoft)
+			context.IconSized(iconErase, 16, context.Theme.InkSoft)
 		})
 		for tile, picture := range tileset {
 			view.paletteCell(context, "tile "+strconv.Itoa(tile), tile, func() {

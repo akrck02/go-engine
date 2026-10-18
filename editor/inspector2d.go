@@ -39,7 +39,7 @@ func (view *View) bodyInspector(context *ui.Context, node *engine.Node) {
 	context.Row(func() {
 		context.Heading("Body")
 		context.Spacer()
-		if found && context.FlatIconButton("x", "") {
+		if found && context.FlatIconButton(iconRemove, "") {
 			editor.TakeBody()
 		}
 		if found {
@@ -137,7 +137,7 @@ func (view *View) animationInspector(context *ui.Context, sheet *scenefile.Sprit
 	context.Frame(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Padding: ui.Pad(8), Gap: 4}, look, func() {
 		context.Row(func() {
 			view.animationNameField(context, index, animation.Name)
-			if context.FlatIconButton("x", "") {
+			if context.FlatIconButton(iconRemove, "") {
 				editor.RemoveAnimation(index)
 				view.forgetAnimationTexts() // the next animations move up a place: their texts no longer fit
 			}

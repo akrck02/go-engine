@@ -11,9 +11,8 @@ import (
 	"github.com/akrck02/go-engine/project"
 )
 
-// The editor's window: a toolbar (the scene, save, play, code, build), the scene's nodes and the
-// project's models on the left, the 3D view in the middle, the inspector on the right, and a
-// status line.
+// The editor's window: a bar along the top (the project, the scene, saving), the workspace shown
+// (workspaces.go), and a bar along the bottom to change workspace.
 
 // View is the editor's window and what it remembers between frames.
 type View struct {
@@ -56,11 +55,17 @@ func (view *View) Options(options window.Options) window.Options {
 
 func (view *View) keys(state *input.State) {
 	editor := view.Editor
-	if _, playing := editor.PlayingHere(); playing {
+	if editor.ShownWorkspace() == PlayWorkspace {
 		if state.Pressed(input.KeyEscape) {
-			editor.StopHere()
+			editor.LeavePlay()
 		}
-		return
+		return // the game has the other keys
+	}
+	for _, workspace := range Workspaces {
+		if state.Pressed(workspace.Key()) {
+			view.showWorkspace(workspace)
+			return
+		}
 	}
 	control := state.Down(input.KeyControl)
 	switch {
@@ -94,15 +99,9 @@ func (view *View) Build(context *ui.Context) {
 	context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Height: ui.Grow()}, func() {
 		view.toolbar(context)
 		context.Separator()
-		context.Box(ui.Layout{Width: ui.Grow(), Height: ui.Grow()}, func() {
-			view.left(context)
-			context.Separator()
-			view.middle(context)
-			context.Separator()
-			view.inspector(context)
-		})
+		context.Box(ui.Layout{Width: ui.Grow(), Height: ui.Grow()}, func() { view.workspaceBody(context) })
 		context.Separator()
-		view.statusLine(context)
+		view.workspaceBar(context)
 	})
 }
 

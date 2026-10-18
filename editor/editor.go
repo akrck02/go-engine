@@ -37,6 +37,9 @@ type Editor struct {
 	PaintingTiles bool
 	Brush         int
 
+	workspace Workspace // the workspace shown
+	before    Workspace // the one shown before it, for leaving Play
+
 	behaviours []project.Behaviour // what the project's code defines, read again on demand
 
 	// playingHere is the scene played in the view: a copy of the one edited, made again from its
@@ -58,7 +61,7 @@ type Editor struct {
 
 // Open opens a project at its start scene.
 func Open(opened *project.Project) (*Editor, error) {
-	editor := &Editor{Project: opened, events: make(chan func(editor *Editor), 16)}
+	editor := &Editor{Project: opened, events: make(chan func(editor *Editor), 16), workspace: LevelWorkspace, before: LevelWorkspace}
 	if err := editor.OpenScene(opened.Settings.StartScene); err != nil {
 		return nil, err
 	}

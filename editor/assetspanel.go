@@ -11,15 +11,13 @@ import (
 // assets shows the project's assets folder as a tree: whatever is copied there, from the file
 // manager or the code editor, shows here. A model clicked is placed in the scene.
 func (view *View) assets(context *ui.Context) {
-	if time.Since(view.assetsReadAt) > 2*time.Second {
-		view.assetTree, view.assetsReadAt = view.Editor.Project.AssetTree(), time.Now()
-	}
+	view.readAssetsNow()
 	layout := ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Height: ui.GrowBy(2), Padding: ui.Pad(10), Gap: 1}
 	context.ScrollArea("Assets", layout, func() {
 		context.Row(func() {
 			context.Heading("Assets")
 			context.Spacer()
-			if context.FlatIconButton("refresh-cw", "") {
+			if context.FlatIconButton(iconReadAgain, "") {
 				view.assetsReadAt = time.Time{}
 			}
 			context.Tooltip("Read the assets folder again")
@@ -40,9 +38,9 @@ func (view *View) assetNode(context *ui.Context, entry project.AssetEntry, depth
 	indent := ui.Layout{Width: ui.Grow(), Padding: ui.Padding{Left: float32(depth) * 14}}
 	if entry.Folder {
 		open := view.openFolders[entry.Path]
-		icon := "folder"
+		icon := iconFolder
 		if open {
-			icon = "folder-open"
+			icon = iconOpenFolder
 		}
 		context.Box(indent, func() {
 			if context.Selectable(icon, entry.Name, false) {
@@ -84,11 +82,11 @@ func (view *View) assetNode(context *ui.Context, entry project.AssetEntry, depth
 func assetIcon(kind project.AssetKind) string {
 	switch kind {
 	case project.ModelAsset:
-		return "package"
+		return iconModel
 	case project.ImageAsset:
-		return "image"
+		return iconPicture
 	case project.SoundAsset:
-		return "music"
+		return iconSound
 	}
-	return "file"
+	return iconFile
 }
