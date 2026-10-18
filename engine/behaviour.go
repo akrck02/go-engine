@@ -90,6 +90,10 @@ func Behaviour[Wanted any](node *Node) (*Wanted, bool) {
 	return nil, false
 }
 
+// MadeBehaviours are the node's behaviours as the game runs them, made from its Behaviours: what
+// the editor watches while a scene plays. A scene not started has none.
+func (node *Node) MadeBehaviours() []any { return node.behaviours }
+
 // Attach gives a node a behaviour while the game runs, made by the game's code; it starts on the
 // next frame.
 func (node *Node) Attach(behaviour any) {

@@ -40,6 +40,14 @@ type Editor struct {
 	workspace Workspace // the workspace shown
 	before    Workspace // the one shown before it, for leaving Play
 
+	// Paused stops the game played in the view; StepFrame moves it on one frame. Target is the
+	// shape of the screen it is shown at.
+	Paused   bool
+	stepOnce bool
+	Target   PlayTarget
+	playLog  playLog
+	unlisten func() // stops keeping the log, while playing
+
 	behaviours []project.Behaviour // what the project's code defines, read again on demand
 
 	// playingHere is the scene played in the view: a copy of the one edited, made again from its
@@ -481,6 +489,9 @@ func FieldText(value any) string {
 // PlayHere plays the scene in the view, with the behaviours compiled into the game the editor runs
 // in; the scene edited stays as it was. StopHere goes back to editing.
 func (editor *Editor) PlayHere() {
+	if editor.unlisten == nil {
+		editor.unlisten = editor.listenToLog()
+	}
 	built, err := engine.Build(editor.Project.Files(), editor.Scene.Describe())
 	if built == nil {
 		editor.say(err.Error(), true)
@@ -505,17 +516,24 @@ func (editor *Editor) StopHere() {
 	if editor.playingHere == nil {
 		return
 	}
-	editor.playingHere = nil
+	editor.playingHere, editor.Paused = nil, false
+	if editor.unlisten != nil {
+		editor.unlisten()
+		editor.unlisten = nil
+	}
 	editor.say("Back to editing", false)
 }
 
 // AdvancePlay moves the scene played in the view on a frame, and goes on to the scene the game
 // asked for (a level started again, the next one); one that cannot be read is reported and the
-// view stays where it is.
+// view stays where it is. While paused it stands still, except for one frame after StepFrame.
 func (editor *Editor) AdvancePlay(seconds float64, keys *input.State) {
 	played := editor.playingHere
-	if played == nil {
+	if played == nil || editor.Paused && !editor.stepOnce {
 		return
+	}
+	if editor.stepOnce {
+		editor.stepOnce, seconds = false, oneFrame
 	}
 	played.Update(seconds, keys)
 	next, replaced, err := played.TakeReplacement()

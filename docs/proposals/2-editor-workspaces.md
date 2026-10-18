@@ -87,7 +87,7 @@ meanings share an icon.
 - [x] T3 — Level: tool rail, fill, overlays (bodies, camera bounds, cell grid), palette as drawn,
   inspector that only places · `editor/` · R4 · tests: `the paint tool paints and the select tool
   chooses`, `fill paints the region of the tile clicked`, `the palette keeps the tileset's columns`
-- [ ] T4 — Play: pause, step, restart, target shape, watch, log · `editor/`, `engine/` · R5 ·
+- [x] T4 — Play: pause, step, restart, target shape, watch, log · `editor/`, `engine/` · R5 ·
   tests: `a paused game stands still and steps one frame`, `restart starts the scene as written`,
   `the watch shows a behaviour's fields`
 - [ ] T5 — Art: sprites and tilesets, canvas with the cut, animation strip and preview, solid
