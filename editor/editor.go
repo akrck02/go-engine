@@ -73,15 +73,16 @@ type Editor struct {
 	codeCheckedAt time.Time
 	codeChanged   bool
 
-	running    bool        // building or playing the game
-	playing    *exec.Cmd   // the game, while it plays
-	playedOn   BuildTarget // where it plays
-	stopping   bool        // Stop was asked: the game's end is no failure
-	output     *outputTail
-	toolsFound []ToolFound // the build tools and where they were found, looked for when needed
-	toolsKept  int         // how many times the tools were kept by an install: the view fills its fields again
-	installing *installing // the tool being installed, while one is
-	events     chan func(editor *Editor)
+	running        bool        // building or playing the game
+	playing        *exec.Cmd   // the game, while it plays
+	playedOn       BuildTarget // where it plays
+	stopping       bool        // Stop was asked: the game's end is no failure
+	output         *outputTail
+	toolsFound     []ToolFound // the build tools and where they were found, looked for when needed
+	toolsKept      int         // how many times the tools were kept by an install: the view fills its fields again
+	installing     *installing // the tool being installed, while one is
+	androidLicence string      // Android's licence, while it waits to be accepted
+	events         chan func(editor *Editor)
 	// Wake asks the window for a frame, when background work has something to show.
 	Wake func()
 }

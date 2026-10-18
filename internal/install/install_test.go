@@ -162,8 +162,3 @@ func TestDevkitProIsInstalledWithItsOwnManager(test *testing.T) {
 		test.Fatalf("devkitPro is installed with %v", command)
 	}
 }
-
-func fileExists(path string) bool {
-	_, err := os.Stat(path)
-	return err == nil
-}

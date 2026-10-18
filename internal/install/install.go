@@ -18,6 +18,30 @@ import (
 	"github.com/akrck02/go-engine/failure"
 )
 
+// Installer installs tools into a folder, saying the progress of what it downloads.
+type Installer struct {
+	Folder   string   // where tools go: DataFolder, or a test's own
+	Progress Progress // hears each download's progress; may be nil
+	// TinyGoReleases is where tinygo-3ds's releases are downloaded from: TinyGoReleases, or a
+	// test's server.
+	TinyGoReleases string
+	// AndroidRepository is where Google's Android repository is: AndroidRepository, or a test's
+	// server.
+	AndroidRepository string
+	// AzaharLatest is where GitHub says what Azahar's latest release holds: AzaharLatest, or a
+	// test's server.
+	AzaharLatest string
+	System       string // the system and processor to install for, as "linux-amd64"; empty is this one
+}
+
+// system is the system and processor the tools are for.
+func (installer Installer) system() string {
+	if installer.System != "" {
+		return installer.System
+	}
+	return runtime.GOOS + "-" + runtime.GOARCH
+}
+
 // Progress hears how much of a download has arrived, in bytes; total is 0 when the server does not
 // say.
 type Progress func(done, total int64)

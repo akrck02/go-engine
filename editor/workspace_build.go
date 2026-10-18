@@ -3,6 +3,7 @@ package editor
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/akrck02/go-engine/failure"
@@ -51,6 +52,7 @@ func (view *View) buildWorkspace(context *ui.Context) {
 				}
 			})
 			view.toolsSection(context)
+			view.licenceSheet(context)
 		})
 		context.Separator()
 		panel(context, "Build log", ui.Fixed(buildLogWidth), func() { view.buildLog(context) })
@@ -269,8 +271,47 @@ func (view *View) browseForTool(index int, found ToolFound) {
 
 // toolInstalls are how each tool that can be installed from the editor is, by its name.
 var toolInstalls = map[string]func(view *View){
-	"TinyGo":    func(view *View) { view.Editor.InstallTinyGo() },
-	"devkitPro": (*View).installDevkitPro,
+	"TinyGo":       func(view *View) { view.Editor.InstallTinyGo() },
+	"devkitPro":    (*View).installDevkitPro,
+	"3DS emulator": func(view *View) { view.Editor.InstallEmulator() },
+	"Android SDK":  func(view *View) { view.Editor.ReadAndroidLicence() },
+	"Android NDK":  func(view *View) { view.Editor.ReadAndroidLicence() }, // installed with the SDK
+}
+
+// The licence sheet's measures, in pixels.
+const (
+	licenceWidth  = 640
+	licenceHeight = 420
+)
+
+// licenceSheet shows Android's licence while it waits: accepting it installs the SDK.
+func (view *View) licenceSheet(context *ui.Context) {
+	editor := view.Editor
+	licence, waiting := editor.AndroidLicence()
+	if !waiting {
+		return
+	}
+	accepted := false
+	if context.Sheet("Android SDK licence", ui.SheetOptions{Width: ui.Fixed(licenceWidth)}, func() {
+		note(context, "Installing the Android SDK, its NDK and the packages a game's build needs means accepting Google's licence:")
+		inside := ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Height: ui.Fixed(licenceHeight), Gap: 8}
+		context.ScrollArea("Licence", inside, func() {
+			for _, paragraph := range strings.Split(licence, "\n\n") {
+				wrapped(context, paragraph, ui.TextStyle{Color: context.Theme.InkSoft, Size: context.Theme.SmallTextSize})
+			}
+		})
+		context.Row(func() {
+			if context.Button("Decline") {
+				editor.DeclineAndroidLicence()
+			}
+			accepted = context.PrimaryButton("Accept and install")
+		})
+	}) {
+		editor.DeclineAndroidLicence()
+	}
+	if accepted {
+		editor.InstallAndroid()
+	}
 }
 
 // installDevkitPro runs devkitPro's own installer for the 3DS's packages in a terminal, where the

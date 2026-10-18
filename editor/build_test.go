@@ -149,3 +149,30 @@ func TestAToolInstalledIsSetAndKept(test *testing.T) {
 		test.Fatalf("TinyGo installed is kept as %+v (%v) and found as %+v", kept, err, editor.ToolsFound()[0])
 	}
 }
+
+func TestAndroidsLicenceWaitsToBeAcceptedOrDeclined(test *testing.T) {
+	editor := open(test)
+	editor.androidLicence = "Use the lighthouse kindly."
+	if licence, waiting := editor.AndroidLicence(); !waiting || licence != "Use the lighthouse kindly." {
+		test.Fatal("the licence read does not wait to be accepted")
+	}
+	editor.DeclineAndroidLicence()
+	if _, waiting := editor.AndroidLicence(); waiting {
+		test.Fatal("a licence declined still waits")
+	}
+}
+
+func TestEveryToolThatCanBeInstalledIsOne(test *testing.T) {
+	names := map[string]bool{}
+	for _, part := range buildToolParts {
+		names[part.name] = true
+	}
+	for name := range toolInstalls {
+		if !names[name] {
+			test.Errorf("%q can be installed, but is no tool", name)
+		}
+	}
+	if len(toolInstalls) != len(buildToolParts) {
+		test.Errorf("%d tools, %d can be installed", len(buildToolParts), len(toolInstalls))
+	}
+}

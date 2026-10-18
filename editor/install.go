@@ -92,3 +92,42 @@ func (editor *Editor) installEnded(set func(tools *build.Tools, place string), p
 	editor.toolsKept++
 	editor.LookForTools(tools)
 }
+
+// ReadAndroidLicence reads Android's licence in the background, for the person to read and accept
+// before the SDK is installed (AndroidLicence).
+func (editor *Editor) ReadAndroidLicence() {
+	folder, err := install.DataFolder()
+	if err != nil {
+		editor.say(err.Error(), true)
+		return
+	}
+	editor.Run("Reading Android's licence…", func() (string, error) {
+		licence, err := install.Installer{Folder: folder}.AndroidLicence()
+		if err != nil {
+			return "", err
+		}
+		editor.send(func(editor *Editor) { editor.androidLicence = licence })
+		return "Read Android's licence: accept it to install the SDK", nil
+	})
+}
+
+// AndroidLicence is Android's licence while it waits for the person to accept it or not.
+func (editor *Editor) AndroidLicence() (string, bool) {
+	return editor.androidLicence, editor.androidLicence != ""
+}
+
+// DeclineAndroidLicence leaves the SDK uninstalled.
+func (editor *Editor) DeclineAndroidLicence() { editor.androidLicence = "" }
+
+// InstallAndroid installs Android's SDK, with the NDK and what a game's build needs, the licence
+// accepted, and sets the SDK's place.
+func (editor *Editor) InstallAndroid() {
+	editor.androidLicence = ""
+	editor.installTool("Android SDK", install.Installer.AndroidSDK, func(tools *build.Tools, place string) { tools.AndroidSDK = place })
+}
+
+// InstallEmulator installs Azahar's latest release for this system and sets the 3DS emulator's
+// place.
+func (editor *Editor) InstallEmulator() {
+	editor.installTool("3DS emulator", install.Installer.Azahar, func(tools *build.Tools, place string) { tools.ConsoleEmulator = place })
+}

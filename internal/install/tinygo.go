@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 
 	"github.com/akrck02/go-engine/failure"
@@ -20,24 +19,6 @@ const (
 	TinyGoReleases = "https://github.com/akrck02/tinygo-3ds/releases/download/"
 	checksumsFile  = "SHA256SUMS"
 )
-
-// Installer installs tools into a folder, saying the progress of what it downloads.
-type Installer struct {
-	Folder   string   // where tools go: DataFolder, or a test's own
-	Progress Progress // hears each download's progress; may be nil
-	// TinyGoReleases is where tinygo-3ds's releases are downloaded from: TinyGoReleases, or a
-	// test's server.
-	TinyGoReleases string
-	System         string // the system and processor to install for, as "linux-amd64"; empty is this one
-}
-
-// system is the system and processor the tools are for.
-func (installer Installer) system() string {
-	if installer.System != "" {
-		return installer.System
-	}
-	return runtime.GOOS + "-" + runtime.GOARCH
-}
 
 // tinyGoArchive is the name of tinygo-3ds's archive for a system.
 func tinyGoArchive(system string) (string, error) {
