@@ -143,3 +143,27 @@ func TestAZipIsUnpacked(test *testing.T) {
 		test.Fatalf("the zip's file holds %q", read)
 	}
 }
+
+func TestDevkitProIsInstalledWithItsOwnManager(test *testing.T) {
+	if runtime.GOOS == "windows" {
+		test.Skip("devkitPro's Windows installer is a program of its own")
+	}
+	folder := test.TempDir()
+	test.Setenv("PATH", folder)
+	if _, found := DevkitProCommand(); found && !fileExists("/opt/devkitpro/pacman/bin/pacman") {
+		test.Fatal("a command is offered with no dkp-pacman")
+	}
+	manager := filepath.Join(folder, "dkp-pacman")
+	if err := os.WriteFile(manager, []byte("#!/bin/sh\n"), 0o755); err != nil {
+		test.Fatal(err)
+	}
+	command, found := DevkitProCommand()
+	if !found || len(command) != 5 || command[0] != "sudo" || command[1] != manager || command[4] != "3ds-dev" {
+		test.Fatalf("devkitPro is installed with %v", command)
+	}
+}
+
+func fileExists(path string) bool {
+	_, err := os.Stat(path)
+	return err == nil
+}

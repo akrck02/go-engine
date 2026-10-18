@@ -7,9 +7,12 @@ import (
 
 	"github.com/akrck02/go-engine/failure"
 	"github.com/akrck02/go-engine/internal/build"
+	"github.com/akrck02/go-engine/internal/install"
+	"github.com/akrck02/go-engine/project"
 
 	"github.com/akrck02/go-renderer/draw2d"
 	ui "github.com/akrck02/go-ui"
+	"github.com/akrck02/go-ui/window"
 )
 
 // The Build workspace: one card for each place the game runs, with its last build and what can be
@@ -266,7 +269,24 @@ func (view *View) browseForTool(index int, found ToolFound) {
 
 // toolInstalls are how each tool that can be installed from the editor is, by its name.
 var toolInstalls = map[string]func(view *View){
-	"TinyGo": func(view *View) { view.Editor.InstallTinyGo() },
+	"TinyGo":    func(view *View) { view.Editor.InstallTinyGo() },
+	"devkitPro": (*View).installDevkitPro,
+}
+
+// installDevkitPro runs devkitPro's own installer for the 3DS's packages in a terminal, where the
+// person types their password; without it, it opens devkitPro's guide to get it.
+func (view *View) installDevkitPro() {
+	command, found := install.DevkitProCommand()
+	if !found {
+		window.OpenLink(install.DevkitProGuide)
+		view.Editor.say("devkitPro's installer is not here yet: follow its guide, then press Install again", false)
+		return
+	}
+	if err := project.RunInTerminal(command); err != nil {
+		view.Editor.say(err.Error(), true)
+		return
+	}
+	view.Editor.say("devkitPro installs in the terminal (it asks for your password): press Check when it ends", false)
 }
 
 // The progress bar's measures, in pixels.

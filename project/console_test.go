@@ -34,3 +34,9 @@ func TestSendingToTheConsoleRunsThreeDSLinkWithTheProgram(test *testing.T) {
 		test.Errorf("3dslink was asked:\n%s", said)
 	}
 }
+
+func TestACommandIsQuotedForTheShell(test *testing.T) {
+	if quoted := shellQuoted([]string{"sudo", "/opt/dev kit/pacman", "it's"}); quoted != `'sudo' '/opt/dev kit/pacman' 'it'\''s'` {
+		test.Fatalf("the command is quoted as %s", quoted)
+	}
+}

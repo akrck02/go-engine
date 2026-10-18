@@ -44,7 +44,7 @@ builds (`Editor.Run`), shows progress under the tool, and saves the place found.
 
 - [x] T1 — tinygo-3ds: `{devkitpro}` from `$DEVKITPRO`; the release workflow · R1, R2
 - [x] T2 — `internal/install`: download, checksum, unpack · R3
-- [ ] T3 — TinyGo's Install · R3, R7
-- [ ] T4 — devkitPro's Install · R4
+- [x] T3 — TinyGo's Install · R3, R7
+- [x] T4 — devkitPro's Install · R4
 - [ ] T5 — Android's Install, with the licences · R5
 - [ ] T6 — Azahar's Install · R6

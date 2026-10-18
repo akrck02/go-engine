@@ -295,6 +295,9 @@ func (project *Project) Build3DS() (Built, error) {
 		return Built{}, err
 	}
 	environment := []string{"GOFLAGS=-buildvcs=false", build.GoOnPath()}
+	if project.Tools.DevkitPro != "" {
+		environment = append(environment, "DEVKITPRO="+project.Tools.DevkitPro) // tinygo-3ds finds devkitPro there
+	}
 	if err := build.Run(project.Folder, environment, tinygo, append(append([]string{"build", "-target=nintendo3ds"}, project.EngineFlags()...), "-o", output, ".")...); err != nil {
 		return Built{}, err
 	}
