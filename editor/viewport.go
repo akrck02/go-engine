@@ -230,7 +230,7 @@ func (view *viewport) followMouse(editor *Editor, state *input.State) bool {
 		if !wasDragging && moved <= clickDistance {
 			if origin, direction, found := view.ray(state, x, y); found {
 				picked, _ := editor.Pick(origin, direction)
-				editor.Select(picked)
+				chooseWith(editor, picked, state.Down(input.KeyShift))
 			}
 		}
 		return wasDragging

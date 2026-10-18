@@ -32,6 +32,7 @@ type View struct {
 	DarkByDefault bool
 
 	emptyWorld *scene.Scene // what is drawn behind the workspaces that cover the window
+	shift      bool         // Shift was held on the last frame: a click joins the choice
 
 	art     artView     // the Art workspace's choices
 	project projectView // the Project workspace's choices
@@ -55,6 +56,7 @@ func NewView(editor *Editor) *View {
 func (view *View) Options(options window.Options) window.Options {
 	options.Title = "go-engine " + engine.Version() + " — " + view.Editor.Project.Settings.Name
 	options.Scene = func(state *input.State, seconds float64) *window.SceneView {
+		view.shift = state.Down(input.KeyShift)
 		view.keys(state)
 		shown := view.Editor.ShownWorkspace()
 		if shown != LevelWorkspace && shown != PlayWorkspace {
@@ -71,13 +73,29 @@ func (view *View) keys(state *input.State) {
 	if view.workspaceKeys(state) || editor.ShownWorkspace() == PlayWorkspace {
 		return // while playing, the game has the other keys
 	}
-	if state.Down(input.KeyControl) && state.Pressed(input.KeyS) {
-		editor.Save()
+	if state.Down(input.KeyControl) && view.controlKeys(state) {
 		return
 	}
 	if editor.ShownWorkspace() == LevelWorkspace {
 		view.levelKeys(state)
 	}
+}
+
+// controlKeys save, undo and redo with Control held; they tell whether they took a key.
+func (view *View) controlKeys(state *input.State) bool {
+	editor := view.Editor
+	switch {
+	case state.Pressed(input.KeyS):
+		editor.Save()
+	case state.Pressed(input.KeyZ) && state.Down(input.KeyShift), state.Pressed(input.KeyY):
+		editor.Redo()
+	case state.Pressed(input.KeyZ):
+		editor.Undo()
+	default:
+		return false
+	}
+	view.shownFor = nil // the inspector's fields show the scene as it is now
+	return true
 }
 
 // workspaceKeys change workspace with 1 to 6, and leave Play with Escape; they tell whether they

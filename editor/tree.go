@@ -51,8 +51,8 @@ func (view *View) treeButton(context *ui.Context, icon, tip string, action func(
 func (view *View) treeNode(context *ui.Context, node *engine.Node, depth int) {
 	context.Push(node.Name)
 	context.Box(ui.Layout{Width: ui.Grow(), Padding: ui.Padding{Left: float32(depth) * 16}}, func() {
-		if context.Selectable(nodeIcon(node), node.Name, node == view.Editor.Selected) {
-			view.Editor.Select(node)
+		if context.Selectable(nodeIcon(node), node.Name, view.Editor.IsChosen(node)) {
+			chooseWith(view.Editor, node, view.shift)
 		}
 	})
 	for _, child := range node.Children() {

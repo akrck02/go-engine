@@ -2,6 +2,7 @@ package editor
 
 import (
 	"math"
+	"strconv"
 	"strings"
 
 	"github.com/akrck02/go-renderer/draw2d"
@@ -109,6 +110,9 @@ func (view *View) nodeInspector(context *ui.Context, node *engine.Node) {
 	if context.Checkbox("Visible", &node.Visible) {
 		editor.Scene.Sync()
 		editor.Changed()
+	}
+	if others := len(view.Editor.Chosen); others > 0 {
+		note(context, "And "+strconv.Itoa(others)+" more chosen: dragging moves them all, Delete and Duplicate act on all. The inspector shows this one.")
 	}
 	view.transformInspector(context, node)
 	view.partsInspector(context, node)

@@ -66,6 +66,8 @@ const (
 	iconFrame       = "focus"
 	iconLeaveCamera = "video-off"
 	iconSave        = "save"
+	iconUndo        = "undo-2"
+	iconRedo        = "redo-2"
 
 	// the Level workspace's tools and overlays
 	iconSelect = "mouse-pointer-2"

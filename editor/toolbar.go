@@ -25,6 +25,7 @@ func (view *View) toolbar(context *ui.Context) {
 		context.Box(ui.Layout{Width: ui.Fixed(8)}, nil)
 		view.sceneMenu(context)
 		view.saveButton(context)
+		view.historyButtons(context)
 		context.Spacer()
 		context.Text("Go Engine "+engine.Version(), ui.TextStyle{Color: context.Theme.InkQuiet, Size: context.Theme.SmallTextSize})
 		context.Tooltip("The Go Engine this editor was built with: its release and commit")
@@ -60,6 +61,21 @@ func (view *View) saveButton(context *ui.Context) {
 		view.Editor.Save()
 	}
 	context.Tooltip("Save the scene (Ctrl+S)")
+}
+
+// historyButtons undo and redo the scene's changes.
+func (view *View) historyButtons(context *ui.Context) {
+	editor := view.Editor
+	if context.FlatIconButton(iconUndo, "") && editor.CanUndo() {
+		editor.Undo()
+		view.shownFor = nil
+	}
+	context.Tooltip("Undo (Ctrl+Z)")
+	if context.FlatIconButton(iconRedo, "") && editor.CanRedo() {
+		editor.Redo()
+		view.shownFor = nil
+	}
+	context.Tooltip("Redo (Ctrl+Shift+Z)")
 }
 
 // themeButton switches between the dark and the light mode.

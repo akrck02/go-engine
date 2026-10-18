@@ -24,11 +24,12 @@ type flatView struct {
 	area     draw2d.Rect // where the view was last painted
 	pressing bool
 	panning  bool
-	dragging *engine.Node
+	dragging []*engine.Node // the nodes a drag moves: every node chosen
 	moved    bool
 	pressX   float64
 	pressY   float64
-	grabbed  space.Vector // the dragged node's position minus the point pressed
+	starts   []space.Vector // where each dragged node was when the drag began
+	pressed  space.Vector   // the point of the world pressed
 	lastX    float64
 	lastY    float64
 	pointer  space.Vector // the point of the world under the pointer
@@ -151,33 +152,48 @@ func (flat *flatView) selectWith(editor *Editor, state *input.State, point space
 		flat.pressing = false
 		if !flat.moved {
 			picked, _ := editor.PickFlat(point, flat.reach())
-			editor.Select(picked)
+			chooseWith(editor, picked, state.Down(input.KeyShift))
 		}
 	}
 }
 
-// press starts a click, or a drag of the chosen node when it is under the pointer.
+// chooseWith chooses a node clicked: with Shift it joins those chosen, or leaves them.
+func chooseWith(editor *Editor, node *engine.Node, shift bool) {
+	if shift {
+		editor.ToggleChoice(node)
+		return
+	}
+	editor.Select(node)
+}
+
+// press starts a click, or a drag of the nodes chosen when one of them is under the pointer.
 func (flat *flatView) press(editor *Editor, point space.Vector, x, y float64) {
-	flat.pressing, flat.moved, flat.dragging = true, false, nil
-	flat.pressX, flat.pressY = x, y
-	if chosen := editor.Selected; chosen != nil {
-		if picked, found := editor.PickFlat(point, flat.reach()); found && picked == chosen {
-			flat.dragging, flat.grabbed = chosen, chosen.World().Position.Subtract(point)
-		}
+	flat.pressing, flat.moved, flat.dragging, flat.starts = true, false, nil, nil
+	flat.pressX, flat.pressY, flat.pressed = x, y, point
+	picked, found := editor.PickFlat(point, flat.reach())
+	if !found || !editor.IsChosen(picked) {
+		return
+	}
+	for _, node := range editor.outermostChosen() {
+		flat.dragging = append(flat.dragging, node)
+		flat.starts = append(flat.starts, node.World().Position)
 	}
 }
 
-// drag moves the chosen node with the pointer, once it has gone further than a click.
+// drag moves the nodes chosen with the pointer, once it has gone further than a click; each keeps
+// its depth.
 func (flat *flatView) drag(editor *Editor, point space.Vector, x, y float64) {
 	if math.Hypot(x-flat.pressX, y-flat.pressY) > clickDistance {
 		flat.moved = true
 	}
-	if flat.dragging == nil || !flat.moved {
+	if len(flat.dragging) == 0 || !flat.moved {
 		return
 	}
-	target := point.Add(flat.grabbed)
-	target.Z = flat.dragging.World().Position.Z
-	editor.MoveTo(flat.dragging, target)
+	moved := point.Subtract(flat.pressed)
+	moved.Z = 0
+	for index, node := range flat.dragging {
+		editor.MoveTo(node, flat.starts[index].Add(moved))
+	}
 }
 
 // zoomAt zooms around the point under the pointer, which stays under it.
@@ -266,12 +282,18 @@ func (flat *flatView) drawMarks(editor *Editor) {
 	if column, row, inside := chosen.CellAt(flat.pointer); editor.PaintingHere() && inside {
 		flat.outline(chosen.CellBox(column, row), hoveredCell, 2)
 	}
-	box := chosen.Bounds()
-	if box.IsEmpty() {
-		position := chosen.World().Position
-		box = space.Box{Minimum: position.Subtract(space.NewVector(0.2, 0.2, 0)), Maximum: position.Add(space.NewVector(0.2, 0.2, 0))}
+	for _, node := range editor.AllChosen() {
+		flat.outline(markBox(node), flatChosen, 2)
 	}
-	flat.outline(box, flatChosen, 2)
+}
+
+// markBox is the box a node is outlined with: its own, or a small one round a point.
+func markBox(node *engine.Node) space.Box {
+	if box := node.Bounds(); !box.IsEmpty() {
+		return box
+	}
+	position := node.World().Position
+	return space.Box{Minimum: position.Subtract(space.NewVector(0.2, 0.2, 0)), Maximum: position.Add(space.NewVector(0.2, 0.2, 0))}
 }
 
 func (flat *flatView) outline(box space.Box, colour draw2d.Color, width float32) {

@@ -27,7 +27,8 @@ type Editor struct {
 	Project   *project.Project
 	SceneFile string
 	Scene     *engine.Scene
-	Selected  *engine.Node
+	Selected  *engine.Node   // the node chosen, which the inspector shows
+	Chosen    []*engine.Node // other nodes chosen with it (Shift), which act with it
 	Saved     bool
 
 	Message string
@@ -51,6 +52,9 @@ type Editor struct {
 	unlisten func() // stops keeping the log, while playing
 
 	art artFile // the sprite or tileset open in the Art workspace
+
+	history history          // the scene after each change, for undo and redo
+	now     func() time.Time // the editor's clock, when a test sets one
 
 	used        map[string][]project.Use // the behaviours the saved scenes use, read now and then
 	usedAt      time.Time
@@ -104,7 +108,8 @@ func (editor *Editor) OpenScene(file string) error {
 	}
 	built.Editing = true
 	built.Sync()
-	editor.Scene, editor.SceneFile, editor.Selected, editor.Saved = built, file, nil, true
+	editor.Scene, editor.SceneFile, editor.Selected, editor.Chosen, editor.Saved = built, file, nil, nil, true
+	editor.startHistory()
 	editor.say("Opened "+file, false)
 	if err != nil {
 		editor.say(err.Error(), true)
@@ -122,6 +127,7 @@ func (editor *Editor) Save() error {
 		return err
 	}
 	editor.Saved, editor.used = true, nil
+	editor.history.savedAt, editor.history.lastAt = editor.history.at, time.Time{}
 	editor.say("Saved "+editor.SceneFile, false)
 	return nil
 }
@@ -131,11 +137,14 @@ func (editor *Editor) say(message string, failed bool) {
 	editor.Message, editor.Failed = strings.Join(strings.Fields(message), " "), failed
 }
 
-// Changed marks the scene as changed since it was saved.
-func (editor *Editor) Changed() { editor.Saved = false }
+// Changed marks the scene as changed since it was saved, and keeps it for undo.
+func (editor *Editor) Changed() {
+	editor.Saved = false
+	editor.remember()
+}
 
-// Select chooses a node (nil for none).
-func (editor *Editor) Select(node *engine.Node) { editor.Selected = node }
+// Select chooses a node (nil for none), and lets go of any other chosen with it.
+func (editor *Editor) Select(node *engine.Node) { editor.Selected, editor.Chosen = node, nil }
 
 // Kinds of node the editor adds.
 var Kinds = []string{"Empty", "Cube", "Sphere", "Plane", "Cylinder", "Camera"}
@@ -263,30 +272,37 @@ func (editor *Editor) place(description scenefile.Node) *engine.Node {
 	return node
 }
 
-// Duplicate copies the selected node, and what hangs from it, beside it.
+// Duplicate copies the nodes chosen, and what hangs from them, each beside its original; the
+// copies are chosen.
 func (editor *Editor) Duplicate() {
-	selected := editor.Selected
-	if selected == nil {
+	originals := editor.outermostChosen()
+	if len(originals) == 0 {
 		return
 	}
-	description := selected.Describe()
-	description.Name = uniqueName(selected.Parent(), description.Name)
-	node, _ := editor.Scene.NewNode(description)
-	selected.Parent().Insert(node, selected.Index()+1)
+	editor.Select(nil)
+	for _, original := range originals {
+		description := original.Describe()
+		description.Name = uniqueName(original.Parent(), description.Name)
+		node, _ := editor.Scene.NewNode(description)
+		original.Parent().Insert(node, original.Index()+1)
+		editor.ToggleChoice(node)
+	}
 	editor.Scene.Sync()
-	editor.Select(node)
 	editor.Changed()
 }
 
-// Delete removes the selected node and what hangs from it.
+// Delete removes the nodes chosen and what hangs from them; the node after the inspector's is
+// chosen next.
 func (editor *Editor) Delete() {
 	selected := editor.Selected
 	if selected == nil {
 		return
 	}
 	parent, index := selected.Parent(), selected.Index()
-	selected.Remove()
-	editor.Selected = nil
+	for _, node := range editor.outermostChosen() {
+		node.Remove()
+	}
+	editor.Select(nil)
 	if siblings := parent.Children(); len(siblings) > 0 {
 		editor.Select(siblings[min(index, len(siblings)-1)])
 	} else if parent != editor.Scene.Root {
