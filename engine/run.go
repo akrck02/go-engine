@@ -53,6 +53,7 @@ func Run(files fs.FS) error {
 	if err != nil {
 		return err
 	}
+	slog.Info("Go Engine", "version", Version(), "game", settings.Name)
 	played, err := Load(files, settings.StartScene)
 	if played == nil {
 		return err

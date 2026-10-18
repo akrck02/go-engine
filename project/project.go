@@ -185,8 +185,36 @@ func (project *Project) BuildEditor() error {
 	if err := project.Tidy(); err != nil {
 		return err
 	}
-	return build.Run(project.Folder, nil, build.GoTool(), "build", "-o", project.EditorProgram(), ".")
+	arguments := append([]string{"build"}, project.EngineFlags()...)
+	return build.Run(project.Folder, nil, build.GoTool(), append(arguments, "-o", project.EditorProgram(), ".")...)
 }
+
+// EngineFlags tell a build which commit a local copy of Go Engine is at (one the project's go.mod
+// replaces with a folder, or a go.work uses), so the program can say it (engine.Version): a
+// local copy's build information does not. A project that requires a version needs none.
+func (project *Project) EngineFlags() []string {
+	listed, err := build.Output(project.Folder, nil, build.GoTool(), "list", "-m", "-f", engineListing, engine.Module)
+	if err != nil {
+		return nil
+	}
+	folder, local, _ := strings.Cut(strings.TrimSpace(listed), "|")
+	if local != "local" || folder == "" {
+		return nil
+	}
+	revision, err := build.Output(folder, nil, "git", "rev-parse", "--short=7", "HEAD")
+	if err != nil {
+		return nil // not a git copy: the program says "local"
+	}
+	revision = strings.TrimSpace(revision)
+	if changes, err := build.Output(folder, nil, "git", "status", "--porcelain"); err == nil && strings.TrimSpace(changes) != "" {
+		revision += "-modified" // the copy has changes no commit holds
+	}
+	return []string{"-ldflags=-X " + engine.Module + "/engine.localRevision=" + revision}
+}
+
+// engineListing is how go list says where Go Engine is, and whether it is a local copy: one with
+// no version of its own (a go.work), or replaced by a folder.
+const engineListing = "{{.Dir}}|{{if not .Version}}local{{else if .Replace}}{{if not .Replace.Version}}local{{end}}{{end}}"
 
 // CodeChangedSince tells whether a Go file of the project changed after a time: the game the
 // editor runs in is older than its code.
@@ -218,7 +246,7 @@ func (project *Project) BuildDesktop() (Built, error) {
 	if err := project.Tidy(); err != nil {
 		return Built{}, err
 	}
-	if err := build.Run(project.Folder, nil, build.GoTool(), "build", "-tags", "release", "-o", output, "."); err != nil {
+	if err := build.Run(project.Folder, nil, build.GoTool(), append(append([]string{"build", "-tags", "release"}, project.EngineFlags()...), "-o", output, ".")...); err != nil {
 		return Built{}, err
 	}
 	noticesFile, err := writeNotices(project.Path("build"), notices.Desktop)
@@ -236,7 +264,7 @@ func (project *Project) Build3DS() (Built, error) {
 		return Built{}, err
 	}
 	environment := []string{"GOFLAGS=-buildvcs=false", build.GoOnPath()}
-	if err := build.Run(project.Folder, environment, tinygo, "build", "-target=nintendo3ds", "-o", output, "."); err != nil {
+	if err := build.Run(project.Folder, environment, tinygo, append(append([]string{"build", "-target=nintendo3ds"}, project.EngineFlags()...), "-o", output, ".")...); err != nil {
 		return Built{}, err
 	}
 	noticesFile, err := writeNotices(project.Path("build"), notices.Console)

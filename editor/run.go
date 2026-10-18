@@ -3,6 +3,7 @@ package editor
 import (
 	"flag"
 	"fmt"
+	"log/slog"
 	"os"
 	"time"
 
@@ -41,6 +42,7 @@ func RunHere() error {
 	if err != nil {
 		return err
 	}
+	slog.Info("Go Engine's editor", "version", engine.Version(), "project", opened.Settings.Name)
 	edited, err := Open(opened)
 	if err != nil {
 		return err

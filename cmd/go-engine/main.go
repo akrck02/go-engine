@@ -81,7 +81,7 @@ func projectFrom(arguments []string) (*project.Project, error) {
 
 // edit builds the project's game with the editor in it and starts it, in the project's folder.
 func edit(opened *project.Project, flags []string) error {
-	fmt.Printf("Building %s with the editor…\n", opened.Settings.Name)
+	fmt.Printf("Go Engine %s · building %s with the editor…\n", engine.Version(), opened.Settings.Name)
 	if err := opened.BuildEditor(); err != nil {
 		return err
 	}

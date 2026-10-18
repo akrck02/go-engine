@@ -170,3 +170,14 @@ func TestSettingsAreSaved(test *testing.T) {
 		test.Fatalf("the settings came back as %+v, %v", opened.Settings, err)
 	}
 }
+
+func TestALocalGoEngineGivesItsCommitToTheBuild(test *testing.T) {
+	created, err := Create(filepath.Join(test.TempDir(), "game"), "Game")
+	if err != nil {
+		test.Fatal(err)
+	}
+	flags := created.EngineFlags()
+	if len(flags) != 1 || !strings.Contains(flags[0], "engine.localRevision=") {
+		test.Fatalf("a project that replaces Go Engine with this folder builds with %v", flags)
+	}
+}

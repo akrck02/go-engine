@@ -53,7 +53,7 @@ func NewView(editor *Editor) *View {
 // Options are the window's, with the step that shows the scene and reads what the interface
 // leaves of the mouse and the keys.
 func (view *View) Options(options window.Options) window.Options {
-	options.Title = "go-engine — " + view.Editor.Project.Settings.Name
+	options.Title = "go-engine " + engine.Version() + " — " + view.Editor.Project.Settings.Name
 	options.Scene = func(state *input.State, seconds float64) *window.SceneView {
 		view.keys(state)
 		shown := view.Editor.ShownWorkspace()

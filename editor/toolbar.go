@@ -9,6 +9,7 @@ import (
 	ui "github.com/akrck02/go-ui"
 	"github.com/akrck02/go-ui/window"
 
+	"github.com/akrck02/go-engine/engine"
 	"github.com/akrck02/go-engine/scenefile"
 )
 
@@ -25,6 +26,8 @@ func (view *View) toolbar(context *ui.Context) {
 		view.sceneMenu(context)
 		view.saveButton(context)
 		context.Spacer()
+		context.Text("Go Engine "+engine.Version(), ui.TextStyle{Color: context.Theme.InkQuiet, Size: context.Theme.SmallTextSize})
+		context.Tooltip("The Go Engine this editor was built with: its release and commit")
 		view.themeButton(context)
 	})
 }
