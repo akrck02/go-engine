@@ -30,7 +30,8 @@ type View struct {
 	// DarkByDefault starts the editor dark when no mode was kept (the window's -dark).
 	DarkByDefault bool
 
-	art artView // the Art workspace's choices
+	art     artView     // the Art workspace's choices
+	project projectView // the Project workspace's choices
 
 	assetTree    project.AssetEntry
 	assetsReadAt time.Time

@@ -130,3 +130,43 @@ func TestTheAssetsTreeIsTheAssetsFolder(test *testing.T) {
 		test.Fatal("kinds")
 	}
 }
+
+func TestAnAssetsUsesAreFoundInEveryScene(test *testing.T) {
+	created, err := Create(filepath.Join(test.TempDir(), "game"), "Game")
+	if err != nil {
+		test.Fatal(err)
+	}
+	flat, _ := created.NewScene("Coast", scenefile.Mode2D)
+	scene, _ := created.ReadScene(flat)
+	lamp := scenefile.NewNode("Lamp")
+	lamp.Sprite = "assets/lamp.sprite.json"
+	harbour := scenefile.NewNode("Harbour")
+	harbour.Children = []scenefile.Node{lamp}
+	scene.Nodes = append(scene.Nodes, harbour)
+	created.WriteScene(flat, scene)
+	sprite := &scenefile.Sprite{Picture: "assets/lamp.png", SpriteSheet: scenefile.SpriteSheet{Columns: 1, Rows: 1}}
+	data, _ := sprite.Marshal()
+	os.WriteFile(created.Path("assets/lamp.sprite.json"), data, 0o644)
+	uses := created.UsesOf("assets/lamp.sprite.json")
+	if len(uses) != 1 || uses[0].File != flat || uses[0].Node != "Harbour/Lamp" {
+		test.Fatalf("the sprite is used in %+v", uses)
+	}
+	if uses := created.UsesOf("assets/lamp.png"); len(uses) != 1 || uses[0].File != "assets/lamp.sprite.json" || uses[0].Node != "" {
+		test.Fatalf("the picture is used in %+v", uses)
+	}
+}
+
+func TestSettingsAreSaved(test *testing.T) {
+	created, err := Create(filepath.Join(test.TempDir(), "game"), "Game")
+	if err != nil {
+		test.Fatal(err)
+	}
+	created.Settings.Name, created.Settings.CodeEditor = "Harbour Lights", "nvim"
+	if err := created.SaveSettings(); err != nil {
+		test.Fatal(err)
+	}
+	opened, err := Open(created.Folder)
+	if err != nil || opened.Settings.Name != "Harbour Lights" || opened.Settings.CodeEditor != "nvim" {
+		test.Fatalf("the settings came back as %+v, %v", opened.Settings, err)
+	}
+}

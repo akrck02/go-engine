@@ -32,14 +32,12 @@ func (view *View) left(context *ui.Context) {
 			view.treeButton(context, iconMakeChild, "Make it a child of the node above", editor.Nest)
 			view.treeButton(context, iconMoveOut, "Move it out, beside its parent", editor.Unnest)
 		})
-		tree := ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Height: ui.GrowBy(3), Padding: ui.PadXY(8, 4), Gap: 1}
+		tree := ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Height: ui.Grow(), Padding: ui.PadXY(8, 4), Gap: 1}
 		context.ScrollArea("Tree", tree, func() {
 			for _, child := range editor.Scene.Root.Children() {
 				view.treeNode(context, child, 0)
 			}
 		})
-		context.Separator()
-		view.assets(context)
 	})
 }
 

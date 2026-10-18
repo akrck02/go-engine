@@ -48,10 +48,12 @@ func (view *View) openCodeButton(context *ui.Context) {
 	context.Tooltip("Open the project's folder in the code editor")
 }
 
+// openProject opens the project in the code editor its settings name, or the one found.
 func (view *View) openProject() {
-	if err := view.Editor.Project.OpenInZed(); err != nil {
+	opened, err := view.Editor.Project.OpenCode()
+	if err != nil {
 		view.Editor.say(err.Error(), true)
 		return
 	}
-	view.Editor.say("Opened the project in Zed", false)
+	view.Editor.say("Opened the project in "+opened, false)
 }

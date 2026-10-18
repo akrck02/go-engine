@@ -102,3 +102,13 @@ func (owner *Scene) Picture(file string) (*draw2d.Image, error) { return owner.a
 func (owner *Scene) Frames(picture string, sheet *scenefile.SpriteSheet) ([]*draw2d.Image, error) {
 	return owner.assets.sheetFrames(picture, sheet, false)
 }
+
+// SpriteFile is a sprite's file of the project's, read once.
+func (owner *Scene) SpriteFile(file string) (*scenefile.Sprite, error) {
+	return owner.assets.spriteFile(file)
+}
+
+// TilesetFile is a tileset's file of the project's, read once.
+func (owner *Scene) TilesetFile(file string) (*scenefile.Tileset, error) {
+	return owner.assets.tilesetFile(file)
+}

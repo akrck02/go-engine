@@ -2,12 +2,9 @@ package project
 
 import (
 	"os"
-	"os/exec"
 	"path"
 	"sort"
 	"strings"
-
-	"github.com/akrck02/go-engine/failure"
 )
 
 // AssetEntry is a file or a folder of the project's assets, as the editor's tree shows them.
@@ -73,20 +70,4 @@ func (project *Project) assetEntry(file, name string) AssetEntry {
 		return strings.ToLower(earlier.Name) < strings.ToLower(later.Name)
 	})
 	return entry
-}
-
-// OpenInZed opens the project's folder in Zed.
-func (project *Project) OpenInZed() error {
-	for _, program := range []string{"zed", "zeditor", "zed-editor"} {
-		if found, err := exec.LookPath(program); err == nil {
-			command := exec.Command(found, project.Folder)
-			command.Dir = project.Folder
-			if err := command.Start(); err != nil {
-				return err
-			}
-			go command.Wait()
-			return nil
-		}
-	}
-	return failure.Wrap(ZedNotFound, project.Folder, nil)
 }

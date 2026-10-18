@@ -94,7 +94,7 @@ meanings share an icon.
   tiles · `editor/` · R3 · tests: `a picture becomes a sprite with its frames`, `clicked frames
   make an animation`, `a clicked tile turns solid and back`, `an edited sprite is saved and read
   back`
-- [ ] T6 — Project: thumbnails, folders, filters, preview with uses, scenes, settings · `editor/`,
+- [x] T6 — Project: thumbnails, folders, filters, preview with uses, scenes, settings · `editor/`,
   `project/` · R6 · tests: `an asset's uses are found in every scene`, `settings are saved`
 - [ ] T7 — Code: behaviours, fields, uses, missing ones, rebuild and open with output · `editor/`
   · R7 · tests: `a behaviour's uses are listed by scene`, `a missing behaviour is reported`

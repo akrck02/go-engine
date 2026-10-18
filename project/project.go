@@ -143,10 +143,13 @@ func (project *Project) Import(source string) (string, error) {
 // SaveSettings writes the project's settings.
 func (project *Project) SaveSettings() error {
 	data, err := json.MarshalIndent(project.Settings, "", "\t")
-	if err != nil {
-		return err
+	if err == nil {
+		err = writeFile(project.Path(engine.SettingsFile), append(data, '\n'))
 	}
-	return writeFile(project.Path(engine.SettingsFile), append(data, '\n'))
+	if err != nil {
+		return failure.Wrap(SettingsNotSaved, "", err)
+	}
+	return nil
 }
 
 // PlayCommand builds the game for this computer, as BuildDesktop does, and returns the command
