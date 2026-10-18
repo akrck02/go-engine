@@ -132,7 +132,7 @@ func TestSpikesStartTheLevelAgain(test *testing.T) {
 	forest := level(test, "scenes/forest-1.scene.json")
 	placeOn(find(test, forest, "Player"), find(test, forest, "Spikes 1"))
 	play(forest, frame)
-	again, replaced, err := forest.Replacement()
+	again, replaced, err := forest.TakeReplacement()
 	if err != nil || !replaced || again.Name != "Forest 1" {
 		test.Fatalf("after the spikes: %v, %v, %v", again, replaced, err)
 	}
@@ -142,7 +142,7 @@ func TestTheSignGoesToTheNextLevel(test *testing.T) {
 	forest := level(test, "scenes/forest-1.scene.json")
 	placeOn(find(test, forest, "Player"), find(test, forest, "Sign"))
 	play(forest, frame)
-	next, replaced, err := forest.Replacement()
+	next, replaced, err := forest.TakeReplacement()
 	if err != nil || !replaced || next.Name != "Forest 2" {
 		test.Fatalf("after the sign: %v, %v, %v", next, replaced, err)
 	}

@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"errors"
 	"testing"
 	"testing/fstest"
 
@@ -48,7 +49,7 @@ func twoLevels(test *testing.T, next string) fstest.MapFS {
 func playUntilReplaced(test *testing.T, scene *Scene) (*Scene, error) {
 	for frame := 0; frame < 60; frame++ {
 		scene.Update(1.0/60, nil)
-		next, replaced, err := scene.Replacement()
+		next, replaced, err := scene.TakeReplacement()
 		if replaced || err != nil {
 			return next, err
 		}
@@ -97,7 +98,15 @@ func TestChangingToAMissingSceneKeepsTheOneThereIs(test *testing.T) {
 	if _, err := playUntilReplaced(test, first); !failure.Is(err, SceneNotFound) {
 		test.Fatalf("changing to a missing scene: %v", err)
 	}
-	if _, replaced, _ := first.Replacement(); replaced {
+	if _, replaced, _ := first.TakeReplacement(); replaced {
 		test.Fatal("the failed change was asked for again")
+	}
+}
+
+func TestRestartingASceneMadeByHandIsAnError(test *testing.T) {
+	scene := NewScene(nil)
+	(&Context{Scene: scene}).RestartScene()
+	if _, replaced, err := scene.TakeReplacement(); replaced || !errors.Is(err, SceneNotRestartable) {
+		test.Fatalf("replaced %v, %v", replaced, err)
 	}
 }

@@ -126,7 +126,7 @@ func (game *runner) secondsSince(state *input.State, step float64) float64 {
 
 // replaceIfAsked goes on to the scene a behaviour asked for, if it can be read.
 func (game *runner) replaceIfAsked() {
-	next, replaced, err := game.played.Replacement()
+	next, replaced, err := game.played.TakeReplacement()
 	if err != nil {
 		slog.Error("the scene asked for could not be read; the game stays in this one", "error", err)
 		return

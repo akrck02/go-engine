@@ -1,5 +1,5 @@
 // Package physics moves boxes in 2D: bodies that fall, collide with solid ground and walls, and
-// slide along them, as a platformer needs. It knows nothing of scenes or nodes; the engine keeps
+// slide along them, as a game seen from the side needs. It knows nothing of scenes or nodes; the engine keeps
 // a World in step with them.
 //
 // Bodies are boxes lined up with the axes, sized and placed in metres, with X to the right and Y
@@ -8,7 +8,7 @@
 //
 //	world := physics.NewWorld(space.NewVector(0, -9.81, 0))
 //	world.Add(&physics.Body{Kind: physics.Solid, Position: groundCentre, Size: groundSize})
-//	world.Add(player) // a Moving body
+//	world.Add(mover) // a Moving body
 //	world.Step(seconds)
 //	for _, touch := range world.Begun() { … } // triggers touched in this step
 package physics
@@ -38,6 +38,9 @@ const touchTolerance = 1e-9
 
 // longestStepShare is the longest step a moving body takes, as a share of its smallest side.
 const longestStepShare = 0.5
+
+// pointStepMetres is the longest step of a body with no size, which has no side to measure by.
+const pointStepMetres = 0.05
 
 // Body is a box in the world.
 type Body struct {
@@ -136,11 +139,11 @@ func (world *World) moveAlong(body *Body, axis axis, distance float64) {
 }
 
 // stepsFor is how many steps a body takes to go a distance: none longer than half its smallest
-// side.
+// side, or than a point's step for a body with no size.
 func stepsFor(body *Body, distance float64) int {
 	longest := math.Min(body.Size.X, body.Size.Y) * longestStepShare
 	if longest <= 0 {
-		return 1
+		longest = pointStepMetres
 	}
 	return int(math.Ceil(math.Abs(distance) / longest))
 }

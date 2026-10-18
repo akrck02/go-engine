@@ -140,3 +140,20 @@ func TestATileMapTakesItsSolidTilesFromItsTileset(test *testing.T) {
 		test.Fatalf("the crate is at %v, on the floor %v", crate.Transform.Position, body.OnFloor())
 	}
 }
+
+func TestAMissingPictureIsTriedOnceAndCostsNothingAfter(test *testing.T) {
+	description := &scenefile.Scene{Name: "Missing", Mode: scenefile.Mode2D, Nodes: []scenefile.Node{
+		{Name: "Ghost", Sprite: "assets/nowhere.png", Scale: [3]float64{1, 1, 1}},
+	}}
+	built, _ := Build(fstest.MapFS{}, description)
+	var list draw2d.List
+	area := draw2d.Rect{Width: 100, Height: 100}
+	built.Draw2D(&list, area, built.View2D())
+	allocations := testing.AllocsPerRun(50, func() {
+		list.Reset()
+		built.Draw2D(&list, area, built.View2D())
+	})
+	if allocations != 0 {
+		test.Fatalf("drawing a missing picture allocates %v times a frame", allocations)
+	}
+}

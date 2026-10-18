@@ -2,6 +2,7 @@ package engine
 
 import (
 	"io/fs"
+	"log/slog"
 	"math"
 	"path"
 
@@ -64,8 +65,11 @@ type Scene struct {
 }
 
 // Load reads a scene file from a project's files.
-func Load(files fs.FS, file string) (*Scene, error) {
-	data, err := fs.ReadFile(files, file)
+func Load(files fs.FS, file string) (*Scene, error) { return loadWith(newAssets(files), file) }
+
+// loadWith reads a scene file, with pictures and models already read.
+func loadWith(library *assets, file string) (*Scene, error) {
+	data, err := fs.ReadFile(library.files, file)
 	if err != nil {
 		return nil, failure.Wrap(SceneNotFound, file, err)
 	}
@@ -73,14 +77,19 @@ func Load(files fs.FS, file string) (*Scene, error) {
 	if err != nil {
 		return nil, failure.Wrap(SceneUnreadable, file, err)
 	}
-	return Build(files, description)
+	return buildWith(library, description)
 }
 
 // Build makes a scene from its description, finding its models in a project's files. A model
 // that cannot be read leaves its node showing nothing; the first such error is returned with the
 // scene.
 func Build(files fs.FS, description *scenefile.Scene) (*Scene, error) {
-	built := NewScene(files)
+	return buildWith(newAssets(files), description)
+}
+
+// buildWith makes a scene from its description, with pictures and models already read.
+func buildWith(library *assets, description *scenefile.Scene) (*Scene, error) {
+	built := newSceneWith(library)
 	built.Name, built.Mode, built.PixelsPerMetre = description.Name, description.Mode, description.PixelsPerMetre
 	built.description = description
 	built.SetSky(description.Sky)
@@ -97,8 +106,11 @@ func Build(files fs.FS, description *scenefile.Scene) (*Scene, error) {
 }
 
 // NewScene is an empty scene, whose models come from a project's files.
-func NewScene(files fs.FS) *Scene {
-	built := &Scene{world: scene.New(), assets: newAssets(files), materials: map[string]*scene.Material{}, helpers: map[string]*scene.Mesh{},
+func NewScene(files fs.FS) *Scene { return newSceneWith(newAssets(files)) }
+
+// newSceneWith is an empty scene, with pictures and models already read.
+func newSceneWith(library *assets) *Scene {
+	built := &Scene{world: scene.New(), assets: library, materials: map[string]*scene.Material{}, helpers: map[string]*scene.Mesh{},
 		flatColours: map[string]draw2d.Color{}}
 	built.Root = newNode(built, "")
 	built.world.Nodes = []*scene.Node{built.Root.render}
@@ -324,19 +336,39 @@ type assets struct {
 
 	sprites      map[string]*scenefile.Sprite  // sprites' files, read once
 	tilesetFiles map[string]*scenefile.Tileset // tilesets' files, read once
+
+	// failed are the pictures that could not be read, with why: tried once and reported once, not
+	// on every frame that draws them
+	failed map[string]error
 }
 
 func newAssets(files fs.FS) *assets {
 	return &assets{files: files, models: map[string]*scene.Scene{}, images: map[string]*draw2d.Image{},
 		tilesets: map[tilesetKey][]*draw2d.Image{}, sheets: map[sheetKey][]*draw2d.Image{},
-		sprites: map[string]*scenefile.Sprite{}, tilesetFiles: map[string]*scenefile.Tileset{}}
+		sprites: map[string]*scenefile.Sprite{}, tilesetFiles: map[string]*scenefile.Tileset{}, failed: map[string]error{}}
 }
 
-// image reads a picture of the project's (PNG or JPEG), once.
+// image reads a picture of the project's (PNG or JPEG), once; one that cannot be read is
+// reported once, and its error kept.
 func (library *assets) image(file string) (*draw2d.Image, error) {
 	if picture, found := library.images[file]; found {
 		return picture, nil
 	}
+	if err, failed := library.failed[file]; failed {
+		return nil, err
+	}
+	picture, err := library.readImage(file)
+	if err != nil {
+		library.failed[file] = err
+		slog.Warn("a picture could not be read; what shows it draws nothing", "error", err)
+		return nil, err
+	}
+	library.images[file] = picture
+	return picture, nil
+}
+
+// readImage reads and decodes a picture of the project's.
+func (library *assets) readImage(file string) (*draw2d.Image, error) {
 	if library.files == nil {
 		return nil, failure.Wrap(NoFiles, file, nil)
 	}
@@ -349,7 +381,6 @@ func (library *assets) image(file string) (*draw2d.Image, error) {
 	if err != nil {
 		return nil, failure.Wrap(PictureUnreadable, file, err)
 	}
-	library.images[file] = picture
 	return picture, nil
 }
 
@@ -381,6 +412,7 @@ func (owner *Scene) Forget(file string) {
 	delete(owner.assets.models, file)
 	delete(owner.assets.images, file)
 	delete(owner.assets.sprites, file)
+	delete(owner.assets.failed, file)
 	delete(owner.assets.tilesetFiles, file)
 	for key := range owner.assets.tilesets {
 		if key.file == file {

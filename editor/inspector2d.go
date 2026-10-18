@@ -2,6 +2,7 @@ package editor
 
 import (
 	"strconv"
+	"strings"
 
 	ui "github.com/akrck02/go-ui"
 
@@ -20,6 +21,10 @@ var (
 	smoothingLimits    = numberLimits{0, 10, 0.05}
 )
 
+// newCameraBounds is the box a camera keeps its view in when it is first given one of its own:
+// twenty metres a side round the origin.
+var newCameraBounds = [4]float64{-10, -10, 10, 10}
+
 // bodyKindNotes say what each kind of body does, in the order of scenefile.BodyKinds.
 var bodyKindNotes = []string{
 	"Solid: never moves; moving bodies stand on it and stop against it.",
@@ -36,6 +41,9 @@ func (view *View) bodyInspector(context *ui.Context, node *engine.Node) {
 		context.Spacer()
 		if found && context.FlatIconButton("x", "") {
 			editor.TakeBody()
+		}
+		if found {
+			context.Tooltip("Remove the body")
 		}
 	})
 	if !found {
@@ -131,7 +139,9 @@ func (view *View) animationInspector(context *ui.Context, sheet *scenefile.Sprit
 			view.animationNameField(context, index, animation.Name)
 			if context.FlatIconButton("x", "") {
 				editor.RemoveAnimation(index)
+				view.forgetAnimationTexts() // the next animations move up a place: their texts no longer fit
 			}
+			context.Tooltip("Remove the animation")
 		})
 		if index >= len(sheet.Animations) {
 			return // just removed
@@ -143,11 +153,24 @@ func (view *View) animationInspector(context *ui.Context, sheet *scenefile.Sprit
 		if context.Checkbox("Loops", &animation.Loop) {
 			editor.Changed()
 		}
-		if context.Checkbox("Plays when the scene starts", pointerTo(sheet.Start == animation.Name)) {
-			sheet.Start = animation.Name
+		starts := sheet.Start == animation.Name
+		if context.Checkbox("Plays when the scene starts", &starts) {
+			sheet.Start = ""
+			if starts {
+				sheet.Start = animation.Name
+			}
 			editor.Changed()
 		}
 	})
+}
+
+// forgetAnimationTexts drops what was being typed in the animations' fields.
+func (view *View) forgetAnimationTexts() {
+	for key := range view.fieldTexts {
+		if strings.HasPrefix(key, "animation ") {
+			delete(view.fieldTexts, key)
+		}
+	}
 }
 
 func (view *View) animationNameField(context *ui.Context, index int, name string) {
@@ -196,7 +219,7 @@ func (view *View) followInspector(context *ui.Context, camera *engine.Node, sett
 		return
 	}
 	context.Caption("Seconds it takes to catch up; 0 stays right on it")
-	if numberField(context, "Smoothing", &settings.Smoothing, smoothingLimits, "%.2f s") {
+	if numberField(context, "Smoothing", &settings.SmoothingSeconds, smoothingLimits, "%.2f s") {
 		editor.Changed()
 	}
 	view.followBoundsFields(context, settings)
@@ -213,7 +236,8 @@ func (view *View) followBoundsFields(context *ui.Context, settings *scenefile.Ca
 	if context.Tabs("Keep inside", &own, "The tile maps", "A box of its own") {
 		settings.Bounds = nil
 		if own == 1 {
-			settings.Bounds = &[4]float64{-10, -10, 10, 10}
+			bounds := newCameraBounds // a copy: each camera edits its own
+			settings.Bounds = &bounds
 		}
 		editor.Changed()
 	}

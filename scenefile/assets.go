@@ -9,8 +9,8 @@ import (
 
 // A picture can be an asset of its own beside the scenes that use it: a sprite (the picture cut
 // into frames, with named animations) or a tileset (the picture cut into tiles, some of them
-// solid). Nodes and tile maps point to these files by path, so every coin of a game shares one
-// spin and every map of a forest the same solid ground.
+// solid). Nodes and tile maps point to these files by path, so every lamp of a harbour shares one
+// flicker and every map of a coast the same solid ground.
 
 // The files of sprites and tilesets end with these.
 const (
@@ -26,7 +26,7 @@ func IsTilesetFile(path string) bool { return strings.HasSuffix(path, TilesetSuf
 
 // Sprite is a picture cut into frames, with the animations made of them.
 type Sprite struct {
-	Picture string `json:"picture"` // a picture in the project, as "assets/sprites/coin.png"
+	Picture string `json:"picture"` // a picture in the project, as "assets/sprites/lamp.png"
 	SpriteSheet
 }
 

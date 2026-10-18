@@ -1,6 +1,6 @@
 # 1. A platformer demo that drives the engine
 
-> Status: building · Author's approval: proposal ☑ plan ☑
+> Status: done (the console check is the author's) · Author's approval: proposal ☑ plan ☑
 
 ## Why
 
@@ -22,8 +22,8 @@ that uses them, with only its own behaviours as game code.
 | R3 | A level is painted in the editor from a tileset picture onto a grid, and its solid tiles collide | in the editor, paint tiles and play: the player stands on them; test `solid tiles stop a body` |
 | R4 | A sprite plays named animations from a sprite sheet (idle, walk, jump), at a set speed, and faces left or right | test `an animation shows each frame for its time and loops`; the demo's player walks and turns |
 | R5 | The camera follows a node smoothly and stays inside the level's bounds | test `the camera follows its target and stops at the level's edge` |
-| R6 | Triggers: something happens when the player touches a node (a coin is collected, spikes restart the level, a flag goes to the next level) | test `touching a trigger tells the behaviour once`; the demo's coins, spikes and flag |
-| R7 | The demo plays the same on the desktop and the 3DS: arrows or the cross move, Space or A jumps | play it in the editor, in a window, and on the 3DS emulator; the author plays it on the console |
+| R6 | Triggers: something happens when the player touches a node (a coin is collected, spikes restart the level, a flag goes to the next level) | test `touching a trigger is reported once`; the demo's coins, spikes and flag |
+| R7 | The demo plays the same on the desktop and the 3DS: arrows or the cross move, Space, the up arrow, A or up on the cross jumps | play it in the editor, in a window, and on the 3DS emulator; the author plays it on the console |
 | R8 | Everything the demo needs from the engine is generic: no part of the engine knows it is a platformer | review: the engine's new code names no coin, spike or player |
 
 ## Out of scope
@@ -109,7 +109,7 @@ three forest levels: the first two converted from the reference's `World.tscn` a
   `a fast body does not pass through a thin wall`, `a body pushed into a wall slides up it`,
   `a body on the ground is on the floor`
 - [x] T2 — `physics`: triggers that report when an overlap begins, once · `physics/` · R6 ·
-  test: `touching a trigger tells the behaviour once`
+  test: `touching a trigger is reported once`
 - [x] T3 — scene files: bodies, tile maps and sprite sheets with animations, read and written ·
   `scenefile/` · R3, R4 · test: `a scene with bodies, tiles and animations comes back as written`
 - [x] T4 — engine: nodes with bodies stepped every frame, `Touched` for behaviours · `engine/` ·
@@ -128,9 +128,36 @@ three forest levels: the first two converted from the reference's `World.tscn` a
   `painting a tile and erasing it` (and played by hand)
 - [x] T11 — the demo: project, art, `Player`, `Coin`, `Hazard`, `Flag`, three levels ·
   `examples/platformer/` · R1–R8 · played in the editor, in a window and on the 3DS emulator
-- [x] T12 — check on the 3DS: build the demo with TinyGo and play it in the emulator; the author
-  plays it on the console · R7
+- [x] T12 — check on the 3DS: build the demo with TinyGo and play it in the emulator · R7
+- [ ] T13 — the author plays it on the console · R7
 
 ## Result
 
-Not built yet.
+**Built.** The `physics` package (boxes that fall, collide, slide, and triggers that report a
+touch once); bodies, tile maps with merged solid rows, animated sprites that face either way, a
+camera that follows within bounds (the sky open above the tile maps unless the camera has a
+ceiling), and restarting or changing scenes, in `engine`; inspector sections for bodies, sheets and
+following cameras and a tile tool in the editor; and the demo in `examples/platformer/`: three
+forest levels (two converted from the reference's Godot levels, the third joining them), with
+`Player`, `Coin`, `Hazard` and `Flag` as its only code.
+
+**Checked.** Every requirement's test passes (`go test ./...` here and in the demo). The demo was
+played by a script in the editor's view and drawn after some seconds; on the 3DS it was built
+with TinyGo and played in Azahar at 60 frames a second: walking, jumping over the spikes with A,
+the camera rising with the jump, a restart on the spikes. That found a real bug: go-ui hands the
+scene a fresh copy of its input each frame, so a button was never "pressed"; the engine now keeps
+the game's keys itself (`engine/console.go`).
+
+**Review.** The reviewer's findings were fixed: a node moved or added while playing keeps or gets
+its body; a body with no size takes short steps; a scene made by hand cannot restart and says so
+(`engine.scene-not-restartable`); a missing picture is tried once and costs nothing after; a
+restart shares the pictures already read (`TakeReplacement`, renamed because it acts); typed
+frames are checked against the sheet before a run is counted out; removing an animation forgets
+the texts typed for the others; the first animation can be unticked; a missing tileset says why;
+remove buttons have tooltips; the engine's own code and tests name no coin, spike or player.
+Not changed, on purpose: `DefaultGravity` keeps its name (its unit, metres a second each second,
+is in its comment); two long editor functions (`followMouse`, `nodeInspector`) are rewritten by
+proposal 2's Level task instead of split twice.
+
+**For a person.** Play the demo on the console (T13): the jump's height, the camera and the
+frame rate on the real machine.

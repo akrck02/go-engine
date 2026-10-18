@@ -40,7 +40,7 @@ func (owner *Scene) follow(camera *Node, seconds float64) {
 	}
 	position := camera.World().Position
 	wanted := target.World().Position
-	share := catchUpShare(seconds, camera.camera.Smoothing)
+	share := catchUpShare(seconds, camera.camera.SmoothingSeconds)
 	position.X += (wanted.X - position.X) * share
 	position.Y += (wanted.Y - position.Y) * share
 	if bounds, bounded := owner.cameraBounds(camera); bounded {

@@ -164,12 +164,9 @@ func (editor *Editor) SetAnimationFrames(index int, written string) error {
 	if !found {
 		return nil
 	}
-	frames, err := ReadFrames(written)
+	frames, err := ReadFrames(written, sheet.FrameCount())
 	if err != nil {
 		return err
-	}
-	if last := slices.Max(frames); last >= sheet.FrameCount() {
-		return failure.Wrap(FramesWrong, "the sheet has "+strconv.Itoa(sheet.FrameCount())+" frames, from 0", nil)
 	}
 	animation.Frames = frames
 	editor.Changed()
@@ -202,14 +199,18 @@ func (editor *Editor) selectedAnimation(index int) (*scenefile.Animation, *scene
 	return &sheet.Animations[index], sheet, true
 }
 
-// ReadFrames reads frames written as numbers and runs, separated by commas: "0-3, 6" is 0, 1, 2,
-// 3 and 6.
-func ReadFrames(written string) ([]int, error) {
+// ReadFrames reads frames written as numbers and runs, separated by commas, of a sheet of a count
+// of frames: "0-3, 6" is 0, 1, 2, 3 and 6. A frame the sheet does not have is an error, found
+// before a run is counted out.
+func ReadFrames(written string, count int) ([]int, error) {
 	var frames []int
 	for _, part := range strings.Split(written, ",") {
 		first, last, err := readRun(strings.TrimSpace(part))
 		if err != nil {
 			return nil, failure.Wrap(FramesWrong, written, err)
+		}
+		if last >= count {
+			return nil, failure.Wrap(FramesWrong, "the sheet has "+strconv.Itoa(count)+" frames, from 0", nil)
 		}
 		for frame := first; frame <= last; frame++ {
 			frames = append(frames, frame)
@@ -251,7 +252,11 @@ func (editor *Editor) Followable(camera *engine.Node) []string {
 // SetAnimationFramesIfChanged sets an animation's frames from what is written, when it says other
 // frames than the ones it shows; it tells why what is written cannot be.
 func (editor *Editor) SetAnimationFramesIfChanged(index int, written string, shown []int) error {
-	if frames, err := ReadFrames(written); err == nil && slices.Equal(frames, shown) {
+	sheet, found := editor.selectedSheet()
+	if !found {
+		return nil
+	}
+	if frames, err := ReadFrames(written, sheet.FrameCount()); err == nil && slices.Equal(frames, shown) {
 		return nil
 	}
 	return editor.SetAnimationFrames(index, written)

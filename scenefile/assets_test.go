@@ -6,14 +6,14 @@ import (
 )
 
 func TestASpriteComesBackAsWritten(test *testing.T) {
-	sprite := &Sprite{Picture: "assets/sprites/coin.png", SpriteSheet: SpriteSheet{Columns: 4, Rows: 1, Start: "spin",
-		Animations: []Animation{{Name: "spin", Frames: []int{0, 1, 2, 3}, FramesPerSecond: 7, Loop: true}}}}
+	sprite := &Sprite{Picture: "assets/sprites/lamp.png", SpriteSheet: SpriteSheet{Columns: 4, Rows: 1, Start: "flicker",
+		Animations: []Animation{{Name: "flicker", Frames: []int{0, 1, 2, 3}, FramesPerSecond: 7, Loop: true}}}}
 	data, err := sprite.Marshal()
 	if err != nil {
 		test.Fatal(err)
 	}
 	read, err := ReadSprite(data)
-	if err != nil || read.Picture != sprite.Picture || read.Columns != 4 || read.Start != "spin" || len(read.Animations[0].Frames) != 4 {
+	if err != nil || read.Picture != sprite.Picture || read.Columns != 4 || read.Start != "flicker" || len(read.Animations[0].Frames) != 4 {
 		test.Fatalf("the sprite came back as %+v, %v", read, err)
 	}
 }
@@ -36,7 +36,7 @@ func TestASpriteIsChecked(test *testing.T) {
 }
 
 func TestATilesetComesBackAsWritten(test *testing.T) {
-	tileset := &Tileset{Picture: "assets/sprites/forest.png", TileSize: 16, Solid: []int{14, 15}}
+	tileset := &Tileset{Picture: "assets/sprites/coast.png", TileSize: 16, Solid: []int{14, 15}}
 	data, err := tileset.Marshal()
 	if err != nil {
 		test.Fatal(err)
@@ -51,14 +51,14 @@ func TestATilesetComesBackAsWritten(test *testing.T) {
 }
 
 func TestFilesAreToldBySuffix(test *testing.T) {
-	if !IsSpriteFile("assets/coin.sprite.json") || IsSpriteFile("assets/coin.png") || !IsTilesetFile("a/forest.tileset.json") {
+	if !IsSpriteFile("assets/lamp.sprite.json") || IsSpriteFile("assets/lamp.png") || !IsTilesetFile("a/coast.tileset.json") {
 		test.Fatal("sprite and tileset files are not told apart")
 	}
 }
 
 func TestATileMapOfATilesetFileNeedsNoTileSize(test *testing.T) {
 	node := NewNode("Ground")
-	node.Tiles = &TileMap{Tileset: "assets/forest.tileset.json", Columns: 1, Rows: 1, Tiles: []int{0}}
+	node.Tiles = &TileMap{Tileset: "assets/coast.tileset.json", Columns: 1, Rows: 1, Tiles: []int{0}}
 	if err := (&Scene{Name: "Level", Mode: Mode2D, Nodes: []Node{node}}).Check(); err != nil {
 		test.Fatal(err)
 	}

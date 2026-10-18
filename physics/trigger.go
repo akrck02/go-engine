@@ -1,6 +1,6 @@
 package physics
 
-// Touch is a moving body touching a trigger: a coin taken, spikes stepped on.
+// Touch is a moving body touching a trigger: a door reached, a line crossed.
 type Touch struct {
 	Trigger *Body
 	Other   *Body // the moving body that touches it

@@ -14,7 +14,7 @@ import (
 // followedLevel is a 2D scene at 16 pixels a metre (a tile a metre): a map 20 tiles wide and 6 high
 // from (0, 6) to (20, 0), a runner, and a camera seeing 4 metres that follows it with a smoothing.
 func followedLevel(test *testing.T, smoothing float64) *Scene {
-	return followedLevelWith(test, &scenefile.Camera{Projection: scenefile.Orthographic, Height: 4, Follow: "Runner", Smoothing: smoothing})
+	return followedLevelWith(test, &scenefile.Camera{Projection: scenefile.Orthographic, Height: 4, Follow: "Runner", SmoothingSeconds: smoothing})
 }
 
 // followedLevelWith is followedLevel with a camera of its own.

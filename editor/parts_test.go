@@ -95,12 +95,12 @@ func TestASmallerSheetKeepsOnlyTheFramesItHas(test *testing.T) {
 }
 
 func TestFramesAreReadAsTyped(test *testing.T) {
-	read, err := ReadFrames(" 0-3, 6 ,5 ")
+	read, err := ReadFrames(" 0-3, 6 ,5 ", 8)
 	if err != nil || !slices.Equal(read, []int{0, 1, 2, 3, 6, 5}) {
 		test.Fatalf("read %v, %v", read, err)
 	}
-	for _, wrong := range []string{"", "a", "3-1", "-2", "1,,2"} {
-		if _, err := ReadFrames(wrong); !errors.Is(err, FramesWrong) {
+	for _, wrong := range []string{"", "a", "3-1", "-2", "1,,2", "9", "0-300000000"} {
+		if _, err := ReadFrames(wrong, 8); !errors.Is(err, FramesWrong) {
 			test.Errorf("%q: %v", wrong, err)
 		}
 	}
@@ -114,17 +114,17 @@ func TestAFollowingCameraIsSaved(test *testing.T) {
 		test.Fatalf("a camera may follow %v", editor.Followable(camera))
 	}
 	settings, _ := camera.Camera()
-	settings.Follow, settings.Smoothing, settings.Ceiling = followed, 0.25, true
+	settings.Follow, settings.SmoothingSeconds, settings.Ceiling = followed, 0.25, true
 	settings.Bounds = &[4]float64{-10, -5, 40, 15}
 	saved, _ := saveAndOpenAgain(test, editor, "Camera").Camera()
-	if saved.Follow != followed || saved.Smoothing != 0.25 || !saved.Ceiling || *saved.Bounds != [4]float64{-10, -5, 40, 15} {
+	if saved.Follow != followed || saved.SmoothingSeconds != 0.25 || !saved.Ceiling || *saved.Bounds != [4]float64{-10, -5, 40, 15} {
 		test.Fatalf("the camera came back as %+v", saved)
 	}
 }
 
 func TestFramesAreWrittenAsTheyAreRead(test *testing.T) {
 	for _, written := range []string{"0-3, 6", "4", "2, 1, 0", "0-1, 5-7"} {
-		frames, _ := ReadFrames(written)
+		frames, _ := ReadFrames(written, 8)
 		if writtenFrames(frames) != written {
 			test.Errorf("%q came back as %q", written, writtenFrames(frames))
 		}

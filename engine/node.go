@@ -128,6 +128,9 @@ func (node *Node) Add(child *Node) {
 	node.children = append(node.children, child)
 	node.render.Children = append(node.render.Children, child.render)
 	child.Walk(func(each *Node) bool { each.scene = node.scene; return true })
+	if node.scene.physics != nil {
+		node.scene.addBodies(child) // made while the scene plays, or moved from another: bodies it lacks
+	}
 }
 
 // Insert hangs a node from this one at a place among its children.
@@ -139,8 +142,12 @@ func (node *Node) Insert(child *Node, at int) {
 	node.rebuildRenderChildren()
 }
 
-// Remove takes the node, and what hangs from it, out of its scene.
-func (node *Node) Remove() { node.detach() }
+// Remove takes the node, and what hangs from it, out of its scene, and their bodies out of its
+// physics.
+func (node *Node) Remove() {
+	node.scene.removeBodies(node)
+	node.detach()
+}
 
 // Index is where the node is among its parent's children.
 func (node *Node) Index() int {
@@ -160,7 +167,6 @@ func (node *Node) detach() {
 	if parent == nil {
 		return
 	}
-	node.scene.removeBodies(node)
 	children := parent.children[:0]
 	for _, child := range parent.children {
 		if child != node {

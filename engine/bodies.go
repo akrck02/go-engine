@@ -45,11 +45,12 @@ func (owner *Scene) startPhysics() {
 	owner.addBodies(owner.Root)
 }
 
+// addBodies gives a node, and what hangs from it, the bodies they lack.
 func (owner *Scene) addBodies(node *Node) {
-	if node.body != nil {
+	if node.body != nil && node.physicsBody == nil {
 		owner.addBody(node)
 	}
-	if node.tiles != nil {
+	if node.tiles != nil && node.tileBodies == nil {
 		owner.addTileBodies(node)
 	}
 	for _, child := range node.children {

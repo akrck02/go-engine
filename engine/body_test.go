@@ -18,7 +18,7 @@ func (taker *Taker) Touched(context *Context, other *Node) {
 }
 
 // platform is a 2D scene: a solid ground whose top is at height 0, a crate that falls onto it, and
-// a coin, a trigger, in the crate's way.
+// a marker, a trigger, in the crate's way.
 func platform(test *testing.T) *Scene {
 	RegisterAs("Taker", Taker{})
 	description := &scenefile.Scene{Name: "Platform", Mode: scenefile.Mode2D, Nodes: []scenefile.Node{
@@ -26,7 +26,7 @@ func platform(test *testing.T) *Scene {
 			Body: &scenefile.Body{Kind: scenefile.Solid}},
 		{Name: "Crate", Shape: "cube", Position: [3]float64{0, 4, 0}, Scale: [3]float64{1, 1, 1},
 			Body: &scenefile.Body{Kind: scenefile.Moving}, Behaviours: []scenefile.Behaviour{{Name: "Taker"}}},
-		{Name: "Coin", Shape: "sphere", Position: [3]float64{0, 2, 0}, Scale: [3]float64{0.5, 0.5, 1},
+		{Name: "Marker", Shape: "sphere", Position: [3]float64{0, 2, 0}, Scale: [3]float64{0.5, 0.5, 1},
 			Body: &scenefile.Body{Kind: scenefile.Trigger}, Behaviours: []scenefile.Behaviour{{Name: "Taker"}}},
 	}}
 	built, err := Build(nil, description)
@@ -63,13 +63,13 @@ func TestBehavioursHearWhatTheirNodesTouch(test *testing.T) {
 	scene := platform(test)
 	playFor(scene, 3)
 	crate, _ := scene.Find("Crate")
-	coin, _ := scene.Find("Coin")
+	marker, _ := scene.Find("Marker")
 	crateTaker, _ := Behaviour[Taker](crate)
-	coinTaker, _ := Behaviour[Taker](coin)
-	if len(coinTaker.touches) != 1 || coinTaker.touches[0] != "Crate" {
-		test.Fatalf("the coin heard %v", coinTaker.touches)
+	markerTaker, _ := Behaviour[Taker](marker)
+	if len(markerTaker.touches) != 1 || markerTaker.touches[0] != "Crate" {
+		test.Fatalf("the marker heard %v", markerTaker.touches)
 	}
-	if len(crateTaker.touches) != 1 || crateTaker.touches[0] != "Coin" {
+	if len(crateTaker.touches) != 1 || crateTaker.touches[0] != "Marker" {
 		test.Fatalf("the crate heard %v", crateTaker.touches)
 	}
 }
@@ -101,5 +101,29 @@ func TestAFrameOf2DPlayAllocatesNothing(test *testing.T) {
 	allocations := testing.AllocsPerRun(100, func() { scene.Update(1.0/60, nil) })
 	if allocations != 0 {
 		test.Fatalf("a frame allocates %v times", allocations)
+	}
+}
+
+func TestANodeMovedOrAddedWhilePlayingKeepsOrGetsItsBody(test *testing.T) {
+	scene := platform(test)
+	ground, _ := scene.Find("Ground")
+	crate, _ := scene.Find("Crate")
+	ground.Add(crate)
+	if _, found := crate.Body(); !found {
+		test.Fatal("moved under another node, the crate lost its body")
+	}
+	box, err := scene.NewNode(scenefile.Node{Name: "Box", Shape: "cube", Position: [3]float64{3, 4, 0}, Scale: [3]float64{1, 1, 1},
+		Body: &scenefile.Body{Kind: scenefile.Moving}})
+	if err != nil {
+		test.Fatal(err)
+	}
+	scene.Root.Add(box)
+	playFor(scene, 2)
+	if body, found := box.Body(); !found || !body.OnFloor() {
+		test.Fatal("a node added while playing did not fall onto the ground")
+	}
+	box.Remove()
+	if _, found := box.Body(); found {
+		test.Fatal("a removed node kept its body")
 	}
 }

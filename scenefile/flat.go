@@ -21,9 +21,12 @@ type Body struct {
 type BodyKind string
 
 const (
-	Solid   BodyKind = "solid"   // never moves; moving bodies stop against it
-	Moving  BodyKind = "moving"  // falls, moves and is stopped by solids
-	Trigger BodyKind = "trigger" // stops nothing; notices the moving bodies that touch it
+	// Solid never moves; moving bodies stop against it.
+	Solid BodyKind = "solid"
+	// Moving falls, moves and is stopped by solids.
+	Moving BodyKind = "moving"
+	// Trigger stops nothing; it notices the moving bodies that touch it.
+	Trigger BodyKind = "trigger"
 )
 
 // BodyKinds are the kinds of body, in the order the editor offers them.

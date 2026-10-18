@@ -120,3 +120,15 @@ func TestGravityCanChange(test *testing.T) {
 		test.Fatalf("with gravity up the crate is at %v", falling.Position.Y)
 	}
 }
+
+func TestABodyWithNoSizeDoesNotPassThroughAThinWall(test *testing.T) {
+	world := NewWorld(space.Vector{})
+	wall := &Body{Kind: Solid, Position: space.NewVector(5, 0, 0), Size: space.NewVector(0.1, 10, 0)}
+	point := &Body{Kind: Moving, Velocity: space.NewVector(600, 0, 0)}
+	world.Add(wall)
+	world.Add(point)
+	world.Step(1.0 / 60) // ten metres in one step
+	if point.Position.X > 5 {
+		test.Fatalf("a body with no size went through the wall to %v", point.Position.X)
+	}
+}

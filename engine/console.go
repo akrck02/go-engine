@@ -6,13 +6,15 @@ import (
 )
 
 // consoleButtons are the console's buttons a game reads as keys: the cross as the arrows, A as
-// Space.
+// Space, B as Escape, X and Y as themselves. With the circle pad (Input.Move) they are all a game
+// reads on the console: the touch screen and L and R belong to the bottom screen's interface.
 var consoleButtons = [...]struct {
 	button ctr.Buttons
 	key    input.Key
 }{
 	{ctr.ButtonUp, input.KeyUp}, {ctr.ButtonDown, input.KeyDown}, {ctr.ButtonLeft, input.KeyLeft},
-	{ctr.ButtonRight, input.KeyRight}, {ctr.ButtonA, input.KeySpace},
+	{ctr.ButtonRight, input.KeyRight}, {ctr.ButtonA, input.KeySpace}, {ctr.ButtonB, input.KeyEscape},
+	{ctr.ButtonX, input.KeyX}, {ctr.ButtonY, input.KeyY},
 }
 
 // consoleInput is a game's keys on the console. go-ui's window hands the scene a fresh copy of

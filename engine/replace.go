@@ -13,17 +13,21 @@ func (context *Context) RestartScene() { context.Scene.restartRequested = true }
 // ChangeScene asks for another scene of the project, by its file, at the end of the frame.
 func (context *Context) ChangeScene(file string) { context.Scene.changeRequested = file }
 
-// Replacement is the scene that replaces this one when a behaviour asked for it in the last frame,
-// built and started; replaced is false when nothing was asked. A scene that cannot be read
-// gives its error, and the asking is forgotten: the game goes on in this one.
-func (owner *Scene) Replacement() (next *Scene, replaced bool, err error) {
+// TakeReplacement builds and starts the scene a behaviour asked for in the last frame, and
+// forgets the asking; replaced is false when nothing was asked. The new scene shares this one's
+// pictures and models, already read. A scene that cannot be made gives its error, and the game
+// goes on in this one.
+func (owner *Scene) TakeReplacement() (next *Scene, replaced bool, err error) {
 	if owner.restartRequested {
 		owner.restartRequested = false
-		return startedReplacement(Build(owner.assets.files, owner.description))
+		if owner.description == nil {
+			return nil, false, SceneNotRestartable
+		}
+		return startedReplacement(buildWith(owner.assets, owner.description))
 	}
 	if file := owner.changeRequested; file != "" {
 		owner.changeRequested = ""
-		return startedReplacement(Load(owner.assets.files, file))
+		return startedReplacement(loadWith(owner.assets, file))
 	}
 	return nil, false, nil
 }

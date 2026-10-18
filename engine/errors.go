@@ -19,4 +19,5 @@ var (
 	PictureUnreadable     = failure.Define("engine.picture-unreadable", "the picture is not a PNG or a JPEG")
 	SpriteNotFound        = failure.Define("engine.sprite-not-found", "the sprite's file does not exist")
 	TilesetNotFound       = failure.Define("engine.tileset-not-found", "the tileset's file does not exist")
+	SceneNotRestartable   = failure.Define("engine.scene-not-restartable", "the scene was not made from a description, so it cannot start again")
 )

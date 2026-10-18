@@ -254,7 +254,7 @@ func TestErrorsComeWithTheirCodes(test *testing.T) {
 func TestA2DScenesBodiesSheetsAndTilesSurviveBeingRewritten(test *testing.T) {
 	floating := 0.5
 	description := &scenefile.Scene{Name: "Level", Mode: scenefile.Mode2D, Nodes: []scenefile.Node{{
-		Name: "Player", Scale: [3]float64{1, 1, 1},
+		Name: "Keeper", Scale: [3]float64{1, 1, 1},
 		Body:  &scenefile.Body{Kind: scenefile.Moving, Size: [2]float64{0.8, 0.6}, GravityScale: &floating},
 		Sheet: &scenefile.SpriteSheet{Columns: 2, Rows: 1, Animations: []scenefile.Animation{{Name: "walk", Frames: []int{0, 1}, FramesPerSecond: 8}}},
 		Tiles: &scenefile.TileMap{Tileset: "assets/tiles.png", TileSize: 16, Columns: 1, Rows: 1, Tiles: []int{0}},

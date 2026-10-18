@@ -5,8 +5,6 @@
 package editor
 
 import (
-	"github.com/akrck02/go-renderer/input"
-
 	"fmt"
 	"math"
 	"os/exec"
@@ -14,6 +12,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/akrck02/go-renderer/input"
 
 	"github.com/akrck02/go-engine/engine"
 	"github.com/akrck02/go-engine/project"
@@ -515,7 +515,7 @@ func (editor *Editor) AdvancePlay(seconds float64, keys *input.State) {
 		return
 	}
 	played.Update(seconds, keys)
-	next, replaced, err := played.Replacement()
+	next, replaced, err := played.TakeReplacement()
 	if err != nil {
 		editor.say(err.Error(), true)
 		return

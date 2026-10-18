@@ -86,8 +86,16 @@ func (view *View) tileMapSizeFields(context *ui.Context, tiles *scenefile.TileMa
 // tilePalette shows the eraser and the tileset's tiles, to choose the one painted.
 func (view *View) tilePalette(context *ui.Context, node *engine.Node) {
 	editor := view.Editor
+	if tiles, _ := node.Tiles(); tiles.Tileset == "" {
+		note(context, "Choose a tileset to paint with its tiles.")
+		return
+	}
 	tileset, err := editor.Scene.Tileset(node)
-	if err != nil || len(tileset) == 0 {
+	if err != nil {
+		context.Text(err.Error(), ui.TextStyle{Color: context.Theme.Warning, Size: context.Theme.SmallTextSize})
+		return
+	}
+	if len(tileset) == 0 {
 		note(context, "Choose a tileset to paint with its tiles.")
 		return
 	}
