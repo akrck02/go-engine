@@ -7,6 +7,8 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+
+	"github.com/akrck02/go-engine/failure"
 )
 
 // The tools that build a game for Android and play it on a device are the Android SDK's: found in
@@ -15,7 +17,7 @@ import (
 // FindAndroidSDK finds the Android SDK's folder: the one chosen, $ANDROID_HOME,
 // $ANDROID_SDK_ROOT, or Android Studio's.
 func (tools Tools) FindAndroidSDK() (string, error) {
-	if place, isChosen, err := chosen(tools.AndroidSDK); isChosen {
+	if place, isChosen, err := chosenFolder(tools.AndroidSDK); isChosen {
 		return place, err
 	}
 	for _, variable := range []string{"ANDROID_HOME", "ANDROID_SDK_ROOT"} {
@@ -47,7 +49,7 @@ func androidStudioSDK() string {
 // FindAndroidNDK finds the Android NDK's folder: the one chosen, $ANDROID_NDK_HOME, or the
 // newest in the SDK.
 func (tools Tools) FindAndroidNDK(sdk string) (string, error) {
-	if place, isChosen, err := chosen(tools.AndroidNDK); isChosen {
+	if place, isChosen, err := chosenFolder(tools.AndroidNDK); isChosen {
 		return place, err
 	}
 	if folder := os.Getenv("ANDROID_NDK_HOME"); folder != "" && FileExists(folder) {
@@ -83,9 +85,14 @@ func newerVersion(version, other string) bool {
 	return len(parts) > len(others)
 }
 
-// FindADB finds the Android Debug Bridge: the SDK's, or adb on the path.
+// FindADB finds the Android Debug Bridge: the SDK's, or adb on the path; with an SDK chosen,
+// only the SDK's.
 func (tools Tools) FindADB() (string, error) {
-	if sdk, err := tools.FindAndroidSDK(); err == nil {
+	sdk, err := tools.FindAndroidSDK()
+	if tools.AndroidSDK != "" {
+		return adbIn(sdk, err)
+	}
+	if err == nil {
 		if tool := filepath.Join(sdk, "platform-tools", "adb"+ExecutableSuffix()); FileExists(tool) {
 			return tool, nil
 		}
@@ -94,4 +101,15 @@ func (tools Tools) FindADB() (string, error) {
 		return tool, nil
 	}
 	return "", ADBNotFound
+}
+
+// adbIn is the adb of an SDK chosen, or why there is none.
+func adbIn(sdk string, err error) (string, error) {
+	if err != nil {
+		return "", err
+	}
+	if tool := filepath.Join(sdk, "platform-tools", "adb"+ExecutableSuffix()); FileExists(tool) {
+		return tool, nil
+	}
+	return "", failure.Wrap(ToolPlaceWrong, sdk+": no platform-tools/adb", nil)
 }

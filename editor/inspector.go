@@ -88,7 +88,11 @@ func pointerTo(value bool) *bool { return &value }
 // note writes a quiet text that goes on to the next line where the panel ends: a word per box, in
 // a box that wraps them.
 func note(context *ui.Context, text string) {
-	style := ui.TextStyle{Color: context.Theme.InkQuiet, Size: context.Theme.SmallTextSize}
+	wrapped(context, text, ui.TextStyle{Color: context.Theme.InkQuiet, Size: context.Theme.SmallTextSize})
+}
+
+// wrapped is a text that goes on to the next line where the place it is in ends, word by word.
+func wrapped(context *ui.Context, text string, style ui.TextStyle) {
 	context.Box(ui.Layout{Width: ui.Grow(), Wrap: true, Gap: 3}, func() {
 		for _, word := range strings.Fields(text) {
 			context.Text(word, style)

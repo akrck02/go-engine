@@ -31,6 +31,9 @@ type Project struct {
 	// Tools are the places of the tools that build for consoles and phones, kept on this
 	// computer for every project.
 	Tools build.Tools
+	// ToolsUnread is why the places kept could not be read, when they could not: the builds look
+	// for the tools as if none were kept, and saving writes them anew.
+	ToolsUnread error
 }
 
 // Folders in a project.
@@ -51,17 +54,18 @@ func Open(folder string) (*Project, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Project{Folder: folder, Settings: settings, Tools: keptTools()}, nil
+	opened := &Project{Folder: folder, Settings: settings}
+	opened.readTools()
+	return opened, nil
 }
 
-// keptTools are the tools' places kept on this computer; when they cannot be read, none, and the
-// builds look for the tools as if none were kept.
-func keptTools() build.Tools {
-	tools, err := build.ReadTools()
-	if err != nil {
-		slog.Warn("the tools' places kept on this computer are left out", "error", err)
+// readTools reads the tools' places kept on this computer; when they cannot be read, none, and
+// ToolsUnread says why.
+func (project *Project) readTools() {
+	project.Tools, project.ToolsUnread = build.ReadTools()
+	if project.ToolsUnread != nil {
+		slog.Warn("the tools' places kept on this computer are left out", "error", project.ToolsUnread)
 	}
-	return tools
 }
 
 // Files are the project's files, as the engine reads them.

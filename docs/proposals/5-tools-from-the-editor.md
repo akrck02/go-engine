@@ -1,6 +1,6 @@
 # 5. The tools that build for consoles and phones, set from the editor
 
-> Status: in progress · Author's approval: proposal ☑ plan ☑ (2026-10-18, "tienes que hacer que
+> Status: done · Author's approval: proposal ☑ plan ☑ (2026-10-18, "tienes que hacer que
 > se pueda configurar tinygo y android desde ui": approved together)
 
 ## Why
@@ -27,16 +27,32 @@ editor. A person should see what the editor found and point it at what it did no
 
 **Tools** (`internal/build`): a `Tools` value holds the place of each tool the person chose,
 read from and saved to `go-engine/tools.json` in the user's configuration folder
-(`os.UserConfigDir`). Each finder is a method of it (`tools.TinyGo()`, `tools.AndroidSDK()`…):
-the place chosen first, then the variables, then the usual folders. `project.Open` reads it into
-`Project.Tools`, so the builds use it.
+(`os.UserConfigDir`). Each finder is a method of it (`tools.FindTinyGo()`,
+`tools.FindAndroidSDK()`…): the place chosen first (a program or a folder, as the tool is), then
+the variables, then the usual folders. `project.Open` reads it into `Project.Tools`, so the builds
+use it, and keeps why it could not be read in `Project.ToolsUnread`.
 
 **Panel**: under the Build cards, a "Tools on this computer" panel: a row per tool with its
-name, what needs it, a field for its place, and where it was found or the error. Saving writes the
-file and looks for them again; nothing is looked for every frame.
+name, what needs it, a field for its place, and where it was found or the error with its meaning.
+Check looks where the places typed say; saving writes the file and looks again (not while the game
+builds or plays: the build reads them). Nothing is looked for every frame.
 
 ## Tasks
 
 - [x] T1 — Tools, kept in the user's folder, and the finders as its methods · `internal/build`,
   `project/` · R1, R2
-- [ ] T2 — the Tools panel in Build · `editor/` · R3
+- [x] T2 — the Tools panel in Build · `editor/` · R3
+
+## Result
+
+**Built.** `build.Tools`, kept in `go-engine/tools.json` of the user's configuration folder, with
+a finder for each tool (TinyGo, devkitPro's 3dslink, a 3DS emulator, the Android SDK and its adb,
+the NDK); a place chosen comes first, and one where the wrong thing is (nothing, a folder for a
+program, a devkitPro with no 3dslink, an SDK with no adb) is said by `build.tool-place-wrong`.
+Build's **Tools on this computer** shows each tool, what needs it, the place typed, and where it
+was found or why not, with Check and Save; a file that could not be read is said there.
+
+**Checked.** The tests of each requirement; captures of the panel with tools found and missing.
+
+**For a person.** Set a place with a real file manager at hand: the field takes a typed path, with
+no file picker yet.

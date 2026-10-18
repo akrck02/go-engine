@@ -119,7 +119,8 @@ func Create(folder, name string) (*Project, error) {
 		return nil, err
 	}
 	settings := engine.Settings{Name: name, StartScene: path.Join(ScenesFolder, "main"+SceneSuffix)}
-	created := &Project{Folder: folder, Settings: settings, Tools: keptTools()}
+	created := &Project{Folder: folder, Settings: settings}
+	created.readTools()
 	files := map[string]string{
 		"go.mod":                 module,
 		"main.go":                fmt.Sprintf(mainFile, name),

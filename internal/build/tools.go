@@ -30,7 +30,7 @@ func ReadTools() (Tools, error) {
 	var tools Tools
 	file, err := toolsPath()
 	if err != nil {
-		return tools, err
+		return tools, failure.Wrap(ToolsNotRead, "", err)
 	}
 	data, err := os.ReadFile(file)
 	if errors.Is(err, fs.ErrNotExist) {
@@ -49,7 +49,7 @@ func ReadTools() (Tools, error) {
 func (tools Tools) Save() error {
 	file, err := toolsPath()
 	if err != nil {
-		return err
+		return failure.Wrap(ToolsNotSaved, "", err)
 	}
 	data, err := json.MarshalIndent(tools, "", "\t")
 	if err == nil {
@@ -68,18 +68,31 @@ func (tools Tools) Save() error {
 func toolsPath() (string, error) {
 	folder, err := os.UserConfigDir()
 	if err != nil {
-		return "", failure.Wrap(ToolsNotRead, "", err)
+		return "", err
 	}
 	return filepath.Join(folder, toolsFile), nil
 }
 
-// chosen is a place the person chose, when they chose one: an error when nothing is there.
-func chosen(place string) (string, bool, error) {
+// chosenProgram is a program the person chose, when they chose one: an error when no program is
+// there (nothing, or a folder).
+func chosenProgram(place string) (string, bool, error) {
 	if place == "" {
 		return "", false, nil
 	}
-	if !FileExists(place) {
-		return "", true, failure.Wrap(ToolPlaceWrong, place, nil)
+	if details, err := os.Stat(place); err != nil || details.IsDir() {
+		return "", true, failure.Wrap(ToolPlaceWrong, place, err)
+	}
+	return place, true, nil
+}
+
+// chosenFolder is a folder the person chose, when they chose one: an error when no folder is
+// there.
+func chosenFolder(place string) (string, bool, error) {
+	if place == "" {
+		return "", false, nil
+	}
+	if details, err := os.Stat(place); err != nil || !details.IsDir() {
+		return "", true, failure.Wrap(ToolPlaceWrong, place, err)
 	}
 	return place, true, nil
 }

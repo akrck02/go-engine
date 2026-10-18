@@ -82,7 +82,7 @@ func TestAToolSetInTheEditorIsUsedFirst(test *testing.T) {
 func TestAToolSetWhereNothingIsIsSaidByItsCode(test *testing.T) {
 	withNoTools(test)
 	tools := Tools{TinyGo: "/nowhere/tinygo", AndroidSDK: "/nowhere/sdk", AndroidNDK: "/nowhere/ndk", DevkitPro: "/nowhere/devkitpro", ConsoleEmulator: "/nowhere/azahar"}
-	finders := []func() (string, error){tools.FindTinyGo, tools.FindAndroidSDK, tools.FindThreeDSLink, tools.FindConsoleEmulator,
+	finders := []func() (string, error){tools.FindTinyGo, tools.FindAndroidSDK, tools.FindThreeDSLink, tools.FindConsoleEmulator, tools.FindADB,
 		func() (string, error) { return tools.FindAndroidNDK("/nowhere/sdk") }}
 	for _, find := range finders {
 		if _, err := find(); !errors.Is(err, ToolPlaceWrong) {
@@ -91,9 +91,27 @@ func TestAToolSetWhereNothingIsIsSaidByItsCode(test *testing.T) {
 	}
 }
 
+func TestAToolSetWhereTheWrongThingIsIsSaidByItsCode(test *testing.T) {
+	folder := withNoTools(test)
+	program := filepath.Join(folder, "program")
+	if err := os.WriteFile(program, nil, 0o755); err != nil {
+		test.Fatal(err)
+	}
+	tools := Tools{TinyGo: folder, ConsoleEmulator: folder, AndroidSDK: program, AndroidNDK: program, DevkitPro: folder}
+	finders := map[string]func() (string, error){
+		"a folder as TinyGo": tools.FindTinyGo, "a folder as the emulator": tools.FindConsoleEmulator,
+		"a program as the SDK": tools.FindAndroidSDK, "a program as the NDK": func() (string, error) { return tools.FindAndroidNDK("") },
+		"a devkitPro with no 3dslink": tools.FindThreeDSLink, "an SDK with no adb": Tools{AndroidSDK: folder}.FindADB,
+	}
+	for name, find := range finders {
+		if _, err := find(); !errors.Is(err, ToolPlaceWrong) {
+			test.Errorf("%s gives %v", name, err)
+		}
+	}
+}
+
 func TestTheToolsPlacesAreKeptBetweenSessions(test *testing.T) {
-	test.Setenv("XDG_CONFIG_HOME", test.TempDir())
-	test.Setenv("HOME", test.TempDir())
+	useConfigurationFolder(test, test.TempDir())
 	if read, err := ReadTools(); err != nil || read != (Tools{}) {
 		test.Fatalf("with nothing saved the tools are %+v, %v", read, err)
 	}
@@ -103,5 +121,13 @@ func TestTheToolsPlacesAreKeptBetweenSessions(test *testing.T) {
 	}
 	if read, err := ReadTools(); err != nil || read != saved {
 		test.Fatalf("the tools came back as %+v, %v", read, err)
+	}
+}
+
+// useConfigurationFolder makes a test keep the tools' places in a folder of its own, not the
+// person's, on every system: the variables os.UserConfigDir reads.
+func useConfigurationFolder(test *testing.T, folder string) {
+	for _, variable := range []string{"XDG_CONFIG_HOME", "HOME", "APPDATA", "LOCALAPPDATA"} {
+		test.Setenv(variable, folder)
 	}
 }

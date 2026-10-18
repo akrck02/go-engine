@@ -1,8 +1,12 @@
 package editor
 
 import (
+	"errors"
 	"fmt"
 	"time"
+
+	"github.com/akrck02/go-engine/failure"
+	"github.com/akrck02/go-engine/internal/build"
 
 	"github.com/akrck02/go-renderer/draw2d"
 	ui "github.com/akrck02/go-ui"
@@ -14,6 +18,10 @@ import (
 // The Build workspace's measures, in pixels.
 const (
 	targetCardWidth = 340
+	targetCardGap   = 12
+	toolsWidth      = 2*targetCardWidth + targetCardGap // under two cards
+	cardIconSize    = 22
+	stateIconSize   = 16
 	buildLogWidth   = 460
 	bytesInMegabyte = 1 << 20
 )
@@ -23,7 +31,9 @@ const playLogRefresh = 250 * time.Millisecond
 
 // buildView is what the Build workspace remembers between frames.
 type buildView struct {
-	shown BuildTarget // the target whose log is shown
+	shown       BuildTarget // the target whose log is shown
+	tools       build.Tools // the tools' places as typed, kept when saved
+	toolsFilled bool        // tools was filled with the places kept, to be typed over
 }
 
 func (view *View) buildWorkspace(context *ui.Context) {
@@ -31,11 +41,12 @@ func (view *View) buildWorkspace(context *ui.Context) {
 		panel(context, "Targets", ui.Grow(), func() {
 			context.Heading("Build the game")
 			note(context, "Every build leaves the editor out of the game (-tags release) and writes, beside the program, the notices of the code it carries.")
-			context.Box(ui.Layout{Width: ui.Grow(), Gap: 12, Wrap: true}, func() {
+			context.Box(ui.Layout{Width: ui.Grow(), Gap: targetCardGap, Wrap: true}, func() {
 				for _, target := range BuildTargets {
 					view.targetCard(context, target)
 				}
 			})
+			view.toolsSection(context)
 		})
 		context.Separator()
 		panel(context, "Build log", ui.Fixed(buildLogWidth), func() { view.buildLog(context) })
@@ -52,7 +63,7 @@ func (view *View) targetCard(context *ui.Context, target BuildTarget) {
 	defer context.Pop()
 	context.Frame(ui.Layout{Direction: ui.Vertical, Width: ui.Fixed(targetCardWidth), Padding: ui.Pad(14), Gap: 6}, look, func() {
 		context.Row(func() {
-			context.IconSized(target.Icon(), 22, context.Theme.Primary)
+			context.IconSized(target.Icon(), cardIconSize, context.Theme.Primary)
 			context.Heading(target.Name())
 		})
 		context.Caption(target.Makes())
@@ -147,4 +158,78 @@ func (view *View) playOutput(target BuildTarget) []string {
 		return nil
 	}
 	return editor.output.Lines()
+}
+
+// toolsSection is where the tools that build for consoles and phones are: set by the person, and
+// found or not.
+func (view *View) toolsSection(context *ui.Context) {
+	editor := view.Editor
+	if !view.build.toolsFilled {
+		view.build.tools, view.build.toolsFilled = editor.Project.Tools, true
+	}
+	look := ui.Look{Fill: context.Theme.Background, Radius: 10, Border: context.Theme.Line, BorderWidth: 1}
+	context.Frame(ui.Layout{Direction: ui.Vertical, Width: ui.Fixed(toolsWidth), Padding: ui.Pad(14), Gap: 6}, look, func() {
+		context.Row(func() {
+			context.IconSized(iconTools, cardIconSize, context.Theme.Primary)
+			context.Heading("Tools on this computer")
+		})
+		note(context, "Kept for every project on this computer, not in the project. An empty place looks for the tool in its variable and where it is usually installed.")
+		if unread := editor.Project.ToolsUnread; unread != nil {
+			wrapped(context, "The places kept could not be read, and saving writes them anew: "+explained(unread), ui.TextStyle{Color: context.Theme.Danger, Size: context.Theme.SmallTextSize})
+		}
+		for index, found := range editor.ToolsFound() {
+			view.toolRow(context, index, found)
+		}
+		context.Row(func() {
+			if context.PrimaryIconButton(iconSave, "Save tools") {
+				view.saveTools()
+			}
+			if context.IconButton(iconRestart, "Check") {
+				editor.LookForTools(view.build.tools)
+			}
+			context.Tooltip("Look for the tools where the places typed say, before saving them, or again after installing one")
+		})
+	})
+}
+
+// toolRow is a tool: what needs it, the place typed, and where it was found or why not.
+func (view *View) toolRow(context *ui.Context, index int, found ToolFound) {
+	context.Push(found.Name)
+	defer context.Pop()
+	context.Separator()
+	context.Row(func() {
+		if found.Err != nil {
+			context.IconSized(iconMissing, stateIconSize, context.Theme.Danger)
+		} else {
+			context.IconSized(iconFound, stateIconSize, context.Theme.Positive)
+		}
+		context.Text(found.Name, ui.TextStyle{Weight: draw2d.Bold})
+	})
+	context.Caption(found.Needs)
+	context.TextField(found.Name, buildToolParts[index].place(&view.build.tools))
+	small := ui.TextStyle{Color: context.Theme.InkSoft, Size: context.Theme.SmallTextSize}
+	if found.Err != nil {
+		small.Color = context.Theme.Danger
+		wrapped(context, explained(found.Err), small)
+		return
+	}
+	wrapped(context, "Found: "+found.Found, small)
+}
+
+// saveTools keeps the tools' places as typed, and says how it went.
+func (view *View) saveTools() {
+	if err := view.Editor.SaveTools(view.build.tools); err != nil {
+		view.Editor.say(err.Error(), true)
+		return
+	}
+	view.Editor.say("Saved the tools' places, for every project on this computer", false)
+}
+
+// explained is an error with its code's meaning: a code wrapped with details says only its name.
+func explained(err error) string {
+	var failed *failure.Error
+	if errors.As(err, &failed) && failed.Details != "" {
+		return failed.Code.Error() + " (" + failed.Details + ")"
+	}
+	return err.Error()
 }

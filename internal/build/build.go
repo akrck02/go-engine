@@ -102,7 +102,7 @@ func GoOnPath() string {
 // FindTinyGo finds the TinyGo with the nintendo3ds target: the one chosen, $TINYGO, tinygo on
 // the path, or in ~/go/bin.
 func (tools Tools) FindTinyGo() (string, error) {
-	if place, isChosen, err := chosen(tools.TinyGo); isChosen {
+	if place, isChosen, err := chosenProgram(tools.TinyGo); isChosen {
 		return place, err
 	}
 	if tool := os.Getenv("TINYGO"); tool != "" {

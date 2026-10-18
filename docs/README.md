@@ -62,7 +62,10 @@ devkitPro's `3dslink`, `$DEVKITPRO`) or opens it in an emulator (Azahar or Citra
 `$ANDROID_NDK_HOME`, or Android Studio's) and plays it on the phone or emulator `adb` sees, with
 its log; on a phone the game shows touch buttons, and a 2D camera's **width** keeps the level's
 sides in view when the phone is held upright. The settings keep the Android application id and
-the 3DS's address.
+the 3DS's address. Where each of these tools is (TinyGo, devkitPro, the emulator, the Android
+SDK and NDK) is set in Build's **Tools on this computer**, kept for every project in
+`go-engine/tools.json` of the user's configuration folder; a place set there comes before the
+variables, and an empty one looks for the tool as above.
 
 <p align="center">
   <img alt="Playing in the editor's view: the house and the spinning cube seen through the scene's camera, the inspector saying the view plays a copy" src="images/playing-in-view.png" width="560">

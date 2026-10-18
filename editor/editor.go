@@ -73,12 +73,13 @@ type Editor struct {
 	codeCheckedAt time.Time
 	codeChanged   bool
 
-	running  bool        // building or playing the game
-	playing  *exec.Cmd   // the game, while it plays
-	playedOn BuildTarget // where it plays
-	stopping bool        // Stop was asked: the game's end is no failure
-	output   *outputTail
-	events   chan func(editor *Editor)
+	running    bool        // building or playing the game
+	playing    *exec.Cmd   // the game, while it plays
+	playedOn   BuildTarget // where it plays
+	stopping   bool        // Stop was asked: the game's end is no failure
+	output     *outputTail
+	toolsFound []ToolFound // the build tools and where they were found, looked for when needed
+	events     chan func(editor *Editor)
 	// Wake asks the window for a frame, when background work has something to show.
 	Wake func()
 }
