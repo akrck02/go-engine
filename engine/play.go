@@ -55,6 +55,7 @@ func (owner *Scene) Update(seconds float64, keys *input.State) {
 	owner.updateBehaviours()
 	owner.stepPhysics(seconds)
 	owner.advanceAnimations(owner.Root, seconds)
+	owner.followTargets(seconds)
 	owner.Animate.Update(seconds)
 	owner.Sync()
 }

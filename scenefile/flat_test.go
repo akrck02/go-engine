@@ -85,3 +85,21 @@ func TestACopyOfA2DPartIsIndependent(test *testing.T) {
 		test.Fatal("a copy of nothing is something")
 	}
 }
+
+func TestACameraThatFollowsComesBackAsWritten(test *testing.T) {
+	camera := NewNode("Camera")
+	camera.Camera = &Camera{Projection: Orthographic, Height: 8, Follow: "Player", Smoothing: 0.25,
+		Bounds: &[4]float64{-10, -5, 40, 15}}
+	data, err := (&Scene{Name: "Level", Mode: Mode2D, Nodes: []Node{camera}}).Marshal()
+	if err != nil {
+		test.Fatal(err)
+	}
+	read, err := Read(data)
+	if err != nil {
+		test.Fatal(err)
+	}
+	again := read.Nodes[0].Camera
+	if again.Follow != "Player" || again.Smoothing != 0.25 || again.Bounds == nil || again.Bounds[2] != 40 {
+		test.Fatalf("the camera came back as %+v", again)
+	}
+}

@@ -116,7 +116,7 @@ levels painted with the tile tool. No behaviour of the demo reaches into the eng
   test: `solid tiles stop a body`, `a row of solid tiles is one box`
 - [x] T6 — engine: animated sprites, `Play`, `FaceLeft` · `engine/` · R4 · test:
   `an animation shows each frame for its time and loops`
-- [ ] T7 — engine: a camera that follows a node within bounds · `engine/` · R5 · test:
+- [x] T7 — engine: a camera that follows a node within bounds · `engine/` · R5 · test:
   `the camera follows its target and stops at the level's edge`
 - [ ] T8 — engine: `RestartScene` and `ChangeScene`, in the window and in the editor's view ·
   `engine/`, `editor/` · R6, R7 · test: `changing scene starts the new one`

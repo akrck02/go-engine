@@ -70,6 +70,15 @@ type Camera struct {
 	FieldOfView float64    `json:"fieldOfView,omitempty"` // degrees, top to bottom, in perspective; 0 is 45
 	Height      float64    `json:"height,omitempty"`      // metres seen top to bottom, orthographic and isometric; 0 is 10
 	Main        bool       `json:"main,omitempty"`
+
+	// Follow is the path of a node the camera follows, in a 2D scene ("Player", "World/Player").
+	Follow string `json:"follow,omitempty"`
+	// Smoothing is about how many seconds the camera takes to catch up with what it follows; 0
+	// keeps it right on it.
+	Smoothing float64 `json:"smoothing,omitempty"`
+	// Bounds keep a following camera's view inside a box of the world: its lowest x and y, then its
+	// highest. Without them, the scene's tile maps make the box.
+	Bounds *[4]float64 `json:"bounds,omitempty"`
 }
 
 // Projection is how a camera flattens the world.

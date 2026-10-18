@@ -31,6 +31,9 @@ func (owner *Scene) pixelsPerMetre() float64 {
 	return scenefile.DefaultPixelsPerMetre
 }
 
+// defaultViewHeight is how many metres a 2D camera sees, top to bottom, when it does not say.
+const defaultViewHeight = 10.0
+
 // View2D is what a 2D camera sees: the point at the middle of the screen and how many metres fit
 // between the screen's top and bottom.
 type View2D struct {
@@ -42,9 +45,9 @@ type View2D struct {
 func (owner *Scene) View2D() View2D {
 	camera, found := owner.MainCamera()
 	if !found {
-		return View2D{Height: 10}
+		return View2D{Height: defaultViewHeight}
 	}
-	height := 10.0
+	height := defaultViewHeight
 	if settings, _ := camera.Camera(); settings != nil && settings.Height > 0 {
 		height = settings.Height
 	}
@@ -122,6 +125,9 @@ func (owner *Scene) Draw2D(list *draw2d.List, area draw2d.Rect, view View2D) {
 // DrawContent2D draws a 2D scene's sprites and shapes without its sky: over something of the
 // program's own (the editor's grid).
 func (owner *Scene) DrawContent2D(list *draw2d.List, area draw2d.Rect, view View2D) {
+	if area.Height > 0 {
+		owner.drawnAspect = float64(area.Width) / float64(area.Height)
+	}
 	list.PushClip(area)
 	defer list.PopClip()
 	for _, node := range owner.drawOrder() {

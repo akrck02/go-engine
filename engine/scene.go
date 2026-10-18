@@ -55,6 +55,7 @@ type Scene struct {
 	updating    []*Node
 	drawn       []*Node                 // the nodes a 2D frame draws, furthest first
 	flatColours map[string]draw2d.Color // shapes' colours, read from their text once
+	drawnAspect float64                 // the screen's width over its height, as last drawn
 }
 
 // Load reads a scene file from a project's files.
