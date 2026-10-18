@@ -146,7 +146,7 @@ A **package** and a **module** divide different things:
    ```
    failure, space             the base: they import nothing of ours
      ↑
-   animation, scenefile, shapes
+   animation, scenefile, shapes, physics
      ↑
    engine                     what a game carries; builds for the 3DS
      ↑
@@ -203,6 +203,7 @@ without go-ui and GLFW, or if the editor came to be released at a pace of its ow
 | `animation` | Values that move over time | Games |
 | `scenefile` | The scene file format | The engine and the editor |
 | `shapes` | Meshes of simple shapes | The engine |
+| `physics` | 2D boxes that fall, collide and slide | The engine |
 | `engine` | The running game: nodes, behaviours, input, cameras | Games |
 | `project` | A game's folder: creating, building, reading its code | The editor (desktop only) |
 | `editor` | The editor's window | The game while it is being made (desktop only) |
