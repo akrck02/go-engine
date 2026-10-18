@@ -27,7 +27,10 @@ func (node *Node) SetTiles(tiles *scenefile.TileMap) { node.tiles = tiles }
 // CellAt finds the cell of the node's tile map at a point of the world; inside is false outside
 // the map, or for a node that is not one.
 func (node *Node) CellAt(point space.Vector) (column, row int, inside bool) {
-	if node.tiles == nil || node.tiles.TileSize <= 0 {
+	if node.tiles == nil {
+		return 0, 0, false
+	}
+	if _, tileSize := node.tileSource(); tileSize <= 0 {
 		return 0, 0, false
 	}
 	width, height := node.tileMetres()
@@ -46,14 +49,15 @@ func (owner *Scene) Tileset(node *Node) ([]*draw2d.Image, error) {
 	if node.tiles == nil {
 		return nil, nil
 	}
-	return owner.assets.tileset(node.tiles.Tileset, node.tiles.TileSize)
+	return owner.assets.tileset(node.tileSource())
 }
 
 // tileMetres is how many metres a tile of a node's map takes, across and down, its node's scale
 // counted.
 func (node *Node) tileMetres() (width, height float64) {
 	scale := node.World().Scale
-	side := float64(node.tiles.TileSize) / node.scene.pixelsPerMetre()
+	_, tileSize := node.tileSource()
+	side := float64(tileSize) / node.scene.pixelsPerMetre()
 	return side * math.Abs(scale.X), side * math.Abs(scale.Y)
 }
 
@@ -77,7 +81,7 @@ func (node *Node) cellBox(column, row int) space.Box {
 
 // drawTiles draws the map's tiles that fall in the area.
 func (owner *Scene) drawTiles(list *draw2d.List, area draw2d.Rect, view View2D, node *Node) {
-	pictures, err := owner.assets.tileset(node.tiles.Tileset, node.tiles.TileSize)
+	pictures, err := owner.assets.tileset(node.tileSource())
 	if err != nil {
 		return
 	}
@@ -138,7 +142,7 @@ func (owner *Scene) addTileBodies(node *Node) {
 // solidRunFrom is how many solid tiles there are side by side in a row, from a column.
 func (node *Node) solidRunFrom(column, row int) int {
 	run := 0
-	for column+run < node.tiles.Columns && node.tiles.IsSolid(node.tiles.TileAt(column+run, row)) {
+	for column+run < node.tiles.Columns && node.isSolidTile(node.tiles.TileAt(column+run, row)) {
 		run++
 	}
 	return run

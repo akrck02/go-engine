@@ -17,4 +17,6 @@ var (
 	ModelUnreadable       = failure.Define("engine.model-unreadable", "the model's file is not a .glb go-renderer reads")
 	PictureNotFound       = failure.Define("engine.picture-not-found", "the picture's file does not exist")
 	PictureUnreadable     = failure.Define("engine.picture-unreadable", "the picture is not a PNG or a JPEG")
+	SpriteNotFound        = failure.Define("engine.sprite-not-found", "the sprite's file does not exist")
+	TilesetNotFound       = failure.Define("engine.tileset-not-found", "the tileset's file does not exist")
 )

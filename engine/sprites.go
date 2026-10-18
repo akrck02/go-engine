@@ -27,13 +27,14 @@ func (node *Node) SetSheet(sheet *scenefile.SpriteSheet) {
 // where it is, so a behaviour may ask for "walk" every frame it walks. It tells whether the sheet
 // has the animation.
 func (node *Node) Play(name string) bool {
-	if node.sheet == nil {
+	sheet := node.frames()
+	if sheet == nil {
 		return false
 	}
 	if name == node.playing.Name {
 		return true
 	}
-	animation, found := node.sheet.Find(name)
+	animation, found := sheet.Find(name)
 	if !found {
 		return false
 	}
@@ -65,8 +66,8 @@ func (node *Node) FacingLeft() bool { return node.facingLeft }
 
 // startAnimations plays each sheet's first animation.
 func (owner *Scene) startAnimations(node *Node) {
-	if node.sheet != nil && node.sheet.Start != "" {
-		node.Play(node.sheet.Start)
+	if sheet := node.frames(); sheet != nil && sheet.Start != "" {
+		node.Play(sheet.Start)
 	}
 	for _, child := range node.children {
 		owner.startAnimations(child)
@@ -86,11 +87,12 @@ func (owner *Scene) advanceAnimations(node *Node, seconds float64) {
 // spritePicture is the picture a sprite shows now: the whole picture, or its sheet's frame, turned
 // to face left when it does.
 func (owner *Scene) spritePicture(node *Node) (*draw2d.Image, bool) {
-	if node.sheet == nil {
-		picture, err := owner.assets.image(node.sprite)
+	sheet := node.frames()
+	if sheet == nil {
+		picture, err := owner.assets.image(node.picture())
 		return picture, err == nil
 	}
-	frames, err := owner.assets.sheetFrames(node.sprite, node.sheet, node.facingLeft)
+	frames, err := owner.assets.sheetFrames(node.picture(), sheet, node.facingLeft)
 	if err != nil || len(frames) == 0 {
 		return nil, false
 	}
@@ -99,15 +101,16 @@ func (owner *Scene) spritePicture(node *Node) (*draw2d.Image, bool) {
 
 // framePixels is how many pixels wide and high a sprite's frame is.
 func (owner *Scene) framePixels(node *Node) (width, height int, found bool) {
-	picture, err := owner.assets.image(node.sprite)
+	picture, err := owner.assets.image(node.picture())
 	if err != nil {
 		return 0, 0, false
 	}
 	width, height = picture.Size()
-	if node.sheet == nil || node.sheet.Columns <= 0 || node.sheet.Rows <= 0 {
+	sheet := node.frames()
+	if sheet == nil || sheet.Columns <= 0 || sheet.Rows <= 0 {
 		return width, height, true
 	}
-	return width / node.sheet.Columns, height / node.sheet.Rows, true
+	return width / sheet.Columns, height / sheet.Rows, true
 }
 
 // sheetKey names a picture cut into a sheet's frames, facing one way.

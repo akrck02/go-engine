@@ -67,16 +67,17 @@ func (sheet *SpriteSheet) Find(name string) (Animation, bool) {
 	return Animation{}, false
 }
 
-// TileMap is a grid of tiles cut from a tileset picture. Its node's position is the map's
-// top-left corner; rows go down from there. A tile is TileSize pixels a side, which the scene's
-// pixels per metre make metres.
+// TileMap is a grid of tiles cut from a tileset. Its node's position is the map's top-left corner;
+// rows go down from there. A tile is TileSize pixels a side, which the scene's pixels per metre
+// make metres. The tileset is a tileset's file, which brings its tile size and solid tiles, or a
+// picture, with the map's own.
 type TileMap struct {
-	Tileset  string `json:"tileset"`  // a picture in the project, cut into tiles in rows
-	TileSize int    `json:"tileSize"` // pixels a side
+	Tileset  string `json:"tileset"`            // a tileset's file, or a picture cut into tiles in rows
+	TileSize int    `json:"tileSize,omitempty"` // pixels a side, for a picture
 	Columns  int    `json:"columns"`
 	Rows     int    `json:"rows"`
 	Tiles    []int  `json:"tiles"`           // a tile number per cell, row by row; EmptyTile for none
-	Solid    []int  `json:"solid,omitempty"` // the tile numbers that bodies stand on
+	Solid    []int  `json:"solid,omitempty"` // the tile numbers that bodies stand on, for a picture
 }
 
 // EmptyTile is a cell with no tile.
@@ -126,7 +127,7 @@ func isBodyKind(kind BodyKind) bool {
 }
 
 func (tiles *TileMap) check(path string) error {
-	if tiles.TileSize <= 0 {
+	if tiles.TileSize <= 0 && !IsTilesetFile(tiles.Tileset) { // a tileset's file has the size
 		return failure.Wrap(TileSizeWrong, path, nil)
 	}
 	if tiles.Columns < 0 || tiles.Rows < 0 || len(tiles.Tiles) != tiles.Columns*tiles.Rows {

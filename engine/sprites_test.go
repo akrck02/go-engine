@@ -126,3 +126,49 @@ func TestAnimatingAFrameAllocatesNothing(test *testing.T) {
 		test.Fatalf("an animated frame allocates %v times", allocations)
 	}
 }
+
+func TestANodePlaysTheAnimationsOfTheSpriteItPointsTo(test *testing.T) {
+	sprite := scenefile.Sprite{Picture: "assets/hero.png", SpriteSheet: scenefile.SpriteSheet{Columns: 4, Rows: 1, Start: "walk",
+		Animations: []scenefile.Animation{{Name: "walk", Frames: []int{0, 1, 2, 3}, FramesPerSecond: 4, Loop: true}}}}
+	data, _ := sprite.Marshal()
+	description := &scenefile.Scene{Name: "Walk", Mode: scenefile.Mode2D, PixelsPerMetre: 8, Nodes: []scenefile.Node{
+		{Name: "Hero", Sprite: "assets/hero.sprite.json", Scale: [3]float64{1, 1, 1}},
+	}}
+	files := fstest.MapFS{"assets/hero.png": {Data: sheetPicture()}, "assets/hero.sprite.json": {Data: data}}
+	built, err := Build(files, description)
+	if err != nil {
+		test.Fatal(err)
+	}
+	built.Start()
+	hero, _ := built.Find("Hero")
+	built.Update(0.3, nil)
+	if hero.Animation() != "walk" || hero.Frame() != 1 {
+		test.Fatalf("the hero plays %q on frame %d", hero.Animation(), hero.Frame())
+	}
+	if size := hero.Bounds().Size(); size.X != 1 || size.Y != 1 {
+		test.Fatalf("a frame of the sprite is %v metres, not one", size)
+	}
+	var list draw2d.List
+	built.Draw2D(&list, draw2d.Rect{Width: 100, Height: 100}, built.View2D())
+	if list.IsEmpty() {
+		test.Fatal("the sprite was not drawn")
+	}
+}
+
+func TestASheetOfItsOwnWinsOverItsSpritesFile(test *testing.T) {
+	sprite := scenefile.Sprite{Picture: "assets/hero.png", SpriteSheet: scenefile.SpriteSheet{Columns: 4, Rows: 1,
+		Animations: []scenefile.Animation{{Name: "walk", Frames: []int{0, 1}, FramesPerSecond: 4}}}}
+	data, _ := sprite.Marshal()
+	description := &scenefile.Scene{Name: "Walk", Mode: scenefile.Mode2D, PixelsPerMetre: 8, Nodes: []scenefile.Node{
+		{Name: "Hero", Sprite: "assets/hero.sprite.json", Scale: [3]float64{1, 1, 1},
+			Sheet: &scenefile.SpriteSheet{Columns: 2, Rows: 1, Animations: []scenefile.Animation{{Name: "wave", Frames: []int{1}, FramesPerSecond: 1}}}},
+	}}
+	built, err := Build(fstest.MapFS{"assets/hero.png": {Data: sheetPicture()}, "assets/hero.sprite.json": {Data: data}}, description)
+	if err != nil {
+		test.Fatal(err)
+	}
+	hero, _ := built.Find("Hero")
+	if hero.Play("walk") || !hero.Play("wave") || hero.Bounds().Size().X != 2 {
+		test.Fatalf("the node's own sheet did not win: %v metres wide", hero.Bounds().Size().X)
+	}
+}

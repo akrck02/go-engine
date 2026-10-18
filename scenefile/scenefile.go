@@ -48,7 +48,7 @@ type Node struct {
 
 	Shape  string  `json:"shape,omitempty"`  // one of Shapes
 	Model  string  `json:"model,omitempty"`  // a model in the project, as "assets/models/tree.glb"
-	Sprite string  `json:"sprite,omitempty"` // in a 2D scene, a picture in the project, as "assets/sprites/hero.png"
+	Sprite string  `json:"sprite,omitempty"` // in a 2D scene, a picture or a sprite's file, as "assets/sprites/hero.sprite.json"
 	Colour string  `json:"colour,omitempty"` // of a shape, "#rrggbb"
 	Camera *Camera `json:"camera,omitempty"`
 

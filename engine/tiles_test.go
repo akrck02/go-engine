@@ -117,3 +117,26 @@ func TestDrawingA2DFrameAllocatesNothing(test *testing.T) {
 		test.Fatalf("drawing a frame allocates %v times", allocations)
 	}
 }
+
+func TestATileMapTakesItsSolidTilesFromItsTileset(test *testing.T) {
+	tileset := scenefile.Tileset{Picture: "assets/tiles.png", TileSize: 16, Solid: []int{1}}
+	data, _ := tileset.Marshal()
+	empty := scenefile.EmptyTile
+	description := &scenefile.Scene{Name: "Tiled", Mode: scenefile.Mode2D, PixelsPerMetre: 16, Nodes: []scenefile.Node{
+		{Name: "Ground", Position: [3]float64{-3, 1, 0}, Scale: [3]float64{1, 1, 1}, Tiles: &scenefile.TileMap{
+			Tileset: "assets/tiles.tileset.json", Columns: 3, Rows: 2, Tiles: []int{empty, empty, empty, 1, 1, 1}}},
+		{Name: "Crate", Shape: "cube", Position: [3]float64{-1.5, 4, 0}, Scale: [3]float64{1, 1, 1},
+			Body: &scenefile.Body{Kind: scenefile.Moving}},
+	}}
+	files := fstest.MapFS{"assets/tiles.png": {Data: tilesetPicture()}, "assets/tiles.tileset.json": {Data: data}}
+	built, err := Build(files, description)
+	if err != nil {
+		test.Fatal(err)
+	}
+	built.Start()
+	playFor(built, 2)
+	crate, _ := built.Find("Crate")
+	if body, _ := crate.Body(); !body.OnFloor() || math.Abs(crate.Transform.Position.Y-0.5) > 1e-6 {
+		test.Fatalf("the crate is at %v, on the floor %v", crate.Transform.Position, body.OnFloor())
+	}
+}

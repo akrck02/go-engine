@@ -17,4 +17,5 @@ var (
 	FrameOutsideSheet = failure.Define("scenefile.frame-outside-sheet", "an animation shows a frame the sheet does not have")
 	SameAnimationName = failure.Define("scenefile.same-animation-name", "two animations of a sheet have the same name")
 	UnknownAnimation  = failure.Define("scenefile.unknown-animation", "a sheet starts with an animation it does not have")
+	NoPicture         = failure.Define("scenefile.no-picture", "a sprite or a tileset names no picture")
 )
