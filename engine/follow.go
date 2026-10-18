@@ -97,10 +97,7 @@ func tileMapsBounds(node *Node, box space.Box) space.Box {
 // keepViewInside moves a camera's centre so its view stays inside the bounds; along an axis where
 // the bounds are smaller than the view, it centres the view on them.
 func (owner *Scene) keepViewInside(position space.Vector, camera *Node, bounds space.Box) space.Vector {
-	height := camera.camera.Height
-	if height <= 0 {
-		height = defaultViewHeight
-	}
+	height := owner.heightSeen(camera)
 	halfWidth, halfHeight := height*owner.aspect()/2, height/2
 	position.X = keepInside(position.X, halfWidth, bounds.Minimum.X, bounds.Maximum.X)
 	position.Y = keepInside(position.Y, halfHeight, bounds.Minimum.Y, bounds.Maximum.Y)

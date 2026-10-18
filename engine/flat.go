@@ -47,11 +47,21 @@ func (owner *Scene) View2D() View2D {
 	if !found {
 		return View2D{Height: defaultViewHeight}
 	}
+	return View2D{Centre: camera.World().Position, Height: owner.heightSeen(camera)}
+}
+
+// heightSeen is the metres a 2D camera sees top to bottom on the screen it was last drawn on: its
+// height, or more on a screen too narrow for the width it must see.
+func (owner *Scene) heightSeen(camera *Node) float64 {
+	settings, _ := camera.Camera()
 	height := defaultViewHeight
-	if settings, _ := camera.Camera(); settings != nil && settings.Height > 0 {
+	if settings != nil && settings.Height > 0 {
 		height = settings.Height
 	}
-	return View2D{Centre: camera.World().Position, Height: height}
+	if settings != nil && settings.Width > height*owner.aspect() {
+		return settings.Width / owner.aspect()
+	}
+	return height
 }
 
 // scale is how many screen pixels a metre takes in an area.

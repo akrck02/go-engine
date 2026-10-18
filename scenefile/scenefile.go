@@ -72,7 +72,10 @@ type Camera struct {
 	Projection  Projection `json:"projection"`
 	FieldOfView float64    `json:"fieldOfView,omitempty"` // degrees, top to bottom, in perspective; 0 is 45
 	Height      float64    `json:"height,omitempty"`      // metres seen top to bottom, orthographic and isometric; 0 is 10
-	Main        bool       `json:"main,omitempty"`
+	// Width is the metres a 2D camera sees across, at least: a screen narrower than Height and
+	// Width make (a phone held upright) sees more height instead of losing the sides. 0 is no least.
+	Width float64 `json:"width,omitempty"`
+	Main  bool    `json:"main,omitempty"`
 
 	// Follow is the path of a node the camera follows, in a 2D scene ("Keeper", "Harbour/Keeper").
 	Follow string `json:"follow,omitempty"`

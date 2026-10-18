@@ -105,6 +105,9 @@ func (game *runner) step(state *input.State, step float64) *window.SceneView {
 	keys := consoleKeys(&game.console, state)
 	game.played.Update(seconds, keys)
 	game.replaceIfAsked()
+	if game.played.Is2D() && !flatNeedsScene {
+		return nil // the interface paints a 2D scene (interfaceFor): no 3D scene behind it
+	}
 	drawOver(game.played, state, &game.flat)
 	game.view = window.SceneView{World: game.played.World(), Camera: CameraAt(fallbackCamera, defaultCamera)}
 	if camera, found := game.played.MainCamera(); found {

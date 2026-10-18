@@ -11,6 +11,10 @@ import (
 // On the desktop a 2D scene is painted by the window's interface, which go-ui paints over the
 // (empty) 3D scene: the whole window is its area.
 
+// flatNeedsScene is false off the console: a 2D scene is painted by the interface alone, and a
+// window given no scene draws only its interface (on Android, a scene would cover it).
+const flatNeedsScene = false
+
 // drawOver draws nothing over the scene on the desktop: the interface does it (interfaceFor).
 func drawOver(*Scene, *input.State, *draw2d.List) {}
 

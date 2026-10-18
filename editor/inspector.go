@@ -362,6 +362,7 @@ func (view *View) cameraInspector(context *ui.Context, node *engine.Node, settin
 	if view.Editor.Scene.Is2D() {
 		settings.Projection = scenefile.Orthographic
 		view.heightSeenField(context, settings)
+		view.widthSeenField(context, settings)
 		view.mainCameraCheckbox(context, settings)
 		view.followInspector(context, node, settings)
 		return
@@ -418,6 +419,15 @@ func (view *View) heightSeenField(context *ui.Context, settings *scenefile.Camer
 	}
 	context.Caption("Metres seen, top to bottom")
 	if numberField(context, "Height seen", &settings.Height, numberLimits{0, 1000, 0.5}, "%.1f m") {
+		view.Editor.Changed()
+	}
+}
+
+// widthSeenField sets the metres an orthographic camera sees across at least, so a narrow screen
+// sees more height instead of losing the sides.
+func (view *View) widthSeenField(context *ui.Context, settings *scenefile.Camera) {
+	context.Caption("Metres seen across, at least (0: no least)")
+	if numberField(context, "Width seen", &settings.Width, numberLimits{0, 1000, 0.5}, "%.1f m") {
 		view.Editor.Changed()
 	}
 }

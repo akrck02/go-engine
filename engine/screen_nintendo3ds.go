@@ -22,6 +22,9 @@ func drawOver(played *Scene, _ *input.State, flat *draw2d.List) {
 	played.World().Overlay.Drawing = flat
 }
 
+// flatNeedsScene is true on the console: a 2D scene is drawn over the top screen's scene.
+const flatNeedsScene = true
+
 // interfaceFor is the bottom screen's interface: nothing yet.
 func interfaceFor(func() *Scene) func(context *ui.Context) { return func(*ui.Context) {} }
 

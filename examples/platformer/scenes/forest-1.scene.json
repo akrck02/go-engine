@@ -237,6 +237,7 @@
 			"camera": {
 				"projection": "orthographic",
 				"height": 9.375,
+				"width": 16.5,
 				"main": true,
 				"follow": "Player",
 				"smoothing": 0.2
