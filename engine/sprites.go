@@ -180,7 +180,7 @@ func cutIntoFrames(picture *image.NRGBA, columns, rows int, mirrored bool) []*dr
 			if mirrored {
 				mirror(frame)
 			}
-			frames = append(frames, draw2d.NewImage(frame))
+			frames = append(frames, pixelArt(draw2d.NewImage(frame)))
 		}
 	}
 	return frames

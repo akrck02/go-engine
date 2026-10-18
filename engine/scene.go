@@ -368,6 +368,13 @@ func (library *assets) image(file string) (*draw2d.Image, error) {
 	return picture, nil
 }
 
+// pixelArt marks a picture to be drawn at the nearest pixel when scaled: a 2D scene's sprites and
+// tiles are pixel art, whose pixels should stay square blocks, not blend into their neighbours.
+func pixelArt(picture *draw2d.Image) *draw2d.Image {
+	picture.Sharp = true
+	return picture
+}
+
 // readImage reads and decodes a picture of the project's.
 func (library *assets) readImage(file string) (*draw2d.Image, error) {
 	if library.files == nil {
@@ -382,7 +389,7 @@ func (library *assets) readImage(file string) (*draw2d.Image, error) {
 	if err != nil {
 		return nil, failure.Wrap(PictureUnreadable, file, err)
 	}
-	return picture, nil
+	return pixelArt(picture), nil
 }
 
 func (library *assets) model(file string) (*scene.Scene, error) {

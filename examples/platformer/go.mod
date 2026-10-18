@@ -18,4 +18,4 @@ require (
 
 replace github.com/akrck02/go-engine => ../..
 
-replace github.com/akrck02/go-renderer => github.com/akrck02/go-renderer v0.0.0-20261017114320-1fc015dd62b2
+replace github.com/akrck02/go-renderer => github.com/akrck02/go-renderer v0.0.0-20261018192419-3b08cd96e5a5

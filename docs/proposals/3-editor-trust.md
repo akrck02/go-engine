@@ -1,6 +1,6 @@
 # 3. Undo, several nodes, sharp pixels: an editor to trust
 
-> Status: building · Author's approval: proposal ☑ plan ☑ (2026-10-18, "haz todas pero además haz
+> Status: done · Author's approval: proposal ☑ plan ☑ (2026-10-18, "haz todas pero además haz
 > que aparezca la versión en la ventana de editor y logs": approved together)
 
 ## Why
@@ -53,8 +53,23 @@ branch, committed only with the author's say.
   chosen`
 - [x] T4 — the 2D view's mouse, tested · `editor/` · R4
 - [x] T5 — Level's tool rail in 3D · `editor/` · R6
-- [ ] T6 — sharp pixel art · go-renderer `draw2d`, `opengl`, `ctr`; `engine/` · R5
+- [x] T6 — sharp pixel art · go-renderer `draw2d`, `opengl`, `ctr`; `engine/` · R5
 
 ## Result
 
-Not built yet.
+**Built.** The version of Go Engine in the editor's title and top bar and in the logs of the
+editor, the game and the go-engine command, with the commit of a local copy and whether it has
+changes; undo and redo of every change to the scene, a drag or a number typed being one step;
+several nodes chosen with Shift, dragged, deleted and duplicated together; tests that press, move
+and let go the mouse over the 2D view; Level's tool rail in 3D (Select and Hand); pixel art drawn
+sharp, through go-renderer's `draw2d.Image.Sharp` (feature/3ds 3b08cd9, committed with the
+author's say), which the engine sets on every sprite, frame and tile.
+
+**Checked.** Every task's tests; sharp pixels compared before and after in captures, on the desktop
+and in the 3DS emulator.
+
+**Not done.** Metal draws sharp pictures blended, as before: it is hand-written and was not
+touched. Changes to sprite and tileset files are not undone (Art saves them itself). Choosing
+nodes with a box was out of scope.
+
+**For a person.** Undo after real edits, Shift-clicks and drags with a real mouse.

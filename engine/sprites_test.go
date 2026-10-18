@@ -198,3 +198,12 @@ func TestANodeStartsWithTheAnimationItNames(test *testing.T) {
 		test.Fatal("the animation a node starts with was not written back")
 	}
 }
+
+func TestASpritesFramesAreDrawnSharp(test *testing.T) {
+	scene := walkerScene(test)
+	hero, _ := scene.Find("Hero")
+	picture, found := scene.spritePicture(hero)
+	if !found || !picture.Sharp {
+		test.Fatal("a sprite's frame is not drawn at the nearest pixel")
+	}
+}

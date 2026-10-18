@@ -210,7 +210,7 @@ func cutIntoTiles(picture *image.NRGBA, tileSize int) []*draw2d.Image {
 		for left := bounds.Min.X; left+tileSize <= bounds.Max.X; left += tileSize {
 			tile := image.NewNRGBA(image.Rect(0, 0, tileSize, tileSize))
 			draw.Draw(tile, tile.Bounds(), picture, image.Pt(left, top), draw.Src)
-			tiles = append(tiles, draw2d.NewImage(tile))
+			tiles = append(tiles, pixelArt(draw2d.NewImage(tile)))
 		}
 	}
 	return tiles
