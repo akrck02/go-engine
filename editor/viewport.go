@@ -153,6 +153,10 @@ func (view *viewport) step(editor *Editor, state *input.State, seconds float64) 
 	}
 	world := editor.Scene.World()
 	view.attach(world)
+	if editor.Tool == HandTool {
+		view.orbit.Update(handInput(state), seconds, &view.camera) // the left button moves the view
+		return world, view.camera
+	}
 	mouseTaken := view.followMouse(editor, state)
 	switch {
 	case mouseTaken:
@@ -303,6 +307,19 @@ func (view *viewport) fixIsometricAngle() {
 // isometricInput is the input for the camera in the isometric view, whose angle does not turn: a
 // drag with the left button pans, as a drag with the right one does (the camera pans with Shift
 // held), and the arrows are left out (they turn it).
+// handInput is the input the camera reads with the hand tool: the left button pans, as Shift and
+// the left button do.
+func handInput(state *input.State) *input.State {
+	if state == nil {
+		return nil
+	}
+	panning := state.Unclaimed()
+	if panning.Button(input.MouseLeft) {
+		panning.SetKey(input.KeyShift, true)
+	}
+	return &panning
+}
+
 func (view *viewport) isometricInput(state *input.State) *input.State {
 	fixed := state.Unclaimed()
 	if fixed.Button(input.MouseLeft) {

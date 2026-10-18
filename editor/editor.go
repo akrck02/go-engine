@@ -151,6 +151,9 @@ var Kinds = []string{"Empty", "Cube", "Sphere", "Plane", "Cylinder", "Camera"}
 
 // SetMode makes the scene shown 3D or 2D.
 func (editor *Editor) SetMode(mode scenefile.Mode) {
+	if mode == scenefile.Mode3D && editor.Tool.paintsTiles() {
+		editor.Tool = SelectTool // a 3D scene has no tiles to paint
+	}
 	if editor.Scene.Mode == mode || (mode == scenefile.Mode3D && !editor.Scene.Is2D()) {
 		return
 	}

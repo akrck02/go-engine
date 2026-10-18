@@ -119,8 +119,8 @@ func (view *View) workspaceKeys(state *input.State) bool {
 func (view *View) levelKeys(state *input.State) {
 	editor := view.Editor
 	control := state.Down(input.KeyControl)
-	if editor.Scene.Is2D() && !control {
-		for _, tool := range Tools {
+	if !control {
+		for _, tool := range ToolsFor(editor.Scene.Is2D()) {
 			if state.Pressed(tool.Key()) {
 				editor.Tool = tool
 				return

@@ -51,8 +51,8 @@ branch, committed only with the author's say.
 - [x] T3 — several nodes chosen · `editor/` · R3 · tests: `shift adds a node to the choice and
   takes it out`, `deleting and duplicating act on every node chosen`, `dragging moves every node
   chosen`
-- [ ] T4 — the 2D view's mouse, tested · `editor/` · R4
-- [ ] T5 — Level's tool rail in 3D · `editor/` · R6
+- [x] T4 — the 2D view's mouse, tested · `editor/` · R4
+- [x] T5 — Level's tool rail in 3D · `editor/` · R6
 - [ ] T6 — sharp pixel art · go-renderer `draw2d`, `opengl`, `ctr`; `engine/` · R5
 
 ## Result

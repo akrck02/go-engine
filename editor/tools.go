@@ -56,6 +56,17 @@ func (tool Tool) Letter() string { return toolParts[tool].letter }
 // Key is the key that takes the tool.
 func (tool Tool) Key() input.Key { return toolParts[tool].key }
 
+// threeDTools are the tools that work in a 3D scene: there is no tile map to paint.
+var threeDTools = []Tool{SelectTool, HandTool}
+
+// ToolsFor are the tools of a scene: all of them in 2D, choosing and moving the view in 3D.
+func ToolsFor(flat bool) []Tool {
+	if flat {
+		return Tools
+	}
+	return threeDTools
+}
+
 // paintsTiles tells whether the tool works on a tile map.
 func (tool Tool) paintsTiles() bool {
 	return tool == PaintTool || tool == EraseTool || tool == FillTool

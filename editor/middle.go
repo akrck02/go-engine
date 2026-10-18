@@ -27,9 +27,7 @@ func (view *View) middle(context *ui.Context) {
 	}
 	context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Height: ui.Grow()}, func() {
 		context.Box(ui.Layout{Width: ui.Grow(), Height: ui.Grow()}, func() {
-			if view.Editor.Scene.Is2D() {
-				view.toolRail(context)
-			}
+			view.toolRail(context)
 			context.Box(column, func() {
 				view.viewStrip(context)
 				view.sceneView(context)
@@ -55,7 +53,7 @@ func (view *View) paletteUnderView(context *ui.Context) {
 func (view *View) toolRail(context *ui.Context) {
 	layout := ui.Layout{Direction: ui.Vertical, Width: ui.Fixed(48), Height: ui.Grow(), Padding: ui.PadXY(6, 10), Gap: 4, AlignX: ui.Center}
 	bar(context, layout, func() {
-		for _, tool := range Tools {
+		for _, tool := range ToolsFor(view.Editor.Scene.Is2D()) {
 			view.toolButton(context, tool)
 		}
 	})
@@ -185,5 +183,5 @@ func (view *View) viewHint() string {
 	if view.viewport.mode == ViewIsometric {
 		return "Isometric is a fixed angle: drag to pan · scroll to zoom · click to choose · drag the chosen to move it"
 	}
-	return "Drag to turn · right-drag to pan · scroll to zoom · click to choose · drag the chosen to move it"
+	return "Drag to turn · right-drag or Hand (H) to pan · scroll to zoom · click to choose (Shift adds) · drag the chosen to move it"
 }
