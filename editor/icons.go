@@ -42,6 +42,7 @@ const (
 	iconTools      = "wrench"
 	iconBrowse     = "folder-search"
 	iconImport     = "file-input"
+	iconInstall    = "download"
 	iconFound      = "circle-check"
 	iconMissing    = "circle-alert"
 	iconOutput     = "terminal"

@@ -5,8 +5,10 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/akrck02/go-engine/internal/build"
+	"github.com/akrck02/go-engine/internal/install"
 	"github.com/akrck02/go-engine/project"
 )
 
@@ -105,5 +107,45 @@ func TestAModelChosenIsCopiedIntoTheProject(test *testing.T) {
 	editor.ImportModel(model)
 	if _, err := os.Stat(editor.Project.Path("assets/models/boat.glb")); err != nil {
 		test.Fatalf("the model chosen is not in the project: %v", err)
+	}
+}
+
+// waitForTheTask applies the background task's events until it ends.
+func waitForTheTask(test *testing.T, editor *Editor) {
+	test.Helper()
+	deadline := time.Now().Add(5 * time.Second)
+	for editor.Running() {
+		if time.Now().After(deadline) {
+			test.Fatal("the task did not end")
+		}
+		editor.TakeEvents()
+		time.Sleep(time.Millisecond)
+	}
+}
+
+func TestAToolInstalledIsSetAndKept(test *testing.T) {
+	editor := open(test)
+	for _, variable := range []string{"XDG_CONFIG_HOME", "XDG_DATA_HOME", "HOME", "APPDATA", "LOCALAPPDATA"} {
+		test.Setenv(variable, test.TempDir())
+	}
+	editor.Project.Tools = build.Tools{}
+	var program string
+	editor.installTool("TinyGo", func(installer install.Installer) (string, error) {
+		program = filepath.Join(installer.Folder, "tinygo", "bin", "tinygo")
+		installer.Progress(50, 100)
+		if err := os.MkdirAll(filepath.Dir(program), 0o755); err != nil {
+			return "", err
+		}
+		return program, os.WriteFile(program, nil, 0o755)
+	}, func(tools *build.Tools, place string) { tools.TinyGo = place })
+	if tool, _, _, busy := editor.Installing(); !busy || tool != "TinyGo" {
+		test.Fatal("the editor does not say TinyGo is being installed")
+	}
+	waitForTheTask(test, editor)
+	if _, _, _, busy := editor.Installing(); busy {
+		test.Fatal("the install still shows once it ended")
+	}
+	if kept, err := build.ReadTools(); err != nil || kept.TinyGo != program || editor.ToolsFound()[0].Found != program {
+		test.Fatalf("TinyGo installed is kept as %+v (%v) and found as %+v", kept, err, editor.ToolsFound()[0])
 	}
 }

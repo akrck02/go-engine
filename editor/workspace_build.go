@@ -34,6 +34,7 @@ type buildView struct {
 	shown       BuildTarget // the target whose log is shown
 	tools       build.Tools // the tools' places as typed, kept when saved
 	toolsFilled bool        // tools was filled with the places kept, to be typed over
+	toolsKept   int         // the editor's toolsKept when tools was filled: an install keeps new ones
 }
 
 func (view *View) buildWorkspace(context *ui.Context) {
@@ -164,8 +165,8 @@ func (view *View) playOutput(target BuildTarget) []string {
 // found or not.
 func (view *View) toolsSection(context *ui.Context) {
 	editor := view.Editor
-	if !view.build.toolsFilled {
-		view.build.tools, view.build.toolsFilled = editor.Project.Tools, true
+	if !view.build.toolsFilled || view.build.toolsKept != editor.toolsKept {
+		view.build.tools, view.build.toolsFilled, view.build.toolsKept = editor.Project.Tools, true, editor.toolsKept
 	}
 	look := ui.Look{Fill: context.Theme.Background, Radius: 10, Border: context.Theme.Line, BorderWidth: 1}
 	context.Frame(ui.Layout{Direction: ui.Vertical, Width: ui.Fixed(toolsWidth), Padding: ui.Pad(14), Gap: 6}, look, func() {
@@ -212,7 +213,11 @@ func (view *View) toolRow(context *ui.Context, index int, found ToolFound) {
 		if context.IconButton(iconBrowse, "Browse") {
 			view.browseForTool(index, found)
 		}
+		if install, offered := toolInstalls[found.Name]; offered && context.IconButton(iconInstall, "Install") {
+			install(view)
+		}
 	})
+	view.installProgress(context, found.Name)
 	small := ui.TextStyle{Color: context.Theme.InkSoft, Size: context.Theme.SmallTextSize}
 	if found.Err != nil {
 		small.Color = context.Theme.Danger
@@ -257,4 +262,36 @@ func (view *View) browseForTool(index int, found ToolFound) {
 		*part.place(&view.build.tools) = path
 		view.Editor.LookForTools(view.build.tools)
 	})
+}
+
+// toolInstalls are how each tool that can be installed from the editor is, by its name.
+var toolInstalls = map[string]func(view *View){
+	"TinyGo": func(view *View) { view.Editor.InstallTinyGo() },
+}
+
+// The progress bar's measures, in pixels.
+const (
+	progressHeight = 6
+	progressRadius = 3
+)
+
+// installProgress shows how the install of a tool goes, while it is installed.
+func (view *View) installProgress(context *ui.Context, name string) {
+	tool, done, total, busy := view.Editor.Installing()
+	if !busy || tool != name {
+		return
+	}
+	small := ui.TextStyle{Color: context.Theme.InkSoft, Size: context.Theme.SmallTextSize}
+	if total <= 0 {
+		context.Text(fmt.Sprintf("Installing… %.1f MB", float64(done)/bytesInMegabyte), small)
+		return
+	}
+	share := float32(done) / float32(total)
+	context.Paint(ui.Layout{Width: ui.Grow(), Height: ui.Fixed(progressHeight)}, func(area draw2d.Rect, list *draw2d.List) {
+		list.Rectangle(area, progressRadius, context.Theme.Line, draw2d.Color{}, 0)
+		filled := area
+		filled.Width *= share
+		list.Rectangle(filled, progressRadius, context.Theme.Primary, draw2d.Color{}, 0)
+	})
+	context.Text(fmt.Sprintf("Installing… %.0f of %.0f MB", float64(done)/bytesInMegabyte, float64(total)/bytesInMegabyte), small)
 }
