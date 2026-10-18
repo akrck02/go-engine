@@ -50,6 +50,9 @@ type Editor struct {
 
 	art artFile // the sprite or tileset open in the Art workspace
 
+	builds   map[BuildTarget]BuildResult                   // each target's last build
+	builders map[BuildTarget]func() (project.Built, error) // how a target is built, when a test says
+
 	behaviours []project.Behaviour // what the project's code defines, read again on demand
 
 	// playingHere is the scene played in the view: a copy of the one edited, made again from its
@@ -71,7 +74,8 @@ type Editor struct {
 
 // Open opens a project at its start scene.
 func Open(opened *project.Project) (*Editor, error) {
-	editor := &Editor{Project: opened, events: make(chan func(editor *Editor), 16), workspace: LevelWorkspace, before: LevelWorkspace}
+	editor := &Editor{Project: opened, events: make(chan func(editor *Editor), 16), workspace: LevelWorkspace, before: LevelWorkspace,
+		builds: map[BuildTarget]BuildResult{}, builders: map[BuildTarget]func() (project.Built, error){}}
 	if err := editor.OpenScene(opened.Settings.StartScene); err != nil {
 		return nil, err
 	}

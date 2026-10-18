@@ -98,7 +98,7 @@ meanings share an icon.
   `project/` · R6 · tests: `an asset's uses are found in every scene`, `settings are saved`
 - [x] T7 — Code: behaviours, fields, uses, missing ones, rebuild and open with output · `editor/`
   · R7 · tests: `a behaviour's uses are listed by scene`, `a missing behaviour is reported`
-- [ ] T8 — Build: target cards, results kept per target, logs · `editor/`, `project/` · R8 · test:
+- [x] T8 — Build: target cards, results kept per target, logs · `editor/`, `project/` · R8 · test:
   `a build's result is kept per target`
 - [ ] T9 — the demo on sprites and a tileset; captures of every workspace · `examples/platformer/`
   · R10 · the demo's tests

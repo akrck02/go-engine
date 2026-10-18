@@ -33,6 +33,7 @@ type View struct {
 	art     artView     // the Art workspace's choices
 	project projectView // the Project workspace's choices
 	code    codeView    // the Code workspace's choices
+	build   buildView   // the Build workspace's choices
 
 	assetTree    project.AssetEntry
 	assetsReadAt time.Time
