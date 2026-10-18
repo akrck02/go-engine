@@ -84,7 +84,7 @@ meanings share an icon.
 - [x] T2 — workspaces and their bar; top bar trimmed; keys 1–6; icons as constants · `editor/` ·
   R1, R9 · tests: `switching workspaces keeps the scene and the choice`, `no icon stands for two
   things`
-- [ ] T3 — Level: tool rail, fill, overlays (bodies, camera bounds, cell grid), palette as drawn,
+- [x] T3 — Level: tool rail, fill, overlays (bodies, camera bounds, cell grid), palette as drawn,
   inspector that only places · `editor/` · R4 · tests: `the paint tool paints and the select tool
   chooses`, `fill paints the region of the tile clicked`, `the palette keeps the tileset's columns`
 - [ ] T4 — Play: pause, step, restart, target shape, watch, log · `editor/`, `engine/` · R5 ·

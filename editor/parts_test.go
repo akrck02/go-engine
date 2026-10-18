@@ -142,3 +142,18 @@ func TestFramesWrittenAnotherWayAreNotAChange(test *testing.T) {
 		test.Fatal("the same frames written another way changed the scene")
 	}
 }
+
+func TestASpriteChosenInTheInspectorIsSaved(test *testing.T) {
+	editor := openFlat(test)
+	tilesetPicture(test, editor, "assets/lamp.png")
+	if err := editor.SetSprite("assets/lamp.png"); err != nil {
+		test.Fatal(err)
+	}
+	if editor.Saved || editor.Selected.Sprite() != "assets/lamp.png" {
+		test.Fatal("choosing a sprite changed nothing")
+	}
+	saved := saveAndOpenAgain(test, editor, editor.Selected.Path())
+	if saved.Sprite() != "assets/lamp.png" {
+		test.Fatalf("the sprite came back as %q", saved.Sprite())
+	}
+}

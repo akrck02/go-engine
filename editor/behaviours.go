@@ -63,7 +63,7 @@ func (view *View) behaviourFields(context *ui.Context, behaviour *scenefile.Beha
 	shown := map[string]bool{}
 	for _, field := range declared {
 		shown[field.Name] = true
-		view.behaviourField(context, behaviour, field.Name, field.Type+fieldComment(field.Comment))
+		view.behaviourField(context, behaviour, field.Name, field.Comment) // its Go type is shown in Code
 	}
 	for name := range behaviour.Fields {
 		if !shown[name] {
@@ -72,20 +72,17 @@ func (view *View) behaviourFields(context *ui.Context, behaviour *scenefile.Beha
 	}
 }
 
-func fieldComment(comment string) string {
-	if comment == "" {
-		return ""
-	}
-	return " · " + comment
-}
-
 func (view *View) behaviourField(context *ui.Context, behaviour *scenefile.Behaviour, name, hint string) {
 	key := behaviour.Name + "." + name
 	text, editing := view.fieldTexts[key]
 	if !editing {
 		text = FieldText(behaviour.Fields[name])
 	}
-	context.Caption(name + " (" + hint + ")")
+	if hint == "" {
+		context.Caption(name)
+	} else {
+		context.Caption(name + " · " + hint)
+	}
 	if context.TextField(key, &text) {
 		view.fieldTexts[key] = text
 		if behaviour.Fields == nil {

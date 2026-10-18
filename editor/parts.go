@@ -43,6 +43,17 @@ func (editor *Editor) TakeBody() {
 	editor.Changed()
 }
 
+// SetSprite makes the chosen node show a picture, or a sprite's file, of the project's.
+func (editor *Editor) SetSprite(path string) error {
+	if editor.Selected == nil {
+		return nil
+	}
+	err := editor.Selected.SetSprite(path)
+	editor.Scene.Sync()
+	editor.Changed()
+	return err
+}
+
 // SetGravityScale sets how much gravity pulls the chosen node's body: 1 fully, 0 not at all.
 func (editor *Editor) SetGravityScale(scale float64) {
 	body, found := editor.selectedBody()

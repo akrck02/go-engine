@@ -8,6 +8,7 @@ import (
 	ui "github.com/akrck02/go-ui"
 
 	"github.com/akrck02/go-engine/engine"
+	"github.com/akrck02/go-engine/project"
 	"github.com/akrck02/go-engine/scenefile"
 	"github.com/akrck02/go-engine/space"
 )
@@ -154,6 +155,10 @@ func (view *View) modelInspector(context *ui.Context, node *engine.Node) {
 // transformInspector edits where the node is, how it is turned and how large, relative to its
 // parent.
 func (view *View) transformInspector(context *ui.Context, node *engine.Node) {
+	if view.Editor.Scene.Is2D() {
+		view.flatTransformInspector(context, node)
+		return
+	}
 	editor := view.Editor
 	context.Separator()
 	context.Heading("Transform")
@@ -164,12 +169,9 @@ func (view *View) transformInspector(context *ui.Context, node *engine.Node) {
 		editor.Scene.Sync()
 		editor.Changed()
 	}
-	if view.Editor.Scene.Is2D() {
-		note(context, "In 2D, Z is the depth: a greater Z is drawn in front. Turned sprites are not drawn turned yet.")
-	}
 	angles := node.Transform.Angles()
 	turned := space.Vector{X: angles.X, Y: angles.Y, Z: angles.Z}
-	if !view.Editor.Scene.Is2D() && vectorRow(context, "Rotation", &turned, rotationLimits, "%.0f°") {
+	if vectorRow(context, "Rotation", &turned, rotationLimits, "%.0f°") {
 		node.Transform.SetAngles(space.Angles{X: turned.X, Y: turned.Y, Z: turned.Z})
 		editor.Scene.Sync()
 		editor.Changed()
@@ -278,27 +280,43 @@ func (view *View) shapeInspector(context *ui.Context, node *engine.Node) {
 	}
 }
 
+// spriteInspector chooses what the node shows: a sprite made in Art, or a picture. Cutting it into
+// frames and timing its animations is Art's job.
 func (view *View) spriteInspector(context *ui.Context, node *engine.Node) {
 	editor := view.Editor
 	context.Separator()
 	context.Heading("Sprite")
-	context.Caption(node.Sprite())
-	if size := node.Bounds().Size(); size.X > 0 {
-		perMetre := editor.Scene.PixelsPerMetre
-		if perMetre <= 0 {
-			perMetre = scenefile.DefaultPixelsPerMetre
-		}
-		note(context, trimmed(size.X)+" × "+trimmed(size.Y)+" m at "+trimmed(perMetre)+" pixels a metre, times its scale")
-	}
-	if context.Button("Read the picture again") {
-		editor.Scene.Forget(node.Sprite())
-		if err := node.SetSprite(node.Sprite()); err != nil {
+	options := spriteChoices(view.assetTree)
+	chosen := max(0, indexOf(options, node.Sprite()))
+	if len(options) > 0 && context.Select("Sprite", &chosen, options) {
+		if err := editor.SetSprite(options[chosen]); err != nil {
 			editor.say(err.Error(), true)
 		}
 	}
-	if editor.Scene.Is2D() {
-		view.sheetInspector(context, node)
+	if size := node.Bounds().Size(); size.X > 0 {
+		note(context, trimmed(size.X)+" × "+trimmed(size.Y)+" m, times its scale")
 	}
+	if _, cutHere := node.Sheet(); cutHere {
+		note(context, "This node cuts its picture into frames itself, as scenes did before sprites had files: Art can make it a sprite of its own.")
+	}
+	if context.IconButton(iconArt, "Open in Art") {
+		view.showWorkspace(ArtWorkspace)
+	}
+	context.Tooltip("Cut the picture into frames and time its animations (2)")
+}
+
+// spriteChoices are the project's sprites first, then its pictures.
+func spriteChoices(entry project.AssetEntry) []string {
+	var sprites, pictures []string
+	for _, path := range assetPaths(entry) {
+		switch {
+		case scenefile.IsSpriteFile(path):
+			sprites = append(sprites, path)
+		case project.KindOf(path) == project.ImageAsset:
+			pictures = append(pictures, path)
+		}
+	}
+	return append(sprites, pictures...)
 }
 
 func (view *View) cameraInspector(context *ui.Context, node *engine.Node, settings *scenefile.Camera) {
@@ -404,4 +422,35 @@ func colourPicker(context *ui.Context, name string, colour *string) bool {
 	}
 	context.Pop()
 	return changed
+}
+
+// flatTransformInspector edits where a node of a 2D scene is, in front of what, and how large.
+func (view *View) flatTransformInspector(context *ui.Context, node *engine.Node) {
+	editor := view.Editor
+	context.Separator()
+	context.Heading("Transform")
+	position, scale := node.Transform.Position, node.Transform.Scale
+	changed := false
+	context.Caption("Position in metres, from its parent")
+	context.Push("Position")
+	context.Grid(2, func() {
+		changed = numberField(context, "X", &position.X, positionLimits, "X %.2f") || changed
+		changed = numberField(context, "Y", &position.Y, positionLimits, "Y %.2f") || changed
+	})
+	context.Pop()
+	context.Caption("Draw order: greater is drawn in front")
+	changed = numberField(context, "Draw order", &position.Z, positionLimits, "%.2f") || changed
+	context.Caption("Scale, as times its size")
+	context.Push("Scale")
+	context.Grid(2, func() {
+		changed = numberField(context, "X", &scale.X, scaleLimits, "X %.2f×") || changed
+		changed = numberField(context, "Y", &scale.Y, scaleLimits, "Y %.2f×") || changed
+	})
+	context.Pop()
+	if !changed {
+		return
+	}
+	node.Transform.Position, node.Transform.Scale = position, scale
+	editor.Scene.Sync()
+	editor.Changed()
 }
