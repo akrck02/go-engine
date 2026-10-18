@@ -67,6 +67,14 @@ func (view *View) keys(state *input.State) {
 			return
 		}
 	}
+	if editor.ShownWorkspace() == LevelWorkspace && editor.Scene.Is2D() && !state.Down(input.KeyControl) {
+		for _, tool := range Tools {
+			if state.Pressed(tool.Key()) {
+				editor.Tool = tool
+				return
+			}
+		}
+	}
 	control := state.Down(input.KeyControl)
 	switch {
 	case control && state.Pressed(input.KeyS):

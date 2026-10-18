@@ -2,6 +2,7 @@ package editor
 
 import (
 	"github.com/akrck02/go-renderer/draw2d"
+	"github.com/akrck02/go-renderer/input"
 	ui "github.com/akrck02/go-ui"
 
 	"github.com/akrck02/go-engine/engine"
@@ -17,18 +18,81 @@ func (view *View) frame() {
 	view.viewport.frame(view.Editor.Selected)
 }
 
-// middle is the view of the scene, with a strip of how to see it: being edited, or played.
+// middle is the view of the scene: played, or edited with the tool rail beside it and, while a
+// tile map is chosen, the palette under it.
 func (view *View) middle(context *ui.Context) {
 	column := ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Height: ui.Grow(), Padding: ui.Pad(8)}
 	if played, playing := view.Editor.PlayingHere(); playing {
 		context.Box(column, func() { view.playingView(context, played) })
 		return
 	}
-	context.Box(column, func() {
-		view.viewStrip(context)
-		view.sceneView(context)
+	context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Height: ui.Grow()}, func() {
+		context.Box(ui.Layout{Width: ui.Grow(), Height: ui.Grow()}, func() {
+			if view.Editor.Scene.Is2D() {
+				view.toolRail(context)
+			}
+			context.Box(column, func() {
+				view.viewStrip(context)
+				view.sceneView(context)
+			})
+		})
+		view.paletteUnderView(context)
 	})
 }
+
+// paletteUnderView shows the palette while a tile map of a 2D scene is chosen.
+func (view *View) paletteUnderView(context *ui.Context) {
+	chosen := view.Editor.Selected
+	if chosen == nil || !view.Editor.Scene.Is2D() {
+		return
+	}
+	if tiles, isTileMap := chosen.Tiles(); isTileMap {
+		context.Separator()
+		view.paletteStrip(context, chosen, tiles)
+	}
+}
+
+// toolRail is the column of tools beside the 2D view.
+func (view *View) toolRail(context *ui.Context) {
+	layout := ui.Layout{Direction: ui.Vertical, Width: ui.Fixed(48), Height: ui.Grow(), Padding: ui.PadXY(6, 10), Gap: 4, AlignX: ui.Center}
+	bar(context, layout, func() {
+		for _, tool := range Tools {
+			view.toolButton(context, tool)
+		}
+	})
+	context.Separator()
+}
+
+// toolButton takes a tool; the one taken stands out.
+func (view *View) toolButton(context *ui.Context, tool Tool) {
+	taken := view.Editor.Tool == tool
+	ink, look := context.Theme.InkSoft, ui.Look{Radius: 8}
+	if taken {
+		ink, look.Fill = context.Theme.Primary, context.Theme.Sunken
+	}
+	hovered := look
+	hovered.Fill = context.Theme.Sunken
+	layout := ui.Layout{Width: ui.Fixed(36), Height: ui.Fixed(36), AlignX: ui.Center, AlignY: ui.Center}
+	if context.Clickable(tool.Name(), layout, ui.Looks{Normal: look, Hovered: hovered, Pressed: hovered}, func() {
+		context.IconSized(tool.Icon(), 18, ink)
+	}) {
+		view.Editor.Tool = tool
+	}
+	context.Tooltip(tool.Name() + " (" + keyName(tool.Key()) + "): " + tool.Does())
+}
+
+// keyName is the letter of a tool's key.
+func keyName(key input.Key) string {
+	for _, tool := range Tools {
+		if tool.Key() == key {
+			return toolLetters[tool]
+		}
+	}
+	return ""
+}
+
+// toolLetters are the letters of the tools' keys, in the order of Tools.
+var toolLetters = []string{"V", "B", "E", "G", "H"}
 
 // floatingLook is the look of what floats over the view: a card with a shadow.
 func floatingLook(context *ui.Context) ui.Look {
@@ -51,20 +115,34 @@ func (view *View) playingView(context *ui.Context, played *engine.Scene) {
 	})
 }
 
-// viewStrip is the strip over the view: 3D or 2D, the 3D camera's projection, framing the chosen
-// node, and leaving a camera looked through.
+// viewStrip is the strip over the view: in 2D what to draw over the scene, in 3D the camera's
+// projection; framing the chosen node, and leaving a camera looked through.
 func (view *View) viewStrip(context *ui.Context) {
 	context.Frame(ui.Layout{Padding: ui.PadXY(6, 4), Gap: 6, AlignY: ui.Center}, floatingLook(context), func() {
-		view.dimensionsSwitch(context)
-		if !view.Editor.Scene.Is2D() {
+		if view.Editor.Scene.Is2D() {
+			view.overlayToggles(context)
+		} else {
 			view.projectionSwitch(context)
 		}
-		if context.FlatIconButton(iconFrame, "") {
+		if context.FlatIconButton(iconFrame, "Frame") {
 			view.frame()
 		}
-		context.Tooltip("Frame the chosen node (F)")
+		context.Tooltip("Centre the view on the chosen node (F)")
 		view.leaveCameraButton(context)
 	})
+}
+
+// overlayToggles switch what the 2D view draws over the scene.
+func (view *View) overlayToggles(context *ui.Context) {
+	flat := view.viewport.flat
+	if context.Selectable(iconBody, "Bodies", flat.showBodies) {
+		flat.showBodies = !flat.showBodies
+	}
+	context.Tooltip("Outline bodies and fill solid tiles")
+	if context.Selectable(iconCamera, "Camera bounds", flat.showBounds) {
+		flat.showBounds = !flat.showBounds
+	}
+	context.Tooltip("Draw the box a following camera keeps its view in")
 }
 
 // dimensionsSwitch makes the scene 3D or 2D.
@@ -109,7 +187,7 @@ func (view *View) sceneView(context *ui.Context) {
 		context.Paint(ui.Layout{Width: ui.Grow(), Height: ui.Grow()}, func(area draw2d.Rect, list *draw2d.List) {
 			view.viewport.flat.paint(view.Editor, area, list)
 		})
-		context.Caption("Drag the background to move · scroll to zoom · click to choose · drag the chosen to move it")
+		context.Caption("Middle-drag or Hand (H) moves the view · scroll zooms · Select (V) chooses and drags · Paint (B), Erase (E), Fill (G) work on the chosen tile map")
 		return
 	}
 	context.Spacer()

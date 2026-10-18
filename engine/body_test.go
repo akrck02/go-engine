@@ -127,3 +127,19 @@ func TestANodeMovedOrAddedWhilePlayingKeepsOrGetsItsBody(test *testing.T) {
 		test.Fatal("a removed node kept its body")
 	}
 }
+
+func TestABodysBoxIsItsSizeOrItsNodes(test *testing.T) {
+	scene := platform(test)
+	ground, _ := scene.Find("Ground")
+	box, found := ground.BodyBox()
+	if !found || !box.Size().Near(space.NewVector(10, 1, 0), 1e-9) || !box.Centre().Near(space.NewVector(0, -0.5, 0), 1e-9) {
+		test.Fatalf("the ground's body is %v", box)
+	}
+	ground.SetBodySettings(&scenefile.Body{Kind: scenefile.Solid, Size: [2]float64{4, 0.5}})
+	if box, _ := ground.BodyBox(); box.Size().X != 4 || box.Size().Y != 0.5 {
+		test.Fatalf("a body of its own size is %v", box.Size())
+	}
+	if _, found := scene.Root.BodyBox(); found {
+		test.Fatal("the root has a body")
+	}
+}

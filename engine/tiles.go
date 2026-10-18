@@ -41,6 +41,14 @@ func (node *Node) CellAt(point space.Vector) (column, row int, inside bool) {
 	return column, row, inside
 }
 
+// SolidCell tells whether bodies stand on a cell of the node's tile map.
+func (node *Node) SolidCell(column, row int) bool {
+	return node.tiles != nil && node.isSolidTile(node.tiles.TileAt(column, row))
+}
+
+// SolidTile tells whether bodies stand on a tile of the node's tileset, by its number.
+func (node *Node) SolidTile(tile int) bool { return node.tiles != nil && node.isSolidTile(tile) }
+
 // CellBox is the box of the world one cell of the node's tile map fills.
 func (node *Node) CellBox(column, row int) space.Box { return node.cellBox(column, row) }
 
@@ -50,6 +58,21 @@ func (owner *Scene) Tileset(node *Node) ([]*draw2d.Image, error) {
 		return nil, nil
 	}
 	return owner.assets.tileset(node.tileSource())
+}
+
+// TilesetColumns is how many tiles across a tile map's tileset picture is: the palette shows
+// them in its rows, as they were drawn. It is 0 for a map whose tileset cannot be read.
+func (owner *Scene) TilesetColumns(node *Node) int {
+	if node.tiles == nil {
+		return 0
+	}
+	picture, tileSize := node.tileSource()
+	whole, err := owner.assets.image(picture)
+	if err != nil || tileSize <= 0 {
+		return 0
+	}
+	width, _ := whole.Size()
+	return width / tileSize
 }
 
 // tileMetres is how many metres a tile of a node's map takes, across and down, its node's scale

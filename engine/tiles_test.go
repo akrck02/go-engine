@@ -157,3 +157,11 @@ func TestAMissingPictureIsTriedOnceAndCostsNothingAfter(test *testing.T) {
 		test.Fatalf("drawing a missing picture allocates %v times a frame", allocations)
 	}
 }
+
+func TestATilesetHasTheColumnsOfItsPicture(test *testing.T) {
+	level := tiledLevel(test)
+	ground, _ := level.Find("Ground")
+	if columns := level.TilesetColumns(ground); columns != 2 {
+		test.Fatalf("a 32-pixel picture of 16-pixel tiles has %d columns", columns)
+	}
+}

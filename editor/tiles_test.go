@@ -1,7 +1,15 @@
 package editor
 
 import (
+	"bytes"
+	"image"
+	"image/color"
+	"image/png"
+	"os"
 	"testing"
+
+	"github.com/akrck02/go-renderer/draw2d"
+	"github.com/akrck02/go-renderer/input"
 
 	"github.com/akrck02/go-engine/scenefile"
 	"github.com/akrck02/go-engine/space"
@@ -72,12 +80,87 @@ func TestAResizedTileMapKeepsItsTilesFromTheCorner(test *testing.T) {
 
 func TestPaintingIsOnlyForATileMap(test *testing.T) {
 	editor := openTileMap(test)
-	editor.PaintingTiles = true
+	editor.Tool = PaintTool
 	if !editor.PaintingHere() {
 		test.Fatal("a chosen tile map is not painted")
 	}
 	editor.Select(editor.Add("Square"))
 	if editor.PaintingHere() {
 		test.Fatal("a square is painted")
+	}
+}
+
+func TestFillPaintsTheRegionOfTheTileClicked(test *testing.T) {
+	editor := openTileMap(test)
+	editor.ResizeTileMap(4, 3)
+	for column := 0; column < 4; column++ { // a wall across the middle row
+		editor.PaintTileAt(space.NewVector(float64(column)+0.5, -1.5, 0), 2)
+	}
+	if !editor.FillTileAt(space.NewVector(0.5, -0.5, 0), 5) {
+		test.Fatal("filling changed nothing")
+	}
+	tiles, _ := editor.Selected.Tiles()
+	for column := 0; column < 4; column++ {
+		if tiles.TileAt(column, 0) != 5 || tiles.TileAt(column, 1) != 2 || tiles.TileAt(column, 2) != scenefile.EmptyTile {
+			test.Fatalf("filled, the map is %v", tiles.Tiles)
+		}
+	}
+}
+
+// tilesetPicture writes a picture of three 16-pixel tiles side by side into the project.
+func tilesetPicture(test *testing.T, editor *Editor, file string) {
+	picture := image.NewNRGBA(image.Rect(0, 0, 48, 16))
+	for x := 0; x < 48; x++ {
+		for y := 0; y < 16; y++ {
+			picture.SetNRGBA(x, y, color.NRGBA{R: uint8(x * 5), G: 120, B: 60, A: 255})
+		}
+	}
+	var encoded bytes.Buffer
+	png.Encode(&encoded, picture)
+	if err := os.WriteFile(editor.Project.Path(file), encoded.Bytes(), 0o644); err != nil {
+		test.Fatal(err)
+	}
+}
+
+func TestThePaletteKeepsTheTilesetsColumns(test *testing.T) {
+	editor := openTileMap(test)
+	tilesetPicture(test, editor, "assets/tiles.png")
+	editor.SetTileset("assets/tiles.png")
+	editor.SetTileSize(16)
+	if columns := editor.PaletteColumns(); columns != 3 {
+		test.Fatalf("the palette has %d columns, not the tileset's 3", columns)
+	}
+}
+
+// clickAt presses and lets go the left button over a point of the 2D view.
+func clickAt(flat *flatView, editor *Editor, point space.Vector) {
+	x, y := flat.view.ToScreen(flat.area, point)
+	state := input.NewState()
+	state.MoveCursor(float64(x), float64(y))
+	state.SetButton(input.MouseLeft, true)
+	flat.followMouse(editor, state)
+	state.EndFrame()
+	state.SetButton(input.MouseLeft, false)
+	flat.followMouse(editor, state)
+}
+
+func TestThePaintToolPaintsAndTheSelectToolChooses(test *testing.T) {
+	editor := openTileMap(test)
+	tiles, _ := editor.Selected.Tiles()
+	flat := newFlatView()
+	flat.area = draw2d.Rect{Width: 400, Height: 400}
+	flat.view.Centre, flat.view.Height = space.NewVector(4, -4, 0), 10
+	editor.Tool, editor.Brush = PaintTool, 1
+	clickAt(flat, editor, space.NewVector(2.5, -1.5, 0))
+	if tiles.TileAt(2, 1) != 1 {
+		test.Fatal("the paint tool did not paint")
+	}
+	square := editor.Add("Square")
+	square.Transform.Position = space.NewVector(6, -6, 1)
+	editor.Select(nil)
+	editor.Tool = SelectTool
+	clickAt(flat, editor, space.NewVector(6, -6, 0))
+	if editor.Selected != square {
+		test.Fatalf("the select tool chose %v", editor.Selected)
 	}
 }

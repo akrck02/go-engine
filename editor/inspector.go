@@ -63,6 +63,8 @@ func (view *View) sceneInspector(context *ui.Context) {
 		editor.Scene.SetSky(sky)
 		editor.Changed()
 	}
+	context.Caption("3D (shapes and models) or 2D (sprites and flat shapes)")
+	view.dimensionsSwitch(context)
 	if editor.Scene.Is2D() {
 		perMetre := editor.Scene.PixelsPerMetre
 		if perMetre <= 0 {
@@ -108,19 +110,18 @@ func (view *View) nodeInspector(context *ui.Context, node *engine.Node) {
 		editor.Changed()
 	}
 	view.transformInspector(context, node)
+	view.partsInspector(context, node)
+	view.behaviourInspector(context, node)
+}
+
+// partsInspector shows the sections of what the node is: a shape, a model, a sprite, a camera, a
+// tile map, and its body.
+func (view *View) partsInspector(context *ui.Context, node *engine.Node) {
 	if node.Shape() != "" {
 		view.shapeInspector(context, node)
 	}
 	if node.Model() != "" {
-		context.Separator()
-		context.Heading("Model")
-		context.Caption(node.Model())
-		if context.Button("Read the file again") {
-			editor.Scene.Forget(node.Model())
-			if err := node.SetModel(node.Model()); err != nil {
-				editor.say(err.Error(), true)
-			}
-		}
+		view.modelInspector(context, node)
 	}
 	if node.Sprite() != "" {
 		view.spriteInspector(context, node)
@@ -130,12 +131,24 @@ func (view *View) nodeInspector(context *ui.Context, node *engine.Node) {
 	}
 	tiles, isTileMap := node.Tiles()
 	if isTileMap {
-		view.tileMapInspector(context, node, tiles)
+		view.tileMapInspector(context, tiles)
 	}
-	if editor.Scene.Is2D() && !isTileMap { // a tile map's solid tiles are its bodies
+	if view.Editor.Scene.Is2D() && !isTileMap { // a tile map's solid tiles are its bodies
 		view.bodyInspector(context, node)
 	}
-	view.behaviourInspector(context, node)
+}
+
+func (view *View) modelInspector(context *ui.Context, node *engine.Node) {
+	editor := view.Editor
+	context.Separator()
+	context.Heading("Model")
+	context.Caption(node.Model())
+	if context.Button("Read the file again") {
+		editor.Scene.Forget(node.Model())
+		if err := node.SetModel(node.Model()); err != nil {
+			editor.say(err.Error(), true)
+		}
+	}
 }
 
 // transformInspector edits where the node is, how it is turned and how large, relative to its

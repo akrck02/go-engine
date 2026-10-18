@@ -61,11 +61,7 @@ func (owner *Scene) addBodies(node *Node) {
 // addBody gives a node its body: its kind, its size (the one written, or the node's own sprite or
 // shape) and its place.
 func (owner *Scene) addBody(node *Node) {
-	size := space.NewVector(node.body.Size[0], node.body.Size[1], 0)
-	if size.X == 0 || size.Y == 0 {
-		width, height, _ := node.flatSize()
-		size = space.NewVector(width, height, 0)
-	}
+	size := node.bodySize()
 	body := &physics.Body{
 		Kind: physicsKinds[node.body.Kind], Position: node.World().Position, Size: size,
 		GravityScale: node.body.Gravity(),
@@ -74,6 +70,27 @@ func (owner *Scene) addBody(node *Node) {
 	owner.bodyOwners[body] = node
 	owner.bodied = append(owner.bodied, node)
 	owner.physics.Add(body)
+}
+
+// bodySize is the width and height of the node's body: the size written, or the node's own.
+func (node *Node) bodySize() space.Vector {
+	size := space.NewVector(node.body.Size[0], node.body.Size[1], 0)
+	if size.X == 0 || size.Y == 0 {
+		width, height, _ := node.flatSize()
+		size = space.NewVector(width, height, 0)
+	}
+	return size
+}
+
+// BodyBox is the box of the world the node's body takes, from its settings, playing or not: what
+// the editor outlines. A node without a body has none.
+func (node *Node) BodyBox() (space.Box, bool) {
+	if node.body == nil {
+		return space.EmptyBox(), false
+	}
+	half := node.bodySize().Scale(0.5)
+	centre := node.World().Position
+	return space.Box{Minimum: centre.Subtract(half), Maximum: centre.Add(half)}, true
 }
 
 // physicsKinds are the scene file's kinds of body, as the physics names them.

@@ -32,10 +32,10 @@ type Editor struct {
 	Message string
 	Failed  bool
 
-	// PaintingTiles makes the 2D view paint the chosen tile map: Brush, a tile of its tileset, with
-	// the left button; the right one erases.
-	PaintingTiles bool
-	Brush         int
+	// Tool is what the left button does in the 2D view (tools.go); Brush is the tile of the
+	// tileset that painting and filling put down.
+	Tool  Tool
+	Brush int
 
 	workspace Workspace // the workspace shown
 	before    Workspace // the one shown before it, for leaving Play

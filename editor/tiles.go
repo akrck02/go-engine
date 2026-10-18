@@ -38,11 +38,11 @@ func (editor *Editor) selectedTiles() (*scenefile.TileMap, bool) {
 	return editor.Selected.Tiles()
 }
 
-// PaintingHere tells whether the 2D view paints tiles now: painting is on and a tile map is
+// PaintingHere tells whether the 2D view paints tiles now: a tile tool is taken and a tile map is
 // chosen.
 func (editor *Editor) PaintingHere() bool {
 	_, isTileMap := editor.selectedTiles()
-	return editor.PaintingTiles && isTileMap
+	return editor.Tool.paintsTiles() && isTileMap
 }
 
 // PaintTileAt puts a tile (scenefile.EmptyTile erases) in the chosen tile map's cell at a point of

@@ -32,9 +32,12 @@ type flatView struct {
 	lastX    float64
 	lastY    float64
 	pointer  space.Vector // the point of the world under the pointer
+
+	showBodies bool // outline bodies and fill solid tiles
+	showBounds bool // draw the box following cameras keep their view in
 }
 
-func newFlatView() *flatView { return &flatView{view: engine.View2D{Height: 14}} }
+func newFlatView() *flatView { return &flatView{view: engine.View2D{Height: 14}, showBodies: true} }
 
 // Colours of the 2D view's grid and marks.
 var (
@@ -70,6 +73,7 @@ func (flat *flatView) paint(editor *Editor, area draw2d.Rect, list *draw2d.List)
 	flat.drawing.PushClip(area)
 	flat.drawGrid()
 	editor.Scene.DrawContent2D(&flat.drawing, area, flat.view)
+	flat.drawOverlays(editor)
 	flat.drawMarks(editor)
 	flat.drawing.PopClip()
 	*list = flat.drawing
@@ -89,45 +93,91 @@ func (flat *flatView) followMouse(editor *Editor, state *input.State) {
 	}
 	point := flat.view.FromScreen(flat.area, float32(x), float32(y))
 	flat.pointer = point
-	if editor.PaintingHere() && paintTiles(editor, state, point) {
+	if flat.panWith(editor, state, x, y) {
 		return
 	}
-	if state.ButtonPressed(input.MouseLeft) || state.ButtonPressed(input.MouseRight) || state.ButtonPressed(input.MouseMiddle) {
-		flat.pressing, flat.moved, flat.panning, flat.dragging = true, false, !state.Button(input.MouseLeft), nil
-		flat.pressX, flat.pressY, flat.lastX, flat.lastY = x, y, x, y
-		if chosen := editor.Selected; state.Button(input.MouseLeft) && chosen != nil {
-			if picked, found := editor.PickFlat(point, flat.reach()); found && picked == chosen {
-				flat.dragging, flat.grabbed = chosen, chosen.World().Position.Subtract(point)
-			}
-		}
-		if state.Button(input.MouseLeft) && flat.dragging == nil {
-			flat.panning = true // the background: the press may become a click, or a pan
-		}
-	}
-	held := state.Button(input.MouseLeft) || state.Button(input.MouseRight) || state.Button(input.MouseMiddle)
-	if flat.pressing && held {
-		if math.Hypot(x-flat.pressX, y-flat.pressY) > clickDistance {
-			flat.moved = true
-		}
-		switch {
-		case flat.dragging != nil && flat.moved:
-			target := point.Add(flat.grabbed)
-			target.Z = flat.dragging.World().Position.Z
-			editor.MoveTo(flat.dragging, target)
-		case flat.panning && flat.moved:
-			scale := flat.view.Height / float64(max(flat.area.Height, 1))
-			flat.view.Centre = flat.view.Centre.Add(space.NewVector(-(x-flat.lastX)*scale, (y-flat.lastY)*scale, 0))
-		}
-		flat.lastX, flat.lastY = x, y
+	if editor.PaintingHere() {
+		paintWith(editor, state, point)
 		return
 	}
-	if flat.pressing && !held {
+	if editor.Tool == SelectTool {
+		flat.selectWith(editor, state, point, x, y)
+	}
+}
+
+// panWith moves the view while the middle button is held, or the left one with the hand tool;
+// it tells whether it took the mouse.
+func (flat *flatView) panWith(editor *Editor, state *input.State, x, y float64) bool {
+	panButton := state.Button(input.MouseMiddle) || editor.Tool == HandTool && state.Button(input.MouseLeft)
+	if !panButton {
+		flat.panning = false
+		return false
+	}
+	if flat.panning {
+		scale := flat.view.Height / float64(max(flat.area.Height, 1))
+		flat.view.Centre = flat.view.Centre.Add(space.NewVector(-(x-flat.lastX)*scale, (y-flat.lastY)*scale, 0))
+	}
+	flat.panning, flat.lastX, flat.lastY = true, x, y
+	return true
+}
+
+// paintWith paints, erases or fills the chosen tile map under the pointer: the left button with
+// the tool, the right one always erasing.
+func paintWith(editor *Editor, state *input.State, point space.Vector) {
+	tile := editor.Brush
+	if editor.Tool == EraseTool || state.Button(input.MouseRight) {
+		tile = scenefile.EmptyTile
+	}
+	held := state.Button(input.MouseLeft) || state.Button(input.MouseRight)
+	pressed := state.ButtonPressed(input.MouseLeft) || state.ButtonPressed(input.MouseRight)
+	switch {
+	case editor.Tool == FillTool && pressed:
+		editor.FillTileAt(point, tile)
+	case editor.Tool != FillTool && held:
+		editor.PaintTileAt(point, tile)
+	}
+}
+
+// selectWith chooses the node clicked, and drags the chosen node when it is pressed.
+func (flat *flatView) selectWith(editor *Editor, state *input.State, point space.Vector, x, y float64) {
+	if state.ButtonPressed(input.MouseLeft) {
+		flat.press(editor, point, x, y)
+	}
+	if flat.pressing && state.Button(input.MouseLeft) {
+		flat.drag(editor, point, x, y)
+		return
+	}
+	if flat.pressing {
 		flat.pressing = false
-		if !flat.moved && state.ButtonReleased(input.MouseLeft) {
+		if !flat.moved {
 			picked, _ := editor.PickFlat(point, flat.reach())
 			editor.Select(picked)
 		}
 	}
+}
+
+// press starts a click, or a drag of the chosen node when it is under the pointer.
+func (flat *flatView) press(editor *Editor, point space.Vector, x, y float64) {
+	flat.pressing, flat.moved, flat.dragging = true, false, nil
+	flat.pressX, flat.pressY = x, y
+	if chosen := editor.Selected; chosen != nil {
+		if picked, found := editor.PickFlat(point, flat.reach()); found && picked == chosen {
+			flat.dragging, flat.grabbed = chosen, chosen.World().Position.Subtract(point)
+		}
+	}
+}
+
+// drag moves the chosen node with the pointer, once it has gone further than a click.
+func (flat *flatView) drag(editor *Editor, point space.Vector, x, y float64) {
+	if math.Hypot(x-flat.pressX, y-flat.pressY) > clickDistance {
+		flat.moved = true
+	}
+	if flat.dragging == nil || !flat.moved {
+		return
+	}
+	target := point.Add(flat.grabbed)
+	target.Z = flat.dragging.World().Position.Z
+	editor.MoveTo(flat.dragging, target)
 }
 
 // zoomAt zooms around the point under the pointer, which stays under it.
@@ -136,20 +186,6 @@ func (flat *flatView) zoomAt(x, y, scrolled float64) {
 	flat.view.Height = math.Min(math.Max(flat.view.Height*math.Pow(0.88, scrolled), 0.5), 2000)
 	after := flat.view.FromScreen(flat.area, float32(x), float32(y))
 	flat.view.Centre = flat.view.Centre.Add(before.Subtract(after))
-}
-
-// paintTiles paints the chosen tile map while the left button is held, and erases while the right
-// one is; it tells whether it took the mouse.
-func paintTiles(editor *Editor, state *input.State, point space.Vector) bool {
-	switch {
-	case state.Button(input.MouseLeft):
-		editor.PaintTileAt(point, editor.Brush)
-	case state.Button(input.MouseRight):
-		editor.PaintTileAt(point, scenefile.EmptyTile)
-	default:
-		return false
-	}
-	return true
 }
 
 // reach is how near, in metres, a click must fall to choose a camera or an empty node: a dozen
@@ -239,7 +275,5 @@ func (flat *flatView) drawMarks(editor *Editor) {
 }
 
 func (flat *flatView) outline(box space.Box, colour draw2d.Color, width float32) {
-	left, top := flat.view.ToScreen(flat.area, space.NewVector(box.Minimum.X, box.Maximum.Y, 0))
-	right, bottom := flat.view.ToScreen(flat.area, space.NewVector(box.Maximum.X, box.Minimum.Y, 0))
-	flat.drawing.Rectangle(draw2d.Rect{X: left, Y: top, Width: right - left, Height: bottom - top}, 0, draw2d.Color{}, colour, width)
+	flat.drawing.Rectangle(flat.screenRect(box), 0, draw2d.Color{}, colour, width)
 }

@@ -106,3 +106,17 @@ func TestFollowingAllocatesNothing(test *testing.T) {
 		test.Fatalf("a frame with a following camera allocates %v times", allocations)
 	}
 }
+
+func TestACamerasBoundsAreOpenAboveUnlessItHasACeiling(test *testing.T) {
+	level := followedLevel(test, 0)
+	camera, _ := level.Find("Camera")
+	bounds, found := level.CameraBounds(camera)
+	if !found || bounds.Minimum.Y != 0 || !math.IsInf(bounds.Maximum.Y, 1) || bounds.Maximum.X != 20 {
+		test.Fatalf("the camera's bounds are %v", bounds)
+	}
+	settings, _ := camera.Camera()
+	settings.Ceiling = true
+	if bounds, _ := level.CameraBounds(camera); bounds.Maximum.Y != 6 {
+		test.Fatalf("with a ceiling the bounds are %v", bounds)
+	}
+}
