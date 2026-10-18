@@ -79,6 +79,8 @@ func kindIcon(kind string) string {
 		return "square"
 	case "Circle":
 		return "circle"
+	case "Tile map":
+		return "grid-3x3"
 	}
 	return "crosshair"
 }
@@ -95,6 +97,9 @@ func nodeIcon(node *engine.Node) string {
 	}
 	if node.Shape() != "" {
 		return kindIcon(strings.ToUpper(node.Shape()[:1]) + node.Shape()[1:])
+	}
+	if _, isTileMap := node.Tiles(); isTileMap {
+		return "grid-3x3"
 	}
 	return "crosshair"
 }

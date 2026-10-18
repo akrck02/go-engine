@@ -123,7 +123,7 @@ levels painted with the tile tool. No behaviour of the demo reaches into the eng
   `engine/`, `editor/` · R6, R7 · test: `changing scene starts the new one`
 - [x] T9 — editor: inspector sections for bodies, sprite sheets and cameras that follow · `editor/` ·
   R3–R5 · test: `a body set in the inspector is saved`
-- [ ] T10 — editor: the tile tool (choose, paint, erase) in the 2D view · `editor/` · R3 · test:
+- [x] T10 — editor: the tile tool (choose, paint, erase) in the 2D view · `editor/` · R3 · test:
   `painting a tile and erasing it` (and played by hand)
 - [ ] T11 — the demo: project, art, `Player`, `Coin`, `Spikes`, `Flag`, three levels ·
   `examples/platformer/` · R1–R8 · played in the editor, in a window and on the 3DS emulator

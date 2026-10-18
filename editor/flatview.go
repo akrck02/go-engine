@@ -9,6 +9,7 @@ import (
 	"github.com/akrck02/go-renderer/scene"
 
 	"github.com/akrck02/go-engine/engine"
+	"github.com/akrck02/go-engine/scenefile"
 	"github.com/akrck02/go-engine/space"
 )
 
@@ -30,6 +31,7 @@ type flatView struct {
 	grabbed  space.Vector // the dragged node's position minus the point pressed
 	lastX    float64
 	lastY    float64
+	pointer  space.Vector // the point of the world under the pointer
 }
 
 func newFlatView() *flatView { return &flatView{view: engine.View2D{Height: 14}} }
@@ -83,13 +85,13 @@ func paintPlaying(played *engine.Scene, area draw2d.Rect, list *draw2d.List) {
 func (flat *flatView) followMouse(editor *Editor, state *input.State) {
 	x, y := state.CursorX, state.CursorY
 	if state.ScrollDelta != 0 {
-		// zoom around the point under the pointer, which stays under it
-		before := flat.view.FromScreen(flat.area, float32(x), float32(y))
-		flat.view.Height = math.Min(math.Max(flat.view.Height*math.Pow(0.88, state.ScrollDelta), 0.5), 2000)
-		after := flat.view.FromScreen(flat.area, float32(x), float32(y))
-		flat.view.Centre = flat.view.Centre.Add(before.Subtract(after))
+		flat.zoomAt(x, y, state.ScrollDelta)
 	}
 	point := flat.view.FromScreen(flat.area, float32(x), float32(y))
+	flat.pointer = point
+	if editor.PaintingHere() && paintTiles(editor, state, point) {
+		return
+	}
 	if state.ButtonPressed(input.MouseLeft) || state.ButtonPressed(input.MouseRight) || state.ButtonPressed(input.MouseMiddle) {
 		flat.pressing, flat.moved, flat.panning, flat.dragging = true, false, !state.Button(input.MouseLeft), nil
 		flat.pressX, flat.pressY, flat.lastX, flat.lastY = x, y, x, y
@@ -126,6 +128,28 @@ func (flat *flatView) followMouse(editor *Editor, state *input.State) {
 			editor.Select(picked)
 		}
 	}
+}
+
+// zoomAt zooms around the point under the pointer, which stays under it.
+func (flat *flatView) zoomAt(x, y, scrolled float64) {
+	before := flat.view.FromScreen(flat.area, float32(x), float32(y))
+	flat.view.Height = math.Min(math.Max(flat.view.Height*math.Pow(0.88, scrolled), 0.5), 2000)
+	after := flat.view.FromScreen(flat.area, float32(x), float32(y))
+	flat.view.Centre = flat.view.Centre.Add(before.Subtract(after))
+}
+
+// paintTiles paints the chosen tile map while the left button is held, and erases while the right
+// one is; it tells whether it took the mouse.
+func paintTiles(editor *Editor, state *input.State, point space.Vector) bool {
+	switch {
+	case state.Button(input.MouseLeft):
+		editor.PaintTileAt(point, editor.Brush)
+	case state.Button(input.MouseRight):
+		editor.PaintTileAt(point, scenefile.EmptyTile)
+	default:
+		return false
+	}
+	return true
 }
 
 // reach is how near, in metres, a click must fall to choose a camera or an empty node: a dozen
@@ -202,6 +226,9 @@ func (flat *flatView) drawMarks(editor *Editor) {
 	chosen := editor.Selected
 	if chosen == nil {
 		return
+	}
+	if column, row, inside := chosen.CellAt(flat.pointer); editor.PaintingHere() && inside {
+		flat.outline(chosen.CellBox(column, row), hoveredCell, 2)
 	}
 	box := chosen.Bounds()
 	if box.IsEmpty() {

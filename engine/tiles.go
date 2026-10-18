@@ -18,6 +18,37 @@ import (
 // TileSize pixels a side, made metres by the scene's pixels per metre. Only the tiles in sight
 // are drawn, and the solid ones, row by row, become solid boxes while the game plays.
 
+// Tiles is the node's tile map, to edit in place; a node that is not one has none.
+func (node *Node) Tiles() (*scenefile.TileMap, bool) { return node.tiles, node.tiles != nil }
+
+// SetTiles makes the node a tile map, or not one (nil).
+func (node *Node) SetTiles(tiles *scenefile.TileMap) { node.tiles = tiles }
+
+// CellAt finds the cell of the node's tile map at a point of the world; inside is false outside
+// the map, or for a node that is not one.
+func (node *Node) CellAt(point space.Vector) (column, row int, inside bool) {
+	if node.tiles == nil || node.tiles.TileSize <= 0 {
+		return 0, 0, false
+	}
+	width, height := node.tileMetres()
+	corner := node.World().Position
+	column = int(math.Floor((point.X - corner.X) / width))
+	row = int(math.Floor((corner.Y - point.Y) / height))
+	inside = column >= 0 && row >= 0 && column < node.tiles.Columns && row < node.tiles.Rows
+	return column, row, inside
+}
+
+// CellBox is the box of the world one cell of the node's tile map fills.
+func (node *Node) CellBox(column, row int) space.Box { return node.cellBox(column, row) }
+
+// Tileset is the pictures of a tile map's tileset, cut once, numbered as its tiles are.
+func (owner *Scene) Tileset(node *Node) ([]*draw2d.Image, error) {
+	if node.tiles == nil {
+		return nil, nil
+	}
+	return owner.assets.tileset(node.tiles.Tileset, node.tiles.TileSize)
+}
+
 // tileMetres is how many metres a tile of a node's map takes, across and down, its node's scale
 // counted.
 func (node *Node) tileMetres() (width, height float64) {

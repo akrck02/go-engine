@@ -32,6 +32,11 @@ type Editor struct {
 	Message string
 	Failed  bool
 
+	// PaintingTiles makes the 2D view paint the chosen tile map: Brush, a tile of its tileset, with
+	// the left button; the right one erases.
+	PaintingTiles bool
+	Brush         int
+
 	behaviours []project.Behaviour // what the project's code defines, read again on demand
 
 	// playingHere is the scene played in the view: a copy of the one edited, made again from its
@@ -125,7 +130,7 @@ func (editor *Editor) SetMode(mode scenefile.Mode) {
 }
 
 // Kinds2D are the kinds of node the editor adds to a 2D scene.
-var Kinds2D = []string{"Empty", "Square", "Circle", "Camera"}
+var Kinds2D = []string{"Empty", "Square", "Circle", "Tile map", "Camera"}
 
 // KindsHere are the kinds of node the scene shown takes.
 func (editor *Editor) KindsHere() []string {
@@ -147,6 +152,8 @@ func (editor *Editor) Add(kind string) *engine.Node {
 			description.Shape, description.Colour = "sphere", "#c8c8c8"
 		case "Camera":
 			description.Camera = &scenefile.Camera{Projection: scenefile.Orthographic, Height: 10}
+		case "Tile map":
+			description.Tiles = newTileMap()
 		}
 		return editor.place(description)
 	}

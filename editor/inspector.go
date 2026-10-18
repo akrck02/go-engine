@@ -128,7 +128,11 @@ func (view *View) nodeInspector(context *ui.Context, node *engine.Node) {
 	if settings, isCamera := node.Camera(); isCamera {
 		view.cameraInspector(context, node, settings)
 	}
-	if editor.Scene.Is2D() {
+	tiles, isTileMap := node.Tiles()
+	if isTileMap {
+		view.tileMapInspector(context, node, tiles)
+	}
+	if editor.Scene.Is2D() && !isTileMap { // a tile map's solid tiles are its bodies
 		view.bodyInspector(context, node)
 	}
 	view.behaviourInspector(context, node)
