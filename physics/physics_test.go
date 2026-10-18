@@ -109,3 +109,14 @@ func TestAStepAllocatesNothing(test *testing.T) {
 		test.Fatalf("a step allocates %v times", allocations)
 	}
 }
+
+func TestGravityCanChange(test *testing.T) {
+	world := NewWorld(earthGravity)
+	falling := crate(5)
+	world.Add(falling)
+	world.SetGravity(space.NewVector(0, 9.81, 0)) // upside down
+	run(world, 1)
+	if falling.Position.Y <= 5 || world.Gravity() != space.NewVector(0, 9.81, 0) {
+		test.Fatalf("with gravity up the crate is at %v", falling.Position.Y)
+	}
+}

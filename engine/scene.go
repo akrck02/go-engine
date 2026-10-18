@@ -13,6 +13,7 @@ import (
 
 	"github.com/akrck02/go-engine/animation"
 	"github.com/akrck02/go-engine/failure"
+	"github.com/akrck02/go-engine/physics"
 	"github.com/akrck02/go-engine/scenefile"
 	"github.com/akrck02/go-engine/shapes"
 	"github.com/akrck02/go-engine/space"
@@ -42,6 +43,16 @@ type Scene struct {
 	started   bool
 
 	pendingStarts []startOf // behaviours made and not started yet
+
+	// while it plays: the physics of a 2D scene, the nodes with bodies, and whose body is whose
+	physics    *physics.World
+	bodied     []*Node
+	bodyOwners map[*physics.Body]*Node
+
+	// what each frame reuses, so a frame allocates nothing
+	context  Context
+	input    Input
+	updating []*Node
 }
 
 // Load reads a scene file from a project's files.

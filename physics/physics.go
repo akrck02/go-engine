@@ -77,6 +77,12 @@ type World struct {
 // NewWorld makes a world with a gravity, in metres a second each second (Earth's is 9.81 down).
 func NewWorld(gravity space.Vector) *World { return &World{gravity: gravity} }
 
+// Gravity is the world's gravity, in metres a second each second.
+func (world *World) Gravity() space.Vector { return world.gravity }
+
+// SetGravity changes the world's gravity: a floatier jump, a world upside down.
+func (world *World) SetGravity(gravity space.Vector) { world.gravity = gravity }
+
 // Add puts a body in the world.
 func (world *World) Add(body *Body) { world.bodies = append(world.bodies, body) }
 

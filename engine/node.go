@@ -22,6 +22,7 @@ import (
 	"github.com/akrck02/go-renderer/graphics"
 	"github.com/akrck02/go-renderer/scene"
 
+	"github.com/akrck02/go-engine/physics"
 	"github.com/akrck02/go-engine/scenefile"
 	"github.com/akrck02/go-engine/shapes"
 	"github.com/akrck02/go-engine/space"
@@ -43,6 +44,8 @@ type Node struct {
 	body  *scenefile.Body
 	sheet *scenefile.SpriteSheet
 	tiles *scenefile.TileMap
+
+	physicsBody *physics.Body // the body in the scene's physics, while it plays
 
 	// Behaviours are the game's code attached to the node, as the scene file keeps them; while the
 	// game runs, behaviours holds them made.
@@ -152,6 +155,7 @@ func (node *Node) detach() {
 	if parent == nil {
 		return
 	}
+	node.scene.removeBodies(node)
 	children := parent.children[:0]
 	for _, child := range parent.children {
 		if child != node {
