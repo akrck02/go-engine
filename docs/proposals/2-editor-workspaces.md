@@ -100,7 +100,7 @@ meanings share an icon.
   · R7 · tests: `a behaviour's uses are listed by scene`, `a missing behaviour is reported`
 - [x] T8 — Build: target cards, results kept per target, logs · `editor/`, `project/` · R8 · test:
   `a build's result is kept per target`
-- [ ] T9 — the demo on sprites and a tileset; captures of every workspace · `examples/platformer/`
+- [x] T9 — the demo on sprites and a tileset; captures of every workspace · `examples/platformer/`
   · R10 · the demo's tests
 
 ## Result
