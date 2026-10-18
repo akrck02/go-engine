@@ -1,6 +1,8 @@
 package project
 
 import (
+	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -46,14 +48,46 @@ func TestAnAndroidBuildAsksForThePackage(test *testing.T) {
 	}
 }
 
-func TestAModuleKnowsWhetherItHasTheAndroidTool(test *testing.T) {
-	without := "module game\n\ngo 1.25\n"
-	with := without + "\ntool " + androidTool + "\n\nreplace " + uiModule + " => " + uiModule + " v0.0.0-1\n"
-	if hasLine(without, "tool "+androidTool) || !hasLine(with, "tool "+androidTool) {
-		test.Error("the tool line is not found where it is, or found where it is not")
+func TestAModuleKnowsItsToolsAndWhatAFolderReplaces(test *testing.T) {
+	var module moduleFile
+	printed := `{"Replace": [{"Old": {"Path": "` + uiModule + `"}, "New": {"Path": "../go-ui"}},
+		{"Old": {"Path": "example.com/other"}, "New": {"Path": "example.com/other", "Version": "v1.0.0"}}],
+		"Tool": [{"Path": "` + androidTool + `"}]}`
+	if err := json.Unmarshal([]byte(printed), &module); err != nil {
+		test.Fatal(err)
 	}
-	if hasLine(without, "replace "+uiModule+" ") || !hasLine(with, "replace "+uiModule+" ") {
-		test.Error("go-ui's replace is not found where it is, or found where it is not")
+	if !module.hasTool(androidTool) || module.hasTool("example.com/tool") {
+		test.Error("the module's tools are not told apart")
+	}
+	if !module.replacedByFolder(uiModule) || module.replacedByFolder("example.com/other") {
+		test.Error("a replace by a folder is not told from one by a version")
+	}
+}
+
+func TestGoUIIsReplacedWithTheVersionGoEngineAsksFor(test *testing.T) {
+	graph := "game " + engineModule + "@v0.0.0\n" +
+		androidTool + "@v0.0.0-1 " + uiModule + "@v0.0.0\n" +
+		engineModule + "@v0.0.0 " + uiModule + "@v0.0.0-20261017191932-0e94481e5103\n"
+	if version, found := uiVersionIn(graph); !found || version != "v0.0.0-20261017191932-0e94481e5103" {
+		test.Errorf("the go-ui go-engine asks for is %q, %v", version, found)
+	}
+	if _, found := uiVersionIn("game example.com/other@v1.0.0\n"); found {
+		test.Error("a go-ui is found where go-engine asks for none")
+	}
+}
+
+func TestAnApplicationIDOfTheWrongFormIsNotSaved(test *testing.T) {
+	created, err := Create(filepath.Join(test.TempDir(), "game"), "Game")
+	if err != nil {
+		test.Fatal(err)
+	}
+	created.Settings.AndroidID = "my game"
+	if err := created.SaveSettings(); !errors.Is(err, ApplicationIDWrong) {
+		test.Fatalf("an id with a space is saved: %v", err)
+	}
+	created.Settings.AndroidID = "org.example.game"
+	if err := created.SaveSettings(); err != nil {
+		test.Fatalf("a good id is not saved: %v", err)
 	}
 }
 
@@ -70,18 +104,37 @@ func TestPlayingOnADeviceInstallsStartsAndReadsTheLog(test *testing.T) {
 		test.Fatal(err)
 	}
 	project := &Project{Folder: folder, Settings: engine.Settings{Name: "Harbour Lights"}}
-	logcat, err := project.playOnAndroid(adb, "/games/harbour.apk")
+	serial, err := androidDevice(folder, adb)
+	if err != nil {
+		test.Fatal(err)
+	}
+	logcat, err := project.playOnAndroid(adb, serial, "/games/harbour.apk")
 	if err != nil {
 		test.Fatal(err)
 	}
 	said, _ := os.ReadFile(calls)
-	for _, wanted := range []string{"-s emulator-5554 install -r /games/harbour.apk", "-s emulator-5554 shell monkey -p io.goengine.harbourlights"} {
-		if !strings.Contains(string(said), wanted) {
-			test.Errorf("adb was not asked %q; it was asked:\n%s", wanted, said)
-		}
+	wanted := "devices\n" +
+		"-s emulator-5554 install -r /games/harbour.apk\n" +
+		"-s emulator-5554 shell am force-stop io.goengine.harbourlights\n" +
+		"-s emulator-5554 shell monkey -p io.goengine.harbourlights -c android.intent.category.LAUNCHER 1\n"
+	if string(said) != wanted {
+		test.Errorf("adb was asked:\n%s\nnot:\n%s", said, wanted)
 	}
-	if arguments := strings.Join(logcat.Args, " "); !strings.Contains(arguments, "-s emulator-5554 logcat") {
+	if arguments := strings.Join(logcat.Args, " "); !strings.Contains(arguments, "-s emulator-5554 shell") || !strings.Contains(arguments, "logcat") {
 		test.Errorf("the log is read with %q", arguments)
+	}
+}
+
+func TestNoDeviceIsSaidByItsCode(test *testing.T) {
+	if runtime.GOOS == "windows" {
+		test.Skip("the fake adb is a shell script")
+	}
+	adb := filepath.Join(test.TempDir(), "adb")
+	if err := os.WriteFile(adb, []byte("#!/bin/sh\necho 'List of devices attached'\n"), 0o755); err != nil {
+		test.Fatal(err)
+	}
+	if _, err := androidDevice(filepath.Dir(adb), adb); !errors.Is(err, NoAndroidDevice) {
+		test.Fatalf("adb listing no device gives %v", err)
 	}
 }
 

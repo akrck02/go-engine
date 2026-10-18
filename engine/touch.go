@@ -8,8 +8,9 @@ import (
 // Touch buttons are the console's buttons drawn on a touch screen with no keyboard (a phone): the
 // cross's left and right on the left, A and B on the right. A finger on one holds its key, as the
 // console's own button does. A phone held upright shows the game at the top, at the shape its
-// camera was made for, and the buttons under it, as a handheld console does; held sideways, the
-// game fills the screen and the buttons lie over its bottom corners.
+// camera was made for (when the camera names a width), and the buttons under it, as a handheld
+// console does; held sideways, or with a camera that names no width, the game fills the screen
+// and the buttons lie over its bottom corners.
 
 // The touch buttons' measures, in layout pixels.
 const (
@@ -73,11 +74,21 @@ func touchButtonsIn(band draw2d.Rect) [4]touchButton {
 // those whose button a finger is on.
 func touchKeys(keys, window *input.State, buttons [4]touchButton) *input.State {
 	keys.EndFrame()
-	for _, button := range buttons {
-		keys.SetKey(button.key, window.Down(button.key) || touched(window, button.area))
+	for key := input.KeyUnknown + 1; key <= input.KeySuper; key++ { // KeySuper is the last key
+		keys.SetKey(key, window.Down(key) || buttonHeld(window, buttons, key))
 	}
 	keys.StickX, keys.StickY = window.StickX, window.StickY
 	return keys
+}
+
+// buttonHeld tells whether a finger is on a button of a key.
+func buttonHeld(window *input.State, buttons [4]touchButton, key input.Key) bool {
+	for _, button := range buttons {
+		if button.key == key && touched(window, button.area) {
+			return true
+		}
+	}
+	return false
 }
 
 // touched tells whether a finger is on an area.

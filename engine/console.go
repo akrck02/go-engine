@@ -17,10 +17,11 @@ var consoleButtons = [...]struct {
 	{ctr.ButtonX, input.KeyX}, {ctr.ButtonY, input.KeyY},
 }
 
-// consoleInput is a game's keys on the console. go-ui's window hands the scene a fresh copy of
-// its input every frame, without what its interface took (the arrows and A move between its
-// controls and press them), so a key in it can never be pressed once and then held. The game's
-// keys are kept here instead, from frame to frame, set from the buttons themselves.
+// consoleInput is a game's keys on the console, and on a touch screen (Android). go-ui's window
+// hands the scene a fresh copy of its input every frame, without what its interface took (the
+// arrows and A move between its controls and press them), so a key in it can never be pressed
+// once and then held. The game's keys are kept here instead, from frame to frame, set from the
+// buttons themselves.
 type consoleInput struct {
 	keys    input.State
 	buttons [4]touchButton // where a touch screen's buttons were last drawn (Android)

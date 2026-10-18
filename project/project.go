@@ -140,8 +140,12 @@ func (project *Project) Import(source string) (string, error) {
 	return file, output.Close()
 }
 
-// SaveSettings writes the project's settings.
+// SaveSettings writes the project's settings, when its Android application id has the form one
+// has.
 func (project *Project) SaveSettings() error {
+	if asked := project.Settings.AndroidID; asked != "" && !applicationIDForm.MatchString(asked) {
+		return failure.Wrap(ApplicationIDWrong, asked, nil)
+	}
 	data, err := json.MarshalIndent(project.Settings, "", "\t")
 	if err == nil {
 		err = writeFile(project.Path(engine.SettingsFile), append(data, '\n'))
@@ -167,8 +171,17 @@ func (project *Project) PlayCommand() (*exec.Cmd, error) {
 
 // Tidy brings the project's go.mod up to date with its code and with the go-engine it builds
 // against, as `go mod tidy` does: an engine of a newer version may need other versions of its
-// libraries.
+// libraries. A game built for Android has go-ui's replace written again first (keepUIReplace).
 func (project *Project) Tidy() error {
+	module, err := project.readModule()
+	if err != nil {
+		return err
+	}
+	if module.hasTool(androidTool) {
+		if err := project.keepUIReplace(module); err != nil {
+			return err
+		}
+	}
 	return build.Run(project.Folder, nil, build.GoTool(), "mod", "tidy")
 }
 

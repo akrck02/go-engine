@@ -641,7 +641,7 @@ func (editor *Editor) playWith(target BuildTarget, prepare func() (*exec.Cmd, er
 	go func() {
 		command, err := prepare()
 		if err != nil {
-			editor.send(func(editor *Editor) { editor.running = false; editor.say("The game did not build: "+err.Error(), true) })
+			editor.send(func(editor *Editor) { editor.running = false; editor.say("Could not play: "+err.Error(), true) })
 			return
 		}
 		command.Stdout, command.Stderr = editor.output, editor.output

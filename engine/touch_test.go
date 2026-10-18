@@ -63,3 +63,12 @@ func TestASidewaysPhoneShowsTheGameUnderItsButtons(test *testing.T) {
 		test.Fatalf("the buttons reach %v, under the gesture bar", bottom)
 	}
 }
+
+func TestEveryKeyOfAKeyboardReachesTheGameWithTouchButtons(test *testing.T) {
+	window := input.State{}
+	window.SetKey(input.KeyW, true)
+	var keys input.State
+	if touchKeys(&keys, &window, touchLayoutFor(phoneScreen, phoneSafe, 0).buttons); !keys.Down(input.KeyW) {
+		test.Fatal("a key with no touch button is lost with touch buttons")
+	}
+}

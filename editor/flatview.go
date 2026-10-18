@@ -263,10 +263,7 @@ func (flat *flatView) drawMarks(editor *Editor) {
 		}
 		position := node.World().Position
 		if settings, isCamera := node.Camera(); isCamera {
-			height := settings.Height
-			if height <= 0 {
-				height = 10
-			}
+			height := engine.HeightSeen(settings, aspect)
 			half := space.NewVector(height*aspect/2, height/2, 0)
 			flat.outline(space.Box{Minimum: position.Subtract(half), Maximum: position.Add(half)}, flatCamera, 1)
 		} else if node.Bounds().IsEmpty() {

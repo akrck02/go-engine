@@ -56,6 +56,13 @@ camera; Escape or **Stop** goes back to the scene as it was. The button beside i
 and plays it in its own window instead; its output shows in the status line. **Build** writes the
 program into `build/`, with `THIRD_PARTY_NOTICES.md` beside it (for the 3DS it needs
 [tinygo-3ds](https://github.com/akrck02/tinygo-3ds); set `$TINYGO` if it is not on the path).
+The 3DS card also sends the game to the console's Homebrew Launcher (press Y there first; it needs
+devkitPro's `3dslink`, `$DEVKITPRO`) or opens it in an emulator (Azahar or Citra on the path, or
+`$EMULATOR_3DS`). The Android card builds an `.apk` (the Android SDK and NDK: `$ANDROID_HOME`,
+`$ANDROID_NDK_HOME`, or Android Studio's) and plays it on the phone or emulator `adb` sees, with
+its log; on a phone the game shows touch buttons, and a 2D camera's **width** keeps the level's
+sides in view when the phone is held upright. The settings keep the Android application id and
+the 3DS's address.
 
 <p align="center">
   <img alt="Playing in the editor's view: the house and the spinning cube seen through the scene's camera, the inspector saying the view plays a copy" src="images/playing-in-view.png" width="560">

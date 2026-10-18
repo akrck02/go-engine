@@ -5,7 +5,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
-	"sort"
+	"strconv"
+	"strings"
 )
 
 // The tools that build a game for Android and play it on a device are the Android SDK's: found in
@@ -44,12 +45,34 @@ func AndroidNDK(sdk string) (string, error) {
 	if folder := os.Getenv("ANDROID_NDK_HOME"); folder != "" && FileExists(folder) {
 		return folder, nil
 	}
-	versions, _ := filepath.Glob(filepath.Join(sdk, "ndk", "*")) // a bad pattern is impossible: it is fixed
-	if len(versions) == 0 {
+	entries, err := os.ReadDir(filepath.Join(sdk, "ndk"))
+	if err != nil {
 		return "", AndroidNDKNotFound
 	}
-	sort.Strings(versions)
-	return versions[len(versions)-1], nil
+	newest := ""
+	for _, entry := range entries {
+		if entry.IsDir() && (newest == "" || newerVersion(entry.Name(), newest)) {
+			newest = entry.Name()
+		}
+	}
+	if newest == "" {
+		return "", AndroidNDKNotFound
+	}
+	return filepath.Join(sdk, "ndk", newest), nil
+}
+
+// newerVersion tells whether a version written as numbers joined by dots (28.2.13676358) is
+// newer than another, comparing number by number.
+func newerVersion(version, other string) bool {
+	parts, others := strings.Split(version, "."), strings.Split(other, ".")
+	for index := range min(len(parts), len(others)) {
+		number, _ := strconv.Atoi(parts[index]) // a part that is no number counts as 0
+		otherNumber, _ := strconv.Atoi(others[index])
+		if number != otherNumber {
+			return number > otherNumber
+		}
+	}
+	return len(parts) > len(others)
 }
 
 // ADBTool is the Android Debug Bridge: the SDK's, or adb on the path.

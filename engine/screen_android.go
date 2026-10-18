@@ -25,8 +25,8 @@ func interfaceFor(game *runner) func(context *ui.Context) {
 			played := game.played
 			layout := touchLayoutFor(area, safe, played.designedAspect())
 			game.console.buttons = layout.buttons
-			list.Rectangle(area, 0, draw2d.Color{0, 0, 0, 1}, draw2d.Color{}, 0)
-			if played.Is2D() {
+			if played.Is2D() { // a 3D scene is drawn under the interface: covering it would hide it
+				list.Rectangle(area, 0, draw2d.Color{0, 0, 0, 1}, draw2d.Color{}, 0)
 				list.PushClip(layout.scene)
 				played.Draw2D(list, layout.scene, played.View2D())
 				list.PopClip()

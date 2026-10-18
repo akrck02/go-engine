@@ -58,22 +58,28 @@ func (owner *Scene) designedAspect() float64 {
 		return 0
 	}
 	settings, _ := camera.Camera()
-	if settings.Width <= 0 || settings.Height <= 0 {
+	if settings == nil || settings.Width <= 0 || settings.Height <= 0 {
 		return 0
 	}
 	return settings.Width / settings.Height
 }
 
-// heightSeen is the metres a 2D camera sees top to bottom on the screen it was last drawn on: its
-// height, or more on a screen too narrow for the width it must see.
+// heightSeen is the metres a 2D camera sees top to bottom on the screen it was last drawn on.
 func (owner *Scene) heightSeen(camera *Node) float64 {
 	settings, _ := camera.Camera()
+	return HeightSeen(settings, owner.aspect())
+}
+
+// HeightSeen is the metres a 2D camera sees top to bottom on a screen of a shape (its width over
+// its height): the camera's height (10 when it has none), or more on a screen too narrow for the
+// width it must see.
+func HeightSeen(settings *scenefile.Camera, aspect float64) float64 {
 	height := defaultViewHeight
 	if settings != nil && settings.Height > 0 {
 		height = settings.Height
 	}
-	if settings != nil && settings.Width > height*owner.aspect() {
-		return settings.Width / owner.aspect()
+	if settings != nil && aspect > 0 && settings.Width > height*aspect {
+		return settings.Width / aspect
 	}
 	return height
 }

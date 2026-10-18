@@ -1,8 +1,8 @@
 # go-engine
 
 A game engine in Go with an editor (go-ui over go-renderer): games are Go modules whose scenes the
-editor arranges and whose code uses the engine's standard library; they build for the desktop and
-the Nintendo 3DS. Start with `docs/README.md`.
+editor arranges and whose code uses the engine's standard library; they build for the desktop,
+Android and the Nintendo 3DS. Start with `docs/README.md`.
 
 ## Commands
 

@@ -12,5 +12,6 @@ var (
 	CodeEditorNotFound = failure.Define("project.code-editor-not-found", "no code editor found: set codeEditor in engine.json (\"code\", \"zed\", \"nvim\"…) or $VISUAL")
 	TerminalNotFound   = failure.Define("project.terminal-not-found", "the code editor runs in a terminal, and no terminal was found")
 	SettingsNotSaved   = failure.Define("project.settings-not-saved", "engine.json could not be written")
+	ApplicationIDWrong = failure.Define("project.application-id-wrong", "an Android application id is two words or more joined by dots, each starting with a letter, as io.example.game")
 	NoAndroidDevice    = failure.Define("project.no-android-device", "adb sees no Android device: plug a phone in with USB debugging on, or start the emulator")
 )
