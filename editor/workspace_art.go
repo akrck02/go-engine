@@ -480,25 +480,33 @@ func previewFrame(animation *scenefile.Animation, seconds float64) int {
 // frameStrip is the animation's frames in order; a click on one takes it out.
 func (view *View) frameStrip(context *ui.Context, animation *scenefile.Animation, frames []*draw2d.Image) {
 	editor := view.Editor
-	inside := ui.Layout{Direction: ui.Horizontal, Width: ui.Grow(), Height: ui.Grow(), Gap: 6, AlignY: ui.Center}
+	inside := ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Height: ui.Grow(), AlignY: ui.Center}
 	context.ScrollArea("Frames", inside, func() {
-		for place, frame := range animation.Frames {
-			if frame >= len(frames) {
-				continue
+		// the scroll area stacks what it holds: a row of its own keeps the frames side by side
+		context.Box(ui.Layout{Direction: ui.Horizontal, Gap: 6, AlignY: ui.Center}, func() {
+			for place, frame := range animation.Frames {
+				if frame < len(frames) {
+					view.stripFrame(context, frames[frame], frame, place)
+				}
 			}
-			context.Push(strconv.Itoa(place))
-			look := ui.Look{Fill: canvasGround, Radius: 6, Border: context.Theme.ControlLine, BorderWidth: 1}
-			if context.Clickable("frame", ui.Layout{Width: ui.Fixed(stripFrameSide), Height: ui.Fixed(stripFrameSide), Padding: ui.Pad(3)}, ui.Looks{Normal: look, Hovered: look, Pressed: look}, func() {
-				context.Image(frames[frame], ui.Layout{Width: ui.Grow(), Height: ui.Grow()}, 3)
-			}) {
-				editor.RemoveFrameAt(view.art.animation, place)
+			if context.IconButton(iconClose, "Clear") {
+				editor.ClearFrames(view.art.animation)
 			}
-			context.Tooltip("Frame " + strconv.Itoa(frame) + ": click to take it out")
-			context.Pop()
-		}
-		if context.IconButton(iconClose, "Clear") {
-			editor.ClearFrames(view.art.animation)
-		}
-		context.Tooltip("Take every frame out, to click them again")
+			context.Tooltip("Take every frame out, to click them again")
+		})
 	})
+}
+
+// stripFrame is one frame of the animation in the strip; a click takes it out.
+func (view *View) stripFrame(context *ui.Context, picture *draw2d.Image, frame, place int) {
+	context.Push(strconv.Itoa(place))
+	defer context.Pop()
+	look := ui.Look{Fill: canvasGround, Radius: 6, Border: context.Theme.ControlLine, BorderWidth: 1}
+	layout := ui.Layout{Width: ui.Fixed(stripFrameSide), Height: ui.Fixed(stripFrameSide), Padding: ui.Pad(3)}
+	if context.Clickable("frame", layout, ui.Looks{Normal: look, Hovered: look, Pressed: look}, func() {
+		context.Image(picture, ui.Layout{Width: ui.Grow(), Height: ui.Grow()}, 3)
+	}) {
+		view.Editor.RemoveFrameAt(view.art.animation, place)
+	}
+	context.Tooltip("Frame " + strconv.Itoa(frame) + ": click to take it out")
 }
