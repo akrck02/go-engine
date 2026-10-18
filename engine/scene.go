@@ -50,9 +50,11 @@ type Scene struct {
 	bodyOwners map[*physics.Body]*Node
 
 	// what each frame reuses, so a frame allocates nothing
-	context  Context
-	input    Input
-	updating []*Node
+	context     Context
+	input       Input
+	updating    []*Node
+	drawn       []*Node                 // the nodes a 2D frame draws, furthest first
+	flatColours map[string]draw2d.Color // shapes' colours, read from their text once
 }
 
 // Load reads a scene file from a project's files.
@@ -89,7 +91,8 @@ func Build(files fs.FS, description *scenefile.Scene) (*Scene, error) {
 
 // NewScene is an empty scene, whose models come from a project's files.
 func NewScene(files fs.FS) *Scene {
-	built := &Scene{world: scene.New(), assets: newAssets(files), materials: map[string]*scene.Material{}, helpers: map[string]*scene.Mesh{}}
+	built := &Scene{world: scene.New(), assets: newAssets(files), materials: map[string]*scene.Material{}, helpers: map[string]*scene.Mesh{},
+		flatColours: map[string]draw2d.Color{}}
 	built.Root = newNode(built, "")
 	built.world.Nodes = []*scene.Node{built.Root.render}
 	return built
@@ -308,10 +311,13 @@ type assets struct {
 	files  fs.FS
 	models map[string]*scene.Scene
 	images map[string]*draw2d.Image
+
+	tilesets map[tilesetKey][]*draw2d.Image
 }
 
 func newAssets(files fs.FS) *assets {
-	return &assets{files: files, models: map[string]*scene.Scene{}, images: map[string]*draw2d.Image{}}
+	return &assets{files: files, models: map[string]*scene.Scene{}, images: map[string]*draw2d.Image{},
+		tilesets: map[tilesetKey][]*draw2d.Image{}}
 }
 
 // image reads a picture of the project's (PNG or JPEG), once.
@@ -362,4 +368,9 @@ func (library *assets) model(file string) (*scene.Scene, error) {
 func (owner *Scene) Forget(file string) {
 	delete(owner.assets.models, file)
 	delete(owner.assets.images, file)
+	for key := range owner.assets.tilesets {
+		if key.file == file {
+			delete(owner.assets.tilesets, key)
+		}
+	}
 }

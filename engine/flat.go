@@ -1,10 +1,11 @@
 package engine
 
 import (
+	"cmp"
 	_ "image/jpeg" // sprites may be JPEG pictures
 	_ "image/png"
 	"math"
-	"sort"
+	"slices"
 
 	"github.com/akrck02/go-renderer/draw2d"
 
@@ -80,6 +81,9 @@ func (view View2D) MetresAcross(area draw2d.Rect) float64 {
 // flatBounds is the box a node fills in a 2D scene: its sprite or its shape, around its world
 // position, and a centimetre deep.
 func (node *Node) flatBounds() space.Box {
+	if node.tiles != nil {
+		return node.tileBounds()
+	}
 	width, height, found := node.flatSize()
 	if !found {
 		return space.EmptyBox()
@@ -128,29 +132,35 @@ func (owner *Scene) DrawContent2D(list *draw2d.List, area draw2d.Rect, view View
 
 // drawOrder is the visible nodes that show something, furthest first.
 func (owner *Scene) drawOrder() []*Node {
-	var shown []*Node
-	var visit func(node *Node)
-	visit = func(node *Node) {
-		if !node.Visible {
-			return
+	owner.drawn = owner.collectShown(owner.drawn[:0], owner.Root)
+	slices.SortStableFunc(owner.drawn, byDepth)
+	return owner.drawn
+}
+
+// collectShown lists the visible nodes under one that show something, a node before its children.
+func (owner *Scene) collectShown(nodes []*Node, node *Node) []*Node {
+	for _, child := range node.children {
+		if !child.Visible {
+			continue
 		}
-		if node.sprite != "" || node.shape != "" {
-			shown = append(shown, node)
+		if child.sprite != "" || child.shape != "" || child.tiles != nil {
+			nodes = append(nodes, child)
 		}
-		for _, child := range node.children {
-			visit(child)
-		}
+		nodes = owner.collectShown(nodes, child)
 	}
-	for _, child := range owner.Root.children {
-		visit(child)
-	}
-	sort.SliceStable(shown, func(first, second int) bool {
-		return shown[first].World().Position.Z < shown[second].World().Position.Z
-	})
-	return shown
+	return nodes
+}
+
+// byDepth orders nodes from the furthest (the lowest Z) to the nearest.
+func byDepth(first, second *Node) int {
+	return cmp.Compare(first.World().Position.Z, second.World().Position.Z)
 }
 
 func (owner *Scene) drawFlat(list *draw2d.List, area draw2d.Rect, view View2D, node *Node) {
+	if node.tiles != nil {
+		owner.drawTiles(list, area, view, node)
+		return
+	}
 	box := node.flatBounds()
 	if box.IsEmpty() {
 		return
@@ -164,12 +174,22 @@ func (owner *Scene) drawFlat(list *draw2d.List, area draw2d.Rect, view View2D, n
 		}
 		return
 	}
-	colour := draw2d.Hex(firstColour(node.colour))
+	colour := owner.flatColour(node.colour)
 	radius := float32(0)
 	if node.shape == "sphere" {
 		radius = min(rect.Width, rect.Height) / 2
 	}
 	list.Rectangle(rect, radius, colour, draw2d.Color{}, 0)
+}
+
+// flatColour is a shape's colour, read from its text once and kept: a frame reads no text.
+func (owner *Scene) flatColour(colour string) draw2d.Color {
+	if parsed, found := owner.flatColours[colour]; found {
+		return parsed
+	}
+	parsed := draw2d.Hex(firstColour(colour))
+	owner.flatColours[colour] = parsed
+	return parsed
 }
 
 func firstColour(colour string) string {

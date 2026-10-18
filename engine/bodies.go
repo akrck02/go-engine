@@ -41,6 +41,9 @@ func (owner *Scene) addBodies(node *Node) {
 	if node.body != nil {
 		owner.addBody(node)
 	}
+	if node.tiles != nil {
+		owner.addTileBodies(node)
+	}
 	for _, child := range node.children {
 		owner.addBodies(child)
 	}
@@ -74,6 +77,11 @@ func (owner *Scene) removeBodies(node *Node) {
 	if owner.physics == nil {
 		return
 	}
+	for _, tile := range node.tileBodies {
+		owner.physics.Remove(tile)
+		delete(owner.bodyOwners, tile)
+	}
+	node.tileBodies = nil
 	if node.physicsBody != nil {
 		owner.physics.Remove(node.physicsBody)
 		delete(owner.bodyOwners, node.physicsBody)

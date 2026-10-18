@@ -112,7 +112,7 @@ levels painted with the tile tool. No behaviour of the demo reaches into the eng
   `scenefile/` · R3, R4 · test: `a scene with bodies, tiles and animations comes back as written`
 - [x] T4 — engine: nodes with bodies stepped every frame, `Touched` for behaviours · `engine/` ·
   R1, R2, R6 · test: `a node with a body falls onto a solid node`
-- [ ] T5 — engine: tile maps drawn in 2D, solid tiles as merged solid bodies · `engine/` · R3 ·
+- [x] T5 — engine: tile maps drawn in 2D, solid tiles as merged solid bodies · `engine/` · R3 ·
   test: `solid tiles stop a body`, `a row of solid tiles is one box`
 - [ ] T6 — engine: animated sprites, `Play`, `FaceLeft` · `engine/` · R4 · test:
   `an animation shows each frame for its time and loops`

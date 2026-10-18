@@ -45,7 +45,8 @@ type Node struct {
 	sheet *scenefile.SpriteSheet
 	tiles *scenefile.TileMap
 
-	physicsBody *physics.Body // the body in the scene's physics, while it plays
+	physicsBody *physics.Body   // the body in the scene's physics, while it plays
+	tileBodies  []*physics.Body // a tile map's solid boxes, while it plays
 
 	// Behaviours are the game's code attached to the node, as the scene file keeps them; while the
 	// game runs, behaviours holds them made.
