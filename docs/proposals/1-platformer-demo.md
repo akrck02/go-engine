@@ -128,7 +128,7 @@ three forest levels: the first two converted from the reference's `World.tscn` a
   `painting a tile and erasing it` (and played by hand)
 - [x] T11 — the demo: project, art, `Player`, `Coin`, `Hazard`, `Flag`, three levels ·
   `examples/platformer/` · R1–R8 · played in the editor, in a window and on the 3DS emulator
-- [ ] T12 — check on the 3DS: build the demo with TinyGo and play it in the emulator; the author
+- [x] T12 — check on the 3DS: build the demo with TinyGo and play it in the emulator; the author
   plays it on the console · R7
 
 ## Result

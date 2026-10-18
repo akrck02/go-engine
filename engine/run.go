@@ -81,10 +81,11 @@ var fallbackCamera = space.Transform{Position: space.NewVector(0, 4, 10), Rotati
 
 // runner plays scenes in a window, one after another, as the game asks.
 type runner struct {
-	played *Scene
-	last   time.Time
-	flat   draw2d.List      // a 2D scene's drawing on the console, made again every frame
-	view   window.SceneView // what the window shows this frame
+	played  *Scene
+	last    time.Time
+	flat    draw2d.List      // a 2D scene's drawing on the console, made again every frame
+	console consoleInput     // the console's buttons, as keys
+	view    window.SceneView // what the window shows this frame
 }
 
 // run opens the window and plays until it is closed.
@@ -100,8 +101,8 @@ func (game *runner) current() *Scene { return game.played }
 // step moves the game on a frame and gives the window what to show.
 func (game *runner) step(state *input.State, step float64) *window.SceneView {
 	seconds := game.secondsSince(state, step)
-	consoleKeys(state)
-	game.played.Update(seconds, state)
+	keys := consoleKeys(&game.console, state)
+	game.played.Update(seconds, keys)
 	game.replaceIfAsked()
 	drawOver(game.played, state, &game.flat)
 	game.view = window.SceneView{World: game.played.World(), Camera: CameraAt(fallbackCamera, defaultCamera)}

@@ -27,5 +27,5 @@ func interfaceFor(current func() *Scene) func(context *ui.Context) {
 	}
 }
 
-// consoleKeys does nothing on the desktop, where the keyboard is the game's.
-func consoleKeys(*input.State) {}
+// consoleKeys is the window's own keys on the desktop, where the keyboard is the game's.
+func consoleKeys(_ *consoleInput, window *input.State) *input.State { return window }
