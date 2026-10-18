@@ -50,6 +50,20 @@ func (owner *Scene) View2D() View2D {
 	return View2D{Centre: camera.World().Position, Height: owner.heightSeen(camera)}
 }
 
+// designedAspect is the shape a 2D scene's camera was made for, its width over its height; 0
+// when it names no width.
+func (owner *Scene) designedAspect() float64 {
+	camera, found := owner.MainCamera()
+	if !found {
+		return 0
+	}
+	settings, _ := camera.Camera()
+	if settings.Width <= 0 || settings.Height <= 0 {
+		return 0
+	}
+	return settings.Width / settings.Height
+}
+
 // heightSeen is the metres a 2D camera sees top to bottom on the screen it was last drawn on: its
 // height, or more on a screen too narrow for the width it must see.
 func (owner *Scene) heightSeen(camera *Node) float64 {

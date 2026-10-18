@@ -1,6 +1,6 @@
 # 1. A platformer demo that drives the engine
 
-> Status: done (the console check is the author's) · Author's approval: proposal ☑ plan ☑
+> Status: done · Author's approval: proposal ☑ plan ☑
 
 ## Why
 
@@ -129,7 +129,7 @@ three forest levels: the first two converted from the reference's `World.tscn` a
 - [x] T11 — the demo: project, art, `Player`, `Coin`, `Hazard`, `Flag`, three levels ·
   `examples/platformer/` · R1–R8 · played in the editor, in a window and on the 3DS emulator
 - [x] T12 — check on the 3DS: build the demo with TinyGo and play it in the emulator · R7
-- [ ] T13 — the author plays it on the console · R7
+- [x] T13 — the author plays it on the console · R7 (2026-10-18: "funciona en ds")
 
 ## Result
 

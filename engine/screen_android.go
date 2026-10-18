@@ -1,0 +1,43 @@
+package engine
+
+import (
+	"github.com/akrck02/go-renderer/draw2d"
+	"github.com/akrck02/go-renderer/input"
+	ui "github.com/akrck02/go-ui"
+)
+
+// On Android a 2D scene is painted by the window's interface, as on the desktop, with touch
+// buttons (touchLayoutFor): a phone has no keyboard.
+
+// flatNeedsScene is false on Android: a window given a scene would draw it over the interface.
+const flatNeedsScene = false
+
+// drawOver draws nothing over the scene: the interface does it (interfaceFor).
+func drawOver(*Scene, *input.State, *draw2d.List) {}
+
+// interfaceFor is what the window's interface shows: a 2D scene and the touch buttons.
+func interfaceFor(game *runner) func(context *ui.Context) {
+	return func(context *ui.Context) {
+		insets := context.Insets()
+		context.Paint(ui.Layout{Width: ui.Grow(), Height: ui.Grow()}, func(area draw2d.Rect, list *draw2d.List) {
+			safe := draw2d.Rect{X: area.X + insets.Left, Y: area.Y + insets.Top,
+				Width: area.Width - insets.Left - insets.Right, Height: area.Height - insets.Top - insets.Bottom}
+			played := game.played
+			layout := touchLayoutFor(area, safe, played.designedAspect())
+			game.console.buttons = layout.buttons
+			list.Rectangle(area, 0, draw2d.Color{0, 0, 0, 1}, draw2d.Color{}, 0)
+			if played.Is2D() {
+				list.PushClip(layout.scene)
+				played.Draw2D(list, layout.scene, played.View2D())
+				list.PopClip()
+			}
+			drawTouchButtons(list, layout.buttons)
+		})
+	}
+}
+
+// consoleKeys is the game's keys on Android: a keyboard's, if one is plugged in, and the touch
+// buttons'.
+func consoleKeys(console *consoleInput, window *input.State) *input.State {
+	return touchKeys(&console.keys, window, console.buttons)
+}

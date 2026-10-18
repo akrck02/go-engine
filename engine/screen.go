@@ -1,4 +1,4 @@
-//go:build !nintendo3ds
+//go:build !nintendo3ds && !android
 
 package engine
 
@@ -19,9 +19,9 @@ const flatNeedsScene = false
 func drawOver(*Scene, *input.State, *draw2d.List) {}
 
 // interfaceFor is what the window's interface shows: a 2D scene, filling it.
-func interfaceFor(current func() *Scene) func(context *ui.Context) {
+func interfaceFor(game *runner) func(context *ui.Context) {
 	return func(context *ui.Context) {
-		played := current()
+		played := game.played
 		if !played.Is2D() {
 			return
 		}

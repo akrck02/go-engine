@@ -93,11 +93,8 @@ type runner struct {
 func (game *runner) run(title string) error {
 	options := window.Options{Title: title, Width: windowWidth, Height: windowHeight, Continuous: true}
 	options.Scene = game.step
-	return window.Run(options, interfaceFor(game.current))
+	return window.Run(options, interfaceFor(game))
 }
-
-// current is the scene playing now.
-func (game *runner) current() *Scene { return game.played }
 
 // step moves the game on a frame and gives the window what to show.
 func (game *runner) step(state *input.State, step float64) *window.SceneView {

@@ -21,7 +21,10 @@ var consoleButtons = [...]struct {
 // its input every frame, without what its interface took (the arrows and A move between its
 // controls and press them), so a key in it can never be pressed once and then held. The game's
 // keys are kept here instead, from frame to frame, set from the buttons themselves.
-type consoleInput struct{ keys input.State }
+type consoleInput struct {
+	keys    input.State
+	buttons [4]touchButton // where a touch screen's buttons were last drawn (Android)
+}
 
 // keysFrom is the game's keys this frame: the console's buttons held now, and the window's stick.
 func (console *consoleInput) keysFrom(window *input.State, held ctr.Buttons) *input.State {
