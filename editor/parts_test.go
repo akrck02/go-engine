@@ -131,18 +131,6 @@ func TestFramesAreWrittenAsTheyAreRead(test *testing.T) {
 	}
 }
 
-func TestFramesWrittenAnotherWayAreNotAChange(test *testing.T) {
-	editor := openFlat(test)
-	editor.ResizeSheet(4, 1)
-	walk := editor.AddAnimation()
-	editor.SetAnimationFrames(walk, "0-2")
-	editor.Save()
-	sheet, _ := editor.Selected.Sheet()
-	if editor.SetAnimationFramesIfChanged(walk, "0, 1, 2", sheet.Animations[walk].Frames) != nil || !editor.Saved {
-		test.Fatal("the same frames written another way changed the scene")
-	}
-}
-
 func TestASpriteChosenInTheInspectorIsSaved(test *testing.T) {
 	editor := openFlat(test)
 	tilesetPicture(test, editor, "assets/lamp.png")

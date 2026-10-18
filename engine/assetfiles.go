@@ -3,6 +3,8 @@ package engine
 import (
 	"io/fs"
 
+	"github.com/akrck02/go-renderer/draw2d"
+
 	"github.com/akrck02/go-engine/failure"
 	"github.com/akrck02/go-engine/scenefile"
 )
@@ -91,4 +93,12 @@ func (node *Node) isSolidTile(tile int) bool {
 	}
 	tileset, err := node.scene.assets.tilesetFile(node.tiles.Tileset)
 	return err == nil && tileset.IsSolid(tile)
+}
+
+// Picture is a picture of the project's, read once: what the editor's Art workspace shows.
+func (owner *Scene) Picture(file string) (*draw2d.Image, error) { return owner.assets.image(file) }
+
+// Frames are a picture cut into a sheet's frames, numbered from the top left, read and cut once.
+func (owner *Scene) Frames(picture string, sheet *scenefile.SpriteSheet) ([]*draw2d.Image, error) {
+	return owner.assets.sheetFrames(picture, sheet, false)
 }

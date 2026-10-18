@@ -92,78 +92,6 @@ func indexOf[Item comparable](items []Item, wanted Item) int {
 	return -1
 }
 
-// sheetInspector cuts a sprite into frames and names its animations.
-func (view *View) sheetInspector(context *ui.Context, node *engine.Node) {
-	editor := view.Editor
-	sheet, found := node.Sheet()
-	if !found {
-		note(context, "A sheet cuts the sprite into frames of equal size, numbered from 0 at the top left, to make animations from.")
-		if context.Button("Cut into frames") {
-			editor.ResizeSheet(1, 1)
-		}
-		return
-	}
-	context.Caption("Frames across and down")
-	columns, rows := float64(sheet.Columns), float64(sheet.Rows)
-	context.Push("Sheet size")
-	context.Grid(2, func() {
-		if numberField(context, "Columns", &columns, sheetCellLimits, "%.0f across") ||
-			numberField(context, "Rows", &rows, sheetCellLimits, "%.0f down") {
-			editor.ResizeSheet(int(columns), int(rows))
-		}
-	})
-	context.Pop()
-	for index := range sheet.Animations {
-		view.animationInspector(context, sheet, index)
-	}
-	context.Row(func() {
-		if context.Button("Add an animation") {
-			editor.AddAnimation()
-		}
-		if context.FlatButton("Show it whole") {
-			editor.TakeSheet()
-		}
-	})
-}
-
-// animationInspector edits one animation of a sheet: its name, frames, pace and whether it loops
-// or starts the scene.
-func (view *View) animationInspector(context *ui.Context, sheet *scenefile.SpriteSheet, index int) {
-	editor := view.Editor
-	animation := &sheet.Animations[index]
-	context.Push("animation " + strconv.Itoa(index))
-	defer context.Pop()
-	look := ui.Look{Fill: context.Theme.Background, Radius: 8, Border: context.Theme.Line, BorderWidth: 1}
-	context.Frame(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Padding: ui.Pad(8), Gap: 4}, look, func() {
-		context.Row(func() {
-			view.animationNameField(context, index, animation.Name)
-			if context.FlatIconButton(iconRemove, "") {
-				editor.RemoveAnimation(index)
-				view.forgetAnimationTexts() // the next animations move up a place: their texts no longer fit
-			}
-			context.Tooltip("Remove the animation")
-		})
-		if index >= len(sheet.Animations) {
-			return // just removed
-		}
-		view.animationFramesField(context, index, animation.Frames)
-		if numberField(context, "Pace", &animation.FramesPerSecond, paceLimits, "%.0f frames a second") {
-			editor.Changed()
-		}
-		if context.Checkbox("Loops", &animation.Loop) {
-			editor.Changed()
-		}
-		starts := sheet.Start == animation.Name
-		if context.Checkbox("Plays when the scene starts", &starts) {
-			sheet.Start = ""
-			if starts {
-				sheet.Start = animation.Name
-			}
-			editor.Changed()
-		}
-	})
-}
-
 // forgetAnimationTexts drops what was being typed in the animations' fields.
 func (view *View) forgetAnimationTexts() {
 	for key := range view.fieldTexts {
@@ -182,23 +110,6 @@ func (view *View) animationNameField(context *ui.Context, index int, name string
 	if context.TextField(key, &text) {
 		view.fieldTexts[key] = text
 		view.Editor.RenameAnimation(index, text)
-	}
-}
-
-// animationFramesField edits an animation's frames as written ("0-3, 6"); while what is typed is
-// not frames of the sheet, it says why and the animation keeps the ones it had.
-func (view *View) animationFramesField(context *ui.Context, index int, frames []int) {
-	key := "animation frames " + strconv.Itoa(index)
-	text, editing := view.fieldTexts[key]
-	if !editing {
-		text = writtenFrames(frames)
-	}
-	context.Caption("Frames, as 0-3, 6")
-	if context.TextField(key, &text) {
-		view.fieldTexts[key] = text
-	}
-	if err := view.Editor.SetAnimationFramesIfChanged(index, text, frames); err != nil {
-		context.Text(err.Error(), ui.TextStyle{Color: context.Theme.Warning, Size: context.Theme.SmallTextSize})
 	}
 }
 

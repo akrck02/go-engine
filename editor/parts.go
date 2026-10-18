@@ -253,19 +253,6 @@ func (editor *Editor) Followable(camera *engine.Node) []string {
 	return paths
 }
 
-// SetAnimationFramesIfChanged sets an animation's frames from what is written, when it says other
-// frames than the ones it shows; it tells why what is written cannot be.
-func (editor *Editor) SetAnimationFramesIfChanged(index int, written string, shown []int) error {
-	sheet, found := editor.editedSheet()
-	if !found {
-		return nil
-	}
-	if frames, err := ReadFrames(written, sheet.FrameCount()); err == nil && slices.Equal(frames, shown) {
-		return nil
-	}
-	return editor.SetAnimationFrames(index, written)
-}
-
 // writtenFrames writes frames as ReadFrames reads them, runs joined: 0, 1, 2, 3, 6 is "0-3, 6".
 func writtenFrames(frames []int) string {
 	var written strings.Builder

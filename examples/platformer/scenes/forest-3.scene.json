@@ -174,8 +174,7 @@
 				1
 			],
 			"tiles": {
-				"tileset": "assets/sprites/forest-tileset.png",
-				"tileSize": 16,
+				"tileset": "assets/sprites/forest.tileset.json",
 				"columns": 27,
 				"rows": 9,
 				"tiles": [
@@ -422,19 +421,6 @@
 					-1,
 					-1,
 					-1
-				],
-				"solid": [
-					14,
-					15,
-					16,
-					17,
-					20,
-					25,
-					37,
-					42,
-					49,
-					50,
-					54
 				]
 			}
 		},
@@ -515,32 +501,7 @@
 						1,
 						1
 					],
-					"sprite": "assets/sprites/slime.png",
-					"sheet": {
-						"columns": 5,
-						"rows": 2,
-						"start": "idle",
-						"animations": [
-							{
-								"name": "idle",
-								"frames": [
-									0
-								],
-								"framesPerSecond": 1
-							},
-							{
-								"name": "walk",
-								"frames": [
-									0,
-									1,
-									2,
-									3
-								],
-								"framesPerSecond": 3,
-								"loop": true
-							}
-						]
-					}
+					"sprite": "assets/sprites/slime.sprite.json"
 				}
 			]
 		},
@@ -561,25 +522,7 @@
 				1,
 				1
 			],
-			"sprite": "assets/sprites/coin.png",
-			"sheet": {
-				"columns": 4,
-				"rows": 1,
-				"start": "spin",
-				"animations": [
-					{
-						"name": "spin",
-						"frames": [
-							0,
-							1,
-							2,
-							3
-						],
-						"framesPerSecond": 7,
-						"loop": true
-					}
-				]
-			},
+			"sprite": "assets/sprites/coin.sprite.json",
 			"body": {
 				"kind": "trigger",
 				"size": [
@@ -610,25 +553,7 @@
 				1,
 				1
 			],
-			"sprite": "assets/sprites/coin.png",
-			"sheet": {
-				"columns": 4,
-				"rows": 1,
-				"start": "spin",
-				"animations": [
-					{
-						"name": "spin",
-						"frames": [
-							0,
-							1,
-							2,
-							3
-						],
-						"framesPerSecond": 7,
-						"loop": true
-					}
-				]
-			},
+			"sprite": "assets/sprites/coin.sprite.json",
 			"body": {
 				"kind": "trigger",
 				"size": [
@@ -659,25 +584,7 @@
 				1,
 				1
 			],
-			"sprite": "assets/sprites/coin.png",
-			"sheet": {
-				"columns": 4,
-				"rows": 1,
-				"start": "spin",
-				"animations": [
-					{
-						"name": "spin",
-						"frames": [
-							0,
-							1,
-							2,
-							3
-						],
-						"framesPerSecond": 7,
-						"loop": true
-					}
-				]
-			},
+			"sprite": "assets/sprites/coin.sprite.json",
 			"body": {
 				"kind": "trigger",
 				"size": [
@@ -708,25 +615,7 @@
 				1,
 				1
 			],
-			"sprite": "assets/sprites/coin.png",
-			"sheet": {
-				"columns": 4,
-				"rows": 1,
-				"start": "spin",
-				"animations": [
-					{
-						"name": "spin",
-						"frames": [
-							0,
-							1,
-							2,
-							3
-						],
-						"framesPerSecond": 7,
-						"loop": true
-					}
-				]
-			},
+			"sprite": "assets/sprites/coin.sprite.json",
 			"body": {
 				"kind": "trigger",
 				"size": [

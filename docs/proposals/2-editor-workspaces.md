@@ -90,7 +90,7 @@ meanings share an icon.
 - [x] T4 — Play: pause, step, restart, target shape, watch, log · `editor/`, `engine/` · R5 ·
   tests: `a paused game stands still and steps one frame`, `restart starts the scene as written`,
   `the watch shows a behaviour's fields`
-- [ ] T5 — Art: sprites and tilesets, canvas with the cut, animation strip and preview, solid
+- [x] T5 — Art: sprites and tilesets, canvas with the cut, animation strip and preview, solid
   tiles · `editor/` · R3 · tests: `a picture becomes a sprite with its frames`, `clicked frames
   make an animation`, `a clicked tile turns solid and back`, `an edited sprite is saved and read
   back`

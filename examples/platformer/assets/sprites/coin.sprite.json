@@ -1,0 +1,19 @@
+{
+	"picture": "assets/sprites/coin.png",
+	"columns": 4,
+	"rows": 1,
+	"animations": [
+		{
+			"name": "spin",
+			"frames": [
+				0,
+				1,
+				2,
+				3
+			],
+			"framesPerSecond": 7,
+			"loop": true
+		}
+	],
+	"start": "spin"
+}

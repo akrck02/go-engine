@@ -4,6 +4,8 @@ import (
 	"strings"
 
 	"github.com/akrck02/go-renderer/input"
+
+	"github.com/akrck02/go-engine/scenefile"
 )
 
 // The editor is six workspaces, one job each, as the pages of an editing suite: gathering the
@@ -73,8 +75,29 @@ func (editor *Editor) ShowWorkspace(workspace Workspace) {
 		editor.StopHere()
 	}
 	editor.before, editor.workspace = editor.workspace, workspace
-	if workspace == PlayWorkspace {
+	switch workspace {
+	case PlayWorkspace:
 		editor.PlayHere()
+	case ArtWorkspace:
+		editor.openChosenSprite()
+	}
+}
+
+// openChosenSprite opens the chosen node's sprite file, or its tile map's tileset file, in Art,
+// when nothing is open there yet.
+func (editor *Editor) openChosenSprite() {
+	if editor.art.path != "" || editor.Selected == nil {
+		return
+	}
+	file := editor.Selected.Sprite()
+	if tiles, isTileMap := editor.Selected.Tiles(); isTileMap {
+		file = tiles.Tileset
+	}
+	if !scenefile.IsSpriteFile(file) && !scenefile.IsTilesetFile(file) {
+		return
+	}
+	if err := editor.OpenArt(file); err != nil {
+		editor.say(err.Error(), true)
 	}
 }
 

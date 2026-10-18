@@ -93,3 +93,27 @@ func TestANodesOwnSheetBecomesASpriteFile(test *testing.T) {
 		test.Fatal("the node does not play its sprite file's animation")
 	}
 }
+
+func TestArtOpensTheChosenNodesSprite(test *testing.T) {
+	editor := openFlat(test)
+	tilesetPicture(test, editor, "assets/lamp.png")
+	file, _ := editor.MakeSprite("assets/lamp.png", 3, 1)
+	editor.SetSprite(file)
+	editor.CloseArt()
+	editor.ShowWorkspace(ArtWorkspace)
+	if open, _, _ := editor.ArtOpen(); open != file {
+		test.Fatalf("Art opened %q, not the node's sprite", open)
+	}
+}
+
+func TestArtOpensTheChosenMapsTileset(test *testing.T) {
+	editor := openTileMap(test)
+	tilesetPicture(test, editor, "assets/coast.png")
+	file, _ := editor.MakeTileset("assets/coast.png", 16)
+	editor.SetTileset(file)
+	editor.CloseArt()
+	editor.ShowWorkspace(ArtWorkspace)
+	if open, _, isTileset := editor.ArtOpen(); open != file || !isTileset {
+		test.Fatalf("Art opened %q", open)
+	}
+}
