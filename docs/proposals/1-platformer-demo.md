@@ -106,7 +106,7 @@ levels painted with the tile tool. No behaviour of the demo reaches into the eng
   `physics/` · R1, R2 · tests: `a falling body lands on the ground and stays there`,
   `a fast body does not pass through a thin wall`, `a body pushed into a wall slides up it`,
   `a body on the ground is on the floor`
-- [ ] T2 — `physics`: triggers that report when an overlap begins, once · `physics/` · R6 ·
+- [x] T2 — `physics`: triggers that report when an overlap begins, once · `physics/` · R6 ·
   test: `touching a trigger tells the behaviour once`
 - [ ] T3 — scene files: bodies, tile maps and sprite sheets with animations, read and written ·
   `scenefile/` · R3, R4 · test: `a scene with bodies, tiles and animations comes back as written`

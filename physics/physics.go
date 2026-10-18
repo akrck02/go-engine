@@ -10,6 +10,7 @@
 //	world.Add(&physics.Body{Kind: physics.Solid, Position: groundCentre, Size: groundSize})
 //	world.Add(player) // a Moving body
 //	world.Step(seconds)
+//	for _, touch := range world.Begun() { … } // triggers touched in this step
 package physics
 
 import (
@@ -26,7 +27,8 @@ const (
 	Solid Kind = iota
 	// Moving bodies fall with gravity, move with their velocity and are stopped by solids.
 	Moving
-	// Trigger bodies don't move nor stop anything; they only notice what touches them.
+	// Trigger bodies don't move nor stop anything; they notice the moving bodies that touch them
+	// (World.Begun).
 	Trigger
 )
 
@@ -66,6 +68,10 @@ func overlapAlong(body, other *Body, axis axis) bool {
 type World struct {
 	gravity space.Vector // metres a second, each second
 	bodies  []*Body
+
+	touching    []Touch // the moving bodies overlapping a trigger now
+	wasTouching []Touch // the same, a step ago
+	begun       []Touch // the touches that began in the last step
 }
 
 // NewWorld makes a world with a gravity, in metres a second each second (Earth's is 9.81 down).
@@ -86,14 +92,15 @@ func (world *World) Remove(body *Body) {
 	world.bodies = kept
 }
 
-// Step moves the world on by some seconds: gravity pulls the moving bodies, and each moves by its
-// velocity until a solid stops it.
+// Step moves the world on by some seconds: gravity pulls the moving bodies, each moves by its
+// velocity until a solid stops it, and the touches of triggers that began are found (Begun).
 func (world *World) Step(seconds float64) {
 	for _, body := range world.bodies {
 		if body.Kind == Moving {
 			world.move(body, seconds)
 		}
 	}
+	world.findTouches()
 }
 
 // move pulls a body by gravity and moves it, across first and then up or down, so that blocked on
