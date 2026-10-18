@@ -5,6 +5,8 @@
 package editor
 
 import (
+	"github.com/akrck02/go-renderer/input"
+
 	"fmt"
 	"math"
 	"os/exec"
@@ -495,6 +497,25 @@ func (editor *Editor) StopHere() {
 	}
 	editor.playingHere = nil
 	editor.say("Back to editing", false)
+}
+
+// AdvancePlay moves the scene played in the view on a frame, and goes on to the scene the game
+// asked for (a level started again, the next one); one that cannot be read is reported and the
+// view stays where it is.
+func (editor *Editor) AdvancePlay(seconds float64, keys *input.State) {
+	played := editor.playingHere
+	if played == nil {
+		return
+	}
+	played.Update(seconds, keys)
+	next, replaced, err := played.Replacement()
+	if err != nil {
+		editor.say(err.Error(), true)
+		return
+	}
+	if replaced {
+		editor.playingHere = next
+	}
 }
 
 // PlayingHere is the scene played in the view, while it is.

@@ -140,12 +140,13 @@ func (view *viewport) showSelection(chosen *engine.Node) {
 
 // step follows the mouse in the 3D view and places the camera; it returns what to draw.
 func (view *viewport) step(editor *Editor, state *input.State, seconds float64) (*scene.Scene, models.Camera) {
-	if played, playing := editor.PlayingHere(); playing {
+	if _, playing := editor.PlayingHere(); playing {
+		editor.AdvancePlay(seconds, state)
+		played, _ := editor.PlayingHere()
 		if played.Is2D() {
-			played.Update(seconds, state)
 			return played.World(), view.camera
 		}
-		return view.play(played, state, seconds)
+		return view.play(played, seconds)
 	}
 	if editor.Scene.Is2D() {
 		return view.flat.step(editor, state)
@@ -313,10 +314,9 @@ func (view *viewport) isometricInput(state *input.State) *input.State {
 	return &fixed
 }
 
-// play moves the scene played in the view on a frame, with the keys and the mouse the interface
-// left, and sees it through its main camera (or the editor's, if it has none).
-func (view *viewport) play(played *engine.Scene, state *input.State, seconds float64) (*scene.Scene, models.Camera) {
-	played.Update(seconds, state)
+// play sees the scene played in the view through its main camera (or the editor's, if it has
+// none).
+func (view *viewport) play(played *engine.Scene, seconds float64) (*scene.Scene, models.Camera) {
 	if camera, found := played.MainCamera(); found {
 		return played.World(), camera.View()
 	}

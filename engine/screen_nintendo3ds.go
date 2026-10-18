@@ -23,7 +23,7 @@ func drawOver(played *Scene, _ *input.State, flat *draw2d.List) {
 }
 
 // interfaceFor is the bottom screen's interface: nothing yet.
-func interfaceFor(*Scene) func(context *ui.Context) { return func(*ui.Context) {} }
+func interfaceFor(func() *Scene) func(context *ui.Context) { return func(*ui.Context) {} }
 
 // consoleKeys gives the game the cross as the arrow keys, read from the console itself: go-ui's
 // window lets its interface claim the arrows (to move between its controls), and a game's player

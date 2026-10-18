@@ -56,6 +56,11 @@ type Scene struct {
 	drawn       []*Node                 // the nodes a 2D frame draws, furthest first
 	flatColours map[string]draw2d.Color // shapes' colours, read from their text once
 	drawnAspect float64                 // the screen's width over its height, as last drawn
+
+	// what the scene was made from, to make it again, and the replacement a behaviour asked for
+	description      *scenefile.Scene
+	restartRequested bool
+	changeRequested  string
 }
 
 // Load reads a scene file from a project's files.
@@ -77,6 +82,7 @@ func Load(files fs.FS, file string) (*Scene, error) {
 func Build(files fs.FS, description *scenefile.Scene) (*Scene, error) {
 	built := NewScene(files)
 	built.Name, built.Mode, built.PixelsPerMetre = description.Name, description.Mode, description.PixelsPerMetre
+	built.description = description
 	built.SetSky(description.Sky)
 	var firstError error
 	for _, node := range description.Nodes {

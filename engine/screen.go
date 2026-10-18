@@ -15,8 +15,9 @@ import (
 func drawOver(*Scene, *input.State, *draw2d.List) {}
 
 // interfaceFor is what the window's interface shows: a 2D scene, filling it.
-func interfaceFor(played *Scene) func(context *ui.Context) {
+func interfaceFor(current func() *Scene) func(context *ui.Context) {
 	return func(context *ui.Context) {
+		played := current()
 		if !played.Is2D() {
 			return
 		}

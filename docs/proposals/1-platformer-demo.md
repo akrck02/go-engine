@@ -118,7 +118,7 @@ levels painted with the tile tool. No behaviour of the demo reaches into the eng
   `an animation shows each frame for its time and loops`
 - [x] T7 — engine: a camera that follows a node within bounds · `engine/` · R5 · test:
   `the camera follows its target and stops at the level's edge`
-- [ ] T8 — engine: `RestartScene` and `ChangeScene`, in the window and in the editor's view ·
+- [x] T8 — engine: `RestartScene` and `ChangeScene`, in the window and in the editor's view ·
   `engine/`, `editor/` · R6, R7 · test: `changing scene starts the new one`
 - [ ] T9 — editor: inspector sections for bodies, sprite sheets and cameras that follow · `editor/` ·
   R3–R5 · test: `a body set in the inspector is saved`

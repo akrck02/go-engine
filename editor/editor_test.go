@@ -4,6 +4,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/akrck02/go-engine/engine"
 	"github.com/akrck02/go-engine/project"
 	"github.com/akrck02/go-engine/scenefile"
 	"github.com/akrck02/go-engine/space"
@@ -175,5 +176,31 @@ func TestASceneTurnsFrom3DTo2DAndBack(test *testing.T) {
 	editor.SetMode(scenefile.Mode3D)
 	if editor.Scene.Is2D() || cube.Bounds().Size().Z < 0.9 {
 		test.Fatal("the scene did not turn 3D again")
+	}
+}
+
+// Restarter starts its scene again on its first frame.
+type Restarter struct{ done bool }
+
+func (restarter *Restarter) Update(context *engine.Context) {
+	if restarter.done {
+		return
+	}
+	restarter.done = true
+	context.RestartScene()
+}
+
+func TestPlayingInTheViewFollowsTheGamesSceneChanges(test *testing.T) {
+	engine.RegisterAs("Restarter", Restarter{})
+	editor := open(test)
+	cube, _ := editor.Scene.Find("Cube")
+	editor.Select(cube)
+	editor.AttachBehaviour("Restarter")
+	editor.PlayHere()
+	first, _ := editor.PlayingHere()
+	editor.AdvancePlay(1.0/60, nil)
+	again, playing := editor.PlayingHere()
+	if !playing || again == first {
+		test.Fatal("the view did not go on to the restarted scene")
 	}
 }
