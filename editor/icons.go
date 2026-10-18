@@ -37,6 +37,7 @@ const (
 	iconSearch     = "search"
 	iconComputer   = "monitor"
 	iconConsole    = "gamepad-2"
+	iconPhone      = "smartphone"
 	iconOutput     = "terminal"
 	iconLog        = "scroll-text"
 	iconWatch      = "activity"

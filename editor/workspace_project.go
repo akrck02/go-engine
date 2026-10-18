@@ -39,7 +39,8 @@ type projectView struct {
 	settings bool // the right column shows the project's settings
 	name     string
 	editor   string
-	start    int // the start scene, by its place among the scenes
+	android  string // the application id on Android; empty makes one from the name
+	start    int    // the start scene, by its place among the scenes
 }
 
 func (view *View) projectWorkspace(context *ui.Context) {
@@ -330,10 +331,12 @@ func (view *View) usesList(context *ui.Context) {
 func (view *View) openSettings() {
 	settings := view.Editor.Project.Settings
 	view.project.settings, view.project.name, view.project.editor = true, settings.Name, settings.CodeEditor
+	view.project.android = settings.AndroidID
 	view.project.start = max(0, indexOf(view.Editor.Project.Scenes(), settings.StartScene))
 }
 
-// settingsPanel changes the project's name, the scene it starts with and its code editor.
+// settingsPanel changes the project's name, the scene it starts with, its code editor and its
+// application id on Android.
 func (view *View) settingsPanel(context *ui.Context) {
 	editor := view.Editor
 	settings := &editor.Project.Settings
@@ -348,8 +351,11 @@ func (view *View) settingsPanel(context *ui.Context) {
 	context.Select("Start scene", &view.project.start, scenes)
 	context.Caption("Code editor: a command, as zed, code or nvim; empty tries $VISUAL and $EDITOR")
 	context.TextField("Code editor", &view.project.editor)
+	context.Caption("Android application id, as io.example.game; empty is " + editor.Project.ApplicationID())
+	context.TextField("Android id", &view.project.android)
 	if context.PrimaryIconButton(iconSave, "Save settings") {
 		settings.Name, settings.CodeEditor = strings.TrimSpace(view.project.name), strings.TrimSpace(view.project.editor)
+		settings.AndroidID = strings.TrimSpace(view.project.android)
 		if view.project.start < len(scenes) {
 			settings.StartScene = scenes[view.project.start]
 		}

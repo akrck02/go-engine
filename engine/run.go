@@ -22,6 +22,9 @@ type Settings struct {
 	// CodeEditor is the command the editor opens the project's code with ("code", "zed", "nvim"…);
 	// empty tries $VISUAL, $EDITOR and the usual ones.
 	CodeEditor string `json:"codeEditor,omitempty"`
+	// AndroidID is the game's application id on Android, as io.example.game; empty makes one from
+	// its name.
+	AndroidID string `json:"androidId,omitempty"`
 }
 
 // SettingsFile is the settings' file in a project.

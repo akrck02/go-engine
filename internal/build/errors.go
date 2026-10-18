@@ -4,7 +4,10 @@ import "github.com/akrck02/go-engine/failure"
 
 // Error codes of the build package.
 var (
-	SourceNotFound = failure.Define("build.source-not-found", "go-engine's source, which programs build against, is not where the editor was built")
-	ToolFailed     = failure.Define("build.tool-failed", "a Go tool failed")
-	TinyGoNotFound = failure.Define("build.tinygo-not-found", "building for the 3DS needs TinyGo with the nintendo3ds target (github.com/akrck02/tinygo-3ds): set $TINYGO")
+	SourceNotFound     = failure.Define("build.source-not-found", "go-engine's source, which programs build against, is not where the editor was built")
+	ToolFailed         = failure.Define("build.tool-failed", "a Go tool failed")
+	TinyGoNotFound     = failure.Define("build.tinygo-not-found", "building for the 3DS needs TinyGo with the nintendo3ds target (github.com/akrck02/tinygo-3ds): set $TINYGO")
+	AndroidSDKNotFound = failure.Define("build.android-sdk-not-found", "building for Android needs the Android SDK (Android Studio installs it): set $ANDROID_HOME")
+	AndroidNDKNotFound = failure.Define("build.android-ndk-not-found", "building for Android needs the Android NDK, in the SDK's ndk folder (Android Studio's SDK Manager): or set $ANDROID_NDK_HOME")
+	ADBNotFound        = failure.Define("build.adb-not-found", "playing on an Android device needs adb, the SDK's platform-tools")
 )

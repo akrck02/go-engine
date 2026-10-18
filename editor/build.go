@@ -20,15 +20,18 @@ const (
 	ComputerTarget BuildTarget = iota
 	// ConsoleTarget is the Nintendo 3DS.
 	ConsoleTarget
+	// AndroidTarget is a phone or tablet with Android.
+	AndroidTarget
 )
 
 // BuildTargets are the targets in the order of their cards.
-var BuildTargets = []BuildTarget{ComputerTarget, ConsoleTarget}
+var BuildTargets = []BuildTarget{ComputerTarget, ConsoleTarget, AndroidTarget}
 
 // targetParts are each target's name, icon and what its build makes, in the order of BuildTargets.
 var targetParts = []struct{ name, icon, makes string }{
 	{"This computer", iconComputer, "a program for this computer"},
 	{"Nintendo 3DS", iconConsole, "a .3dsx for the Homebrew Launcher"},
+	{"Android", iconPhone, "an .apk to install on a phone, signed for trying"},
 }
 
 // Name is the target's name on its card.
@@ -99,8 +102,11 @@ func (editor *Editor) builderFor(target BuildTarget) func() (project.Built, erro
 	if builder := editor.builders[target]; builder != nil {
 		return builder
 	}
-	if target == ConsoleTarget {
+	switch target {
+	case ConsoleTarget:
 		return editor.Project.Build3DS
+	case AndroidTarget:
+		return editor.Project.BuildAndroid
 	}
 	return editor.Project.BuildDesktop
 }
