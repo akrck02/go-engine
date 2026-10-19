@@ -1,6 +1,6 @@
 # 7. Pushing, riding and pulling: io-world on the 3DS
 
-> Status: in progress · Author's approval: proposal ☑ plan ☑ (2026-10-19, "sigue": together; the io-world repository private)
+> Status: done (the console check is the author's) · Author's approval: proposal ☑ plan ☑ (2026-10-19, "sigue": together; the io-world repository private)
 
 ## Why
 
@@ -74,5 +74,57 @@ session's work is); io-world in its own repository.
 - [x] T3 — gravity zones · `physics`, `scenefile`, `engine` · R3 · tests of R3
 - [x] T4 — switching cameras, tested · `engine` · R4
 - [x] T5 — the kinds and the gravity in Level · `editor` · R5 · capture
-- [ ] T6 — io-world: project, art, level, behaviours · new repository · R6 · captures
-- [ ] T7 — io-world on the 3DS, and the list of what was hard · R6, R7
+- [x] T6 — io-world: project, art, level, behaviours · new repository · R6 · captures
+- [x] T7 — io-world on the 3DS, and the list of what was hard · R6, R7
+- [x] T8 — asked while building: a menu of the scenes on the 3DS's bottom screen (`sceneMenu`), and
+  `SetBottomScreen` for a game to draw it its own way · `engine`, `editor` · tests `the menu lists
+  the scenes by their names`, `a game's own bottom screen is given its scenes`
+
+## Result
+
+**Built.** Two new kinds of body, `pushable` and `platform`, and gravity zones (a trigger's
+`pull`), in the physics, the scene files and Level's inspector, each drawn its own way. A body's
+floor is the side its gravity pulls it to. Pushing goes across that gravity, in a row of at most
+eight, and never round a ring. A platform carries the stacks standing on it, pushes what is in its
+way, and stops against what it cannot move. Triggers notice pushable bodies too. On the 3DS, a
+menu of the scenes on the bottom screen (`sceneMenu`), or the game's own (`SetBottomScreen`).
+[Io World](https://github.com/akrck02/go-engine-io-world) (private) has io-world's first level and
+its dev branch's version (a button that starts a rail that waits, a cube), with a menu of levels
+made of the game's own pieces. It was sent to the author's 3DS by FTP.
+
+**Checked.** Every requirement's tests: the physics', the engine's allocations with the new kinds,
+the editor's, and Io World's own (landing, running, pads, the magnet, the rail, the field, the
+button, the cube). Captures of the editor, and the game in Azahar, with the menu changing the level
+by a touch.
+
+**Not done.** Bodies that turn, slopes, tiles' own shapes (io-world's attractor tiles are partial
+polygons, here whole squares) and flipped tiles (drawn unflipped). The original's two fixed
+screens became one camera that follows Io: at 400 pixels, a whole screen's width made the tiles
+14 pixels.
+
+**What was hard, making it** (for the next proposals):
+
+1. **The editor was not where it was made.** The level came from a script (`tools/convert_level.py`)
+   and the behaviours from a code editor; the editor opened, played and changed it. Drawing a
+   90-by-37 level of 100-pixel tiles by hand in Level, and five jump pads, would take an afternoon:
+   there are no prefabs to place again and again.
+2. **Prefabs.** io-world's jump pad, rail and button are small scenes placed many times; here each is
+   written out in full. Instancing a scene in another is the biggest missing piece.
+3. **Sprites made of tiles.** The pad and the rail are rows of a tile picture; Art cannot compose
+   them, so the script did, into new pictures.
+4. **One tileset per tile map.** Godot's tile set mixes pictures: one level became two tile maps.
+5. **Touching needs overlapping.** A pad's trigger level with the ground it is on never notices what
+   stands on it: it has to reach above it. Easy to get wrong, and silent.
+6. **`go-engine new` opens the editor**, so it needs a display; making a project on a server needed
+   `project.Create` from Go.
+7. **Choices the original left open**: the field pulled left in the level and up in its prefab, and
+   worked in neither; the button only printed. Here the field pulls up (the inspector changes it)
+   and the button starts the rail, as io-world's first, Unity version did.
+
+**The original's other scenes.** io-world began in Unity: `Demoivania` (December 2022: a menu with
+music and lights, a long level with levels 2 and 3 started, buttons, a cube, rails, magnets,
+liquids, another character, ~710 brick sprites and ~30 C# scripts) and `MainMenu`. They went away
+when it moved to Godot, which only ever had `Level1`. They could come here too, as a later proposal.
+
+**For a person.** Play both levels on the console: the controls, the rail and the field's feel, and
+the menu under a thumb.
