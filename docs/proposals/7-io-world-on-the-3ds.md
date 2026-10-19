@@ -73,6 +73,6 @@ session's work is); io-world in its own repository.
 - [x] T2 — platforms · `physics`, `scenefile`, `engine` · R2 · tests of R2
 - [x] T3 — gravity zones · `physics`, `scenefile`, `engine` · R3 · tests of R3
 - [x] T4 — switching cameras, tested · `engine` · R4
-- [ ] T5 — the kinds and the gravity in Level · `editor` · R5 · capture
+- [x] T5 — the kinds and the gravity in Level · `editor` · R5 · capture
 - [ ] T6 — io-world: project, art, level, behaviours · new repository · R6 · captures
 - [ ] T7 — io-world on the 3DS, and the list of what was hard · R6, R7

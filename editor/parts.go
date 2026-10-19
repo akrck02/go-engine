@@ -67,6 +67,16 @@ func (editor *Editor) SetStartsWith(name string) {
 	editor.Changed()
 }
 
+// SetZonePull gives the chosen trigger a gravity of its own, across and up, or the world's (nil).
+func (editor *Editor) SetZonePull(pull *[2]float64) {
+	body, found := editor.selectedBody()
+	if !found {
+		return
+	}
+	body.Pull = pull
+	editor.Changed()
+}
+
 // SetGravityScale sets how much gravity pulls the chosen node's body: 1 fully, 0 not at all.
 func (editor *Editor) SetGravityScale(scale float64) {
 	body, found := editor.selectedBody()

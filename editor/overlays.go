@@ -16,13 +16,16 @@ import (
 
 // Colours of the overlays.
 var (
-	solidFill   = draw2d.Color{0.25, 0.45, 0.85, 0.22}
-	solidLine   = draw2d.Color{0.25, 0.45, 0.85, 0.9}
-	movingLine  = draw2d.Color{0.2, 0.75, 0.35, 0.95}
-	triggerFill = draw2d.Color{0.95, 0.55, 0.1, 0.18}
-	triggerLine = draw2d.Color{0.95, 0.55, 0.1, 0.95}
-	boundsLine  = draw2d.Color{0.85, 0.2, 0.5, 0.9}
-	cellLine    = draw2d.Color{1, 1, 1, 0.25}
+	solidFill    = draw2d.Color{0.25, 0.45, 0.85, 0.22}
+	solidLine    = draw2d.Color{0.25, 0.45, 0.85, 0.9}
+	movingLine   = draw2d.Color{0.2, 0.75, 0.35, 0.95}
+	triggerFill  = draw2d.Color{0.95, 0.55, 0.1, 0.18}
+	triggerLine  = draw2d.Color{0.95, 0.55, 0.1, 0.95}
+	pushFill     = draw2d.Color{0.2, 0.75, 0.35, 0.18}
+	platformFill = draw2d.Color{0.6, 0.35, 0.85, 0.22}
+	platformLine = draw2d.Color{0.6, 0.35, 0.85, 0.95}
+	boundsLine   = draw2d.Color{0.85, 0.2, 0.5, 0.9}
+	cellLine     = draw2d.Color{1, 1, 1, 0.25}
 )
 
 // smallestCellPixels is the size under which a tile map's cells are not outlined: too many lines.
@@ -48,7 +51,8 @@ func (flat *flatView) drawOverlays(editor *Editor) {
 	}
 }
 
-// drawBody outlines a node's body: solid ones filled blue, moving ones in green, triggers orange.
+// drawBody outlines a node's body: solid ones filled blue, moving ones in green (filled when they
+// can be pushed), platforms purple, triggers orange with an arrow where they pull.
 func (flat *flatView) drawBody(node *engine.Node) {
 	box, found := node.BodyBox()
 	settings, _ := node.BodySettings()
@@ -61,9 +65,41 @@ func (flat *flatView) drawBody(node *engine.Node) {
 		flat.drawing.Rectangle(rect, 0, solidFill, solidLine, 1.5)
 	case scenefile.Trigger:
 		flat.drawing.Rectangle(rect, 0, triggerFill, triggerLine, 1.5)
+		flat.drawPull(rect, settings.Pull)
+	case scenefile.Pushable:
+		flat.drawing.Rectangle(rect, 0, pushFill, movingLine, 2)
+	case scenefile.Platform:
+		flat.drawing.Rectangle(rect, 0, platformFill, platformLine, 2)
 	default:
 		flat.drawing.Rectangle(rect, 0, draw2d.Color{}, movingLine, 2)
 	}
+}
+
+// pullArrowSize is the side of the arrow drawn in a gravity zone, in pixels.
+const pullArrowSize = 28
+
+// drawPull draws, in the middle of a gravity zone, an arrow the way it pulls.
+func (flat *flatView) drawPull(rect draw2d.Rect, pull *[2]float64) {
+	if pull == nil || (pull[0] == 0 && pull[1] == 0) {
+		return
+	}
+	icon := pullIcon(pull[0], pull[1])
+	x, y := rect.X+(rect.Width-pullArrowSize)/2, rect.Y+(rect.Height-pullArrowSize)/2
+	flat.drawing.Icon(icon, x, y, pullArrowSize, triggerLine)
+}
+
+// pullIcon is the arrow of a pull across and up: the way it pulls most.
+func pullIcon(across, up float64) string {
+	if math.Abs(across) > math.Abs(up) {
+		if across > 0 {
+			return "arrow-right"
+		}
+		return "arrow-left"
+	}
+	if up > 0 {
+		return "arrow-up"
+	}
+	return "arrow-down"
 }
 
 // drawSolidCells fills a tile map's solid cells that are in sight.

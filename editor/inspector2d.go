@@ -16,6 +16,7 @@ import (
 var (
 	bodySizeLimits     = numberLimits{0, 1000, 0.05}
 	gravityScaleLimits = numberLimits{-10, 10, 0.05}
+	zonePullLimits     = numberLimits{-100, 100, 0.5}
 	sheetCellLimits    = numberLimits{1, 256, 1}
 	paceLimits         = numberLimits{1, 120, 1}
 	smoothingLimits    = numberLimits{0, 10, 0.05}
@@ -67,6 +68,32 @@ func (view *View) bodyInspector(context *ui.Context, node *engine.Node) {
 		if numberField(context, "Gravity scale", &gravity, gravityScaleLimits, "%.2f×") {
 			editor.SetGravityScale(gravity)
 		}
+	}
+	if body.Kind == scenefile.Trigger {
+		view.zonePullFields(context, body)
+	}
+}
+
+// zonePullFields give a trigger a gravity of its own, or leave the world's.
+func (view *View) zonePullFields(context *ui.Context, body *scenefile.Body) {
+	editor := view.Editor
+	pulls := body.Pull != nil
+	if context.Checkbox("A gravity of its own, for what falls inside", &pulls) {
+		if pulls {
+			editor.SetZonePull(&[2]float64{0, engine.DefaultGravity})
+		} else {
+			editor.SetZonePull(nil)
+		}
+	}
+	if body.Pull == nil {
+		return
+	}
+	pull := *body.Pull
+	context.Caption("Pull across and up, in metres a second each second (the world's is 0, -9.81)")
+	across := numberField(context, "Pull across", &pull[0], zonePullLimits, "→ %.1f")
+	up := numberField(context, "Pull up", &pull[1], zonePullLimits, "↑ %.1f")
+	if across || up {
+		editor.SetZonePull(&pull)
 	}
 }
 
