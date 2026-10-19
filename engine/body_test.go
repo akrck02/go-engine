@@ -213,3 +213,26 @@ func TestANodeInAGravityZoneFallsItsWay(test *testing.T) {
 		test.Fatalf("the crate's top is at %v: the field should pull it up to the ceiling at 6", top)
 	}
 }
+
+func TestMarkingAnotherCameraMainChangesTheView(test *testing.T) {
+	description := &scenefile.Scene{Name: "Two rooms", Mode: scenefile.Mode2D, Nodes: []scenefile.Node{
+		{Name: "First room", Position: [3]float64{0, 0, 0}, Camera: &scenefile.Camera{Projection: scenefile.Orthographic, Height: 8, Main: true}},
+		{Name: "Second room", Position: [3]float64{30, 0, 0}, Camera: &scenefile.Camera{Projection: scenefile.Orthographic, Height: 8}},
+	}}
+	scene, err := Build(nil, description)
+	if err != nil {
+		test.Fatal(err)
+	}
+	scene.Start()
+	if centre := scene.View2D().Centre.X; centre != 0 {
+		test.Fatalf("the scene is seen from %v, not the first room's camera", centre)
+	}
+	first, _ := scene.Find("First room")
+	second, _ := scene.Find("Second room")
+	firstCamera, _ := first.Camera()
+	secondCamera, _ := second.Camera()
+	firstCamera.Main, secondCamera.Main = false, true
+	if centre := scene.View2D().Centre.X; centre != 30 {
+		test.Fatalf("with the second camera marked Main the scene is seen from %v, not 30", centre)
+	}
+}
