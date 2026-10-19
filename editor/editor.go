@@ -6,14 +6,19 @@ package editor
 
 import (
 	"fmt"
+	"math"
 	"os/exec"
 	"strconv"
 	"strings"
 	"sync"
+	"time"
+
+	"github.com/akrck02/go-renderer/input"
 
 	"github.com/akrck02/go-engine/engine"
+	"github.com/akrck02/go-engine/failure"
 	"github.com/akrck02/go-engine/project"
-	"github.com/akrck02/go-engine/scenes"
+	"github.com/akrck02/go-engine/scenefile"
 	"github.com/akrck02/go-engine/space"
 )
 
@@ -22,26 +27,70 @@ type Editor struct {
 	Project   *project.Project
 	SceneFile string
 	Scene     *engine.Scene
-	Selected  *engine.Node
+	Selected  *engine.Node   // the node chosen, which the inspector shows
+	Chosen    []*engine.Node // other nodes chosen with it (Shift), which act with it
 	Saved     bool
 
 	Message string
 	Failed  bool
 
-	behaviours []project.BehaviourInfo // what the project's code defines, read again on demand
+	// Tool is what the left button does in the 2D view (tools.go); Brush is the tile of the
+	// tileset that painting and filling put down.
+	Tool  Tool
+	Brush int
 
-	running  bool      // building or playing the game
-	playing  *exec.Cmd // the game, while it plays
-	stopping bool      // Stop was asked: the game's end is no failure
-	output   *outputTail
-	events   chan func(editor *Editor)
+	workspace Workspace // the workspace shown
+	before    Workspace // the one shown before it, for leaving Play
+
+	// Paused stops the game played in the view; StepFrame moves it on one frame. Target is the
+	// shape of the screen it is shown at.
+	Paused   bool
+	stepOnce bool
+	Watched  string // the path of the node of the scene playing that Play's watch shows
+	Target   PlayTarget
+	playLog  playLog
+	unlisten func() // stops keeping the log, while playing
+
+	art artFile // the sprite or tileset open in the Art workspace
+
+	history history          // the scene after each change, for undo and redo
+	now     func() time.Time // the editor's clock, when a test sets one
+
+	used        map[string][]project.Use // the behaviours the saved scenes use, read now and then
+	usedAt      time.Time
+	buildOutput outputTail // what rebuilding the code said when it failed
+
+	builds   map[BuildTarget]BuildResult                   // each target's last build
+	builders map[BuildTarget]func() (project.Built, error) // how a target is built, when a test says
+
+	behaviours []project.Behaviour // what the project's code defines, read again on demand
+
+	// playingHere is the scene played in the view: a copy of the one edited, made again from its
+	// description, with the game's behaviours running.
+	playingHere *engine.Scene
+
+	builtAt       time.Time // when the game the editor runs in was built
+	codeCheckedAt time.Time
+	codeChanged   bool
+
+	running        bool        // building or playing the game
+	playing        *exec.Cmd   // the game, while it plays
+	playedOn       BuildTarget // where it plays
+	stopping       bool        // Stop was asked: the game's end is no failure
+	output         *outputTail
+	toolsFound     []ToolFound // the build tools and where they were found, looked for when needed
+	toolsKept      int         // how many times the tools were kept by an install: the view fills its fields again
+	installing     *installing // the tool being installed, while one is
+	androidLicence string      // Android's licence, while it waits to be accepted
+	events         chan func(editor *Editor)
 	// Wake asks the window for a frame, when background work has something to show.
 	Wake func()
 }
 
 // Open opens a project at its start scene.
 func Open(opened *project.Project) (*Editor, error) {
-	editor := &Editor{Project: opened, events: make(chan func(editor *Editor), 16)}
+	editor := &Editor{Project: opened, events: make(chan func(editor *Editor), 16), workspace: LevelWorkspace, before: LevelWorkspace, Saved: true,
+		builds: map[BuildTarget]BuildResult{}, builders: map[BuildTarget]func() (project.Built, error){}}
 	if err := editor.OpenScene(opened.Settings.StartScene); err != nil {
 		return nil, err
 	}
@@ -51,6 +100,9 @@ func Open(opened *project.Project) (*Editor, error) {
 
 // OpenScene shows another scene of the project.
 func (editor *Editor) OpenScene(file string) error {
+	if !editor.Saved {
+		return failure.Wrap(UnsavedChanges, editor.SceneFile, nil)
+	}
 	description, err := editor.Project.ReadScene(file)
 	if err != nil {
 		return err
@@ -61,11 +113,14 @@ func (editor *Editor) OpenScene(file string) error {
 	}
 	built.Editing = true
 	built.Sync()
-	editor.Scene, editor.SceneFile, editor.Selected, editor.Saved = built, file, nil, true
+	editor.Scene, editor.SceneFile, editor.Selected, editor.Chosen, editor.Saved = built, file, nil, nil, true
+	editor.startHistory()
+	editor.say("Opened "+file, false)
 	if err != nil {
 		editor.say(err.Error(), true)
-	} else {
-		editor.say("Opened "+file, false)
+	}
+	if editor.workspace == PlayWorkspace {
+		editor.PlayHere() // the game goes on in the scene opened, not the one before
 	}
 	return nil
 }
@@ -76,7 +131,8 @@ func (editor *Editor) Save() error {
 		editor.say(err.Error(), true)
 		return err
 	}
-	editor.Saved = true
+	editor.Saved, editor.used = true, nil
+	editor.history.savedAt, editor.history.lastAt = editor.history.at, time.Time{}
 	editor.say("Saved "+editor.SceneFile, false)
 	return nil
 }
@@ -86,24 +142,71 @@ func (editor *Editor) say(message string, failed bool) {
 	editor.Message, editor.Failed = strings.Join(strings.Fields(message), " "), failed
 }
 
-// Changed marks the scene as changed since it was saved.
-func (editor *Editor) Changed() { editor.Saved = false }
+// Changed marks the scene as changed since it was saved, and keeps it for undo.
+func (editor *Editor) Changed() {
+	editor.Saved = false
+	editor.remember()
+}
 
-// Select chooses a node (nil for none).
-func (editor *Editor) Select(node *engine.Node) { editor.Selected = node }
+// Select chooses a node (nil for none), and lets go of any other chosen with it.
+func (editor *Editor) Select(node *engine.Node) { editor.Selected, editor.Chosen = node, nil }
 
 // Kinds of node the editor adds.
 var Kinds = []string{"Empty", "Cube", "Sphere", "Plane", "Cylinder", "Camera"}
 
+// SetMode makes the scene shown 3D or 2D.
+func (editor *Editor) SetMode(mode scenefile.Mode) {
+	if mode == scenefile.Mode3D && editor.Tool.paintsTiles() {
+		editor.Tool = SelectTool // a 3D scene has no tiles to paint
+	}
+	if editor.Scene.Mode == mode || (mode == scenefile.Mode3D && !editor.Scene.Is2D()) {
+		return
+	}
+	editor.Scene.SetMode(mode)
+	if mode == scenefile.Mode2D && editor.Scene.PixelsPerMetre == 0 {
+		editor.Scene.PixelsPerMetre = scenefile.DefaultPixelsPerMetre
+	}
+	editor.Changed()
+	if mode == scenefile.Mode2D {
+		editor.say("The scene is 2D: sprites and flat shapes, seen from the front; models are not shown", false)
+		return
+	}
+	editor.say("The scene is 3D", false)
+}
+
+// Kinds2D are the kinds of node the editor adds to a 2D scene.
+var Kinds2D = []string{"Empty", "Square", "Circle", "Tile map", "Camera"}
+
+// KindsHere are the kinds of node the scene shown takes.
+func (editor *Editor) KindsHere() []string {
+	if editor.Scene.Is2D() {
+		return Kinds2D
+	}
+	return Kinds
+}
+
 // Add adds a node of a kind ("Cube", "Camera"…) under the selected node's parent, after it (or at
 // the end of the scene), and selects it.
 func (editor *Editor) Add(kind string) *engine.Node {
-	description := scenes.NewNode(kind)
+	description := scenefile.NewNode(kind)
+	if editor.Scene.Is2D() {
+		switch kind {
+		case "Square":
+			description.Shape, description.Colour = "cube", "#c8c8c8"
+		case "Circle":
+			description.Shape, description.Colour = "sphere", "#c8c8c8"
+		case "Camera":
+			description.Camera = &scenefile.Camera{Projection: scenefile.Orthographic, Height: 10}
+		case "Tile map":
+			description.Tiles = newTileMap()
+		}
+		return editor.place(description)
+	}
 	switch kind {
 	case "Empty":
 	case "Camera":
 		description.Position, description.Rotation = [3]float64{0, 3, 7}, [3]float64{-20, 0, 0}
-		description.Camera = &scenes.Camera{Projection: scenes.Perspective, FieldOfView: 50}
+		description.Camera = &scenefile.Camera{Projection: scenefile.Perspective, FieldOfView: 50}
 	default:
 		description.Shape, description.Colour = strings.ToLower(kind), "#c8c8c8"
 		if kind != "Plane" {
@@ -117,12 +220,50 @@ func (editor *Editor) Add(kind string) *engine.Node {
 func (editor *Editor) AddModel(model string) *engine.Node {
 	base := model[strings.LastIndex(model, "/")+1:]
 	base = strings.TrimSuffix(base, base[strings.LastIndex(base, "."):])
-	description := scenes.NewNode(base)
+	description := scenefile.NewNode(base)
 	description.Model = model
 	return editor.place(description)
 }
 
-func (editor *Editor) place(description scenes.Node) *engine.Node {
+// AddSprite adds a node showing one of the project's pictures, in a 2D scene, and selects it.
+func (editor *Editor) AddSprite(picture string) *engine.Node {
+	base := picture[strings.LastIndex(picture, "/")+1:]
+	base = strings.TrimSuffix(base, base[strings.LastIndex(base, "."):])
+	description := scenefile.NewNode(base)
+	description.Sprite = picture
+	return editor.place(description)
+}
+
+// PickFlat finds the node drawn on top at a point of a 2D scene: a sprite or a shape there, or
+// an empty node or a camera within a share of a metre of it.
+func (editor *Editor) PickFlat(point space.Vector, reach float64) (*engine.Node, bool) {
+	var found *engine.Node
+	editor.Scene.Root.Walk(func(node *engine.Node) bool {
+		if node == editor.Scene.Root {
+			return true
+		}
+		if !node.Visible {
+			return false
+		}
+		box := node.Bounds()
+		if box.IsEmpty() {
+			position := node.World().Position
+			if math.Abs(position.X-point.X) <= reach && math.Abs(position.Y-point.Y) <= reach && (found == nil || found.Bounds().IsEmpty()) {
+				found = node
+			}
+			return true
+		}
+		if point.X >= box.Minimum.X && point.X <= box.Maximum.X && point.Y >= box.Minimum.Y && point.Y <= box.Maximum.Y {
+			if found == nil || found.Bounds().IsEmpty() || node.World().Position.Z >= found.World().Position.Z {
+				found = node
+			}
+		}
+		return true
+	})
+	return found, found != nil
+}
+
+func (editor *Editor) place(description scenefile.Node) *engine.Node {
 	parent, at := editor.Scene.Root, len(editor.Scene.Root.Children())
 	if selected := editor.Selected; selected != nil {
 		parent, at = selected.Parent(), selected.Index()+1
@@ -139,30 +280,37 @@ func (editor *Editor) place(description scenes.Node) *engine.Node {
 	return node
 }
 
-// Duplicate copies the selected node, and what hangs from it, beside it.
+// Duplicate copies the nodes chosen, and what hangs from them, each beside its original; the
+// copies are chosen.
 func (editor *Editor) Duplicate() {
-	selected := editor.Selected
-	if selected == nil {
+	originals := editor.outermostChosen()
+	if len(originals) == 0 {
 		return
 	}
-	description := selected.Describe()
-	description.Name = uniqueName(selected.Parent(), description.Name)
-	node, _ := editor.Scene.NewNode(description)
-	selected.Parent().Insert(node, selected.Index()+1)
+	editor.Select(nil)
+	for _, original := range originals {
+		description := original.Describe()
+		description.Name = uniqueName(original.Parent(), description.Name)
+		node, _ := editor.Scene.NewNode(description)
+		original.Parent().Insert(node, original.Index()+1)
+		editor.ToggleChoice(node)
+	}
 	editor.Scene.Sync()
-	editor.Select(node)
 	editor.Changed()
 }
 
-// Delete removes the selected node and what hangs from it.
+// Delete removes the nodes chosen and what hangs from them; the node after the inspector's is
+// chosen next.
 func (editor *Editor) Delete() {
 	selected := editor.Selected
 	if selected == nil {
 		return
 	}
 	parent, index := selected.Parent(), selected.Index()
-	selected.Remove()
-	editor.Selected = nil
+	for _, node := range editor.outermostChosen() {
+		node.Remove()
+	}
+	editor.Select(nil)
 	if siblings := parent.Children(); len(siblings) > 0 {
 		editor.Select(siblings[min(index, len(siblings)-1)])
 	} else if parent != editor.Scene.Root {
@@ -218,9 +366,9 @@ func (editor *Editor) reparent(node, parent *engine.Node) {
 		parentWorld = space.NewTransform()
 	}
 	node.Transform = space.Transform{
-		Position: parentWorld.Local(world.Position),
-		Rotation: parentWorld.Rotation.Inverse().Mul(world.Rotation).Normalized(),
-		Scale:    space.V(divide(world.Scale.X, parentWorld.Scale.X), divide(world.Scale.Y, parentWorld.Scale.Y), divide(world.Scale.Z, parentWorld.Scale.Z)),
+		Position: parentWorld.FromParent(world.Position),
+		Rotation: world.Rotation.Then(parentWorld.Rotation.Inverse()).Normalized(),
+		Scale:    space.NewVector(divide(world.Scale.X, parentWorld.Scale.X), divide(world.Scale.Y, parentWorld.Scale.Y), divide(world.Scale.Z, parentWorld.Scale.Z)),
 	}
 	editor.Scene.Sync()
 	editor.Changed()
@@ -273,7 +421,7 @@ func uniqueNameExcept(parent *engine.Node, name string, except *engine.Node) str
 }
 
 // Pick finds the node a ray from the camera meets first: the one whose box it enters nearest.
-func (editor *Editor) Pick(origin, direction space.Vec3) (*engine.Node, bool) {
+func (editor *Editor) Pick(origin, direction space.Vector) (*engine.Node, bool) {
 	var nearest *engine.Node
 	best := 1e300
 	editor.Scene.Root.Walk(func(node *engine.Node) bool {
@@ -296,12 +444,12 @@ func (editor *Editor) Pick(origin, direction space.Vec3) (*engine.Node, bool) {
 }
 
 // MoveTo puts a node at a point of the world, wherever it hangs from.
-func (editor *Editor) MoveTo(node *engine.Node, world space.Vec3) {
+func (editor *Editor) MoveTo(node *engine.Node, world space.Vector) {
 	parent := node.Parent()
 	if parent == nil || parent == editor.Scene.Root {
 		node.Transform.Position = world
 	} else {
-		node.Transform.Position = parent.World().Local(world)
+		node.Transform.Position = parent.World().FromParent(world)
 	}
 	editor.Scene.Sync()
 	editor.Changed()
@@ -319,20 +467,31 @@ func (editor *Editor) Import(source string) {
 	editor.say("Imported "+model, false)
 }
 
+// ImportModel copies a model into the project's assets, without placing it: the Project grid
+// shows it, to place in a scene.
+func (editor *Editor) ImportModel(source string) {
+	model, err := editor.Project.Import(source)
+	if err != nil {
+		editor.say(err.Error(), true)
+		return
+	}
+	editor.say("Imported "+model, false)
+}
+
 // Behaviours are the behaviours the project's code defines, as last read.
-func (editor *Editor) Behaviours() []project.BehaviourInfo { return editor.behaviours }
+func (editor *Editor) Behaviours() []project.Behaviour { return editor.behaviours }
 
 // ReadBehaviours reads the project's code again for its behaviours: after it was edited.
 func (editor *Editor) ReadBehaviours() { editor.behaviours = editor.Project.Behaviours() }
 
-// BehaviourInfo finds what the code says of a behaviour.
-func (editor *Editor) BehaviourInfo(name string) (project.BehaviourInfo, bool) {
-	for _, info := range editor.behaviours {
-		if info.Name == name {
-			return info, true
+// Behaviour finds what the code says of a behaviour.
+func (editor *Editor) FindBehaviour(name string) (project.Behaviour, bool) {
+	for _, definition := range editor.behaviours {
+		if definition.Name == name {
+			return definition, true
 		}
 	}
-	return project.BehaviourInfo{}, false
+	return project.Behaviour{}, false
 }
 
 // AttachBehaviour gives the selected node a behaviour of the project's, its fields empty.
@@ -340,7 +499,7 @@ func (editor *Editor) AttachBehaviour(name string) {
 	if editor.Selected == nil || name == "" {
 		return
 	}
-	editor.Selected.Behaviours = append(editor.Selected.Behaviours, scenes.Behaviour{Name: name, Fields: map[string]any{}})
+	editor.Selected.Behaviours = append(editor.Selected.Behaviours, scenefile.Behaviour{Name: name, Fields: map[string]any{}})
 	editor.Changed()
 }
 
@@ -379,22 +538,125 @@ func FieldText(value any) string {
 	return fmt.Sprint(value)
 }
 
-// Play saves the scene, builds the game and runs it, in the background: what happens arrives
-// through Events. Stop ends it.
-func (editor *Editor) Play() {
+// PlayHere plays the scene in the view, with the behaviours compiled into the game the editor runs
+// in; the scene edited stays as it was. StopHere goes back to editing.
+func (editor *Editor) PlayHere() {
+	editor.Paused, editor.stepOnce, editor.Watched = false, false, ""
+	if editor.Selected != nil {
+		editor.Watched = editor.Selected.Path()
+	}
+	built, err := engine.Build(editor.Project.Files(), editor.Scene.Describe())
+	if built == nil {
+		editor.say(err.Error(), true)
+		return
+	}
+	if editor.unlisten == nil {
+		editor.unlisten = editor.listenToLog()
+	}
+	problems := built.Start()
+	editor.playingHere = built
+	switch {
+	case len(problems) > 0:
+		editor.say(problems[0].Error(), true)
+	case err != nil:
+		editor.say(err.Error(), true)
+	case len(engine.Registered()) == 0:
+		editor.say("Playing without the project's code: open the project with go-engine to play its behaviours", true)
+	default:
+		editor.say("Playing in the view: Escape or Stop goes back to editing", false)
+	}
+}
+
+// StopHere stops the play in the view.
+func (editor *Editor) StopHere() {
+	editor.Paused, editor.stepOnce = false, false
+	if editor.unlisten != nil {
+		editor.unlisten()
+		editor.unlisten = nil
+	}
+	if editor.playingHere == nil {
+		return
+	}
+	editor.playingHere = nil
+	editor.say("Back to editing", false)
+}
+
+// AdvancePlay moves the scene played in the view on a frame, and goes on to the scene the game
+// asked for (a level started again, the next one); one that cannot be read is reported and the
+// view stays where it is. While paused it stands still, except for one frame after StepFrame.
+func (editor *Editor) AdvancePlay(seconds float64, keys *input.State) {
+	played := editor.playingHere
+	if played == nil || editor.Paused && !editor.stepOnce {
+		return
+	}
+	if editor.stepOnce {
+		editor.stepOnce, seconds = false, oneFrame
+	}
+	played.Update(seconds, keys)
+	next, replaced, err := played.TakeReplacement()
+	if err != nil {
+		editor.say(err.Error(), true)
+		return
+	}
+	if replaced {
+		editor.playingHere = next
+	}
+}
+
+// PlayingHere is the scene played in the view, while it is.
+func (editor *Editor) PlayingHere() (*engine.Scene, bool) {
+	return editor.playingHere, editor.playingHere != nil
+}
+
+// PlayInWindow saves the scene, builds the game and runs it in a window of its own, in the
+// background: what happens arrives through Events. Stop ends it.
+func (editor *Editor) PlayInWindow() {
+	editor.playWith(ComputerTarget, editor.Project.PlayCommand, nil)
+}
+
+// PlayOnDevice builds the game for Android and plays it on the device adb sees, its log shown as
+// a window's output is; stopping it stops the game on the device.
+func (editor *Editor) PlayOnDevice() {
+	editor.playWith(AndroidTarget, editor.Project.PlayOnAndroid, editor.Project.StopOnAndroid)
+}
+
+// PlayInEmulator builds the game for the 3DS and opens it in an emulator; Stop closes it.
+func (editor *Editor) PlayInEmulator() {
+	editor.playWith(ConsoleTarget, editor.Project.EmulatorCommand, nil)
+}
+
+// SendToConsole builds the game for the 3DS and sends it to the console's Homebrew Launcher, in
+// the background.
+func (editor *Editor) SendToConsole() {
+	editor.Run("Sending the game to the 3DS…", func() (string, error) {
+		if err := editor.Project.SendTo3DS(); err != nil {
+			return "", err
+		}
+		return "Sent the game to the 3DS", nil
+	})
+}
+
+// PlayingOn tells where the game plays now, when it does.
+func (editor *Editor) PlayingOn() (BuildTarget, bool) {
+	return editor.playedOn, editor.playing != nil
+}
+
+// playWith builds the game for a target and runs the command that plays it (or reads its log),
+// showing what it prints; stopped, when there is one, ends the game where the command cannot.
+func (editor *Editor) playWith(target BuildTarget, prepare func() (*exec.Cmd, error), stopped func() error) {
 	if editor.running {
 		return
 	}
 	if !editor.Saved && editor.Save() != nil {
 		return
 	}
-	editor.running = true
+	editor.running, editor.playedOn = true, target
 	editor.output = &outputTail{}
-	editor.say("Building the game…", false)
+	editor.say("Building the game for "+target.Name()+"…", false)
 	go func() {
-		command, err := editor.Project.PlayCommand()
+		command, err := prepare()
 		if err != nil {
-			editor.send(func(editor *Editor) { editor.running = false; editor.say("The game did not build: "+err.Error(), true) })
+			editor.send(func(editor *Editor) { editor.running = false; editor.say("Could not play: "+err.Error(), true) })
 			return
 		}
 		command.Stdout, command.Stderr = editor.output, editor.output
@@ -402,22 +664,30 @@ func (editor *Editor) Play() {
 			editor.send(func(editor *Editor) { editor.running = false; editor.say(err.Error(), true) })
 			return
 		}
-		editor.send(func(editor *Editor) { editor.playing = command; editor.say("Playing", false) })
+		editor.send(func(editor *Editor) { editor.playing = command; editor.say("Playing on "+target.Name(), false) })
 		err = command.Wait()
-		editor.send(func(editor *Editor) {
-			editor.running, editor.playing = false, nil
-			if editor.stopping {
-				editor.stopping = false
-				editor.say("Stopped the game", false)
-				return
+		if stopped != nil {
+			if stopErr := stopped(); stopErr != nil {
+				editor.output.Write([]byte(stopErr.Error() + "\n")) // shown with the rest: the game may still run there
 			}
-			if last := editor.output.Last(); err != nil && last != "" {
-				editor.say("The game ended: "+last, true)
-				return
-			}
-			editor.say("The game ended", false)
-		})
+		}
+		editor.send(func(editor *Editor) { editor.ended(err) })
 	}()
+}
+
+// ended says how the game that played ended.
+func (editor *Editor) ended(err error) {
+	editor.running, editor.playing = false, nil
+	if editor.stopping {
+		editor.stopping = false
+		editor.say("Stopped the game", false)
+		return
+	}
+	if last := editor.output.Last(); err != nil && last != "" {
+		editor.say("The game ended: "+last, true)
+		return
+	}
+	editor.say("The game ended", false)
 }
 
 // Stop ends the game that is playing.
@@ -489,6 +759,13 @@ func (tail *outputTail) Write(data []byte) (int, error) {
 		tail.lines = tail.lines[len(tail.lines)-200:]
 	}
 	return len(data), nil
+}
+
+// Lines are the lines printed, oldest first.
+func (tail *outputTail) Lines() []string {
+	tail.mutex.Lock()
+	defer tail.mutex.Unlock()
+	return append([]string(nil), tail.lines...)
 }
 
 // Last is the last line printed.

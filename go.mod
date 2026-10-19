@@ -5,7 +5,7 @@ go 1.25.6
 require (
 	github.com/akrck02/go-renderer v0.0.0
 	github.com/akrck02/go-scene-builder v0.0.0-20261017184317-26708cf29060
-	github.com/akrck02/go-ui v0.0.0-20261017114322-990d96da72d6
+	github.com/akrck02/go-ui v0.0.0-20261019180239-542aeea79658
 )
 
 require (
@@ -17,5 +17,5 @@ require (
 )
 
 // go-ui asks for go-renderer v0.0.0 (it builds against a local copy); this is go-renderer's
-// feature/3ds, which draws on the desktop and on the Nintendo 3DS alike, as go-ui's feature/3ds.
-replace github.com/akrck02/go-renderer => github.com/akrck02/go-renderer v0.0.0-20261017114320-1fc015dd62b2
+// dev branch, which draws on the desktop, Android and the Nintendo 3DS alike, as go-ui's dev.
+replace github.com/akrck02/go-renderer => github.com/akrck02/go-renderer v0.0.0-20261019173110-5a5d4410828b

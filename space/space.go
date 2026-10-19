@@ -5,7 +5,7 @@
 // right-handed, so with X to the right and Y up, Z points towards whoever looks. A camera with no
 // rotation looks along -Z (Forward). Angles are in degrees wherever a person reads or types them,
 // and turning by a positive angle is counter-clockwise when looking down the axis towards the
-// origin: a positive turn around Y takes Right (+X) towards Forward (-Z).
+// origin: a positive turn around Up takes Right (+X) towards Forward (-Z).
 package space
 
 import "math"
@@ -17,59 +17,85 @@ const (
 	Kilometre  = 1000.0
 )
 
-// Vec3 is a point or a direction in the world, in metres.
-type Vec3 struct{ X, Y, Z float64 }
+// Vector is a point or a direction in the world, in metres.
+type Vector struct{ X, Y, Z float64 }
 
 // Directions and points that have names.
 var (
-	Zero    = Vec3{}
-	One     = Vec3{1, 1, 1}
-	Right   = Vec3{1, 0, 0}
-	Up      = Vec3{0, 1, 0}
-	Back    = Vec3{0, 0, 1} // towards whoever looks at the world from the front
-	Forward = Vec3{0, 0, -1}
+	Zero    = Vector{}
+	One     = Vector{1, 1, 1}
+	Right   = Vector{1, 0, 0}
+	Up      = Vector{0, 1, 0}
+	Back    = Vector{0, 0, 1} // towards whoever looks at the world from the front
+	Forward = Vector{0, 0, -1}
 )
 
-// V makes a vector.
-func V(x, y, z float64) Vec3 { return Vec3{x, y, z} }
+// NewVector makes a vector from its three coordinates.
+func NewVector(x, y, z float64) Vector { return Vector{x, y, z} }
 
-func (v Vec3) Add(other Vec3) Vec3       { return Vec3{v.X + other.X, v.Y + other.Y, v.Z + other.Z} }
-func (v Vec3) Sub(other Vec3) Vec3       { return Vec3{v.X - other.X, v.Y - other.Y, v.Z - other.Z} }
-func (v Vec3) Scale(factor float64) Vec3 { return Vec3{v.X * factor, v.Y * factor, v.Z * factor} }
-
-// Mul multiplies each axis by the other's: a size scaled per axis.
-func (v Vec3) Mul(other Vec3) Vec3 { return Vec3{v.X * other.X, v.Y * other.Y, v.Z * other.Z} }
-
-func (v Vec3) Dot(other Vec3) float64 { return v.X*other.X + v.Y*other.Y + v.Z*other.Z }
-
-func (v Vec3) Cross(other Vec3) Vec3 {
-	return Vec3{v.Y*other.Z - v.Z*other.Y, v.Z*other.X - v.X*other.Z, v.X*other.Y - v.Y*other.X}
+// Add is the vector moved by another.
+func (vector Vector) Add(other Vector) Vector {
+	return Vector{vector.X + other.X, vector.Y + other.Y, vector.Z + other.Z}
 }
 
-func (v Vec3) Length() float64 { return math.Sqrt(v.Dot(v)) }
+// Subtract is the vector from other to this one.
+func (vector Vector) Subtract(other Vector) Vector {
+	return Vector{vector.X - other.X, vector.Y - other.Y, vector.Z - other.Z}
+}
+
+// Scale is the vector times a number.
+func (vector Vector) Scale(factor float64) Vector {
+	return Vector{vector.X * factor, vector.Y * factor, vector.Z * factor}
+}
+
+// MultiplyEach multiplies each axis by the other vector's: a size scaled per axis.
+func (vector Vector) MultiplyEach(other Vector) Vector {
+	return Vector{vector.X * other.X, vector.Y * other.Y, vector.Z * other.Z}
+}
+
+// Dot is the dot product: how much two directions point the same way, times their lengths.
+func (vector Vector) Dot(other Vector) float64 {
+	return vector.X*other.X + vector.Y*other.Y + vector.Z*other.Z
+}
+
+// Cross is the cross product: a direction square to both, by the right-hand rule.
+func (vector Vector) Cross(other Vector) Vector {
+	return Vector{
+		vector.Y*other.Z - vector.Z*other.Y,
+		vector.Z*other.X - vector.X*other.Z,
+		vector.X*other.Y - vector.Y*other.X,
+	}
+}
+
+// Length is how long the vector is.
+func (vector Vector) Length() float64 { return math.Sqrt(vector.Dot(vector)) }
 
 // Distance is how far apart two points are.
-func (v Vec3) Distance(other Vec3) float64 { return v.Sub(other).Length() }
+func (vector Vector) Distance(other Vector) float64 { return vector.Subtract(other).Length() }
 
-// Normalized is the direction of v with a length of 1 (Zero stays Zero).
-func (v Vec3) Normalized() Vec3 {
-	length := v.Length()
+// Normalized is the vector's direction with a length of 1 (Zero stays Zero).
+func (vector Vector) Normalized() Vector {
+	length := vector.Length()
 	if length == 0 {
-		return v
+		return vector
 	}
-	return v.Scale(1 / length)
+	return vector.Scale(1 / length)
 }
 
-// Lerp is the point a share of the way from v to other (0 is v, 1 is other).
-func (v Vec3) Lerp(other Vec3, share float64) Vec3 {
-	return v.Add(other.Sub(v).Scale(share))
+// Toward is the point a share of the way from this one to another: 0 is this point, 1 the other.
+func (vector Vector) Toward(other Vector, share float64) Vector {
+	return vector.Add(other.Subtract(vector).Scale(share))
 }
 
-// Near tells whether two vectors are the same within a tolerance.
-func (v Vec3) Near(other Vec3, tolerance float64) bool {
-	return math.Abs(v.X-other.X) <= tolerance && math.Abs(v.Y-other.Y) <= tolerance && math.Abs(v.Z-other.Z) <= tolerance
+// Near tells whether two vectors are the same within a tolerance on each axis.
+func (vector Vector) Near(other Vector, tolerance float64) bool {
+	return math.Abs(vector.X-other.X) <= tolerance &&
+		math.Abs(vector.Y-other.Y) <= tolerance &&
+		math.Abs(vector.Z-other.Z) <= tolerance
 }
 
-// Radians turns degrees into radians; Degrees the other way.
+// Radians turns degrees into radians.
 func Radians(degrees float64) float64 { return degrees * math.Pi / 180 }
+
+// Degrees turns radians into degrees.
 func Degrees(radians float64) float64 { return radians * 180 / math.Pi }

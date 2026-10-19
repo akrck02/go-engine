@@ -6,27 +6,34 @@ package project
 
 import (
 	"encoding/json"
-	"errors"
-	"fmt"
 	"io"
 	"io/fs"
+	"log/slog"
 	"os"
 	"os/exec"
 	"path"
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/akrck02/go-engine/engine"
+	"github.com/akrck02/go-engine/failure"
 	"github.com/akrck02/go-engine/internal/build"
 	"github.com/akrck02/go-engine/internal/notices"
-	"github.com/akrck02/go-engine/scenes"
+	"github.com/akrck02/go-engine/scenefile"
 )
 
 // Project is a game's folder.
 type Project struct {
 	Folder   string
 	Settings engine.Settings
+	// Tools are the places of the tools that build for consoles and phones, kept on this
+	// computer for every project.
+	Tools build.Tools
+	// ToolsUnread is why the places kept could not be read, when they could not: the builds look
+	// for the tools as if none were kept, and saving writes them anew.
+	ToolsUnread error
 }
 
 // Folders in a project.
@@ -47,7 +54,18 @@ func Open(folder string) (*Project, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Project{Folder: folder, Settings: settings}, nil
+	opened := &Project{Folder: folder, Settings: settings}
+	opened.readTools()
+	return opened, nil
+}
+
+// readTools reads the tools' places kept on this computer; when they cannot be read, none, and
+// ToolsUnread says why.
+func (project *Project) readTools() {
+	project.Tools, project.ToolsUnread = build.ReadTools()
+	if project.ToolsUnread != nil {
+		slog.Warn("the tools' places kept on this computer are left out", "error", project.ToolsUnread)
+	}
 }
 
 // Files are the project's files, as the engine reads them.
@@ -81,16 +99,16 @@ func (project *Project) filesUnder(folder string, wanted func(name string) bool)
 }
 
 // ReadScene reads a scene file of the project.
-func (project *Project) ReadScene(file string) (*scenes.Scene, error) {
+func (project *Project) ReadScene(file string) (*scenefile.Scene, error) {
 	data, err := os.ReadFile(project.Path(file))
 	if err != nil {
 		return nil, err
 	}
-	return scenes.Read(data)
+	return scenefile.Read(data)
 }
 
 // WriteScene writes a scene file of the project.
-func (project *Project) WriteScene(file string, scene *scenes.Scene) error {
+func (project *Project) WriteScene(file string, scene *scenefile.Scene) error {
 	if err := scene.Check(); err != nil {
 		return err
 	}
@@ -101,11 +119,14 @@ func (project *Project) WriteScene(file string, scene *scenes.Scene) error {
 	return writeFile(project.Path(file), data)
 }
 
-// NewScene adds an empty scene, with a ground and a camera, and returns its file.
-func (project *Project) NewScene(name string) (string, error) {
+// NewScene adds a scene, 3D or 2D, with a ground and a camera, and returns its file.
+func (project *Project) NewScene(name string, mode scenefile.Mode) (string, error) {
 	file := path.Join(ScenesFolder, build.FileName(name)+SceneSuffix)
 	if build.FileExists(project.Path(file)) {
-		return "", fmt.Errorf("%s exists already", file)
+		return "", failure.Wrap(SceneExists, file, nil)
+	}
+	if mode == scenefile.Mode2D {
+		return file, project.WriteScene(file, starterScene2D(name))
 	}
 	return file, project.WriteScene(file, starterScene(name))
 }
@@ -115,7 +136,7 @@ func (project *Project) NewScene(name string) (string, error) {
 func (project *Project) Import(source string) (string, error) {
 	extension := strings.ToLower(filepath.Ext(source))
 	if extension != ".glb" {
-		return "", fmt.Errorf("%s: only .glb models can be imported for now (export glTF as binary .glb)", filepath.Base(source))
+		return "", failure.Wrap(ImportFormat, filepath.Base(source), nil)
 	}
 	file := path.Join(ModelsFolder, filepath.Base(source))
 	input, err := os.Open(source)
@@ -137,13 +158,20 @@ func (project *Project) Import(source string) (string, error) {
 	return file, output.Close()
 }
 
-// SaveSettings writes the project's settings.
+// SaveSettings writes the project's settings, when its Android application id has the form one
+// has.
 func (project *Project) SaveSettings() error {
-	data, err := json.MarshalIndent(project.Settings, "", "\t")
-	if err != nil {
-		return err
+	if asked := project.Settings.AndroidID; asked != "" && !applicationIDForm.MatchString(asked) {
+		return failure.Wrap(ApplicationIDWrong, asked, nil)
 	}
-	return writeFile(project.Path(engine.SettingsFile), append(data, '\n'))
+	data, err := json.MarshalIndent(project.Settings, "", "\t")
+	if err == nil {
+		err = writeFile(project.Path(engine.SettingsFile), append(data, '\n'))
+	}
+	if err != nil {
+		return failure.Wrap(SettingsNotSaved, "", err)
+	}
+	return nil
 }
 
 // PlayCommand builds the game for this computer, as BuildDesktop does, and returns the command
@@ -159,32 +187,122 @@ func (project *Project) PlayCommand() (*exec.Cmd, error) {
 	return command, nil
 }
 
+// Tidy brings the project's go.mod up to date with its code and with the go-engine it builds
+// against, as `go mod tidy` does: an engine of a newer version may need other versions of its
+// libraries. A game built for Android has go-ui's replace written again first (keepUIReplace).
+func (project *Project) Tidy() error {
+	module, err := project.readModule()
+	if err != nil {
+		return err
+	}
+	if module.hasTool(androidTool) {
+		if err := project.keepUIReplace(module); err != nil {
+			return err
+		}
+	}
+	return build.Run(project.Folder, nil, build.GoTool(), "mod", "tidy")
+}
+
+// EditorProgram is where the game built with the editor in it goes.
+func (project *Project) EditorProgram() string {
+	return project.Path(path.Join("build", "editor", build.FileName(project.Settings.Name)+"-editor"+build.ExecutableSuffix()))
+}
+
+// BuildEditor builds the game with the editor in it, for go-engine to start.
+func (project *Project) BuildEditor() error {
+	if _, err := project.EnsureEditor(); err != nil {
+		return err
+	}
+	if err := project.Tidy(); err != nil {
+		return err
+	}
+	arguments := append([]string{"build"}, project.EngineFlags()...)
+	return build.Run(project.Folder, nil, build.GoTool(), append(arguments, "-o", project.EditorProgram(), ".")...)
+}
+
+// EngineFlags tell a build which commit a local copy of Go Engine is at (one the project's go.mod
+// replaces with a folder, or a go.work uses), so the program can say it (engine.Version): a
+// local copy's build information does not. A project that requires a version needs none.
+func (project *Project) EngineFlags() []string {
+	listed, err := build.Output(project.Folder, nil, build.GoTool(), "list", "-m", "-f", engineListing, engine.Module)
+	if err != nil {
+		return nil
+	}
+	folder, local, _ := strings.Cut(strings.TrimSpace(listed), "|")
+	if local != "local" || folder == "" {
+		return nil
+	}
+	revision, err := build.Output(folder, nil, "git", "rev-parse", "--short=7", "HEAD")
+	if err != nil {
+		return nil // not a git copy: the program says "local"
+	}
+	revision = strings.TrimSpace(revision)
+	if changes, err := build.Output(folder, nil, "git", "status", "--porcelain"); err == nil && strings.TrimSpace(changes) != "" {
+		revision += "-modified" // the copy has changes no commit holds
+	}
+	return []string{"-ldflags=-X " + engine.Module + "/engine.localRevision=" + revision}
+}
+
+// engineListing is how go list says where Go Engine is, and whether it is a local copy: one with
+// no version of its own (a go.work), or replaced by a folder.
+const engineListing = "{{.Dir}}|{{if not .Version}}local{{else if .Replace}}{{if not .Replace.Version}}local{{end}}{{end}}"
+
+// CodeChangedSince tells whether a Go file of the project changed after a time: the game the
+// editor runs in is older than its code.
+func (project *Project) CodeChangedSince(built time.Time) bool {
+	changed := false
+	fs.WalkDir(project.Files(), ".", func(file string, entry fs.DirEntry, err error) error {
+		if err != nil || changed {
+			return fs.SkipAll
+		}
+		if entry.IsDir() && (file == "build" || strings.HasPrefix(entry.Name(), ".")) && file != "." {
+			return fs.SkipDir
+		}
+		if strings.HasSuffix(file, ".go") {
+			if details, err := entry.Info(); err == nil && details.ModTime().After(built) {
+				changed = true
+			}
+		}
+		return nil
+	})
+	return changed
+}
+
 // Built is what a build made: the program, and the notices of what it carries.
 type Built struct{ Program, Notices string }
 
 // BuildDesktop builds the game for this computer into build/.
 func (project *Project) BuildDesktop() (Built, error) {
 	output := project.Path(path.Join("build", build.FileName(project.Settings.Name)+build.ExecutableSuffix()))
-	if err := build.Run(project.Folder, nil, build.GoTool(), "build", "-o", output, "."); err != nil {
+	if err := project.Tidy(); err != nil {
 		return Built{}, err
 	}
-	notices, err := writeNotices(project.Path("build"), notices.Desktop)
-	return Built{Program: output, Notices: notices}, err
+	if err := build.Run(project.Folder, nil, build.GoTool(), append(append([]string{"build", "-tags", "release"}, project.EngineFlags()...), "-o", output, ".")...); err != nil {
+		return Built{}, err
+	}
+	noticesFile, err := writeNotices(project.Path("build"), notices.Desktop)
+	return Built{Program: output, Notices: noticesFile}, err
 }
 
 // Build3DS builds the game for the Nintendo 3DS into build/, with TinyGo.
 func (project *Project) Build3DS() (Built, error) {
-	tinygo, err := build.TinyGoTool()
+	tinygo, err := project.Tools.FindTinyGo()
 	if err != nil {
 		return Built{}, err
 	}
 	output := project.Path(path.Join("build", build.FileName(project.Settings.Name)+".3dsx"))
-	environment := []string{"GOFLAGS=-buildvcs=false", build.GoOnPath()}
-	if err := build.Run(project.Folder, environment, tinygo, "build", "-target=nintendo3ds", "-o", output, "."); err != nil {
+	if err := project.Tidy(); err != nil {
 		return Built{}, err
 	}
-	notices, err := writeNotices(project.Path("build"), notices.Console)
-	return Built{Program: output, Notices: notices}, err
+	environment := []string{"GOFLAGS=-buildvcs=false", build.GoOnPath()}
+	if project.Tools.DevkitPro != "" {
+		environment = append(environment, "DEVKITPRO="+project.Tools.DevkitPro) // tinygo-3ds finds devkitPro there
+	}
+	if err := build.Run(project.Folder, environment, tinygo, append(append([]string{"build", "-target=nintendo3ds"}, project.EngineFlags()...), "-o", output, ".")...); err != nil {
+		return Built{}, err
+	}
+	noticesFile, err := writeNotices(project.Path("build"), notices.Console)
+	return Built{Program: output, Notices: noticesFile}, err
 }
 
 func writeNotices(folder string, notices []byte) (string, error) {
@@ -209,15 +327,15 @@ func (project *Project) OpenCode() (string, error) {
 		}
 	}
 	if editor == "" {
-		return "", errors.New("no code editor found: set codeEditor in engine.json (\"code\", \"zed\", \"nvim\"…) or $VISUAL")
+		return "", CodeEditorNotFound
 	}
 	words := strings.Fields(editor)
 	if isTerminalEditor(words[0]) {
 		terminal, found := findTerminal()
 		if !found {
-			return "", fmt.Errorf("%s runs in a terminal, and no terminal was found: open the project in it yourself (%s)", words[0], project.Folder)
+			return "", failure.Wrap(TerminalNotFound, words[0]+", "+project.Folder, nil)
 		}
-		words = append([]string{terminal, "-e"}, words...)
+		words = append(append([]string{terminal}, terminalArguments(terminal)...), words...)
 	}
 	command := exec.Command(words[0], append(words[1:], project.Folder)...)
 	command.Dir = project.Folder
@@ -234,18 +352,6 @@ func isTerminalEditor(program string) bool {
 		return true
 	}
 	return false
-}
-
-func findTerminal() (string, bool) {
-	for _, terminal := range []string{os.Getenv("TERMINAL"), "x-terminal-emulator", "kitty", "alacritty", "wezterm", "gnome-terminal", "konsole", "xterm"} {
-		if terminal == "" {
-			continue
-		}
-		if found, err := exec.LookPath(terminal); err == nil {
-			return found, true
-		}
-	}
-	return "", false
 }
 
 func writeFile(file string, data []byte) error {

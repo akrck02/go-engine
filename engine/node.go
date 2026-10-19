@@ -22,7 +22,8 @@ import (
 	"github.com/akrck02/go-renderer/graphics"
 	"github.com/akrck02/go-renderer/scene"
 
-	"github.com/akrck02/go-engine/scenes"
+	"github.com/akrck02/go-engine/physics"
+	"github.com/akrck02/go-engine/scenefile"
 	"github.com/akrck02/go-engine/shapes"
 	"github.com/akrck02/go-engine/space"
 )
@@ -36,11 +37,25 @@ type Node struct {
 	shape  string
 	colour string
 	model  string
-	camera *scenes.Camera
+	sprite string
+	camera *scenefile.Camera
+
+	// a 2D scene's parts, kept as the scene file has them
+	body  *scenefile.Body
+	sheet *scenefile.SpriteSheet
+	tiles *scenefile.TileMap
+
+	startWith  string              // the animation it starts with, when not its sprite's own
+	playing    scenefile.Animation // the sheet's animation playing, while the game plays
+	playingFor float64             // seconds it has played
+	facingLeft bool
+
+	physicsBody *physics.Body   // the body in the scene's physics, while it plays
+	tileBodies  []*physics.Body // a tile map's solid boxes, while it plays
 
 	// Behaviours are the game's code attached to the node, as the scene file keeps them; while the
 	// game runs, behaviours holds them made.
-	Behaviours []scenes.Behaviour
+	Behaviours []scenefile.Behaviour
 	behaviours []any
 
 	parent   *Node
@@ -114,6 +129,9 @@ func (node *Node) Add(child *Node) {
 	node.children = append(node.children, child)
 	node.render.Children = append(node.render.Children, child.render)
 	child.Walk(func(each *Node) bool { each.scene = node.scene; return true })
+	if node.scene.physics != nil {
+		node.scene.addBodies(child) // made while the scene plays, or moved from another: bodies it lacks
+	}
 }
 
 // Insert hangs a node from this one at a place among its children.
@@ -125,8 +143,12 @@ func (node *Node) Insert(child *Node, at int) {
 	node.rebuildRenderChildren()
 }
 
-// Remove takes the node, and what hangs from it, out of its scene.
-func (node *Node) Remove() { node.detach() }
+// Remove takes the node, and what hangs from it, out of its scene, and their bodies out of its
+// physics.
+func (node *Node) Remove() {
+	node.scene.removeBodies(node)
+	node.detach()
+}
 
 // Index is where the node is among its parent's children.
 func (node *Node) Index() int {
@@ -188,7 +210,7 @@ func (node *Node) World() space.Transform {
 	if node.parent == nil {
 		return node.Transform
 	}
-	return node.parent.World().Then(node.Transform)
+	return node.parent.World().Place(node.Transform)
 }
 
 // worldMatrix is World as go-renderer's matrix, multiplied the way go-renderer walks its nodes.
@@ -208,8 +230,26 @@ func (node *Node) Colour() string { return node.colour }
 // Model is the model the node shows, by its path in the project, or "".
 func (node *Node) Model() string { return node.model }
 
+// Sprite is the picture the node shows in a 2D scene, by its path in the project, or "".
+func (node *Node) Sprite() string { return node.sprite }
+
+// SetSprite makes the node show a picture of the project's, or a sprite's file, in a 2D scene.
+func (node *Node) SetSprite(path string) error {
+	node.sprite = path
+	if path == "" {
+		return nil
+	}
+	if scenefile.IsSpriteFile(path) {
+		if _, err := node.scene.assets.spriteFile(path); err != nil {
+			return err
+		}
+	}
+	_, err := node.scene.assets.image(node.picture())
+	return err
+}
+
 // Camera is the node's camera settings, if it is a camera.
-func (node *Node) Camera() (*scenes.Camera, bool) { return node.camera, node.camera != nil }
+func (node *Node) Camera() (*scenefile.Camera, bool) { return node.camera, node.camera != nil }
 
 // SetShape makes the node a shape of a colour ("" for no shape).
 func (node *Node) SetShape(shape, colour string) {
@@ -224,7 +264,7 @@ func (node *Node) SetModel(path string) error {
 }
 
 // SetCamera makes the node a camera, or no longer one with nil.
-func (node *Node) SetCamera(camera *scenes.Camera) {
+func (node *Node) SetCamera(camera *scenefile.Camera) {
 	node.camera = camera
 	node.rebuild()
 }
@@ -232,6 +272,10 @@ func (node *Node) SetCamera(camera *scenes.Camera) {
 // rebuild makes the node's geometry again after what it shows changed.
 func (node *Node) rebuild() {
 	node.geometry, node.helper = nil, nil
+	if node.scene.Is2D() {
+		node.rebuildRenderChildren() // a 2D scene is drawn flat, by Draw2D
+		return
+	}
 	if node.shape != "" {
 		mesh := shapes.Mesh(node.shape, node.scene.material(node.colour))
 		if mesh != nil {
@@ -249,7 +293,7 @@ func (node *Node) rebuild() {
 func (node *Node) rebuildModel() error {
 	node.geometry, node.helper = nil, nil
 	defer node.rebuildRenderChildren()
-	if node.model == "" {
+	if node.model == "" || node.scene.Is2D() {
 		return nil
 	}
 	model, err := node.scene.assets.model(node.model)
@@ -278,6 +322,9 @@ func cloneRenderNode(original *scene.Node) *scene.Node {
 // Bounds is the box, in the world, around what the node itself shows (not its children); empty
 // for a node that shows nothing.
 func (node *Node) Bounds() space.Box {
+	if node.scene.Is2D() {
+		return node.flatBounds()
+	}
 	box := space.EmptyBox()
 	world := node.worldMatrix()
 	for _, own := range []*scene.Node{node.geometry, node.helper} {
@@ -297,11 +344,11 @@ func renderBounds(node *scene.Node, parent graphics.Mat4) space.Box {
 	world := parent.Multiply(node.Transform)
 	if node.Mesh != nil && node.Mesh.VertexCount() > 0 {
 		minimum, maximum := node.Mesh.Bounds()
-		local := space.Box{Minimum: space.V(float64(minimum[0]), float64(minimum[1]), float64(minimum[2])),
-			Maximum: space.V(float64(maximum[0]), float64(maximum[1]), float64(maximum[2]))}
+		local := space.Box{Minimum: space.NewVector(float64(minimum[0]), float64(minimum[1]), float64(minimum[2])),
+			Maximum: space.NewVector(float64(maximum[0]), float64(maximum[1]), float64(maximum[2]))}
 		for _, corner := range local.Corners() {
 			point := world.Apply(graphics.Vec4{float32(corner.X), float32(corner.Y), float32(corner.Z), 1})
-			box = box.Grow(space.V(float64(point[0]), float64(point[1]), float64(point[2])))
+			box = box.Grow(space.NewVector(float64(point[0]), float64(point[1]), float64(point[2])))
 		}
 	}
 	for _, child := range node.Children {
