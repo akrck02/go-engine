@@ -1,0 +1,27 @@
+package engine
+
+import (
+	"testing"
+	"testing/fstest"
+)
+
+func TestTheMenuListsTheScenesByTheirNames(test *testing.T) {
+	files := fstest.MapFS{
+		"scenes/level-1.scene.json": {Data: []byte(`{"name": "The harbour", "mode": "2d", "nodes": []}`)},
+		"scenes/level-2.scene.json": {Data: []byte(`{"mode": "2d", "nodes": []}`)},
+		"scenes/notes.txt":          {Data: []byte("not a scene")},
+	}
+	scenes := scenesOf(files)
+	if len(scenes) != 2 || scenes[0] != (menuScene{"scenes/level-1.scene.json", "The harbour"}) ||
+		scenes[1] != (menuScene{"scenes/level-2.scene.json", "level-2"}) {
+		test.Fatalf("the menu offers %+v", scenes)
+	}
+}
+
+func TestChoosingASceneOfTheMenuPlaysItNext(test *testing.T) {
+	game := &runner{played: platform(test)}
+	game.choose("scenes/level-2.scene.json")
+	if game.played.changeRequested != "scenes/level-2.scene.json" {
+		test.Fatalf("choosing a scene asks for %q", game.played.changeRequested)
+	}
+}

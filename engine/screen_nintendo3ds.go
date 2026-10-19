@@ -25,8 +25,31 @@ func drawOver(played *Scene, _ *input.State, flat *draw2d.List) {
 // flatNeedsScene is true on the console: a 2D scene is drawn over the top screen's scene.
 const flatNeedsScene = true
 
-// interfaceFor is the bottom screen's interface: nothing yet.
-func interfaceFor(*runner) func(context *ui.Context) { return func(*ui.Context) {} }
+// interfaceFor is the bottom screen's interface: the menu of scenes, when the game has one.
+func interfaceFor(game *runner) func(context *ui.Context) {
+	return func(context *ui.Context) {
+		if len(game.menu) == 0 {
+			return
+		}
+		context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Height: ui.Grow(), Padding: ui.Pad(menuPadding), Gap: menuGap}, func() {
+			context.Heading(game.name)
+			context.Caption("Touch a scene to play it")
+			for _, scene := range game.menu {
+				context.Push(scene.File)
+				if context.Selectable("map", scene.Name, game.played.Name == scene.Name) {
+					game.choose(scene.File)
+				}
+				context.Pop()
+			}
+		})
+	}
+}
+
+// The menu's measures, in the bottom screen's pixels.
+const (
+	menuPadding = 10
+	menuGap     = 4
+)
 
 // consoleKeys is the game's keys on the console: the cross as the arrow keys and A as Space, read
 // from the console itself, whatever the bottom screen's interface did with them (consoleInput).

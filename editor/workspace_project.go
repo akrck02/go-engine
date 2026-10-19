@@ -41,6 +41,7 @@ type projectView struct {
 	editor   string
 	android  string // the application id on Android; empty makes one from the name
 	console  string // the 3DS's address on the network; empty looks for it
+	menu     bool   // the 3DS's bottom screen lists the scenes
 	start    int    // the start scene, by its place among the scenes
 }
 
@@ -337,6 +338,7 @@ func (view *View) openSettings() {
 	settings := view.Editor.Project.Settings
 	view.project.settings, view.project.name, view.project.editor = true, settings.Name, settings.CodeEditor
 	view.project.android, view.project.console = settings.AndroidID, settings.ConsoleAddress
+	view.project.menu = settings.SceneMenu
 	view.project.start = max(0, indexOf(view.Editor.Project.Scenes(), settings.StartScene))
 }
 
@@ -360,9 +362,11 @@ func (view *View) settingsPanel(context *ui.Context) {
 	context.TextField("Android id", &view.project.android)
 	context.Caption("The 3DS's address, to send the game to; empty looks for it on the network")
 	context.TextField("Console address", &view.project.console)
+	context.Checkbox("List the scenes on the 3DS's bottom screen, to play any", &view.project.menu)
 	if context.PrimaryIconButton(iconSave, "Save settings") {
 		settings.Name, settings.CodeEditor = strings.TrimSpace(view.project.name), strings.TrimSpace(view.project.editor)
 		settings.AndroidID, settings.ConsoleAddress = strings.TrimSpace(view.project.android), strings.TrimSpace(view.project.console)
+		settings.SceneMenu = view.project.menu
 		if view.project.start < len(scenes) {
 			settings.StartScene = scenes[view.project.start]
 		}
