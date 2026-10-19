@@ -16,8 +16,9 @@ import (
 	"github.com/akrck02/go-ui/window"
 )
 
-// The Build workspace: one card for each place the game runs, with its last build and what can be
-// done; the chosen target's log beside them, kept until its next build.
+// The Build workspace: two tabs, one with a card for each place the game runs (its last build and
+// what can be done), one with the tools of this computer that build for them; the chosen target's
+// log beside both, kept until its next build.
 
 // The Build workspace's measures, in pixels.
 const (
@@ -27,14 +28,25 @@ const (
 	cardIconSize    = 22
 	stateIconSize   = 16
 	buildLogWidth   = 460
+	buildTabsWidth  = 240
 	bytesInMegabyte = 1 << 20
 )
 
 // playLogRefresh is how often the log of a game playing elsewhere is shown again.
 const playLogRefresh = 250 * time.Millisecond
 
+// buildTab is a tab of the Build workspace.
+type buildTab int
+
+// The Build workspace's tabs, in the order they are shown.
+const (
+	platformsTab buildTab = iota
+	toolsTab
+)
+
 // buildView is what the Build workspace remembers between frames.
 type buildView struct {
+	tab         buildTab    // the tab shown
 	shown       BuildTarget // the target whose log is shown
 	tools       build.Tools // the tools' places as typed, kept when saved
 	toolsFilled bool        // tools was filled with the places kept, to be typed over
@@ -46,16 +58,36 @@ func (view *View) buildWorkspace(context *ui.Context) {
 		panel(context, "Targets", ui.Grow(), func() {
 			context.Heading("Build the game")
 			note(context, "Every build leaves the editor out of the game (-tags release) and writes, beside the program, the notices of the code it carries.")
-			context.Box(ui.Layout{Width: ui.Grow(), Gap: targetCardGap, Wrap: true}, func() {
-				for _, target := range BuildTargets {
-					view.targetCard(context, target)
-				}
-			})
-			view.toolsSection(context)
+			view.buildTabs(context)
+			switch view.build.tab {
+			case platformsTab:
+				view.targetCards(context)
+			case toolsTab:
+				view.toolsSection(context)
+			}
 			view.licenceSheet(context)
 		})
 		context.Separator()
 		panel(context, "Build log", ui.Fixed(buildLogWidth), func() { view.buildLog(context) })
+	})
+}
+
+// buildTabs choose between the places the game is built for and the tools that build it.
+func (view *View) buildTabs(context *ui.Context) {
+	tab := int(view.build.tab)
+	context.Box(ui.Layout{Width: ui.Fixed(buildTabsWidth)}, func() {
+		if context.Tabs("Build tab", &tab, "Platforms", "Tools") {
+			view.build.tab = buildTab(tab)
+		}
+	})
+}
+
+// targetCards are a card for each place the game runs.
+func (view *View) targetCards(context *ui.Context) {
+	context.Box(ui.Layout{Width: ui.Grow(), Gap: targetCardGap, Wrap: true}, func() {
+		for _, target := range BuildTargets {
+			view.targetCard(context, target)
+		}
 	})
 }
 
