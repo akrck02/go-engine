@@ -1,0 +1,17 @@
+{
+	"picture": "assets/sprites/forest-tileset.png",
+	"tileSize": 16,
+	"solid": [
+		14,
+		15,
+		16,
+		17,
+		20,
+		25,
+		37,
+		42,
+		49,
+		50,
+		54
+	]
+}

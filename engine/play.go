@@ -25,6 +25,8 @@ func (owner *Scene) Start() []error {
 		return nil
 	}
 	owner.started = true
+	defer owner.startPhysics()
+	defer owner.startAnimations(owner.Root)
 	var problems []error
 	owner.Root.Walk(func(node *Node) bool {
 		for _, description := range node.Behaviours {
@@ -42,36 +44,56 @@ func (owner *Scene) Start() []error {
 }
 
 // Update moves the scene on by some seconds: behaviours that were just made start, every
-// behaviour updates, the tweens move, and what go-renderer draws follows.
+// behaviour updates, the bodies of a 2D scene move, the tweens move, and what go-renderer draws
+// follows. A frame allocates nothing it can avoid.
 func (owner *Scene) Update(seconds float64, keys *input.State) {
 	owner.Start()
 	owner.clock += seconds
-	context := &Context{Scene: owner, Delta: seconds, Time: owner.clock, Input: &Input{state: keys}}
+	owner.input.state = keys
+	owner.context = Context{Scene: owner, Delta: seconds, Time: owner.clock, Input: &owner.input}
+	owner.startPending()
+	owner.updateBehaviours()
+	owner.stepPhysics(seconds)
+	owner.advanceAnimations(owner.Root, seconds)
+	owner.followTargets(seconds)
+	owner.Animate.Update(seconds)
+	owner.Sync()
+}
+
+// startPending runs Start on the behaviours made since the last frame.
+func (owner *Scene) startPending() {
 	starting := owner.pendingStarts
 	owner.pendingStarts = nil
 	for _, pending := range starting {
 		if starter, found := pending.behaviour.(Starter); found {
-			context.Node = pending.node
-			starter.Start(context)
+			owner.context.Node = pending.node
+			starter.Start(&owner.context)
 		}
 	}
-	var updating []*Node
-	owner.Root.Walk(func(node *Node) bool {
-		if len(node.behaviours) > 0 {
-			updating = append(updating, node)
-		}
-		return true
-	})
-	for _, node := range updating {
-		context.Node = node
+}
+
+// updateBehaviours runs Update on every behaviour, node by node in the scene's order.
+func (owner *Scene) updateBehaviours() {
+	owner.updating = owner.collectBehaving(owner.updating[:0], owner.Root)
+	for _, node := range owner.updating {
+		owner.context.Node = node
 		for _, behaviour := range node.behaviours {
 			if updater, found := behaviour.(Updater); found {
-				updater.Update(context)
+				updater.Update(&owner.context)
 			}
 		}
 	}
-	owner.Animate.Update(seconds)
-	owner.Sync()
+}
+
+// collectBehaving lists the nodes with behaviours, a node before its children.
+func (owner *Scene) collectBehaving(nodes []*Node, node *Node) []*Node {
+	if len(node.behaviours) > 0 {
+		nodes = append(nodes, node)
+	}
+	for _, child := range node.children {
+		nodes = owner.collectBehaving(nodes, child)
+	}
+	return nodes
 }
 
 // Input is the keyboard, the mouse and the controls, as the game reads them.
@@ -95,14 +117,14 @@ func (keys *Input) Axis(negative, positive Key) float64 {
 
 // Move is the direction the arrows (or WASD, or a 3DS's cross and circle pad) point, on the
 // ground: right is +X, up is Forward (-Z). Its length is at most 1.
-func (keys *Input) Move() space.Vec3 {
+func (keys *Input) Move() space.Vector {
 	x := keys.Axis(KeyLeft, KeyRight) + keys.Axis(KeyA, KeyD)
 	forward := keys.Axis(KeyDown, KeyUp) + keys.Axis(KeyS, KeyW)
 	if keys.state != nil {
 		x += keys.state.StickX
 		forward -= keys.state.StickY
 	}
-	direction := space.V(x, 0, -forward)
+	direction := space.NewVector(x, 0, -forward)
 	if direction.Length() > 1 {
 		direction = direction.Normalized()
 	}

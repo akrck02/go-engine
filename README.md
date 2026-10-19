@@ -6,7 +6,7 @@
 A game engine in Go, with an editor, for 2D, 3D and isometric games on the desktop and the
 **Nintendo 3DS**. A game is an ordinary Go module: the editor arranges its scenes and imports its
 models, and the game's code, written in Zed, Neovim, Visual Studio Code or any editor that speaks
-Go, moves them through a small standard library (`engine`, `space`, `anim`). It is built on the
+Go, moves them through a small standard library (`engine`, `space`, `animation`). It is built on the
 author's own libraries: [go-renderer](https://github.com/akrck02/go-renderer) draws,
 [go-ui](https://github.com/akrck02/go-ui) is the editor's window, and
 [tinygo-3ds](https://github.com/akrck02/tinygo-3ds) builds for the console.
@@ -21,8 +21,9 @@ go run ./cmd/go-engine ~/games/harbour
 go test ./...
 ```
 
-**Status:** early (October 2026): an editable 3D scene, imported `.glb` models, the coordinates
-and scales, behaviours in Go, play and build for the desktop and the 3DS. Everything is in
+**Status:** early (October 2026): editable 3D and 2D scenes, `.glb` models and sprites from the
+project's assets, the coordinates and scales, behaviours in Go played in the editor's view, and
+builds for the desktop and the 3DS. Everything is in
 [docs/](docs/README.md).
 
 ## License

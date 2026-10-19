@@ -1,0 +1,26 @@
+{
+	"picture": "assets/sprites/slime.png",
+	"columns": 5,
+	"rows": 2,
+	"animations": [
+		{
+			"name": "idle",
+			"frames": [
+				0
+			],
+			"framesPerSecond": 1
+		},
+		{
+			"name": "walk",
+			"frames": [
+				0,
+				1,
+				2,
+				3
+			],
+			"framesPerSecond": 3,
+			"loop": true
+		}
+	],
+	"start": "idle"
+}

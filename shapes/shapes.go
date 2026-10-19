@@ -56,17 +56,17 @@ func (build *builder) quad(corners [4][3]float64, normal [3]float64) {
 // Cube is a cube a metre a side.
 func Cube() *scene.Mesh {
 	var build builder
-	const h = 0.5
+	const half = 0.5
 	faces := []struct {
 		normal  [3]float64
 		corners [4][3]float64
 	}{
-		{[3]float64{1, 0, 0}, [4][3]float64{{h, -h, h}, {h, -h, -h}, {h, h, -h}, {h, h, h}}},
-		{[3]float64{-1, 0, 0}, [4][3]float64{{-h, -h, -h}, {-h, -h, h}, {-h, h, h}, {-h, h, -h}}},
-		{[3]float64{0, 1, 0}, [4][3]float64{{-h, h, h}, {h, h, h}, {h, h, -h}, {-h, h, -h}}},
-		{[3]float64{0, -1, 0}, [4][3]float64{{-h, -h, -h}, {h, -h, -h}, {h, -h, h}, {-h, -h, h}}},
-		{[3]float64{0, 0, 1}, [4][3]float64{{-h, -h, h}, {h, -h, h}, {h, h, h}, {-h, h, h}}},
-		{[3]float64{0, 0, -1}, [4][3]float64{{h, -h, -h}, {-h, -h, -h}, {-h, h, -h}, {h, h, -h}}},
+		{[3]float64{1, 0, 0}, [4][3]float64{{half, -half, half}, {half, -half, -half}, {half, half, -half}, {half, half, half}}},
+		{[3]float64{-1, 0, 0}, [4][3]float64{{-half, -half, -half}, {-half, -half, half}, {-half, half, half}, {-half, half, -half}}},
+		{[3]float64{0, 1, 0}, [4][3]float64{{-half, half, half}, {half, half, half}, {half, half, -half}, {-half, half, -half}}},
+		{[3]float64{0, -1, 0}, [4][3]float64{{-half, -half, -half}, {half, -half, -half}, {half, -half, half}, {-half, -half, half}}},
+		{[3]float64{0, 0, 1}, [4][3]float64{{-half, -half, half}, {half, -half, half}, {half, half, half}, {-half, half, half}}},
+		{[3]float64{0, 0, -1}, [4][3]float64{{half, -half, -half}, {-half, -half, -half}, {-half, half, -half}, {half, half, -half}}},
 	}
 	for _, face := range faces {
 		build.quad(face.corners, face.normal)
@@ -77,8 +77,8 @@ func Cube() *scene.Mesh {
 // Plane is a square a metre a side, lying flat and facing up.
 func Plane() *scene.Mesh {
 	var build builder
-	const h = 0.5
-	build.quad([4][3]float64{{-h, 0, h}, {h, 0, h}, {h, 0, -h}, {-h, 0, -h}}, [3]float64{0, 1, 0})
+	const half = 0.5
+	build.quad([4][3]float64{{-half, 0, half}, {half, 0, half}, {half, 0, -half}, {-half, 0, -half}}, [3]float64{0, 1, 0})
 	return &build.mesh
 }
 
@@ -107,17 +107,17 @@ func Sphere(slices, rings int) *scene.Mesh {
 // Cylinder is a cylinder a metre across and a metre high, standing up, of some sides.
 func Cylinder(sides int) *scene.Mesh {
 	var build builder
-	const h = 0.5
+	const half = 0.5
 	for side := 0; side < sides; side++ {
 		from := 2 * math.Pi * float64(side) / float64(sides)
 		to := 2 * math.Pi * float64(side+1) / float64(sides)
-		x0, z0 := math.Cos(from)/2, -math.Sin(from)/2
-		x1, z1 := math.Cos(to)/2, -math.Sin(to)/2
+		fromX, fromZ := math.Cos(from)/2, -math.Sin(from)/2
+		toX, toZ := math.Cos(to)/2, -math.Sin(to)/2
 		middle := (from + to) / 2
-		build.quad([4][3]float64{{x0, -h, z0}, {x1, -h, z1}, {x1, h, z1}, {x0, h, z0}}, [3]float64{math.Cos(middle), 0, -math.Sin(middle)})
-		top := [3]uint32{build.vertex(0, h, 0, 0, 1, 0), build.vertex(x0, h, z0, 0, 1, 0), build.vertex(x1, h, z1, 0, 1, 0)}
+		build.quad([4][3]float64{{fromX, -half, fromZ}, {toX, -half, toZ}, {toX, half, toZ}, {fromX, half, fromZ}}, [3]float64{math.Cos(middle), 0, -math.Sin(middle)})
+		top := [3]uint32{build.vertex(0, half, 0, 0, 1, 0), build.vertex(fromX, half, fromZ, 0, 1, 0), build.vertex(toX, half, toZ, 0, 1, 0)}
 		build.triangle(top[0], top[1], top[2])
-		bottom := [3]uint32{build.vertex(0, -h, 0, 0, -1, 0), build.vertex(x1, -h, z1, 0, -1, 0), build.vertex(x0, -h, z0, 0, -1, 0)}
+		bottom := [3]uint32{build.vertex(0, -half, 0, 0, -1, 0), build.vertex(toX, -half, toZ, 0, -1, 0), build.vertex(fromX, -half, fromZ, 0, -1, 0)}
 		build.triangle(bottom[0], bottom[1], bottom[2])
 	}
 	return &build.mesh
