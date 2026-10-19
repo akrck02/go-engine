@@ -192,3 +192,24 @@ func TestAPlatformsNodeCarriesTheNodeOnIt(test *testing.T) {
 		test.Fatalf("the lift's node is at %v and the rider's at %v: the rider was not carried", liftX, riderX)
 	}
 }
+
+func TestANodeInAGravityZoneFallsItsWay(test *testing.T) {
+	description := &scenefile.Scene{Name: "Field", Mode: scenefile.Mode2D, Nodes: []scenefile.Node{
+		{Name: "Ceiling", Shape: "cube", Position: [3]float64{0, 6.5, 0}, Scale: [3]float64{20, 1, 1},
+			Body: &scenefile.Body{Kind: scenefile.Solid}},
+		{Name: "Field", Shape: "cube", Position: [3]float64{0, 3, 0}, Scale: [3]float64{10, 10, 1},
+			Body: &scenefile.Body{Kind: scenefile.Trigger, Pull: &[2]float64{0, 9.81}}},
+		{Name: "Crate", Shape: "cube", Position: [3]float64{0, 1, 0}, Scale: [3]float64{1, 1, 1},
+			Body: &scenefile.Body{Kind: scenefile.Moving}},
+	}}
+	scene, err := Build(nil, description)
+	if err != nil {
+		test.Fatal(err)
+	}
+	scene.Start()
+	playFor(scene, 2)
+	crate, _ := scene.Find("Crate")
+	if top := crate.World().Position.Y + 0.5; math.Abs(top-6) > 1e-6 {
+		test.Fatalf("the crate's top is at %v: the field should pull it up to the ceiling at 6", top)
+	}
+}

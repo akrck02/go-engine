@@ -15,6 +15,10 @@ type Body struct {
 	Size [2]float64 `json:"size,omitempty"` // width and height in metres; zero is the node's own sprite or shape
 	// GravityScale is how much gravity pulls a moving body: 1 (the default) fully, 0 not at all.
 	GravityScale *float64 `json:"gravityScale,omitempty"`
+	// Pull, on a trigger, is the gravity of the area it covers, in metres a second each second
+	// across and up: the falling bodies inside are pulled this way instead of the world's. Nil
+	// leaves the world's.
+	Pull *[2]float64 `json:"gravity,omitempty"`
 }
 
 // BodyKind is what a body does: as physics.Kind, by name.

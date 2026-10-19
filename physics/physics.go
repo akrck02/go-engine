@@ -61,9 +61,18 @@ type Body struct {
 	Size         space.Vector // the box's width (X) and height (Y), in metres
 	Velocity     space.Vector // metres a second
 	GravityScale float64      // how much gravity pulls it: 1 fully, 0 not at all
+	// Gravity, on a trigger, is the gravity of the area it covers: the falling bodies inside it are
+	// pulled this way instead of the world's (a magnetic field, a room upside down). Nil leaves
+	// the world's.
+	Gravity *space.Vector
 
 	onFloor bool
+	pull    space.Vector // the gravity that pulled it in the last step
 }
+
+// Pull is the gravity that pulled the body in the last step: the world's, or the zone's it was
+// in. Its floor is the side this pulls it to.
+func (body *Body) Pull() space.Vector { return body.pull }
 
 // OnFloor tells whether the body stood on something solid in the last step.
 func (body *Body) OnFloor() bool { return body.onFloor }
@@ -88,6 +97,7 @@ type World struct {
 	wasTouching []Touch // the same, a step ago
 	begun       []Touch // the touches that began in the last step
 	riders      []*Body // the bodies standing on the platform moving, reused
+	zones       []*Body // the triggers with a gravity of their own, found again each step
 }
 
 // NewWorld makes a world with a gravity, in metres a second each second (Earth's is 9.81 down).
@@ -122,6 +132,7 @@ func (world *World) Step(seconds float64) {
 			world.movePlatform(body, seconds)
 		}
 	}
+	world.findZones()
 	for _, body := range world.bodies {
 		if body.Kind.falls() {
 			world.move(body, seconds)
@@ -134,7 +145,8 @@ func (world *World) Step(seconds float64) {
 // one axis it still slides along the other.
 func (world *World) move(body *Body, seconds float64) {
 	body.onFloor = false
-	body.Velocity = body.Velocity.Add(world.gravity.Scale(body.GravityScale * seconds))
+	body.pull = world.gravityAt(body)
+	body.Velocity = body.Velocity.Add(body.pull.Scale(body.GravityScale * seconds))
 	world.moveAlong(body, horizontal, body.Velocity.X*seconds, nil)
 	world.moveAlong(body, vertical, body.Velocity.Y*seconds, nil)
 }
@@ -206,9 +218,44 @@ func (world *World) stopAgainst(body, solid *Body, axis axis, stride float64) {
 		axis.set(&body.Position, axis.of(solid.Position)+gap)
 	}
 	axis.set(&body.Velocity, 0)
-	if axis == vertical && stride < 0 {
+	if body.floorIsAlong(axis, stride) {
 		body.onFloor = true
 	}
+}
+
+// findZones finds the triggers that have a gravity of their own, once a step: most worlds have
+// none, and then a falling body looks at none.
+func (world *World) findZones() {
+	world.zones = world.zones[:0]
+	for _, body := range world.bodies {
+		if body.Kind == Trigger && body.Gravity != nil {
+			world.zones = append(world.zones, body)
+		}
+	}
+}
+
+// gravityAt is the gravity that pulls a body: the gravity of a zone it is in, or the world's.
+func (world *World) gravityAt(body *Body) space.Vector {
+	for _, zone := range world.zones {
+		if zone.overlaps(body) {
+			return *zone.Gravity
+		}
+	}
+	return world.gravity
+}
+
+// floorIsAlong tells whether a body stopped going a way (a stride along an axis) stopped on its
+// floor: the side its gravity pulls it to, or below it when nothing pulls it.
+func (body *Body) floorIsAlong(axis axis, stride float64) bool {
+	pull := body.pull
+	if pull == space.Zero {
+		pull = space.NewVector(0, -1, 0)
+	}
+	along := vertical
+	if math.Abs(pull.X) > math.Abs(pull.Y) {
+		along = horizontal
+	}
+	return axis == along && (stride < 0) == (along.of(pull) < 0)
 }
 
 // axis is one of the two directions bodies move in.

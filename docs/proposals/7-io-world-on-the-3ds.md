@@ -71,7 +71,7 @@ session's work is); io-world in its own repository.
 
 - [x] T1 — pushable bodies · `physics`, `scenefile`, `engine` · R1 · tests of R1
 - [x] T2 — platforms · `physics`, `scenefile`, `engine` · R2 · tests of R2
-- [ ] T3 — gravity zones · `physics`, `scenefile`, `engine` · R3 · tests of R3
+- [x] T3 — gravity zones · `physics`, `scenefile`, `engine` · R3 · tests of R3
 - [ ] T4 — switching cameras, tested · `engine` · R4
 - [ ] T5 — the kinds and the gravity in Level · `editor` · R5 · capture
 - [ ] T6 — io-world: project, art, level, behaviours · new repository · R6 · captures

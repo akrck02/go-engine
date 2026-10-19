@@ -66,6 +66,10 @@ func (owner *Scene) addBody(node *Node) {
 		Kind: physicsKinds[node.body.Kind], Position: node.World().Position, Size: size,
 		GravityScale: node.body.Gravity(),
 	}
+	if pull := node.body.Pull; pull != nil && node.body.Kind == scenefile.Trigger {
+		gravity := space.NewVector(pull[0], pull[1], 0)
+		body.Gravity = &gravity
+	}
 	node.physicsBody = body
 	owner.bodyOwners[body] = node
 	owner.bodied = append(owner.bodied, node)
