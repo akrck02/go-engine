@@ -72,10 +72,10 @@ computed on the processor (does not scale, and the 3DS has a GPU for it).
 
 ## Tasks
 
-- [ ] T1 — `draw2d`: the light layer's commands and their tests · go-renderer · R1, R2
-- [ ] T2 — OpenGL: the light target and its blend; pixels compared · go-renderer · R1, R3
-- [ ] T3 — GL ES: the same for Android and the web · go-renderer · R3
-- [ ] T4 — 3DS: the light target in citro3d; Azahar captures, and a measure · go-renderer · R3, R6
+- [x] T1 — `draw2d`: the light layer's commands and their tests · go-renderer · R1, R2
+- [x] T2 — OpenGL: the light target and its blend; pixels compared · go-renderer · R1, R3
+- [x] T3 — GL ES: the same for Android and the web · go-renderer · R3
+- [x] T4 — 3DS: the light target in citro3d; Azahar captures, and a measure · go-renderer · R3, R6
 - [ ] T4b — Metal: the light target and its blends, unbuilt here · go-renderer · R3
 - [ ] T5 — `scenefile` and `engine`: lights on nodes, the ambient, drawn each frame without
   allocating · go-engine · R4, R6
