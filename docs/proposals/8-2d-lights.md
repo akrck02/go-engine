@@ -1,4 +1,4 @@
-# 8. 2D lights
+# 8. Lights, in 2D and 3D
 
 > Status: in progress · Author's approval: proposal ☑ plan ☑ (2026-10-19, "Con metal": with
 > Metal) · go-renderer's part, on its own `feature/lights` branch, is pushed only with the
@@ -27,10 +27,15 @@ one thing over another, with transparency: it has no way to add light nor to mul
 | R5 | Level shows and edits lights: an inspector for them, their radii drawn in the view, and the view lit as the game will be | captures |
 | R6 | Lights cost little: a 2D frame with lights allocates nothing, and on the 3DS a screen of eight lights keeps 60 frames a second | the allocation test; a measure in Azahar and on the console |
 | R7 | Io World's start screen has the Unity menu's seven lights, converted from `MainMenu.unity` by its script | capture; the author on the console |
+| R8 | *(Added 2026-10-19, "debe funcionar en 2D y 3D".)* A 3D node can be a point light too, with the same `light` (colour, intensity, radii) and the same fade as in 2D; a 3D scene's `ambient` scales its sky light | tests in `sceneplan` and `engine`; captures on OpenGL, GL ES and the 3DS |
+| R9 | 3D lights cost little: each draw takes at most four lights, the strongest that reach it, chosen once a frame on the processor for every backend; a frame allocates nothing for them | tests of the choice; the allocation test |
+| R10 | A lighting inside a clip lights only the clip, so a lit view inside the editor leaves the panels around it as they are | a pixel test |
 
 ## Out of scope
 
-- Shadows cast by sprites, normal maps, and lights in 3D scenes (which have their own sun).
+- Shadows cast by sprites or by 3D lights, normal maps, spot lights (a later kind of the same
+  `light`), and dynamic lights on the 3DS's GPU (its fragment lighting: 3D lights are baked into
+  vertex colours there, which suits lights that seldom move).
 - Blend modes as a general tool for programs (only what the light layer needs).
 
 ## Design
@@ -70,6 +75,17 @@ one thing over another, with transparency: it has no way to add light nor to mul
 **Io World**: `tools/make_start_screen.py` reads the Unity menu's `Light2D` components (type,
 colour, intensity, radii, the sprite a sprite light uses) into the start screen's nodes.
 
+**3D (added with R8–R9).** go-renderer's `scene` gets a list of point lights (position, linear
+colour times intensity, inner and outer radius). `sceneplan` chooses, for each draw, the four
+strongest lights whose outer sphere meets its bounds, so every backend gets the same short list.
+OpenGL and GL ES add them in their lit shading next to the sun, as Lambert light times the same
+smoothstep fade as 2D, from a fixed array of four uniforms (within OpenGL ES 2's uniform budget,
+and no light loop beyond four). The 3DS bakes them into its vertex colours with the sun, and bakes
+again when a light changes. Metal follows with T4b. The engine fills the list each frame from the
+3D nodes that are lights, and a 3D scene's `ambient` multiplies its sky light. Researched against
+Unity URP (Light2D, forward's per-object light list), Godot 4 (CanvasModulate, PointLight2D, 8+8
+lights per mesh on mobile), Bevy and the PICA200's fragment lighting.
+
 **Alternatives not taken**: drawing lights as translucent halos with no light picture (option A,
 cheap, but light cannot darken what it does not cover nor multiply colours); a light per sprite
 computed on the processor (does not scale, and the 3DS has a GPU for it).
@@ -83,5 +99,11 @@ computed on the processor (does not scale, and the 3DS has a GPU for it).
 - [ ] T4b — Metal: the light target and its blends, unbuilt here · go-renderer · R3
 - [x] T5 — `scenefile` and `engine`: lights on nodes, the ambient, drawn each frame without
   allocating · go-engine · R4, R6
-- [ ] T6 — Level: the inspector, the radii, Play lit · go-engine · R5
+- [ ] T6 — Level: the inspector (2D and 3D), the ambient, the radii and a mark for each light, Play lit · go-engine · R5
 - [ ] T7 — Io World's start screen lit from Unity's lights · go-engine-io-world · R7
+- [x] T8 — A lighting lights only its clip, on every backend; the 3DS paints its ambient instead
+  of clearing it · go-renderer · R10
+- [ ] T9 — 3D point lights: `scene`, the choice in `sceneplan`, OpenGL and GL ES shading · go-renderer · R8, R9
+- [ ] T10 — 3D lights baked on the 3DS · go-renderer · R8
+- [ ] T11 — The engine's 3D lights and ambient; the audit's 2D fixes (culling, node scale, one
+  screen rectangle) · go-engine · R8, R9
