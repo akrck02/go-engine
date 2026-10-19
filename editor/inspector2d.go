@@ -89,7 +89,7 @@ func (view *View) zonePullFields(context *ui.Context, body *scenefile.Body) {
 		return
 	}
 	pull := *body.Pull
-	context.Caption("Pull across and up, in metres a second each second (the world's is 0, -9.81)")
+	context.Caption("Pull across and up, in m/s² (the world's: 0, -9.81)")
 	across := numberField(context, "Pull across", &pull[0], zonePullLimits, "→ %.1f")
 	up := numberField(context, "Pull up", &pull[1], zonePullLimits, "↑ %.1f")
 	if across || up {
