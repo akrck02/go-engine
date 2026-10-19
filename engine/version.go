@@ -9,7 +9,7 @@ import (
 const Module = "github.com/akrck02/go-engine"
 
 // Release is the version of Go Engine being made.
-const Release = "v0.0.1"
+const Release = "v0.0.2"
 
 // localRevision is the commit of a local copy of Go Engine a game was built with (a go.work), set
 // when go-engine builds it: a local copy's build information does not say.

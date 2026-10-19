@@ -48,31 +48,38 @@ func TestAnAndroidBuildAsksForThePackage(test *testing.T) {
 	}
 }
 
-func TestAModuleKnowsItsToolsAndWhatAFolderReplaces(test *testing.T) {
+func TestAModuleKnowsItsToolsAndVersions(test *testing.T) {
 	var module moduleFile
-	printed := `{"Replace": [{"Old": {"Path": "` + uiModule + `"}, "New": {"Path": "../go-ui"}},
-		{"Old": {"Path": "example.com/other"}, "New": {"Path": "example.com/other", "Version": "v1.0.0"}}],
-		"Tool": [{"Path": "` + androidTool + `"}]}`
+	printed := `{"Require": [{"Path": "` + androidToolModule + `", "Version": "v0.1.0"}], "Tool": [{"Path": "` + androidTool + `"}]}`
 	if err := json.Unmarshal([]byte(printed), &module); err != nil {
 		test.Fatal(err)
 	}
 	if !module.hasTool(androidTool) || module.hasTool("example.com/tool") {
 		test.Error("the module's tools are not told apart")
 	}
-	if !module.replacedByFolder(uiModule) || module.replacedByFolder("example.com/other") {
-		test.Error("a replace by a folder is not told from one by a version")
+	if !module.requires(androidToolModule, "v0.1.0") || module.requires(androidToolModule, androidToolVersion) {
+		test.Error("the version a module asks for is not told apart")
 	}
 }
 
-func TestGoUIIsReplacedWithTheVersionGoEngineAsksFor(test *testing.T) {
-	graph := "game " + engineModule + "@v0.0.0\n" +
-		androidTool + "@v0.0.0-1 " + uiModule + "@v0.0.0\n" +
-		engineModule + "@v0.0.0 " + uiModule + "@v0.0.0-20261017191932-0e94481e5103\n"
-	if version, found := uiVersionIn(graph); !found || version != "v0.0.0-20261017191932-0e94481e5103" {
-		test.Errorf("the go-ui go-engine asks for is %q, %v", version, found)
+func TestOnlyTheGoUIReplaceAnEarlierEngineWroteIsStale(test *testing.T) {
+	cases := []struct {
+		replace string
+		stale   bool
+	}{
+		{`{"Old": {"Path": "` + uiModule + `", "Version": "v0.0.0"}, "New": {"Path": "` + uiModule + `", "Version": "v0.0.0-1"}}`, true},
+		{`{"Old": {"Path": "` + uiModule + `"}, "New": {"Path": "` + uiModule + `", "Version": "v0.0.0-1"}}`, true},
+		{`{"Old": {"Path": "` + uiModule + `"}, "New": {"Path": "../go-ui"}}`, false},
+		{`{"Old": {"Path": "example.com/other"}, "New": {"Path": "example.com/other", "Version": "v1.0.0"}}`, false},
 	}
-	if _, found := uiVersionIn("game example.com/other@v1.0.0\n"); found {
-		test.Error("a go-ui is found where go-engine asks for none")
+	for _, each := range cases {
+		var module moduleFile
+		if err := json.Unmarshal([]byte(`{"Replace": [`+each.replace+`]}`), &module); err != nil {
+			test.Fatal(err)
+		}
+		if module.replacesStaleUI() != each.stale {
+			test.Errorf("%s is stale: %v, not %v", each.replace, !each.stale, each.stale)
+		}
 	}
 }
 

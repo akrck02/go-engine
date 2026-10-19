@@ -15,16 +15,16 @@ import (
 // A game is built for Android with go-ui-apk, go-ui-android's tool, run as a tool of the game's
 // own module (go tool go-ui-apk) so it builds with the game's versions of go-ui and go-renderer.
 
-// The tool, the version of it go-engine builds with, go-engine and go-ui.
+// The tool, its module and the version of it go-engine builds with, and go-ui.
 const (
 	androidTool        = "github.com/akrck02/go-ui-android/cmd/go-ui-apk"
-	androidToolVersion = "v0.0.0-20261015201303-015f7fb03632"
-	engineModule       = "github.com/akrck02/go-engine"
+	androidToolModule  = "github.com/akrck02/go-ui-android"
+	androidToolVersion = "v0.1.1"
 	uiModule           = "github.com/akrck02/go-ui"
-	// uiAskedVersion is the go-ui go-ui-android asks for: v0.0.0, as it builds against a local
-	// copy. It is above every version of go-ui yet (they are all pre-releases of v0.0.0), so the
-	// game replaces it with the go-ui its go-engine asks for (keepUIReplace).
-	uiAskedVersion = "v0.0.0"
+	// staleUIVersion is the go-ui Go Engine v0.0.1 replaced in games built for Android, as
+	// go-ui-android v0.1.0 asked for go-ui v0.0.0; from go-ui-android v0.1.1 on nothing asks for
+	// it, and that replace is dropped.
+	staleUIVersion = "v0.0.0"
 )
 
 // androidProcessors are the processors the package carries a library for: phones' and the
@@ -103,55 +103,28 @@ func androidEnvironment(sdk, ndk string) []string {
 	return []string{"ANDROID_HOME=" + sdk, "ANDROID_NDK_HOME=" + ndk, "GOFLAGS=" + flags, build.GoOnPath()}
 }
 
-// addAndroidTool adds go-ui-apk to the game's module when missing, with go-ui's replace it needs.
+// addAndroidTool adds go-ui-apk at go-engine's version of it to the game's module, when it is
+// missing or at another, and drops the go-ui replace an earlier go-engine wrote for it.
 func (project *Project) addAndroidTool() error {
 	module, err := project.readModule()
 	if err != nil {
 		return err
 	}
-	if err := project.keepUIReplace(module); err != nil {
-		return err
+	if module.replacesStaleUI() {
+		replaced := uiModule + "@" + staleUIVersion
+		if err := build.Run(project.Folder, nil, build.GoTool(), "mod", "edit", "-dropreplace="+replaced, "-dropreplace="+uiModule); err != nil {
+			return err
+		}
 	}
-	if module.hasTool(androidTool) {
+	if module.hasTool(androidTool) && module.requires(androidToolModule, androidToolVersion) {
 		return nil
 	}
 	return build.Run(project.Folder, nil, build.GoTool(), "get", "-tool", androidTool+"@"+androidToolVersion)
 }
 
-// keepUIReplace replaces the go-ui go-ui-android asks for with the one the game's go-engine asks
-// for, written again on every build: a go-engine of another version asks for another go-ui. A
-// go-ui the game replaces with a folder of its own is kept.
-func (project *Project) keepUIReplace(module moduleFile) error {
-	if module.replacedByFolder(uiModule) {
-		return nil
-	}
-	graph, err := build.Output(project.Folder, nil, build.GoTool(), "mod", "graph")
-	if err != nil {
-		return err
-	}
-	version, found := uiVersionIn(graph)
-	if !found {
-		return nil // the game asks for no go-engine that asks for go-ui: nothing to keep
-	}
-	return build.Run(project.Folder, nil, build.GoTool(), "mod", "edit",
-		"-dropreplace="+uiModule, "-dropreplace="+uiModule+"@"+uiAskedVersion,
-		"-replace="+uiModule+"@"+uiAskedVersion+"="+uiModule+"@"+version)
-}
-
-// uiVersionIn is the go-ui go-engine asks for, in what go mod graph prints.
-func uiVersionIn(graph string) (string, bool) {
-	for line := range strings.Lines(graph) {
-		asker, asked, found := strings.Cut(strings.TrimSpace(line), " ")
-		version, isUI := strings.CutPrefix(asked, uiModule+"@")
-		if found && isUI && strings.HasPrefix(asker, engineModule+"@") && version != uiAskedVersion {
-			return version, true
-		}
-	}
-	return "", false
-}
-
 // moduleFile is what go mod edit -json says of a go.mod.
 type moduleFile struct {
+	Require []struct{ Path, Version string }
 	Replace []struct {
 		Old, New struct{ Path, Version string }
 	}
@@ -178,10 +151,23 @@ func (module moduleFile) hasTool(tool string) bool {
 	return false
 }
 
-// replacedByFolder tells whether the module replaces another with a folder.
-func (module moduleFile) replacedByFolder(replaced string) bool {
+// requires tells whether the module asks for another at a version.
+func (module moduleFile) requires(path, version string) bool {
+	for _, each := range module.Require {
+		if each.Path == path && each.Version == version {
+			return true
+		}
+	}
+	return false
+}
+
+// replacesStaleUI tells whether the module has the go-ui replace an earlier go-engine wrote for
+// Android: go-ui, or go-ui at staleUIVersion, replaced by a version of go-ui (not a folder of the
+// person's own, which is kept).
+func (module moduleFile) replacesStaleUI() bool {
 	for _, each := range module.Replace {
-		if each.Old.Path == replaced && each.New.Version == "" {
+		stale := each.Old.Version == "" || each.Old.Version == staleUIVersion
+		if each.Old.Path == uiModule && stale && each.New.Path == uiModule && each.New.Version != "" {
 			return true
 		}
 	}
