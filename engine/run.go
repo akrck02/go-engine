@@ -73,7 +73,7 @@ func Run(files fs.FS) error {
 		slog.Warn("a behaviour could not be made", "error", problem)
 	}
 	game := &runner{played: played, name: settings.Name}
-	if settings.SceneMenu {
+	if settings.SceneMenu || bottomScreen != nil {
 		game.menu = scenesOf(files)
 	}
 	return game.run(settings.Name)
@@ -100,7 +100,7 @@ type runner struct {
 	console consoleInput     // the console's buttons, as keys
 	view    window.SceneView // what the window shows this frame
 	name    string           // the game's
-	menu    []menuScene      // the scenes the bottom screen offers, when the settings ask for it
+	menu    []MenuScene      // the scenes the bottom screen offers, when it offers them
 }
 
 // run opens the window and plays until it is closed.
