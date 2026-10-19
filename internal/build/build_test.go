@@ -1,6 +1,8 @@
 package build
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -22,9 +24,24 @@ func TestAModuleBuildsAgainstThisSource(test *testing.T) {
 	if err != nil {
 		test.Fatal(err)
 	}
-	for _, want := range []string{"module example/game", "replace github.com/akrck02/go-engine => " + source, "replace github.com/akrck02/go-renderer =>"} {
+	for _, want := range []string{"module example/game", "replace github.com/akrck02/go-engine => " + source} {
 		if !strings.Contains(module, want) {
 			test.Errorf("go.mod lacks %q:\n%s", want, module)
 		}
+	}
+}
+
+func TestAModuleRepeatsGoEnginesOwnReplacements(test *testing.T) {
+	source := test.TempDir()
+	own := "module github.com/akrck02/go-engine\n\nreplace example.com/lamp => example.com/lamp v1.2.0\n"
+	if err := os.WriteFile(filepath.Join(source, "go.mod"), []byte(own), 0o644); err != nil {
+		test.Fatal(err)
+	}
+	module, err := ModuleFile("example/game", source)
+	if err != nil {
+		test.Fatal(err)
+	}
+	if !strings.Contains(module, "replace example.com/lamp => example.com/lamp v1.2.0") {
+		test.Errorf("a replacement of go-engine's own is not repeated:\n%s", module)
 	}
 }
