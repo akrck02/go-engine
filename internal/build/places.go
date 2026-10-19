@@ -43,6 +43,29 @@ func emulatorPlaces() []string {
 	return append(places, images...)
 }
 
+// homebrewFolders are where Homebrew installs: on Apple's processors, then on Intel's and Linux's
+// (where it is /home/linuxbrew/.linuxbrew).
+var homebrewFolders = []string{"/opt/homebrew", "/usr/local", "/home/linuxbrew/.linuxbrew"}
+
+// tinyGoPlaces are where TinyGo's program is installed by Homebrew, for an editor started without
+// the shell's path.
+func tinyGoPlaces() []string {
+	places := make([]string, 0, len(homebrewFolders))
+	for _, folder := range homebrewFolders {
+		places = append(places, filepath.Join(folder, "bin", "tinygo"))
+	}
+	return places
+}
+
+// homebrewSDKPlaces are where Homebrew's android-commandlinetools keeps the SDK.
+func homebrewSDKPlaces() []string {
+	places := make([]string, 0, len(homebrewFolders))
+	for _, folder := range homebrewFolders {
+		places = append(places, filepath.Join(folder, "share", "android-commandlinetools"))
+	}
+	return places
+}
+
 // javaPlaces are where Android Studio keeps the JDK it brings (its "JetBrains Runtime") on this
 // system.
 func javaPlaces() []string {

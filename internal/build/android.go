@@ -15,7 +15,7 @@ import (
 // the variables Android's own tools read, or where Android Studio puts them.
 
 // FindAndroidSDK finds the Android SDK's folder: the one chosen, $ANDROID_HOME,
-// $ANDROID_SDK_ROOT, Android Studio's, or the one Install left.
+// $ANDROID_SDK_ROOT, Android Studio's, Homebrew's, or the one Install left.
 func (tools Tools) FindAndroidSDK() (string, error) {
 	if place, isChosen, err := chosenFolder(tools.AndroidSDK); isChosen {
 		return place, err
@@ -28,7 +28,7 @@ func (tools Tools) FindAndroidSDK() (string, error) {
 	if folder := androidStudioSDK(); folder != "" && FileExists(folder) {
 		return folder, nil
 	}
-	if folder := installed().AndroidSDK; folder != "" {
+	if folder := firstExisting(append(homebrewSDKPlaces(), installed().AndroidSDK)); folder != "" {
 		return folder, nil
 	}
 	return "", AndroidSDKNotFound
