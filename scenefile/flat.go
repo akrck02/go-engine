@@ -19,6 +19,8 @@ type Body struct {
 	// across and up: the falling bodies inside are pulled this way instead of the world's. Nil
 	// leaves the world's.
 	Pull *[2]float64 `json:"pull,omitempty"`
+	// IgnoresZones, on a moving or pushable body, keeps the world's gravity for it inside zones too.
+	IgnoresZones bool `json:"ignoresZones,omitempty"`
 }
 
 // BodyKind is what a body does: as physics.Kind, by name.

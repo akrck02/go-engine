@@ -56,3 +56,16 @@ func TestABodyOutOfTheZoneFallsAsBefore(test *testing.T) {
 		test.Fatalf("away from the zone the crate's bottom is at %v, pulled %v: it should fall to the ground", bottom, falling.Pull())
 	}
 }
+
+func TestABodyThatIgnoresZonesKeepsTheWorldsGravity(test *testing.T) {
+	world := NewWorld(earthGravity)
+	world.Add(ground())
+	world.Add(zone(space.NewVector(0, 3, 0), space.NewVector(0, 9.81, 0)))
+	walker := crate(1)
+	walker.IgnoresZones = true
+	world.Add(walker)
+	run(world, 1)
+	if bottom := walker.Position.Y - 0.5; math.Abs(bottom) > 1e-6 || walker.Pull().Y >= 0 {
+		test.Fatalf("a body that ignores zones is at %v, pulled %v: it should stand on the ground", bottom, walker.Pull())
+	}
+}

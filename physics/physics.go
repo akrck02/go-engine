@@ -65,6 +65,9 @@ type Body struct {
 	// pulled this way instead of the world's (a magnetic field, a room upside down). Nil leaves
 	// the world's.
 	ZonePull *space.Vector
+	// IgnoresZones keeps the world's gravity for the body, inside a zone too: a character that
+	// walks through a field meant for the things it moves.
+	IgnoresZones bool
 
 	onFloor bool
 	pull    space.Vector // the gravity that pulled it in the last step
@@ -268,6 +271,9 @@ func (world *World) findZones() {
 // gravityAt is the gravity that pulls a body: the gravity of a zone it is in, or the world's.
 // Where zones overlap, the one added to the world first pulls.
 func (world *World) gravityAt(body *Body) space.Vector {
+	if body.IgnoresZones {
+		return world.gravity
+	}
 	for _, zone := range world.zones {
 		if zone.overlaps(body) {
 			return *zone.ZonePull

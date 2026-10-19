@@ -68,6 +68,9 @@ func (view *View) bodyInspector(context *ui.Context, node *engine.Node) {
 		if numberField(context, "Gravity scale", &gravity, gravityScaleLimits, "%.2f×") {
 			editor.SetGravityScale(gravity)
 		}
+		if context.Checkbox("Keeps the world's gravity inside zones", &body.IgnoresZones) {
+			editor.Changed()
+		}
 	}
 	if body.Kind == scenefile.Trigger {
 		view.zonePullFields(context, body)
