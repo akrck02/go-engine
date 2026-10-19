@@ -45,6 +45,8 @@ const (
 	iconInstall    = "download"
 	iconFound      = "circle-check"
 	iconMissing    = "circle-alert"
+	iconNotice     = "info"
+	iconProblem    = "triangle-alert"
 	iconOutput     = "terminal"
 	iconLog        = "scroll-text"
 	iconWatch      = "activity"

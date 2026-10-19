@@ -31,8 +31,7 @@ type Editor struct {
 	Chosen    []*engine.Node // other nodes chosen with it (Shift), which act with it
 	Saved     bool
 
-	Message string
-	Failed  bool
+	notices []Notice // what the editor said that is still shown (notices.go)
 
 	// Tool is what the left button does in the 2D view (tools.go); Brush is the tile of the
 	// tileset that painting and filling put down.
@@ -135,11 +134,6 @@ func (editor *Editor) Save() error {
 	editor.history.savedAt, editor.history.lastAt = editor.history.at, time.Time{}
 	editor.say("Saved "+editor.SceneFile, false)
 	return nil
-}
-
-// say puts a message on the status line, on one line.
-func (editor *Editor) say(message string, failed bool) {
-	editor.Message, editor.Failed = strings.Join(strings.Fields(message), " "), failed
 }
 
 // Changed marks the scene as changed since it was saved, and keeps it for undo.

@@ -152,7 +152,7 @@ func (view *View) Build(context *ui.Context) {
 		context.RequestFrame(0) // the game moves on every frame, input or not
 	}
 	if view.Editor.Running() {
-		context.RequestFrame(250e6) // the status line follows the game's output
+		context.RequestFrame(250e6) // what runs in the background answers through events, taken each frame
 	}
 	context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Height: ui.Grow()}, func() {
 		view.toolbar(context)
@@ -161,6 +161,7 @@ func (view *View) Build(context *ui.Context) {
 		context.Separator()
 		view.workspaceBar(context)
 	})
+	view.notices(context)
 	view.filePicker(context)
 }
 
