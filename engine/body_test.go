@@ -170,3 +170,25 @@ func TestAPushedBoxsNodeMovesWithIt(test *testing.T) {
 		test.Fatalf("the box's node stayed at %v: it does not move with its body", x)
 	}
 }
+
+func TestAPlatformsNodeCarriesTheNodeOnIt(test *testing.T) {
+	description := &scenefile.Scene{Name: "Lift", Mode: scenefile.Mode2D, Nodes: []scenefile.Node{
+		{Name: "Lift", Shape: "cube", Position: [3]float64{0, -0.25, 0}, Scale: [3]float64{4, 0.5, 1},
+			Body: &scenefile.Body{Kind: scenefile.Platform}},
+		{Name: "Rider", Shape: "cube", Position: [3]float64{0, 0.5, 0}, Scale: [3]float64{1, 1, 1},
+			Body: &scenefile.Body{Kind: scenefile.Moving}},
+	}}
+	scene, err := Build(nil, description)
+	if err != nil {
+		test.Fatal(err)
+	}
+	scene.Start()
+	lift, _ := scene.Find("Lift")
+	rider, _ := scene.Find("Rider")
+	body, _ := lift.Body()
+	body.Velocity = space.NewVector(1, 0, 0)
+	playFor(scene, 1)
+	if liftX, riderX := lift.World().Position.X, rider.World().Position.X; liftX < 0.9 || math.Abs(riderX-liftX) > 1e-6 {
+		test.Fatalf("the lift's node is at %v and the rider's at %v: the rider was not carried", liftX, riderX)
+	}
+}

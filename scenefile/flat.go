@@ -29,10 +29,12 @@ const (
 	Trigger BodyKind = "trigger"
 	// Pushable falls and moves as a moving body, which stands on it and pushes it walking into it.
 	Pushable BodyKind = "pushable"
+	// Platform moves at the velocity its behaviours give it, carrying what stands on it.
+	Platform BodyKind = "platform"
 )
 
 // BodyKinds are the kinds of body, in the order the editor offers them.
-var BodyKinds = []BodyKind{Solid, Moving, Trigger, Pushable}
+var BodyKinds = []BodyKind{Solid, Moving, Trigger, Pushable, Platform}
 
 // Gravity is how much gravity pulls the body: its GravityScale, or 1.
 func (body *Body) Gravity() float64 {

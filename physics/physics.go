@@ -33,10 +33,16 @@ const (
 	// Pushable bodies fall and move as moving ones do, and are obstacles to them: a moving body
 	// stands on one, and walking into one pushes it, until a solid stops both (a box, a cart).
 	Pushable
+	// Platform bodies move at their velocity, with no gravity and through solids; they carry the
+	// bodies standing on them and push those in their way (a lift, a moving floor).
+	Platform
 )
 
 // Moves tells whether bodies of the kind move by the physics: their place is the world's to set.
-func (kind Kind) Moves() bool { return kind == Moving || kind == Pushable }
+func (kind Kind) Moves() bool { return kind == Moving || kind == Pushable || kind == Platform }
+
+// falls tells whether bodies of the kind fall with gravity and are stopped by obstacles.
+func (kind Kind) falls() bool { return kind == Moving || kind == Pushable }
 
 // touchTolerance is how far, in metres, two boxes may overlap and still count as only touching:
 // a body placed against a wall must not be found inside it because of rounding.
@@ -81,6 +87,7 @@ type World struct {
 	touching    []Touch // the moving bodies overlapping a trigger now
 	wasTouching []Touch // the same, a step ago
 	begun       []Touch // the touches that began in the last step
+	riders      []*Body // the bodies standing on the platform moving, reused
 }
 
 // NewWorld makes a world with a gravity, in metres a second each second (Earth's is 9.81 down).
@@ -111,7 +118,12 @@ func (world *World) Remove(body *Body) {
 // velocity until a solid stops it, and the touches of triggers that began are found (Begun).
 func (world *World) Step(seconds float64) {
 	for _, body := range world.bodies {
-		if body.Kind.Moves() {
+		if body.Kind == Platform {
+			world.movePlatform(body, seconds)
+		}
+	}
+	for _, body := range world.bodies {
+		if body.Kind.falls() {
 			world.move(body, seconds)
 		}
 	}
@@ -171,12 +183,12 @@ func (world *World) obstacleTo(body, pusher *Body) (*Body, bool) {
 	return nil, false
 }
 
-// blocks tells whether a body stops another moving into it: solids stop all; pushable bodies stop
-// moving and pushable ones; moving bodies stop pushable ones (a box lands on whoever is under it),
+// blocks tells whether a body stops another moving into it: solids and platforms stop all;
+// pushable bodies stop moving and pushable ones; moving bodies stop pushable ones (a box lands on whoever is under it),
 // but not each other, as before pushable bodies were.
 func blocks(mover, other *Body) bool {
 	switch other.Kind {
-	case Solid, Pushable:
+	case Solid, Pushable, Platform:
 		return true
 	case Moving:
 		return mover.Kind == Pushable

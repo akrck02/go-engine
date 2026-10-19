@@ -31,6 +31,7 @@ var bodyKindNotes = []string{
 	"Moving: falls with gravity, moves with its velocity, and is stopped by solids.",
 	"Trigger: stops nothing; its behaviours hear (Touched) when a moving body begins touching it.",
 	"Pushable: falls as a moving body does; moving bodies stand on it, and push it by walking into it.",
+	"Platform: moves at the velocity its behaviours give it, through solids and with no gravity, carrying what stands on it.",
 }
 
 func (view *View) bodyInspector(context *ui.Context, node *engine.Node) {
@@ -55,7 +56,7 @@ func (view *View) bodyInspector(context *ui.Context, node *engine.Node) {
 		return
 	}
 	kind := max(0, indexOf(scenefile.BodyKinds, body.Kind))
-	if context.Tabs("Body kind", &kind, "Solid", "Moving", "Trigger", "Pushable") {
+	if context.Tabs("Body kind", &kind, "Solid", "Moving", "Trigger", "Pushable", "Platform") {
 		editor.GiveBody(scenefile.BodyKinds[kind])
 	}
 	note(context, bodyKindNotes[kind])

@@ -96,7 +96,7 @@ func (node *Node) BodyBox() (space.Box, bool) {
 // physicsKinds are the scene file's kinds of body, as the physics names them.
 var physicsKinds = map[scenefile.BodyKind]physics.Kind{
 	scenefile.Solid: physics.Solid, scenefile.Moving: physics.Moving, scenefile.Trigger: physics.Trigger,
-	scenefile.Pushable: physics.Pushable,
+	scenefile.Pushable: physics.Pushable, scenefile.Platform: physics.Platform,
 }
 
 // removeBodies takes a node's body, and those of what hangs from it, out of the physics.
