@@ -3,9 +3,9 @@ module github.com/akrck02/go-engine
 go 1.25.6
 
 require (
-	github.com/akrck02/go-renderer v0.0.0
-	github.com/akrck02/go-scene-builder v0.0.0-20261017184317-26708cf29060
-	github.com/akrck02/go-ui v0.0.0-20261019180239-542aeea79658
+	github.com/akrck02/go-renderer v0.1.0
+	github.com/akrck02/go-scene-builder v0.1.0
+	github.com/akrck02/go-ui v0.1.1-0.20261019183617-49c092f96e21
 )
 
 require (
@@ -15,7 +15,3 @@ require (
 	golang.org/x/sys v0.47.0 // indirect
 	golang.org/x/text v0.41.0 // indirect
 )
-
-// go-ui asks for go-renderer v0.0.0 (it builds against a local copy); this is go-renderer's
-// dev branch, which draws on the desktop, Android and the Nintendo 3DS alike, as go-ui's dev.
-replace github.com/akrck02/go-renderer => github.com/akrck02/go-renderer v0.0.0-20261019173110-5a5d4410828b
