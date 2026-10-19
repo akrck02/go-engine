@@ -1,5 +1,7 @@
 github.com/akrck02/go-renderer v0.1.0 h1:XcuTMfi8P0+69nnNxjZZ+ytQ4DL1ulMiLZU3oHluXxw=
 github.com/akrck02/go-renderer v0.1.0/go.mod h1:Z835tJYTrI/B+rxk5BbIMsDFokk+P36R8kZ0CVbEZzA=
+github.com/akrck02/go-renderer v0.1.1-0.20261019224303-3023124a4320 h1:ttrBOCKH6wHfRQ3Ei23vJnUI00fTOjfSMPhysv5nC4w=
+github.com/akrck02/go-renderer v0.1.1-0.20261019224303-3023124a4320/go.mod h1:Z835tJYTrI/B+rxk5BbIMsDFokk+P36R8kZ0CVbEZzA=
 github.com/akrck02/go-scene-builder v0.1.0 h1:qR+MsHtcmDhiYfaICQurwWpFapAFPgTfTVgNMczQb1U=
 github.com/akrck02/go-scene-builder v0.1.0/go.mod h1:/o6DN0ehHZoOa1tBdBanz93gO2QAQzQ1f9dxOLN5ap0=
 github.com/akrck02/go-ui v0.1.1 h1:0doyqtJqZqjOXo1qOjshAkR/hxPZYg7BBPq/rXlgEr0=

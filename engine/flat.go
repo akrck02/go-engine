@@ -144,7 +144,7 @@ func (node *Node) flatSize() (width, height float64, found bool) {
 }
 
 // Draw2D draws a 2D scene into an area of the screen, as a view sees it: the sky's colour, then
-// its sprites and shapes from the furthest to the nearest.
+// its sprites and shapes from the furthest to the nearest, lit by its lights (lights.go).
 func (owner *Scene) Draw2D(list *draw2d.List, area draw2d.Rect, view View2D) {
 	if owner.Sky != "" {
 		list.Rectangle(area, 0, draw2d.Hex(owner.Sky), draw2d.Color{}, 0)
@@ -163,6 +163,7 @@ func (owner *Scene) DrawContent2D(list *draw2d.List, area draw2d.Rect, view View
 	for _, node := range owner.drawOrder() {
 		owner.drawFlat(list, area, view, node)
 	}
+	owner.drawLights(list, area, view)
 }
 
 // drawOrder is the visible nodes that show something, furthest first.
@@ -178,7 +179,7 @@ func (owner *Scene) collectShown(nodes []*Node, node *Node) []*Node {
 		if !child.Visible {
 			continue
 		}
-		if child.sprite != "" || child.shape != "" || child.tiles != nil {
+		if (child.sprite != "" || child.shape != "" || child.tiles != nil) && !child.isSpriteLight() {
 			nodes = append(nodes, child)
 		}
 		nodes = owner.collectShown(nodes, child)
@@ -196,13 +197,10 @@ func (owner *Scene) drawFlat(list *draw2d.List, area draw2d.Rect, view View2D, n
 		owner.drawTiles(list, area, view, node)
 		return
 	}
-	box := node.flatBounds()
-	if box.IsEmpty() {
+	rect, shown := owner.screenRect(area, view, node)
+	if !shown {
 		return
 	}
-	left, top := view.ToScreen(area, space.NewVector(box.Minimum.X, box.Maximum.Y, 0))
-	right, bottom := view.ToScreen(area, space.NewVector(box.Maximum.X, box.Minimum.Y, 0))
-	rect := draw2d.Rect{X: left, Y: top, Width: right - left, Height: bottom - top}
 	if node.sprite != "" {
 		if picture, found := owner.spritePicture(node); found {
 			list.Image(picture, rect, 0, draw2d.Color{1, 1, 1, 1})

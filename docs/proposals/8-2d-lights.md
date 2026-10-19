@@ -55,8 +55,12 @@ one thing over another, with transparency: it has no way to add light nor to mul
 
 **go-engine**:
 
-- `scenefile`: a node's `light`: `{kind: global|point|sprite, colour, intensity, inner, outer,
-  falloff}`; a sprite light uses the node's own picture. A scene's `ambient` colour and intensity.
+- `scenefile`: a node's `light`: `{kind: point|sprite, colour, intensity, inner, outer}`; a
+  sprite light uses the node's own picture, which it is drawn as instead of being shown. A
+  scene's `ambient` colour and intensity is its global light; a scene with lights and no ambient
+  is lit by daylight. *(Changed while building: no "global" kind on nodes, since the scene's
+  ambient is the global light, and no falloff setting: every backend fades with the same smooth
+  curve.)*
 - `engine`: a 2D scene draws its sprites, then its lights (in their nodes' places and scales)
   into one light layer, then what goes above (the interface). Lights are found once a frame
   into a reused list, as the drawn nodes are.
@@ -77,7 +81,7 @@ computed on the processor (does not scale, and the 3DS has a GPU for it).
 - [x] T3 — GL ES: the same for Android and the web · go-renderer · R3
 - [x] T4 — 3DS: the light target in citro3d; Azahar captures, and a measure · go-renderer · R3, R6
 - [ ] T4b — Metal: the light target and its blends, unbuilt here · go-renderer · R3
-- [ ] T5 — `scenefile` and `engine`: lights on nodes, the ambient, drawn each frame without
+- [x] T5 — `scenefile` and `engine`: lights on nodes, the ambient, drawn each frame without
   allocating · go-engine · R4, R6
 - [ ] T6 — Level: the inspector, the radii, Play lit · go-engine · R5
 - [ ] T7 — Io World's start screen lit from Unity's lights · go-engine-io-world · R7

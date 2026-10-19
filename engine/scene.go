@@ -30,6 +30,9 @@ type Scene struct {
 	Mode scenefile.Mode
 	// PixelsPerMetre is how many of a sprite's pixels make a metre, in a 2D scene.
 	PixelsPerMetre float64
+	// Ambient is the light that reaches everything in a 2D scene; nil is daylight when the scene
+	// has lights (see lights.go).
+	Ambient *scenefile.Ambient
 
 	// Editing shows what only the editor shows: a marker for cameras and empty nodes.
 	Editing bool
@@ -55,6 +58,7 @@ type Scene struct {
 	input       Input
 	updating    []*Node
 	drawn       []*Node                 // the nodes a 2D frame draws, furthest first
+	lit         []*Node                 // the lights a 2D frame draws
 	flatColours map[string]draw2d.Color // shapes' colours, read from their text once
 	drawnAspect float64                 // the screen's width over its height, as last drawn
 
@@ -91,6 +95,7 @@ func Build(files fs.FS, description *scenefile.Scene) (*Scene, error) {
 func buildWith(library *assets, description *scenefile.Scene) (*Scene, error) {
 	built := newSceneWith(library)
 	built.Name, built.Mode, built.PixelsPerMetre = description.Name, description.Mode, description.PixelsPerMetre
+	built.Ambient = description.Ambient.Copy()
 	built.description = description
 	built.SetSky(description.Sky)
 	var firstError error
@@ -134,6 +139,7 @@ func (owner *Scene) buildNode(description scenefile.Node) (*Node, error) {
 	node.shape, node.colour, node.model, node.sprite = description.Shape, description.Colour, description.Model, description.Sprite
 	node.camera = description.Camera
 	node.body, node.sheet, node.tiles = description.Body.Copy(), description.Sheet.Copy(), description.Tiles.Copy()
+	node.light = description.Light.Copy()
 	node.startWith = description.Animation
 	node.Behaviours = append([]scenefile.Behaviour(nil), description.Behaviours...)
 	var firstError error
@@ -157,7 +163,8 @@ func (owner *Scene) buildNode(description scenefile.Node) (*Node, error) {
 
 // Describe writes the scene back as its file keeps it.
 func (owner *Scene) Describe() *scenefile.Scene {
-	description := &scenefile.Scene{Name: owner.Name, Sky: owner.Sky, Mode: owner.Mode, PixelsPerMetre: owner.PixelsPerMetre}
+	description := &scenefile.Scene{Name: owner.Name, Sky: owner.Sky, Mode: owner.Mode, PixelsPerMetre: owner.PixelsPerMetre,
+		Ambient: owner.Ambient.Copy()}
 	for _, child := range owner.Root.children {
 		description.Nodes = append(description.Nodes, child.Describe())
 	}
@@ -175,6 +182,7 @@ func (node *Node) Describe() scenefile.Node {
 		Hidden:   !node.Visible,
 		Shape:    node.shape, Colour: node.colour, Model: node.model, Sprite: node.sprite, Camera: node.camera,
 		Body: node.body.Copy(), Sheet: node.sheet.Copy(), Tiles: node.tiles.Copy(), Animation: node.startWith,
+		Light:      node.light.Copy(),
 		Behaviours: append([]scenefile.Behaviour(nil), node.Behaviours...),
 	}
 	for _, child := range node.children {

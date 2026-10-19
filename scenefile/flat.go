@@ -119,6 +119,11 @@ func (node *Node) checkFlat(path string) error {
 	if node.Body != nil && !isBodyKind(node.Body.Kind) {
 		return failure.Wrap(UnknownBodyKind, path+" is a "+string(node.Body.Kind), nil)
 	}
+	if node.Light != nil {
+		if err := node.Light.check(path); err != nil {
+			return err
+		}
+	}
 	if node.Tiles != nil {
 		if err := node.Tiles.check(path); err != nil {
 			return err
@@ -186,9 +191,10 @@ func (body *Body) Copy() *Body {
 		return nil
 	}
 	copied := *body
-	if body.GravityScale != nil {
-		scale := *body.GravityScale
-		copied.GravityScale = &scale
+	copied.GravityScale = copyNumber(body.GravityScale)
+	if body.Pull != nil {
+		pull := *body.Pull
+		copied.Pull = &pull
 	}
 	return &copied
 }

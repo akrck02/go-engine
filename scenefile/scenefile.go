@@ -21,7 +21,10 @@ type Scene struct {
 	// PixelsPerMetre is, in a 2D scene, how many of a sprite's pixels make a metre: a sprite 32
 	// pixels high stands a metre high at 32. 0 is 32.
 	PixelsPerMetre float64 `json:"pixelsPerMetre,omitempty"`
-	Nodes          []Node  `json:"nodes"`
+	// Ambient is, in a 2D scene, the light that reaches everything; nil is white at 1 when the
+	// scene has lights, and no lighting at all when it has none.
+	Ambient *Ambient `json:"ambient,omitempty"`
+	Nodes   []Node   `json:"nodes"`
 }
 
 // Mode is whether a scene is 3D or 2D.
@@ -58,6 +61,7 @@ type Node struct {
 	// sprite's own first one. Nodes that share a sprite can start differently.
 	Animation string   `json:"animation,omitempty"`
 	Tiles     *TileMap `json:"tiles,omitempty"` // in a 2D scene, a map of tiles
+	Light     *Light   `json:"light,omitempty"` // in a 2D scene, a light
 
 	Behaviours []Behaviour `json:"behaviours,omitempty"`
 	Children   []Node      `json:"children,omitempty"`

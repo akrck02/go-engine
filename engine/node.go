@@ -44,6 +44,7 @@ type Node struct {
 	body  *scenefile.Body
 	sheet *scenefile.SpriteSheet
 	tiles *scenefile.TileMap
+	light *scenefile.Light
 
 	startWith  string              // the animation it starts with, when not its sprite's own
 	playing    scenefile.Animation // the sheet's animation playing, while the game plays

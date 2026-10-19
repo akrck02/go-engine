@@ -189,10 +189,31 @@ A 2D node with a body moves by the scene's physics while the game plays. Its kin
 
 "On the floor" is the side a body's gravity pulls it to, so a body pulled up stands on a ceiling.
 
+## Lights
+
+A 2D scene can be lit the way Unity lights its 2D scenes. Its **ambient** (`"ambient"` in the
+scene's file: a colour and an intensity) is the light that reaches everything: white at 1 leaves
+the colours as they are, a dark blue at 0.4 is a night. **Lights** on its nodes (`"light"`) add to
+it where they shine, and can brighten up to twice:
+
+| Kind | What it does |
+|---|---|
+| Point | Shines all around the node: full within its inner radius, fading to nothing at its outer one, in metres (a lamp) |
+| Sprite | Shines through the node's sprite, in its place; the sprite itself is not drawn (a glowing sign, a window) |
+
+```json
+"ambient": {"colour": "#203050", "intensity": 0.4},
+"nodes": [{"name": "Lamp", "position": [2, 1, 0], "light": {"kind": "point", "colour": "#ffd27a", "inner": 0.5, "outer": 3.5}}]
+```
+
+A scene with lights and no ambient is lit by daylight (white at 1); a scene with neither is drawn
+unlit, at no cost. go-renderer draws the lights on every platform, the 3DS too (its
+*2D lights* guide). The editor shows and edits them next (proposal 8).
+
 ## Not yet
 
 - Bodies that turn, slopes, and shapes other than boxes.
 - Textures and materials from the models (they are drawn with their vertex colours), lights of
-  one's own, sound (go-sound), a game's own interface (go-ui).
+  one's own in 3D scenes, sound (go-sound), a game's own interface (go-ui).
 - Moving, turning and scaling with handles in the view (the inspector and dragging do it now),
   dragging nodes in the tree.

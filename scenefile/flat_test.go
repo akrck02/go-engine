@@ -60,6 +60,9 @@ func TestImpossible2DPartsAreRefusedWithTheirCodes(test *testing.T) {
 		{"a frame beyond the sheet", func(scene *Scene) { scene.Nodes[1].Sheet.Animations[1].Frames[0] = 10 }, FrameOutsideSheet},
 		{"two animations with one name", func(scene *Scene) { scene.Nodes[1].Sheet.Animations[1].Name = "idle" }, SameAnimationName},
 		{"a start that does not exist", func(scene *Scene) { scene.Nodes[1].Sheet.Start = "fly" }, UnknownAnimation},
+		{"a light of no kind", func(scene *Scene) { scene.Nodes[2].Light = &Light{Kind: "torch"} }, UnknownLightKind},
+		{"a light inner beyond outer", func(scene *Scene) { scene.Nodes[2].Light = &Light{Kind: PointLight, Inner: 4, Outer: 2} }, LightRadiiWrong},
+		{"a light of negative radius", func(scene *Scene) { scene.Nodes[2].Light = &Light{Kind: PointLight, Outer: -1} }, LightRadiiWrong},
 	}
 	for _, each := range cases {
 		scene := flatScene()
