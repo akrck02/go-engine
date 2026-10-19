@@ -1,7 +1,8 @@
 # 8. 2D lights
 
-> Status: proposed · Author's approval: proposal ☐ plan ☐ · go-renderer's part, on its own
-> `feature/` branch, needs the author's say to commit and push (its CLAUDE.md)
+> Status: in progress · Author's approval: proposal ☑ plan ☑ (2026-10-19, "Con metal": with
+> Metal) · go-renderer's part, on its own `feature/lights` branch, is pushed only with the
+> author's say (its CLAUDE.md)
 
 ## Why
 
@@ -21,7 +22,7 @@ one thing over another, with transparency: it has no way to add light nor to mul
 |---|---|---|
 | R1 | go-renderer's 2D lists draw a light layer: lights added into a light picture cleared to an ambient colour, which then multiplies what the layer drew before it | tests of `draw2d`'s commands; a test that renders a known list on OpenGL into pixels and compares |
 | R2 | Three kinds of light: **global** (the ambient colour and intensity), **point** (a colour, intensity, inner and outer radius, falloff), **sprite** (a picture that glows as a light, tinted) | tests per kind |
-| R3 | The light layer draws on OpenGL (desktop), OpenGL ES (Android, the web) and the 3DS (citro3d); where it cannot (Metal), the scene is drawn as now, unlit, and says so once | captures on each; the 3DS in Azahar |
+| R3 | The light layer draws on OpenGL (desktop), OpenGL ES (Android, the web), Metal (macOS) and the 3DS (citro3d) | captures on each; the 3DS in Azahar; Metal by the author on a Mac |
 | R4 | A 2D node can be a light (`light` in scene files: kind, colour, intensity, radii, falloff); a scene's ambient light is the scene's own setting; lights move with their nodes | tests in `engine` |
 | R5 | Level shows and edits lights: an inspector for them, their radii drawn in the view, and the view lit as the game will be | captures |
 | R6 | Lights cost little: a 2D frame with lights allocates nothing, and on the 3DS a screen of eight lights keeps 60 frames a second | the allocation test; a measure in Azahar and on the console |
@@ -31,7 +32,6 @@ one thing over another, with transparency: it has no way to add light nor to mul
 
 - Shadows cast by sprites, normal maps, and lights in 3D scenes (which have their own sun).
 - Blend modes as a general tool for programs (only what the light layer needs).
-- Metal: it is hand-written, and stays untouched (R3 says what it draws).
 
 ## Design
 
@@ -49,7 +49,9 @@ one thing over another, with transparency: it has no way to add light nor to mul
   the top screen's size, and the PICA200 adds and multiplies with its own blend modes
   (`GPU_BLEND_ADD`, `GPU_DST_COLOR`). Its texture sizes must be powers of two: 512 by 256 for
   400 by 240.
-- Metal draws the list without its light commands.
+- Metal: the same light target as a texture of its own, drawn with the same blends; written as
+  the backdrop's Metal part was. It cannot be built nor run where this is written (Linux): the
+  author checks it on a Mac.
 
 **go-engine**:
 
@@ -74,6 +76,7 @@ computed on the processor (does not scale, and the 3DS has a GPU for it).
 - [ ] T2 — OpenGL: the light target and its blend; pixels compared · go-renderer · R1, R3
 - [ ] T3 — GL ES: the same for Android and the web · go-renderer · R3
 - [ ] T4 — 3DS: the light target in citro3d; Azahar captures, and a measure · go-renderer · R3, R6
+- [ ] T4b — Metal: the light target and its blends, unbuilt here · go-renderer · R3
 - [ ] T5 — `scenefile` and `engine`: lights on nodes, the ambient, drawn each frame without
   allocating · go-engine · R4, R6
 - [ ] T6 — Level: the inspector, the radii, Play lit · go-engine · R5
