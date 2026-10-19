@@ -29,9 +29,9 @@ func TestTheEnginesVersionedReplacesAreRepeated(test *testing.T) {
 		test.Fatal(err)
 	}
 	replaces, err := engineReplaces(goMod)
-	wanted := []string{
-		"-replace=example.com/renderer=example.com/renderer@v0.0.0-20260101000000-abcdef123456",
-		"-replace=example.com/sound@v1.2.0=example.com/fork/sound@v1.2.1",
+	wanted := []replacement{
+		{"example.com/renderer", "example.com/renderer@v0.0.0-20260101000000-abcdef123456"},
+		{"example.com/sound@v1.2.0", "example.com/fork/sound@v1.2.1"},
 	}
 	if err != nil || !slices.Equal(replaces, wanted) {
 		test.Fatalf("the replaces repeated are %q, %v", replaces, err)

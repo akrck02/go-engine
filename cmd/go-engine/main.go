@@ -43,9 +43,7 @@ func main() {
 		fmt.Fprintln(output, "       go-engine -update [-engine version] [project folder]")
 		flags.PrintDefaults()
 	}
-	flags.Parse(os.Args[1:])
-	positional := flags.Args()
-	passed := os.Args[1 : len(os.Args)-len(positional)]
+	passed, positional := parseAnywhere(flags, os.Args[1:])
 	opened, err := projectFrom(positional)
 	switch {
 	case err != nil:
@@ -57,6 +55,20 @@ func main() {
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
+	}
+}
+
+// parseAnywhere parses flags before, between and after the other arguments (Go's flag stops at
+// the first argument that is not one), and returns the flags as given and the other arguments.
+func parseAnywhere(flags *flag.FlagSet, arguments []string) (passed, positional []string) {
+	for {
+		flags.Parse(arguments) // ExitOnError: a wrong flag ends the program with its usage
+		rest := flags.Args()
+		passed = append(passed, arguments[:len(arguments)-len(rest)]...)
+		if len(rest) == 0 {
+			return passed, positional
+		}
+		positional, arguments = append(positional, rest[0]), rest[1:]
 	}
 }
 
