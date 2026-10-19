@@ -9,7 +9,7 @@ import (
 
 // zone is a trigger ten metres a side round a point, pulling with a gravity.
 func zone(centre, gravity space.Vector) *Body {
-	return &Body{Kind: Trigger, Position: centre, Size: space.NewVector(10, 10, 0), Gravity: &gravity}
+	return &Body{Kind: Trigger, Position: centre, Size: space.NewVector(10, 10, 0), ZonePull: &gravity}
 }
 
 func TestABodyFallsTheWayItsZonePulls(test *testing.T) {

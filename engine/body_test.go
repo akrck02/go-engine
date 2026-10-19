@@ -236,3 +236,31 @@ func TestMarkingAnotherCameraMainChangesTheView(test *testing.T) {
 		test.Fatalf("with the second camera marked Main the scene is seen from %v, not 30", centre)
 	}
 }
+
+func TestAFrameWithABoxALiftAndAFieldAllocatesNothing(test *testing.T) {
+	description := &scenefile.Scene{Name: "Factory", Mode: scenefile.Mode2D, Nodes: []scenefile.Node{
+		{Name: "Ground", Shape: "cube", Position: [3]float64{0, -0.5, 0}, Scale: [3]float64{40, 1, 1},
+			Body: &scenefile.Body{Kind: scenefile.Solid}},
+		{Name: "Box", Shape: "cube", Position: [3]float64{2, 0.5, 0}, Scale: [3]float64{1, 1, 1},
+			Body: &scenefile.Body{Kind: scenefile.Pushable}},
+		{Name: "Lift", Shape: "cube", Position: [3]float64{8, 1, 0}, Scale: [3]float64{3, 0.5, 1},
+			Body: &scenefile.Body{Kind: scenefile.Platform}},
+		{Name: "Field", Shape: "cube", Position: [3]float64{-8, 3, 0}, Scale: [3]float64{4, 6, 1},
+			Body: &scenefile.Body{Kind: scenefile.Trigger, Pull: &[2]float64{0, 9.81}}},
+		{Name: "Walker", Shape: "cube", Position: [3]float64{0, 0.5, 0}, Scale: [3]float64{1, 1, 1},
+			Body: &scenefile.Body{Kind: scenefile.Moving}},
+	}}
+	scene, err := Build(nil, description)
+	if err != nil {
+		test.Fatal(err)
+	}
+	scene.Start()
+	lift, _ := scene.Find("Lift")
+	body, _ := lift.Body()
+	body.Velocity = space.NewVector(0, 0.2, 0)
+	playFor(scene, 1)
+	allocations := testing.AllocsPerRun(100, func() { scene.Update(1.0/60, nil) })
+	if allocations != 0 {
+		test.Fatalf("a frame with a box, a lift and a field allocates %v times", allocations)
+	}
+}

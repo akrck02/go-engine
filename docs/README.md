@@ -175,13 +175,24 @@ func (bob *Bob) Update(context *engine.Context) {
 `engine.Behaviour[Bob](node)` finds a node's behaviour from another; `node.Attach(&Bob{…})` adds
 one while the game runs.
 
+## Bodies
+
+A 2D node with a body moves by the scene's physics while the game plays. Its kind says how:
+
+| Kind | What it does |
+|---|---|
+| Solid | Never moves; the others stand on it and stop against it (ground, walls) |
+| Moving | Falls with gravity, moves at its velocity; stopped by solids, platforms and pushable bodies, not by other moving ones |
+| Pushable | Falls like a moving body; a moving body stands on it, and walking into it pushes it, with the row behind it, until a solid stops them (a box) |
+| Platform | Moves at the velocity its behaviours give it, through solids, carrying what stands on it and pushing what is in its way; it stops against what it cannot move (a lift) |
+| Trigger | Stops nothing; its behaviours hear (`Touched`) when a moving or pushable body begins touching it. With a `pull` it is a gravity zone: what falls inside is pulled that way instead (a field) |
+
+"On the floor" is the side a body's gravity pulls it to, so a body pulled up stands on a ceiling.
+
 ## Not yet
 
-- 2D: turned and flipped sprites, sprite sheets and animation, tile maps, the grid prototype's
-  games on the engine.
+- Bodies that turn, slopes, and shapes other than boxes.
 - Textures and materials from the models (they are drawn with their vertex colours), lights of
   one's own, sound (go-sound), a game's own interface (go-ui).
 - Moving, turning and scaling with handles in the view (the inspector and dragging do it now),
-  undo, dragging nodes in the tree, choosing the code editor in the editor (Open project opens Zed;
-  engine.json's codeEditor is kept for later).
-- Changing scenes while playing; physics and collisions.
+  dragging nodes in the tree.

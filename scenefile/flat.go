@@ -18,7 +18,7 @@ type Body struct {
 	// Pull, on a trigger, is the gravity of the area it covers, in metres a second each second
 	// across and up: the falling bodies inside are pulled this way instead of the world's. Nil
 	// leaves the world's.
-	Pull *[2]float64 `json:"gravity,omitempty"`
+	Pull *[2]float64 `json:"pull,omitempty"`
 }
 
 // BodyKind is what a body does: as physics.Kind, by name.
@@ -29,7 +29,7 @@ const (
 	Solid BodyKind = "solid"
 	// Moving falls, moves and is stopped by solids.
 	Moving BodyKind = "moving"
-	// Trigger stops nothing; it notices the moving bodies that touch it.
+	// Trigger stops nothing; it notices the moving and pushable bodies that touch it.
 	Trigger BodyKind = "trigger"
 	// Pushable falls and moves as a moving body, which stands on it and pushes it walking into it.
 	Pushable BodyKind = "pushable"

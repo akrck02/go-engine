@@ -1,18 +1,19 @@
 package physics
 
-// Touch is a moving body touching a trigger: a door reached, a line crossed.
+// Touch is a moving or pushable body touching a trigger: a door reached, a line crossed, a box on
+// a button.
 type Touch struct {
 	Trigger *Body
-	Other   *Body // the moving body that touches it
+	Other   *Body // the moving or pushable body that touches it
 }
 
-// Begun are the touches that began in the last step: each is reported once, when a moving body
+// Begun are the touches that began in the last step: each is reported once, when a body
 // first overlaps a trigger, and again only after it has left and comes back. The slice is the
 // world's own and is reused by the next step: read it, don't keep it.
 func (world *World) Begun() []Touch { return world.begun }
 
-// findTouches finds which moving bodies overlap each trigger now, and which of those touches are
-// new since the last step. Its lists are kept and reused, so a step allocates nothing once they
+// findTouches finds which moving and pushable bodies overlap each trigger now, and which of those
+// touches are new since the last step. Its lists are kept and reused, so a step allocates nothing once they
 // have grown.
 func (world *World) findTouches() {
 	world.touching, world.wasTouching = world.wasTouching[:0], world.touching

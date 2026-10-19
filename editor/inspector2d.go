@@ -30,7 +30,7 @@ var newCameraBounds = [4]float64{-10, -10, 10, 10}
 var bodyKindNotes = []string{
 	"Solid: never moves; moving bodies stand on it and stop against it.",
 	"Moving: falls with gravity, moves with its velocity, and is stopped by solids.",
-	"Trigger: stops nothing; its behaviours hear (Touched) when a moving body begins touching it.",
+	"Trigger: stops nothing; its behaviours hear (Touched) when a moving or pushable body begins touching it.",
 	"Pushable: falls as a moving body does; moving bodies stand on it, and push it by walking into it.",
 	"Platform: moves at the velocity its behaviours give it, through solids and with no gravity, carrying what stands on it.",
 }

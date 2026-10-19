@@ -31,6 +31,9 @@ func (editor *Editor) GiveBody(kind scenefile.BodyKind) {
 		node.SetBodySettings(body)
 	}
 	body.Kind = kind
+	if kind != scenefile.Trigger {
+		body.Pull = nil // only a trigger pulls: kept, it would be saved and never read
+	}
 	editor.Changed()
 }
 
