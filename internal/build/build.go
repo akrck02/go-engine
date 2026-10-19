@@ -100,7 +100,7 @@ func GoOnPath() string {
 }
 
 // FindTinyGo finds the TinyGo with the nintendo3ds target: the one chosen, $TINYGO, tinygo on
-// the path, or in ~/go/bin.
+// the path, in ~/go/bin, or the one Install left.
 func (tools Tools) FindTinyGo() (string, error) {
 	if place, isChosen, err := chosenProgram(tools.TinyGo); isChosen {
 		return place, err
@@ -115,6 +115,9 @@ func (tools Tools) FindTinyGo() (string, error) {
 		if tool := filepath.Join(home, "go", "bin", "tinygo"); FileExists(tool) {
 			return tool, nil
 		}
+	}
+	if tool := installed().TinyGo; tool != "" {
+		return tool, nil
 	}
 	return "", TinyGoNotFound
 }

@@ -48,3 +48,17 @@ builds (`Editor.Run`), shows progress under the tool, and saves the place found.
 - [x] T4 — devkitPro's Install · R4
 - [x] T5 — Android's Install, with the licences · R5
 - [x] T6 — Azahar's Install · R6
+- [x] T7 — Find and check what is installed · R8, R9
+
+### T7: finding and checking (approved 2026-10-18, built 2026-10-19)
+
+| Id | Requirement | Check |
+|---|---|---|
+| R8 | Tools are also found where they are usually installed: Install's own copies not saved, Azahar in Flatpak, `~/Applications`, a Mac's `/Applications` and Windows' Program Files, and a JDK (Android's builds need `javac`) in `$JAVA_HOME`, on the path or in Android Studio | tests with made-up folders |
+| R9 | A tool found is checked: TinyGo has the `nintendo3ds` target; devkitPro has devkitARM's gcc, libctru and citro3d; the SDK has platform-tools, build-tools and a platform; the NDK has its LLVM compilers for this system; the JDK has `javac`. Build shows what is missing | tests: `each tool missing a part says which` |
+
+**Design**: `install` says where its own copies are (`installed.go`); `build` keeps the usual
+places of each system (`places.go`), the JDK's search (`java.go`, a new `Java` place in the tools)
+and one check per tool (`check.go`, each with its error code). The editor runs the check after a
+tool is found and shows the place found with what is wrong. The JDK found becomes Android's
+`JAVA_HOME`, for its builds and for Install.

@@ -55,7 +55,12 @@ func (installer Installer) TinyGo() (string, error) {
 	if err := installer.fetchAndUnpack(link+archive, filepath.Join(folder, archive), SHA256, wanted, folder); err != nil {
 		return "", err
 	}
-	return filepath.Join(folder, "tinygo", "bin", "tinygo"+executableSuffix(installer.system())), nil
+	return tinyGoProgram(folder, installer.system()), nil
+}
+
+// tinyGoProgram is the tinygo program in the folder a release was unpacked into.
+func tinyGoProgram(folder, system string) string {
+	return filepath.Join(folder, "tinygo", "bin", "tinygo"+executableSuffix(system))
 }
 
 // fetchAndUnpack downloads an archive, checks it, unpacks it into a folder and removes it.

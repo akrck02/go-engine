@@ -95,7 +95,12 @@ func (installer Installer) installAzahar(link, name, wanted, tag string) (string
 	if err := installer.fetchAndUnpack(link, file, SHA256, wanted, folder); err != nil {
 		return "", err
 	}
-	return findProgram(folder, "azahar"+executableSuffix(installer.system()))
+	return findProgram(folder, azaharProgram(installer.system()))
+}
+
+// azaharProgram is the name of Azahar's program in the zip of its release.
+func azaharProgram(system string) string {
+	return "azahar" + executableSuffix(system)
 }
 
 // findProgram finds a program by its name in a folder unpacked (in a Mac's .app, it is in

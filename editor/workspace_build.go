@@ -224,12 +224,13 @@ func (view *View) toolRow(context *ui.Context, index int, found ToolFound) {
 	})
 	view.installProgress(context, found.Name)
 	small := ui.TextStyle{Color: context.Theme.InkSoft, Size: context.Theme.SmallTextSize}
+	if found.Found != "" {
+		wrapped(context, "Found: "+found.Found, small)
+	}
 	if found.Err != nil {
 		small.Color = context.Theme.Danger
 		wrapped(context, explained(found.Err), small)
-		return
 	}
-	wrapped(context, "Found: "+found.Found, small)
 }
 
 // saveTools keeps the tools' places as typed, and says how it went.
@@ -276,6 +277,7 @@ var toolInstalls = map[string]func(view *View){
 	"3DS emulator": func(view *View) { view.Editor.InstallEmulator() },
 	"Android SDK":  func(view *View) { view.Editor.ReadAndroidLicence() },
 	"Android NDK":  func(view *View) { view.Editor.ReadAndroidLicence() }, // installed with the SDK
+	"JDK":          (*View).installJava,
 }
 
 // The licence sheet's measures, in pixels.
@@ -329,6 +331,16 @@ func (view *View) installDevkitPro() {
 	}
 	view.Editor.say("devkitPro installs in the terminal (it asks for your password): press Check when it ends", false)
 }
+
+// installJava opens the page of a JDK's installers: a JDK is the system's to install (and to keep
+// up to date), not the editor's.
+func (view *View) installJava() {
+	window.OpenLink(javaDownloads)
+	view.Editor.say("Install a JDK, 17 or newer, from the page opened: then press Check", false)
+}
+
+// javaDownloads is the page of Adoptium's Temurin, a free JDK for every system.
+const javaDownloads = "https://adoptium.net/temurin/releases/"
 
 // The progress bar's measures, in pixels.
 const (

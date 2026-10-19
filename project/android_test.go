@@ -43,7 +43,7 @@ func TestAnAndroidBuildAsksForThePackage(test *testing.T) {
 	if !strings.HasSuffix(project.AndroidPackage(), "harbour-lights.apk") || arguments[len(arguments)-1] != "." {
 		test.Errorf("the package is %q, built from %q", project.AndroidPackage(), arguments[len(arguments)-1])
 	}
-	if !slices.Contains(androidEnvironment("/sdk", "/ndk"), "GOFLAGS=-tags=release") {
+	if !slices.Contains(androidEnvironment("/sdk", "/ndk", "/jdk"), "GOFLAGS=-tags=release") {
 		test.Error("an Android build carries the editor: it is not built with the release tag")
 	}
 }

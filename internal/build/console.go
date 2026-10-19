@@ -19,11 +19,7 @@ func (tools Tools) FindThreeDSLink() (string, error) {
 	if folder, isChosen, err := chosenFolder(tools.DevkitPro); isChosen {
 		return linkIn(folder, err)
 	}
-	devkitPro := os.Getenv("DEVKITPRO")
-	if devkitPro == "" {
-		devkitPro = devkitProFolder
-	}
-	if tool := filepath.Join(devkitPro, "tools", "bin", "3dslink"+ExecutableSuffix()); FileExists(tool) {
+	if tool := filepath.Join(tools.DevkitProFolder(), "tools", "bin", "3dslink"+ExecutableSuffix()); FileExists(tool) {
 		return tool, nil
 	}
 	if tool, err := exec.LookPath("3dslink"); err == nil {
@@ -32,11 +28,24 @@ func (tools Tools) FindThreeDSLink() (string, error) {
 	return "", ThreeDSLinkNotFound
 }
 
+// DevkitProFolder is the folder of devkitPro: the one chosen, $DEVKITPRO, or where devkitPro
+// installs itself. It may not be there.
+func (tools Tools) DevkitProFolder() string {
+	if tools.DevkitPro != "" {
+		return tools.DevkitPro
+	}
+	if folder := os.Getenv("DEVKITPRO"); folder != "" {
+		return folder
+	}
+	return devkitProFolder
+}
+
 // consoleEmulators are the 3DS emulators looked for on the path, the most kept up first.
 var consoleEmulators = []string{"azahar", "lime3ds", "citra-qt", "citra"}
 
-// FindConsoleEmulator finds a 3DS emulator: the one chosen, $EMULATOR_3DS, or the first of
-// consoleEmulators on the path.
+// FindConsoleEmulator finds a 3DS emulator: the one chosen, $EMULATOR_3DS, the first of
+// consoleEmulators on the path, one where emulators are usually installed, or the one Install
+// left.
 func (tools Tools) FindConsoleEmulator() (string, error) {
 	if place, isChosen, err := chosenProgram(tools.ConsoleEmulator); isChosen {
 		return place, err
@@ -48,6 +57,9 @@ func (tools Tools) FindConsoleEmulator() (string, error) {
 		if tool, err := exec.LookPath(name); err == nil {
 			return tool, nil
 		}
+	}
+	if tool := firstExisting(append(emulatorPlaces(), installed().Azahar)); tool != "" {
+		return tool, nil
 	}
 	return "", ConsoleEmulatorNotFound
 }
