@@ -189,17 +189,8 @@ func (project *Project) PlayCommand() (*exec.Cmd, error) {
 
 // Tidy brings the project's go.mod up to date with its code and with the go-engine it builds
 // against, as `go mod tidy` does: an engine of a newer version may need other versions of its
-// libraries. A game built for Android has go-ui's replace written again first (keepUIReplace).
+// libraries.
 func (project *Project) Tidy() error {
-	module, err := project.readModule()
-	if err != nil {
-		return err
-	}
-	if module.hasTool(androidTool) {
-		if err := project.keepUIReplace(module); err != nil {
-			return err
-		}
-	}
 	return build.Run(project.Folder, nil, build.GoTool(), "mod", "tidy")
 }
 
