@@ -5,7 +5,7 @@ go 1.25.6
 require (
 	github.com/akrck02/go-renderer v0.1.0
 	github.com/akrck02/go-scene-builder v0.1.0
-	github.com/akrck02/go-ui v0.1.1-0.20261019183617-49c092f96e21
+	github.com/akrck02/go-ui v0.1.1
 )
 
 require (

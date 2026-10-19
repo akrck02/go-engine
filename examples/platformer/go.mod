@@ -8,7 +8,7 @@ require (
 )
 
 require (
-	github.com/akrck02/go-ui v0.1.1-0.20261019183617-49c092f96e21 // indirect
+	github.com/akrck02/go-ui v0.1.1 // indirect
 	github.com/go-gl/gl v0.0.0-20260331235117-4566fea9a276 // indirect
 	github.com/go-gl/glfw/v3.4/glfw v0.1.0-pre.1 // indirect
 	golang.org/x/image v0.45.0 // indirect
