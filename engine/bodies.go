@@ -96,6 +96,7 @@ func (node *Node) BodyBox() (space.Box, bool) {
 // physicsKinds are the scene file's kinds of body, as the physics names them.
 var physicsKinds = map[scenefile.BodyKind]physics.Kind{
 	scenefile.Solid: physics.Solid, scenefile.Moving: physics.Moving, scenefile.Trigger: physics.Trigger,
+	scenefile.Pushable: physics.Pushable,
 }
 
 // removeBodies takes a node's body, and those of what hangs from it, out of the physics.
@@ -140,7 +141,7 @@ func (owner *Scene) stepPhysics(seconds float64) {
 	}
 	owner.physics.Step(seconds)
 	for _, node := range owner.bodied {
-		if node.physicsBody.Kind == physics.Moving {
+		if node.physicsBody.Kind.Moves() {
 			owner.placeAt(node, node.physicsBody.Position)
 		}
 	}

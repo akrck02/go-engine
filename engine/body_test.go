@@ -143,3 +143,30 @@ func TestABodysBoxIsItsSizeOrItsNodes(test *testing.T) {
 		test.Fatal("the root has a body")
 	}
 }
+
+func TestAPushedBoxsNodeMovesWithIt(test *testing.T) {
+	description := &scenefile.Scene{Name: "Push", Mode: scenefile.Mode2D, Nodes: []scenefile.Node{
+		{Name: "Ground", Shape: "cube", Position: [3]float64{0, -0.5, 0}, Scale: [3]float64{20, 1, 1},
+			Body: &scenefile.Body{Kind: scenefile.Solid}},
+		{Name: "Box", Shape: "cube", Position: [3]float64{2, 0.5, 0}, Scale: [3]float64{1, 1, 1},
+			Body: &scenefile.Body{Kind: scenefile.Pushable}},
+		{Name: "Walker", Shape: "cube", Position: [3]float64{0, 0.5, 0}, Scale: [3]float64{1, 1, 1},
+			Body: &scenefile.Body{Kind: scenefile.Moving}},
+	}}
+	scene, err := Build(nil, description)
+	if err != nil {
+		test.Fatal(err)
+	}
+	scene.Start()
+	walker, _ := scene.Find("Walker")
+	box, _ := scene.Find("Box")
+	const frame = 1.0 / 60
+	for elapsed := 0.0; elapsed < 1; elapsed += frame {
+		body, _ := walker.Body()
+		body.Velocity.X = 3
+		scene.Update(frame, nil)
+	}
+	if x := box.World().Position.X; x <= 2.5 {
+		test.Fatalf("the box's node stayed at %v: it does not move with its body", x)
+	}
+}

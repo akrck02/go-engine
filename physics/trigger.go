@@ -26,7 +26,7 @@ func (world *World) findTouches() {
 
 func (world *World) findTouchesOf(trigger *Body) {
 	for _, other := range world.bodies {
-		if other.Kind != Moving || !trigger.overlaps(other) {
+		if (other.Kind != Moving && other.Kind != Pushable) || !trigger.overlaps(other) {
 			continue
 		}
 		touch := Touch{Trigger: trigger, Other: other}

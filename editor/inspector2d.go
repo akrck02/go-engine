@@ -30,6 +30,7 @@ var bodyKindNotes = []string{
 	"Solid: never moves; moving bodies stand on it and stop against it.",
 	"Moving: falls with gravity, moves with its velocity, and is stopped by solids.",
 	"Trigger: stops nothing; its behaviours hear (Touched) when a moving body begins touching it.",
+	"Pushable: falls as a moving body does; moving bodies stand on it, and push it by walking into it.",
 }
 
 func (view *View) bodyInspector(context *ui.Context, node *engine.Node) {
@@ -54,13 +55,13 @@ func (view *View) bodyInspector(context *ui.Context, node *engine.Node) {
 		return
 	}
 	kind := max(0, indexOf(scenefile.BodyKinds, body.Kind))
-	if context.Tabs("Body kind", &kind, "Solid", "Moving", "Trigger") {
+	if context.Tabs("Body kind", &kind, "Solid", "Moving", "Trigger", "Pushable") {
 		editor.GiveBody(scenefile.BodyKinds[kind])
 	}
 	note(context, bodyKindNotes[kind])
 	view.bodySizeFields(context, body)
 	gravity := body.Gravity()
-	if body.Kind == scenefile.Moving {
+	if body.Kind == scenefile.Moving || body.Kind == scenefile.Pushable {
 		context.Caption("Gravity: 1 pulls fully, 0 not at all")
 		if numberField(context, "Gravity scale", &gravity, gravityScaleLimits, "%.2f×") {
 			editor.SetGravityScale(gravity)

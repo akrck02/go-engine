@@ -30,7 +30,13 @@ const (
 	// Trigger bodies don't move nor stop anything; they notice the moving bodies that touch them
 	// (World.Begun).
 	Trigger
+	// Pushable bodies fall and move as moving ones do, and are obstacles to them: a moving body
+	// stands on one, and walking into one pushes it, until a solid stops both (a box, a cart).
+	Pushable
 )
+
+// Moves tells whether bodies of the kind move by the physics: their place is the world's to set.
+func (kind Kind) Moves() bool { return kind == Moving || kind == Pushable }
 
 // touchTolerance is how far, in metres, two boxes may overlap and still count as only touching:
 // a body placed against a wall must not be found inside it because of rounding.
@@ -105,7 +111,7 @@ func (world *World) Remove(body *Body) {
 // velocity until a solid stops it, and the touches of triggers that began are found (Begun).
 func (world *World) Step(seconds float64) {
 	for _, body := range world.bodies {
-		if body.Kind == Moving {
+		if body.Kind.Moves() {
 			world.move(body, seconds)
 		}
 	}
@@ -117,13 +123,14 @@ func (world *World) Step(seconds float64) {
 func (world *World) move(body *Body, seconds float64) {
 	body.onFloor = false
 	body.Velocity = body.Velocity.Add(world.gravity.Scale(body.GravityScale * seconds))
-	world.moveAlong(body, horizontal, body.Velocity.X*seconds)
-	world.moveAlong(body, vertical, body.Velocity.Y*seconds)
+	world.moveAlong(body, horizontal, body.Velocity.X*seconds, nil)
+	world.moveAlong(body, vertical, body.Velocity.Y*seconds, nil)
 }
 
 // moveAlong moves a body a distance along one axis, in short steps, and stops it against the
-// first solid it meets.
-func (world *World) moveAlong(body *Body, axis axis, distance float64) {
+// first obstacle it meets; a pushable one met across is pushed first, and stops it only if it
+// could not go. pusher, when the body is being pushed, is the body pushing it: no obstacle to it.
+func (world *World) moveAlong(body *Body, axis axis, distance float64, pusher *Body) {
 	if distance == 0 {
 		return
 	}
@@ -131,7 +138,12 @@ func (world *World) moveAlong(body *Body, axis axis, distance float64) {
 	stride := distance / float64(steps)
 	for step := 0; step < steps; step++ {
 		axis.set(&body.Position, axis.of(body.Position)+stride)
-		if blocker, found := world.solidOverlapping(body); found {
+		blocker, found := world.obstacleTo(body, pusher)
+		if found && axis == horizontal && blocker.Kind == Pushable {
+			world.moveAlong(blocker, axis, stride, body)
+			blocker, found = world.obstacleTo(body, pusher)
+		}
+		if found {
 			world.stopAgainst(body, blocker, axis, stride)
 			return
 		}
@@ -148,14 +160,28 @@ func stepsFor(body *Body, distance float64) int {
 	return int(math.Ceil(math.Abs(distance) / longest))
 }
 
-// solidOverlapping finds a solid body that a body overlaps.
-func (world *World) solidOverlapping(body *Body) (*Body, bool) {
+// obstacleTo finds a body that a body overlaps and may not go through (blocks), but the one
+// pushing it.
+func (world *World) obstacleTo(body, pusher *Body) (*Body, bool) {
 	for _, other := range world.bodies {
-		if other.Kind == Solid && other != body && body.overlaps(other) {
+		if other != body && other != pusher && blocks(body, other) && body.overlaps(other) {
 			return other, true
 		}
 	}
 	return nil, false
+}
+
+// blocks tells whether a body stops another moving into it: solids stop all; pushable bodies stop
+// moving and pushable ones; moving bodies stop pushable ones (a box lands on whoever is under it),
+// but not each other, as before pushable bodies were.
+func blocks(mover, other *Body) bool {
+	switch other.Kind {
+	case Solid, Pushable:
+		return true
+	case Moving:
+		return mover.Kind == Pushable
+	}
+	return false
 }
 
 // stopAgainst puts a body against the face of the solid it moved into, and stops it along that
