@@ -21,8 +21,9 @@ type Scene struct {
 	// PixelsPerMetre is, in a 2D scene, how many of a sprite's pixels make a metre: a sprite 32
 	// pixels high stands a metre high at 32. 0 is 32.
 	PixelsPerMetre float64 `json:"pixelsPerMetre,omitempty"`
-	// Ambient is, in a 2D scene, the light that reaches everything; nil is white at 1 when the
-	// scene has lights, and no lighting at all when it has none.
+	// Ambient is the light that reaches everything: in a 2D scene its colour and intensity (nil is
+	// white at 1 when the scene has lights, and no lighting at all when it has none), in a 3D scene
+	// how strong its sky light is (nil is the sky's own).
 	Ambient *Ambient `json:"ambient,omitempty"`
 	Nodes   []Node   `json:"nodes"`
 }
@@ -61,7 +62,7 @@ type Node struct {
 	// sprite's own first one. Nodes that share a sprite can start differently.
 	Animation string   `json:"animation,omitempty"`
 	Tiles     *TileMap `json:"tiles,omitempty"` // in a 2D scene, a map of tiles
-	Light     *Light   `json:"light,omitempty"` // in a 2D scene, a light
+	Light     *Light   `json:"light,omitempty"` // a light: a point light in 2D or 3D, a sprite light in 2D
 
 	Behaviours []Behaviour `json:"behaviours,omitempty"`
 	Children   []Node      `json:"children,omitempty"`
@@ -154,7 +155,7 @@ func checkNodes(nodes []Node, parent string) error {
 			return failure.Wrap(UnknownShape, path+" is a "+node.Shape, nil)
 		}
 		seen[node.Name] = true
-		if err := node.checkFlat(path); err != nil {
+		if err := node.checkParts(path); err != nil {
 			return err
 		}
 		if err := checkNodes(node.Children, path); err != nil {

@@ -2,12 +2,12 @@ package scenefile
 
 import "github.com/akrck02/go-engine/failure"
 
-// A 2D scene can be lit, as Unity lights its 2D scenes: its ambient light lights everything a
-// little, and lights on its nodes add to it where they shine. A scene with neither is drawn
-// unlit, as it always was.
+// A scene can be lit: its ambient light lights everything a little, and lights on its nodes add
+// to it where they shine. A 2D scene with neither is drawn unlit, as it always was; a 3D scene is
+// always lit by its sky, and its ambient says how strongly.
 
-// Ambient is the light that reaches everything in a 2D scene: daylight is white at 1, a dim room
-// is a dark blue at 0.4.
+// Ambient is the light that reaches everything: daylight is white at 1, a dim room a dark blue at
+// 0.4. A 3D scene takes its intensity only, as the strength of its sky light.
 type Ambient struct {
 	Colour string `json:"colour,omitempty"` // "#rrggbb"; empty is white
 	// Intensity is how strong it is: 1 (the default) leaves the scene's colours as they are, less
@@ -15,7 +15,7 @@ type Ambient struct {
 	Intensity *float64 `json:"intensity,omitempty"`
 }
 
-// Light makes a node a light in a 2D scene.
+// Light makes a node a light: a point light, in 2D or 3D, or in 2D a sprite light.
 type Light struct {
 	Kind      LightKind `json:"kind"`
 	Colour    string    `json:"colour,omitempty"`    // "#rrggbb"; empty is white

@@ -169,8 +169,12 @@ func (view *View) ambientInspector(context *ui.Context) {
 			editor.SetAmbient(nil)
 		}
 	}
-	if ambient == nil {
+	if ambient == nil && editor.Scene.Is2D() {
 		note(context, "None: daylight when the scene has lights, and no lighting at all when it has none.")
+		return
+	}
+	if ambient == nil {
+		note(context, "None: the sky lights the scene as it is.")
 		return
 	}
 	if editor.Scene.Is2D() {
@@ -182,6 +186,9 @@ func (view *View) ambientInspector(context *ui.Context) {
 			ambient.Colour = colour
 			editor.LightChanged()
 		}
+	}
+	if !editor.Scene.Is2D() {
+		note(context, "In 3D, how strong the sky's light is: 1 as it is, less for a darker scene.")
 	}
 	intensity := ambient.Strength()
 	if numberField(context, "Ambient intensity", &intensity, intensityLimits, "%.2f×") {

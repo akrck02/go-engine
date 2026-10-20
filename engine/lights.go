@@ -34,7 +34,7 @@ const white = "#ffffff"
 // when the scene has neither lights nor an ambient.
 func (owner *Scene) drawLights(list *draw2d.List, area draw2d.Rect, view View2D) {
 	owner.lit = owner.collectLights(owner.lit[:0], owner.Root)
-	if owner.Unlit || len(owner.lit) == 0 && owner.Ambient == nil {
+	if len(owner.lit) == 0 && owner.Ambient == nil {
 		return
 	}
 	for _, node := range owner.lit {
@@ -78,7 +78,7 @@ func (owner *Scene) drawLight(list *draw2d.List, area draw2d.Rect, view View2D, 
 		return
 	}
 	x, y := view.ToScreen(area, node.World().Position)
-	inner, outer := node.lightRadii()
+	inner, outer := node.LightRadii()
 	scale := float32(view.scale(area))
 	reach := draw2d.Rect{X: x - float32(outer)*scale, Y: y - float32(outer)*scale, Width: 2 * float32(outer) * scale, Height: 2 * float32(outer) * scale}
 	if reach.Intersect(area).IsEmpty() {
@@ -87,12 +87,19 @@ func (owner *Scene) drawLight(list *draw2d.List, area draw2d.Rect, view View2D, 
 	list.PointLight(x, y, float32(inner)*scale, float32(outer)*scale, colour)
 }
 
-// lightRadii are a point light's radii in metres, times its node's largest scale: a lamp scaled
-// up reaches further.
-func (node *Node) lightRadii() (inner, outer float64) {
+// LightRadii are a point light's radii in metres, times its node's largest scale (across and up
+// in 2D, which has no depth to scale): a lamp scaled up reaches further. A node that is not a
+// light has none.
+func (node *Node) LightRadii() (inner, outer float64) {
+	if node.light == nil {
+		return 0, 0
+	}
 	inner, outer = node.light.Radii()
 	scale := node.World().Scale
-	largest := max(math.Abs(scale.X), math.Abs(scale.Y), math.Abs(scale.Z))
+	largest := max(math.Abs(scale.X), math.Abs(scale.Y))
+	if !node.scene.Is2D() {
+		largest = max(largest, math.Abs(scale.Z))
+	}
 	return inner * largest, outer * largest
 }
 
@@ -125,7 +132,7 @@ func (owner *Scene) syncLights() {
 // pointLight is a 3D node's light as go-renderer takes it: in the world, its colour linear.
 func (owner *Scene) pointLight(node *Node) scene.PointLight {
 	position := node.World().Position
-	inner, outer := node.lightRadii()
+	inner, outer := node.LightRadii()
 	colour := owner.lightColour(node.light.Colour, node.light.Strength())
 	return scene.PointLight{
 		Position: graphics.Vec4{float32(position.X), float32(position.Y), float32(position.Z), 1},

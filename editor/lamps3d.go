@@ -30,11 +30,9 @@ func (view *viewport) showLampReach(chosen *engine.Node) {
 		return
 	}
 	centre := chosen.World().Position
-	inner, outer := light.Radii()
-	scale := chosen.World().Scale
-	largest := math.Max(math.Abs(scale.X), math.Max(math.Abs(scale.Y), math.Abs(scale.Z)))
+	inner, outer := chosen.LightRadii()
 	colour := lampRingColour(light.Colour)
-	for _, radius := range [2]float64{inner * largest, outer * largest} {
+	for _, radius := range [2]float64{inner, outer} {
 		if radius > 0 {
 			view.addRing(centre, radius, colour)
 		}

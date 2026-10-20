@@ -152,37 +152,50 @@ func (owner *Scene) Draw2D(list *draw2d.List, area draw2d.Rect, view View2D) {
 	owner.DrawContent2D(list, area, view)
 }
 
-// DrawContent2D draws a 2D scene's sprites and shapes without its sky: over something of the
-// program's own (the editor's grid).
+// DrawContent2D draws a 2D scene's sprites and shapes without its sky, lit by its lights: over
+// something of the program's own (the editor's grid).
 func (owner *Scene) DrawContent2D(list *draw2d.List, area draw2d.Rect, view View2D) {
+	owner.drawContent(list, area, view, true)
+}
+
+// DrawContent2DUnlit draws a 2D scene's sprites and shapes as DrawContent2D does, but without its
+// lights, and a sprite light's sprite as a sprite: what the editor shows to see the colours.
+func (owner *Scene) DrawContent2DUnlit(list *draw2d.List, area draw2d.Rect, view View2D) {
+	owner.drawContent(list, area, view, false)
+}
+
+func (owner *Scene) drawContent(list *draw2d.List, area draw2d.Rect, view View2D, lit bool) {
 	if area.Height > 0 {
 		owner.drawnAspect = float64(area.Width) / float64(area.Height)
 	}
 	list.PushClip(area)
 	defer list.PopClip()
-	for _, node := range owner.drawOrder() {
+	for _, node := range owner.drawOrder(lit) {
 		owner.drawFlat(list, area, view, node)
 	}
-	owner.drawLights(list, area, view)
+	if lit {
+		owner.drawLights(list, area, view)
+	}
 }
 
-// drawOrder is the visible nodes that show something, furthest first.
-func (owner *Scene) drawOrder() []*Node {
-	owner.drawn = owner.collectShown(owner.drawn[:0], owner.Root)
+// drawOrder is the visible nodes that show something, furthest first: lit, a sprite light shines
+// instead of showing its sprite.
+func (owner *Scene) drawOrder(lit bool) []*Node {
+	owner.drawn = owner.collectShown(owner.drawn[:0], owner.Root, lit)
 	slices.SortStableFunc(owner.drawn, byDepth)
 	return owner.drawn
 }
 
 // collectShown lists the visible nodes under one that show something, a node before its children.
-func (owner *Scene) collectShown(nodes []*Node, node *Node) []*Node {
+func (owner *Scene) collectShown(nodes []*Node, node *Node, lit bool) []*Node {
 	for _, child := range node.children {
 		if !child.Visible {
 			continue
 		}
-		if (child.sprite != "" || child.shape != "" || child.tiles != nil) && !child.isSpriteLight() {
+		if (child.sprite != "" || child.shape != "" || child.tiles != nil) && !(lit && child.isSpriteLight()) {
 			nodes = append(nodes, child)
 		}
-		nodes = owner.collectShown(nodes, child)
+		nodes = owner.collectShown(nodes, child, lit)
 	}
 	return nodes
 }

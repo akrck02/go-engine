@@ -114,8 +114,9 @@ func (tiles *TileMap) IsSolid(tile int) bool {
 	return false
 }
 
-// checkFlat tells what is wrong with a node's 2D parts, under a path for the message.
-func (node *Node) checkFlat(path string) error {
+// checkParts tells what is wrong with a node's parts (its body, light, tiles and sheet), under a
+// path for the message.
+func (node *Node) checkParts(path string) error {
 	if node.Body != nil && !isBodyKind(node.Body.Kind) {
 		return failure.Wrap(UnknownBodyKind, path+" is a "+string(node.Body.Kind), nil)
 	}

@@ -36,8 +36,6 @@ type Scene struct {
 
 	// Editing shows what only the editor shows: a marker for cameras and empty nodes.
 	Editing bool
-	// Unlit draws a 2D scene without its lights, as the editor shows it when asked to.
-	Unlit bool
 	// Animate runs the scene's tweens; the engine moves it on every frame.
 	Animate animation.Player
 

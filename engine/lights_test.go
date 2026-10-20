@@ -7,6 +7,7 @@ import (
 	"github.com/akrck02/go-renderer/draw2d"
 
 	"github.com/akrck02/go-engine/scenefile"
+	"github.com/akrck02/go-engine/space"
 )
 
 // litScene is a 2D scene of eight pixels a metre: a shape, a lamp two metres right of it, and a
@@ -186,5 +187,25 @@ func TestALightOutOfSightIsNotDrawn(test *testing.T) {
 		if kind == draw2d.PointLightKind {
 			test.Fatal("a lamp a hundred metres out of sight was drawn")
 		}
+	}
+}
+
+func TestUnlitASpriteLightShowsItsSprite(test *testing.T) {
+	scene := litScene(test, nil)
+	var list draw2d.List
+	scene.DrawContent2DUnlit(&list, draw2d.Rect{Width: 80, Height: 80}, View2D{Height: 10})
+	got := kinds(&list)
+	want := []draw2d.Kind{draw2d.RectangleKind, draw2d.ImageKind}
+	if len(got) != len(want) || got[0] != want[0] || got[1] != want[1] {
+		test.Fatalf("unlit, the scene drew %v; wanted the shape and the sign's sprite, and no light", got)
+	}
+}
+
+func TestA2DLampsReachGrowsWithItsScaleAcrossAndUp(test *testing.T) {
+	scene := litScene(test, nil)
+	lamp, _ := scene.Find("Lamp")
+	lamp.Transform.Scale = space.NewVector(2, 2, 7) // depth means nothing in 2D
+	if inner, outer := lamp.LightRadii(); inner != 1 || outer != 4 {
+		test.Fatalf("the lamp reaches %v to %v; wanted twice its 0.5 to 2", inner, outer)
 	}
 }

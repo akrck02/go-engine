@@ -70,12 +70,10 @@ func (flat *flatView) drawLightReach(node *engine.Node) {
 		return
 	}
 	x, y := flat.view.ToScreen(flat.area, node.World().Position)
-	inner, outer := light.Radii()
-	scale := node.World().Scale
-	largest := math.Max(math.Abs(scale.X), math.Max(math.Abs(scale.Y), math.Abs(scale.Z)))
-	pixelsPerMetre := float64(flat.area.Height) / flat.view.Height
+	inner, outer := node.LightRadii()
+	pixelsPerMetre := float64(flat.area.Width) / flat.view.MetresAcross(flat.area)
 	for _, radius := range [2]float64{inner, outer} {
-		pixels := float32(radius * largest * pixelsPerMetre)
+		pixels := float32(radius * pixelsPerMetre)
 		circle := draw2d.Rect{X: x - pixels, Y: y - pixels, Width: 2 * pixels, Height: 2 * pixels}
 		flat.drawing.Rectangle(circle, pixels, draw2d.Transparent, colour, 1)
 	}

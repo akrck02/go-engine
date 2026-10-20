@@ -81,8 +81,11 @@ func (flat *flatView) paint(editor *Editor, area draw2d.Rect, list *draw2d.List)
 	flat.drawing.Rectangle(area, 0, background, draw2d.Color{}, 0)
 	flat.drawing.PushClip(area)
 	flat.drawGrid()
-	editor.Scene.Unlit = !flat.showLit
-	editor.Scene.DrawContent2D(&flat.drawing, area, flat.view)
+	if flat.showLit {
+		editor.Scene.DrawContent2D(&flat.drawing, area, flat.view)
+	} else {
+		editor.Scene.DrawContent2DUnlit(&flat.drawing, area, flat.view)
+	}
 	flat.drawOverlays(editor)
 	flat.drawMarks(editor)
 	flat.drawing.PopClip()

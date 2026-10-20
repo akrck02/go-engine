@@ -106,3 +106,12 @@ func TestACameraThatFollowsComesBackAsWritten(test *testing.T) {
 		test.Fatalf("the camera came back as %+v", again)
 	}
 }
+
+func TestACopyOfABodyKeepsAPullOfItsOwn(test *testing.T) {
+	body := &Body{Kind: Trigger, Pull: &[2]float64{0, 5}}
+	copied := body.Copy()
+	copied.Pull[1] = -9
+	if body.Pull[1] != 5 {
+		test.Fatal("changing the copy's pull changed the original's")
+	}
+}
