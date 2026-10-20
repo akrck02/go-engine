@@ -100,6 +100,9 @@ func (editor *Editor) ReadAndroidLicence() {
 		editor.say(ToolsInUse.Error(), true)
 		return
 	}
+	if _, found := editor.javaForAndroid(); !found {
+		return // no need to read a licence for tools that could not run
+	}
 	folder, err := install.DataFolder()
 	if err != nil {
 		editor.say(err.Error(), true)
@@ -133,8 +136,23 @@ func (editor *Editor) AcceptAndroidLicence() {
 		editor.say(install.LicenceNotAccepted.Error(), true)
 		return
 	}
-	android := func(installer install.Installer) (string, error) { return installer.AndroidSDK(accepted) }
+	java, found := editor.javaForAndroid()
+	if !found {
+		return
+	}
+	android := func(installer install.Installer) (string, error) { return installer.AndroidSDK(accepted, java) }
 	editor.installTool("Android SDK", android, func(tools *build.Tools, place string) { tools.AndroidSDK = place })
+}
+
+// javaForAndroid is the JDK Android's sdkmanager runs on, as the tools kept say; it says why when
+// there is none.
+func (editor *Editor) javaForAndroid() (string, bool) {
+	java, err := editor.Project.Tools.FindJava()
+	if err != nil {
+		editor.say(err.Error(), true)
+		return "", false
+	}
+	return java, true
 }
 
 // InstallEmulator installs Azahar's latest release for this system and sets the 3DS emulator's

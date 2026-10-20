@@ -2,7 +2,7 @@
 
 A game engine in Go with an editor (go-ui over go-renderer): games are Go modules whose scenes the
 editor arranges and whose code uses the engine's standard library; they build for the desktop,
-Android and the Nintendo 3DS. Start with `docs/README.md`.
+Android and the Nintendo 3DS. Start with `docs/1-overview.md`.
 
 ## Commands
 
@@ -12,15 +12,15 @@ go test ./...                                   # no display needed
 go run ./cmd/go-engine new <folder> [name]      # a new project
 go run ./cmd/go-engine [folder]                 # the editor; needs a display and OpenGL 4.1
 go run ./cmd/go-engine -capture editor.png <folder>   # one frame to PNG
-go run ./cmd/grid-maker [game.json]             # the grid prototype
+python3 docs/6-reference/generate.py            # the reference and the error codes, after an API change
 ```
 
 ## Rules
 
-**Follow `docs/style-guide.md`**: code a junior can follow. In short: English always; whole-word
-names (only `err`, `x`, `y`, `z`, `ui` are short); one job per function, about 40 lines at most;
-early returns, no `else` after a return; every error has a code from `failure`; packages divided
-by meaning, one module. `internal/style` tests what a program can check.
+**Follow `docs/8-contributing/2-style-guide.md`**: code a junior can follow. In short: English
+always; whole-word names (only `err`, `x`, `y`, `z`, `ui` are short); one job per function, about
+40 lines at most; early returns, no `else` after a return; every error has a code from `failure`;
+packages divided by meaning, one module. `internal/style` tests what a program can check.
 
 - **Generic only.** Never put names, places or settings from a user's own project in code,
   comments, tests, examples, docs or commit messages. The sample is made up (a lighthouse keeper).

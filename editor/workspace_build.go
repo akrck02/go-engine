@@ -16,8 +16,9 @@ import (
 	"github.com/akrck02/go-ui/window"
 )
 
-// The Build workspace: one card for each place the game runs, with its last build and what can be
-// done; the chosen target's log beside them, kept until its next build.
+// The Build workspace: two tabs, one with a card for each place the game runs (its last build and
+// what can be done), one with the tools of this computer that build for them; the chosen target's
+// log beside both, kept until its next build.
 
 // The Build workspace's measures, in pixels.
 const (
@@ -27,14 +28,25 @@ const (
 	cardIconSize    = 22
 	stateIconSize   = 16
 	buildLogWidth   = 460
+	buildTabsWidth  = 240
 	bytesInMegabyte = 1 << 20
 )
 
 // playLogRefresh is how often the log of a game playing elsewhere is shown again.
 const playLogRefresh = 250 * time.Millisecond
 
+// buildTab is a tab of the Build workspace.
+type buildTab int
+
+// The Build workspace's tabs, in the order they are shown.
+const (
+	platformsTab buildTab = iota
+	toolsTab
+)
+
 // buildView is what the Build workspace remembers between frames.
 type buildView struct {
+	tab         buildTab    // the tab shown
 	shown       BuildTarget // the target whose log is shown
 	tools       build.Tools // the tools' places as typed, kept when saved
 	toolsFilled bool        // tools was filled with the places kept, to be typed over
@@ -46,16 +58,36 @@ func (view *View) buildWorkspace(context *ui.Context) {
 		panel(context, "Targets", ui.Grow(), func() {
 			context.Heading("Build the game")
 			note(context, "Every build leaves the editor out of the game (-tags release) and writes, beside the program, the notices of the code it carries.")
-			context.Box(ui.Layout{Width: ui.Grow(), Gap: targetCardGap, Wrap: true}, func() {
-				for _, target := range BuildTargets {
-					view.targetCard(context, target)
-				}
-			})
-			view.toolsSection(context)
+			view.buildTabs(context)
+			switch view.build.tab {
+			case platformsTab:
+				view.targetCards(context)
+			case toolsTab:
+				view.toolsSection(context)
+			}
 			view.licenceSheet(context)
 		})
 		context.Separator()
 		panel(context, "Build log", ui.Fixed(buildLogWidth), func() { view.buildLog(context) })
+	})
+}
+
+// buildTabs choose between the places the game is built for and the tools that build it.
+func (view *View) buildTabs(context *ui.Context) {
+	tab := int(view.build.tab)
+	context.Box(ui.Layout{Width: ui.Fixed(buildTabsWidth)}, func() {
+		if context.Tabs("Build tab", &tab, "Platforms", "Tools") {
+			view.build.tab = buildTab(tab)
+		}
+	})
+}
+
+// targetCards are a card for each place the game runs.
+func (view *View) targetCards(context *ui.Context) {
+	context.Box(ui.Layout{Width: ui.Grow(), Gap: targetCardGap, Wrap: true}, func() {
+		for _, target := range BuildTargets {
+			view.targetCard(context, target)
+		}
 	})
 }
 
@@ -224,12 +256,13 @@ func (view *View) toolRow(context *ui.Context, index int, found ToolFound) {
 	})
 	view.installProgress(context, found.Name)
 	small := ui.TextStyle{Color: context.Theme.InkSoft, Size: context.Theme.SmallTextSize}
+	if found.Found != "" {
+		wrapped(context, "Found: "+found.Found, small)
+	}
 	if found.Err != nil {
 		small.Color = context.Theme.Danger
 		wrapped(context, explained(found.Err), small)
-		return
 	}
-	wrapped(context, "Found: "+found.Found, small)
 }
 
 // saveTools keeps the tools' places as typed, and says how it went.
@@ -276,6 +309,7 @@ var toolInstalls = map[string]func(view *View){
 	"3DS emulator": func(view *View) { view.Editor.InstallEmulator() },
 	"Android SDK":  func(view *View) { view.Editor.ReadAndroidLicence() },
 	"Android NDK":  func(view *View) { view.Editor.ReadAndroidLicence() }, // installed with the SDK
+	"JDK":          (*View).installJava,
 }
 
 // The licence sheet's measures, in pixels.
@@ -329,6 +363,16 @@ func (view *View) installDevkitPro() {
 	}
 	view.Editor.say("devkitPro installs in the terminal (it asks for your password): press Check when it ends", false)
 }
+
+// installJava opens the page of a JDK's installers: a JDK is the system's to install (and to keep
+// up to date), not the editor's.
+func (view *View) installJava() {
+	window.OpenLink(javaDownloads)
+	view.Editor.say("Install a JDK, 17 or newer, from the page opened: then press Check", false)
+}
+
+// javaDownloads is the page of Adoptium's Temurin, a free JDK for every system.
+const javaDownloads = "https://adoptium.net/temurin/releases/"
 
 // The progress bar's measures, in pixels.
 const (

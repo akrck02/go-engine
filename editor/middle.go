@@ -127,6 +127,14 @@ func (view *View) overlayToggles(context *ui.Context) {
 		flat.showBounds = !flat.showBounds
 	}
 	context.Tooltip("Draw the box a following camera keeps its view in")
+	if context.Selectable(iconLamp, "Lights", flat.showLights) {
+		flat.showLights = !flat.showLights
+	}
+	context.Tooltip("Draw how far each light reaches")
+	if context.Selectable(iconLit, "Lit", flat.showLit) {
+		flat.showLit = !flat.showLit
+	}
+	context.Tooltip("Light the scene as the game will; off shows its colours unlit")
 }
 
 // dimensionsSwitch makes the scene 3D or 2D.

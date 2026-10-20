@@ -15,6 +15,12 @@ type Body struct {
 	Size [2]float64 `json:"size,omitempty"` // width and height in metres; zero is the node's own sprite or shape
 	// GravityScale is how much gravity pulls a moving body: 1 (the default) fully, 0 not at all.
 	GravityScale *float64 `json:"gravityScale,omitempty"`
+	// Pull, on a trigger, is the gravity of the area it covers, in metres a second each second
+	// across and up: the falling bodies inside are pulled this way instead of the world's. Nil
+	// leaves the world's.
+	Pull *[2]float64 `json:"pull,omitempty"`
+	// IgnoresZones, on a moving or pushable body, keeps the world's gravity for it inside zones too.
+	IgnoresZones bool `json:"ignoresZones,omitempty"`
 }
 
 // BodyKind is what a body does: as physics.Kind, by name.
@@ -25,12 +31,16 @@ const (
 	Solid BodyKind = "solid"
 	// Moving falls, moves and is stopped by solids.
 	Moving BodyKind = "moving"
-	// Trigger stops nothing; it notices the moving bodies that touch it.
+	// Trigger stops nothing; it notices the moving and pushable bodies that touch it.
 	Trigger BodyKind = "trigger"
+	// Pushable falls and moves as a moving body, which stands on it and pushes it walking into it.
+	Pushable BodyKind = "pushable"
+	// Platform moves at the velocity its behaviours give it, carrying what stands on it.
+	Platform BodyKind = "platform"
 )
 
 // BodyKinds are the kinds of body, in the order the editor offers them.
-var BodyKinds = []BodyKind{Solid, Moving, Trigger}
+var BodyKinds = []BodyKind{Solid, Moving, Trigger, Pushable, Platform}
 
 // Gravity is how much gravity pulls the body: its GravityScale, or 1.
 func (body *Body) Gravity() float64 {
@@ -104,10 +114,16 @@ func (tiles *TileMap) IsSolid(tile int) bool {
 	return false
 }
 
-// checkFlat tells what is wrong with a node's 2D parts, under a path for the message.
-func (node *Node) checkFlat(path string) error {
+// checkParts tells what is wrong with a node's parts (its body, light, tiles and sheet), under a
+// path for the message.
+func (node *Node) checkParts(path string) error {
 	if node.Body != nil && !isBodyKind(node.Body.Kind) {
 		return failure.Wrap(UnknownBodyKind, path+" is a "+string(node.Body.Kind), nil)
+	}
+	if node.Light != nil {
+		if err := node.Light.check(path); err != nil {
+			return err
+		}
 	}
 	if node.Tiles != nil {
 		if err := node.Tiles.check(path); err != nil {
@@ -176,9 +192,10 @@ func (body *Body) Copy() *Body {
 		return nil
 	}
 	copied := *body
-	if body.GravityScale != nil {
-		scale := *body.GravityScale
-		copied.GravityScale = &scale
+	copied.GravityScale = copyNumber(body.GravityScale)
+	if body.Pull != nil {
+		pull := *body.Pull
+		copied.Pull = &pull
 	}
 	return &copied
 }

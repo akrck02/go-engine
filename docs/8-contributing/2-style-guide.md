@@ -240,3 +240,7 @@ What runs every frame (a behaviour's `Update`, drawing, input) must not allocate
 avoid it: reuse slices and lists, keep texts that do not change, and make no errors. See
 [3ds.md in go-ui](https://github.com/akrck02/go-ui/blob/feature/3ds/docs/3ds.md) for why it
 matters most on the console.
+
+---
+
+[← Contributing](1-contributing.md)

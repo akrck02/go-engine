@@ -1,6 +1,6 @@
 // Package engine runs a game: a scene of nodes, read from the project's scene files, drawn by
 // go-renderer, and moved by the game's own Go code through behaviours. A node is a thing in the
-// world (a shape, an imported model, a camera, or an empty point to hang others from); its
+// world: a shape, a model, a sprite, a camera, or an empty point to hang others from. Its
 // Transform places it relative to its parent, in metres and degrees (see package space).
 //
 // A game's main registers its behaviours and runs the project it embeds:
@@ -44,6 +44,7 @@ type Node struct {
 	body  *scenefile.Body
 	sheet *scenefile.SpriteSheet
 	tiles *scenefile.TileMap
+	light *scenefile.Light
 
 	startWith  string              // the animation it starts with, when not its sprite's own
 	playing    scenefile.Animation // the sheet's animation playing, while the game plays

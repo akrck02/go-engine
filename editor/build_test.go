@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 
@@ -41,8 +42,18 @@ func TestSavingTheToolsKeepsThemAndLooksAgain(test *testing.T) {
 	if tinygo := editor.ToolsFound()[0]; tinygo.Name != "TinyGo" || tinygo.Err == nil {
 		test.Fatalf("TinyGo is found where there is none: %+v", tinygo)
 	}
+	if runtime.GOOS == "windows" {
+		test.Skip("the fake tinygo is a shell script")
+	}
+	root := test.TempDir()
+	if err := os.MkdirAll(filepath.Join(root, "targets"), 0o755); err != nil {
+		test.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "targets", "nintendo3ds.json"), nil, 0o644); err != nil {
+		test.Fatal(err)
+	}
 	program := filepath.Join(test.TempDir(), "tinygo")
-	if err := os.WriteFile(program, nil, 0o755); err != nil {
+	if err := os.WriteFile(program, []byte("#!/bin/sh\necho "+root+"\n"), 0o755); err != nil {
 		test.Fatal(err)
 	}
 	chosen := editor.Project.Tools

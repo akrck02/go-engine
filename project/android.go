@@ -73,6 +73,10 @@ func (project *Project) BuildAndroid() (Built, error) {
 	if err != nil {
 		return Built{}, err
 	}
+	java, err := project.Tools.FindJava()
+	if err != nil {
+		return Built{}, err
+	}
 	if err := project.addAndroidTool(); err != nil {
 		return Built{}, err
 	}
@@ -82,7 +86,7 @@ func (project *Project) BuildAndroid() (Built, error) {
 	if err := os.MkdirAll(project.Path("build"), 0o755); err != nil {
 		return Built{}, err // go-ui-apk writes the package but makes no folder
 	}
-	if err := build.Run(project.Folder, androidEnvironment(sdk, ndk), build.GoTool(), project.androidArguments()...); err != nil {
+	if err := build.Run(project.Folder, androidEnvironment(sdk, ndk, java), build.GoTool(), project.androidArguments()...); err != nil {
 		return Built{}, err
 	}
 	noticesFile, err := writeNotices(project.Path("build"), notices.Android)
@@ -95,12 +99,12 @@ func (project *Project) androidArguments() []string {
 		"-abi", androidProcessors, "-o", project.AndroidPackage(), "."}
 }
 
-// androidEnvironment is what go-ui-apk reads: where the SDK and the NDK are, go on the path for the
-// builds it starts, and the release tag that leaves the editor out, after the person's own go
-// flags. (A local Go Engine's commit, EngineFlags, cannot go in GOFLAGS: it holds a space.)
-func androidEnvironment(sdk, ndk string) []string {
+// androidEnvironment is what go-ui-apk reads: where the SDK, the NDK and the JDK are, go on the
+// path for the builds it starts, and the release tag that leaves the editor out, after the
+// person's own go flags. (A local Go Engine's commit, EngineFlags, cannot go in GOFLAGS: it holds a space.)
+func androidEnvironment(sdk, ndk, java string) []string {
 	flags := strings.TrimSpace(os.Getenv("GOFLAGS") + " -tags=release")
-	return []string{"ANDROID_HOME=" + sdk, "ANDROID_NDK_HOME=" + ndk, "GOFLAGS=" + flags, build.GoOnPath()}
+	return []string{"ANDROID_HOME=" + sdk, "ANDROID_NDK_HOME=" + ndk, "JAVA_HOME=" + java, "GOFLAGS=" + flags, build.GoOnPath()}
 }
 
 // addAndroidTool adds go-ui-apk at go-engine's version of it to the game's module, when it is

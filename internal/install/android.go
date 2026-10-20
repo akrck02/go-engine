@@ -6,7 +6,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strings"
 
 	"github.com/akrck02/go-engine/failure"
@@ -25,6 +24,7 @@ const (
 	androidIndex       = "repository2-3.xml"
 	androidLicence     = "android-sdk-license"
 	androidCommandLine = "cmdline-tools;latest"
+	androidSDKFolder   = "android-sdk" // the SDK's folder, in the installer's
 )
 
 // AndroidPackages are the SDK's packages installed for a game's Android build.
@@ -68,21 +68,21 @@ func (installer Installer) AndroidLicence() (string, error) {
 // AndroidSDK installs Android's command-line tools and, with them, the packages a game's build
 // needs; accepted is the licence's text the person read and accepted (AndroidLicence). sdkmanager
 // asks for each licence the packages need: it is told yes only for that one, word for word, and
-// no for any other. It returns the SDK's folder (the NDK is in it).
-func (installer Installer) AndroidSDK(accepted string) (string, error) {
+// no for any other. sdkmanager runs on the JDK in javaHome. It returns the SDK's folder (the NDK is
+// in it).
+func (installer Installer) AndroidSDK(accepted, javaHome string) (string, error) {
 	if strings.TrimSpace(accepted) == "" {
 		return "", failure.Wrap(LicenceNotAccepted, androidLicence, nil)
 	}
-	java, err := findJava()
-	if err != nil {
-		return "", err
+	if javaHome == "" {
+		return "", JavaNotFound
 	}
-	sdk := filepath.Join(installer.Folder, "android-sdk")
+	sdk := filepath.Join(installer.Folder, androidSDKFolder)
 	manager, err := installer.androidCommandLine(sdk)
 	if err != nil {
 		return "", err
 	}
-	environment := append(os.Environ(), "JAVA_HOME="+filepath.Dir(filepath.Dir(java)))
+	environment := append(os.Environ(), "JAVA_HOME="+javaHome)
 	answers := licenceAnswers{licence: androidLicence, text: accepted}
 	if err := runAndroidManager(manager, environment, &answers, append([]string{"--sdk_root=" + sdk}, AndroidPackages...)...); err != nil {
 		return "", err
@@ -93,7 +93,7 @@ func (installer Installer) AndroidSDK(accepted string) (string, error) {
 // androidRepository downloads and reads Google's repository index.
 func (installer Installer) androidRepository() (androidRepository, error) {
 	var repository androidRepository
-	index := filepath.Join(installer.Folder, "android-sdk", androidIndex)
+	index := filepath.Join(installer.Folder, androidSDKFolder, androidIndex)
 	if err := Download(installer.androidLink(androidIndex), index, nil); err != nil {
 		return repository, err
 	}
@@ -185,32 +185,6 @@ func runAndroidManager(manager string, environment []string, answers *licenceAns
 		return failure.Wrap(AndroidManagerFailed, strings.Join(lines[max(len(lines)-8, 0):], "\n"), err)
 	}
 	return nil
-}
-
-// findJava finds the java program: $JAVA_HOME's, or on the path.
-func findJava() (string, error) {
-	name := "java"
-	if runtime.GOOS == "windows" {
-		name += ".exe"
-	}
-	if home := os.Getenv("JAVA_HOME"); home != "" {
-		if java := filepath.Join(home, "bin", name); fileExists(java) {
-			return java, nil
-		}
-	}
-	if java, err := exec.LookPath("java"); err == nil {
-		return resolved(java), nil
-	}
-	return "", JavaNotFound
-}
-
-// resolved is a program's place with its links followed: java on the path is often a link to the
-// JDK's own, whose folder is JAVA_HOME.
-func resolved(program string) string {
-	if real, err := filepath.EvalSymlinks(program); err == nil {
-		return real
-	}
-	return program
 }
 
 // fileExists tells whether a path exists.

@@ -27,6 +27,9 @@ type Settings struct {
 	AndroidID string `json:"androidId,omitempty"`
 	// ConsoleAddress is the 3DS's address on the network, to send the game to; empty looks for it.
 	ConsoleAddress string `json:"consoleAddress,omitempty"`
+	// SceneMenu lists the game's scenes on the Nintendo 3DS's bottom screen, to play any of them
+	// with a touch: a level select.
+	SceneMenu bool `json:"sceneMenu,omitempty"`
 }
 
 // SettingsFile is the settings' file in a project.
@@ -69,7 +72,11 @@ func Run(files fs.FS) error {
 	for _, problem := range played.Start() {
 		slog.Warn("a behaviour could not be made", "error", problem)
 	}
-	return (&runner{played: played}).run(settings.Name)
+	game := &runner{played: played, name: settings.Name}
+	if settings.SceneMenu || bottomScreen != nil {
+		game.menu = scenesOf(files)
+	}
+	return game.run(settings.Name)
 }
 
 // The game's window.
@@ -92,6 +99,8 @@ type runner struct {
 	flat    draw2d.List      // a 2D scene's drawing on the console, made again every frame
 	console consoleInput     // the console's buttons, as keys
 	view    window.SceneView // what the window shows this frame
+	name    string           // the game's
+	menu    []MenuScene      // the scenes the bottom screen offers, when it offers them
 }
 
 // run opens the window and plays until it is closed.

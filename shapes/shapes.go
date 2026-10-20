@@ -1,6 +1,6 @@
-// Package shapes makes the meshes of simple shapes, each a metre across and centred on the origin,
-// for go-renderer to draw: the cube, the sphere, the plane (lying flat, facing up) and the
-// cylinder (standing up).
+// Package shapes makes the meshes of simple shapes for go-renderer to draw. Each is a metre across
+// and centred on the origin: the cube, the sphere, the plane (flat, facing up) and the cylinder
+// (standing up).
 package shapes
 
 import (

@@ -144,7 +144,7 @@ func (node *Node) flatSize() (width, height float64, found bool) {
 }
 
 // Draw2D draws a 2D scene into an area of the screen, as a view sees it: the sky's colour, then
-// its sprites and shapes from the furthest to the nearest.
+// its sprites and shapes from the furthest to the nearest, lit by its lights (lights.go).
 func (owner *Scene) Draw2D(list *draw2d.List, area draw2d.Rect, view View2D) {
 	if owner.Sky != "" {
 		list.Rectangle(area, 0, draw2d.Hex(owner.Sky), draw2d.Color{}, 0)
@@ -152,36 +152,50 @@ func (owner *Scene) Draw2D(list *draw2d.List, area draw2d.Rect, view View2D) {
 	owner.DrawContent2D(list, area, view)
 }
 
-// DrawContent2D draws a 2D scene's sprites and shapes without its sky: over something of the
-// program's own (the editor's grid).
+// DrawContent2D draws a 2D scene's sprites and shapes without its sky, lit by its lights: over
+// something of the program's own (the editor's grid).
 func (owner *Scene) DrawContent2D(list *draw2d.List, area draw2d.Rect, view View2D) {
+	owner.drawContent(list, area, view, true)
+}
+
+// DrawContent2DUnlit draws a 2D scene's sprites and shapes as DrawContent2D does, but without its
+// lights, and a sprite light's sprite as a sprite: what the editor shows to see the colours.
+func (owner *Scene) DrawContent2DUnlit(list *draw2d.List, area draw2d.Rect, view View2D) {
+	owner.drawContent(list, area, view, false)
+}
+
+func (owner *Scene) drawContent(list *draw2d.List, area draw2d.Rect, view View2D, lit bool) {
 	if area.Height > 0 {
 		owner.drawnAspect = float64(area.Width) / float64(area.Height)
 	}
 	list.PushClip(area)
 	defer list.PopClip()
-	for _, node := range owner.drawOrder() {
+	for _, node := range owner.drawOrder(lit) {
 		owner.drawFlat(list, area, view, node)
+	}
+	if lit {
+		owner.drawLights(list, area, view)
 	}
 }
 
-// drawOrder is the visible nodes that show something, furthest first.
-func (owner *Scene) drawOrder() []*Node {
-	owner.drawn = owner.collectShown(owner.drawn[:0], owner.Root)
+// drawOrder is the visible nodes that show something, furthest first: lit, a sprite light shines
+// instead of showing its sprite.
+func (owner *Scene) drawOrder(lit bool) []*Node {
+	owner.drawn = owner.collectShown(owner.drawn[:0], owner.Root, lit)
 	slices.SortStableFunc(owner.drawn, byDepth)
 	return owner.drawn
 }
 
 // collectShown lists the visible nodes under one that show something, a node before its children.
-func (owner *Scene) collectShown(nodes []*Node, node *Node) []*Node {
+func (owner *Scene) collectShown(nodes []*Node, node *Node, lit bool) []*Node {
 	for _, child := range node.children {
 		if !child.Visible {
 			continue
 		}
-		if child.sprite != "" || child.shape != "" || child.tiles != nil {
+		if (child.sprite != "" || child.shape != "" || child.tiles != nil) && !(lit && child.isSpriteLight()) {
 			nodes = append(nodes, child)
 		}
-		nodes = owner.collectShown(nodes, child)
+		nodes = owner.collectShown(nodes, child, lit)
 	}
 	return nodes
 }
@@ -196,13 +210,10 @@ func (owner *Scene) drawFlat(list *draw2d.List, area draw2d.Rect, view View2D, n
 		owner.drawTiles(list, area, view, node)
 		return
 	}
-	box := node.flatBounds()
-	if box.IsEmpty() {
+	rect, shown := owner.shownRect(area, view, node)
+	if !shown {
 		return
 	}
-	left, top := view.ToScreen(area, space.NewVector(box.Minimum.X, box.Maximum.Y, 0))
-	right, bottom := view.ToScreen(area, space.NewVector(box.Maximum.X, box.Minimum.Y, 0))
-	rect := draw2d.Rect{X: left, Y: top, Width: right - left, Height: bottom - top}
 	if node.sprite != "" {
 		if picture, found := owner.spritePicture(node); found {
 			list.Image(picture, rect, 0, draw2d.Color{1, 1, 1, 1})
@@ -215,6 +226,15 @@ func (owner *Scene) drawFlat(list *draw2d.List, area draw2d.Rect, view View2D, n
 		radius = min(rect.Width, rect.Height) / 2
 	}
 	list.Rectangle(rect, radius, colour, draw2d.Color{}, 0)
+}
+
+// shownRect is where a node's sprite or shape falls on the screen, if it shows anything.
+func (owner *Scene) shownRect(area draw2d.Rect, view View2D, node *Node) (draw2d.Rect, bool) {
+	box := node.flatBounds()
+	if box.IsEmpty() {
+		return draw2d.Rect{}, false
+	}
+	return screenRect(area, view, box), true
 }
 
 // flatColour is a shape's colour, read from its text once and kept: a frame reads no text.

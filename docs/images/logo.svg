@@ -1,0 +1,10 @@
+<svg width="68" height="68" viewBox="0 0 68 68" fill="none" xmlns="http://www.w3.org/2000/svg">
+<title>go-engine</title>
+<path d="M34.0 34.0 L60.0 47.0 L34.0 60.0 L8.0 47.0 Z" fill="#2F3540" stroke="#2F3540" stroke-width="6" stroke-linejoin="round"/>
+<path d="M49.6 43.7 L34.0 51.5 L34.0 42.7 L49.6 34.9 Z" fill="#007997" stroke="#007997" stroke-width="6" stroke-linejoin="round"/>
+<path d="M18.4 43.7 L34.0 51.5 L34.0 42.7 L18.4 34.9 Z" fill="#0093B7" stroke="#0093B7" stroke-width="6" stroke-linejoin="round"/>
+<path d="M34.0 27.1 L49.6 34.9 L34.0 42.7 L18.4 34.9 Z" fill="#00ADD8" stroke="#00ADD8" stroke-width="6" stroke-linejoin="round"/>
+<path d="M34.0 27.1 L49.6 34.9 L34.0 42.7 L18.4 34.9 Z" fill="#FFFFFF" fill-opacity=".12"/>
+<ellipse cx="34.0" cy="34.7" rx="7.4" ry="3.7" fill="#2F3540"/>
+<ellipse cx="34.0" cy="34.7" rx="2.8" ry="1.4" fill="#00ADD8"/>
+</svg>

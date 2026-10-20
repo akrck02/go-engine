@@ -26,12 +26,13 @@ func TestTheNewestNDKIsChosenByItsNumbers(test *testing.T) {
 // withNoTools leaves a test with no tool to find: no variables, an empty path and home.
 func withNoTools(test *testing.T) string {
 	empty := test.TempDir()
-	for _, variable := range []string{"ANDROID_HOME", "ANDROID_SDK_ROOT", "ANDROID_NDK_HOME", "EMULATOR_3DS", "LOCALAPPDATA", "TINYGO"} {
+	for _, variable := range []string{"ANDROID_HOME", "ANDROID_SDK_ROOT", "ANDROID_NDK_HOME", "EMULATOR_3DS", "LOCALAPPDATA", "TINYGO", "JAVA_HOME", "ProgramFiles"} {
 		test.Setenv(variable, "")
 	}
 	test.Setenv("HOME", empty)
 	test.Setenv("PATH", empty)
 	test.Setenv("DEVKITPRO", empty)
+	test.Setenv("XDG_DATA_HOME", empty)
 	return empty
 }
 
@@ -49,6 +50,7 @@ func TestMissingToolsAreSaidByTheirCodes(test *testing.T) {
 		{"adb", tools.FindADB, ADBNotFound},
 		{"3dslink", tools.FindThreeDSLink, ThreeDSLinkNotFound},
 		{"a 3DS emulator", tools.FindConsoleEmulator, ConsoleEmulatorNotFound},
+		{"a JDK", tools.FindJava, JavaNotFound},
 	}
 	for _, each := range cases {
 		if _, err := each.find(); !errors.Is(err, each.wanted) {
@@ -81,8 +83,8 @@ func TestAToolSetInTheEditorIsUsedFirst(test *testing.T) {
 
 func TestAToolSetWhereNothingIsIsSaidByItsCode(test *testing.T) {
 	withNoTools(test)
-	tools := Tools{TinyGo: "/nowhere/tinygo", AndroidSDK: "/nowhere/sdk", AndroidNDK: "/nowhere/ndk", DevkitPro: "/nowhere/devkitpro", ConsoleEmulator: "/nowhere/azahar"}
-	finders := []func() (string, error){tools.FindTinyGo, tools.FindAndroidSDK, tools.FindThreeDSLink, tools.FindConsoleEmulator, tools.FindADB,
+	tools := Tools{TinyGo: "/nowhere/tinygo", AndroidSDK: "/nowhere/sdk", AndroidNDK: "/nowhere/ndk", DevkitPro: "/nowhere/devkitpro", ConsoleEmulator: "/nowhere/azahar", Java: "/nowhere/jdk"}
+	finders := []func() (string, error){tools.FindTinyGo, tools.FindAndroidSDK, tools.FindThreeDSLink, tools.FindConsoleEmulator, tools.FindADB, tools.FindJava,
 		func() (string, error) { return tools.FindAndroidNDK("/nowhere/sdk") }}
 	for _, find := range finders {
 		if _, err := find(); !errors.Is(err, ToolPlaceWrong) {
