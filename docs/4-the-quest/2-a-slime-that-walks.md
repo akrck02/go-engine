@@ -18,6 +18,8 @@ pictures you copied) and press **Open in Art**. A **sprite file** cuts a picture
 second, looping. The other frames are spare. Choose an animation to watch it under **Preview**;
 **Play it when the scene starts** would make it the one the slime starts with.
 
+<p align="center"><img alt="The Art workspace on slime.sprite.json: the slime's picture cut into 5 by 2 frames, numbered, the first outlined in orange; the animations idle (it starts) and walk on the right; the preview under the frames" src="../images/quest/editor-art-slime.png" width="680"></p>
+
 To make one of your own, choose any picture in Project and press **Make it a sprite or a tileset**.
 
 ## Something to stand on
@@ -35,6 +37,8 @@ is drawn as a square in 2D). In its inspector, under **Body**, press **Give it a
    heroes fall much faster than real things do; it feels better under the thumbs.
 4. An empty node shows only as a small dot: set its position in the inspector, X 8 and Y 0, above
    the ground.
+
+<p align="center"><img alt="Level with Player chosen: its Body section with Moving chosen, width 0.94, height 0.62 and a gravity scale of 5.75" src="../images/quest/editor-body.png" width="560"></p>
 
 ## The costume
 
@@ -142,7 +146,9 @@ body.Velocity.X = direction * speed
 
 </details>
 
-**🎭 Achievement unlocked: Puppeteer.** You gave a node a body and moved it with your own code.
+![Achievement unlocked: Puppeteer](../images/quest/achievement-puppeteer.svg)
+
+You gave a node a body and moved it with your own code.
 
 ---
 

@@ -11,6 +11,9 @@ to any level.
 
 ## A screen of your own
 
+<p align="center"><img alt="Azahar: Io World's lit start screen on top; on the bottom screen, the game's own menu titled IO WORLD, with four levels drawn on brick bands" src="../images/3ds-bottom-screen.png" width="560"></p>
+
+
 `engine.SetBottomScreen` draws the bottom screen with [Go UI](https://github.com/akrck02/go-ui), in
 the game's own look. Call it in `main.go`, before `engine.Run`:
 

@@ -26,6 +26,8 @@ cp -r /tmp/go-engine/examples/platformer/assets/sprites ~/games/forest/assets/
 In **Project** (key 1) the folder `sprites` appears, with the pictures: the forest's tiles, its
 backdrops, a slime, a coin, spikes and a sign.
 
+<p align="center"><img alt="The Project workspace: the folders assets, models and sprites on the left, the forest's pictures and sprite files as thumbnails, from the backdrops to the water" src="../images/quest/editor-project.png" width="680"></p>
+
 ## A 2D scene
 
 1. Click the scene's name at the top (**main**) and choose **New 2D scene**. It opens with a green
@@ -74,7 +76,9 @@ only the sky behind them changes. In level 5 the whole forest goes dark, with li
 
 </details>
 
-**🧭 Achievement unlocked: Explorer.** You made a project, a 2D scene and a camera.
+![Achievement unlocked: Explorer](../images/quest/achievement-explorer.svg)
+
+You made a project, a 2D scene and a camera.
 
 ---
 

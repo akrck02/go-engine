@@ -16,6 +16,10 @@ see [level 3 of the quest](../4-the-quest/3-ground-to-stand-on.md).
 
 Set the scene's **pixels per metre** to the tile's size, so a tile is a metre.
 
+<p align="center"><img alt="Level with a tile map chosen: ledges of grass and rock painted over hills, the map's grid outlined, and the palette of tiles under the view" src="../images/quest/3.png" width="680"></p>
+
+<p align="center"><img alt="The tileset in Art: numbered tiles, the solid ones tinted blue" src="../images/quest/editor-art-tiles.png" width="560"></p>
+
 ## How it behaves
 
 | | |

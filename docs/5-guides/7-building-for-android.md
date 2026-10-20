@@ -27,6 +27,9 @@ A phone needs **USB debugging** on (in its developer options) and a cable, or an
 
 ## How the game behaves there
 
+<p align="center"><img alt="A game on an Android emulator held upright: the level at the top, round touch buttons under it" src="../images/android-upright.png" width="280"></p>
+
+
 - **Touch buttons.** The game draws round buttons for the arrows and A; a keyboard plugged in still
   works.
 - **Held upright or sideways.** Sideways, the game fills the screen. Upright, it sits at the top at

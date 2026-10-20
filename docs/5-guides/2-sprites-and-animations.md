@@ -17,6 +17,8 @@ its pixels at the scene's **pixels per metre**, times the node's scale.
 
 The sprite is a file, `name.sprite.json`, that every scene shares. Place it like a picture.
 
+<p align="center"><img alt="A sprite in Art: the picture cut into numbered frames, its animations on the right, a preview under it" src="../images/quest/editor-art-slime.png" width="680"></p>
+
 ## From code
 
 ```go

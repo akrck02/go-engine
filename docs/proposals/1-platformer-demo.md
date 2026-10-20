@@ -4,15 +4,15 @@
 
 ## Why
 
-Go Engine (v0.0.1) can place things in a scene and run code on them, but nothing yet makes a
-game feel like one: things don't fall, collide, animate or get followed by the camera. A small
-platformer needs all of that, so building one tells us what the engine is missing and proves each
-piece works, on the desktop and on the 3DS. The author's own `godot-generic-platformer` is the
+Go Engine (v0.0.1) can place things in a scene and run code on them. But nothing yet makes a game
+feel like one: things don't fall, collide, animate or get followed by the camera. A small
+platformer needs all of that. Building one tells us what the engine is missing, and proves each
+piece works on the desktop and on the 3DS. The author's own `godot-generic-platformer` is the
 reference for how it should play.
 
 ## What
 
-The engine gains generic 2D pieces any game can use; the demo is a project made with the editor
+The engine gains generic 2D pieces any game can use. The demo is a project made with the editor
 that uses them, with only its own behaviours as game code.
 
 | Id | Requirement | Check |
@@ -36,16 +36,16 @@ that uses them, with only its own behaviours as game code.
 
 ## Decisions
 
-- **Art**: the sprites and tilesets of `godot-generic-platformer`, as the author allowed; the
+- **Art**: the sprites and tilesets of `godot-generic-platformer`, as the author allowed. The
   demo says where they come from.
-- **Where**: `examples/platformer/`, a project with its own `go.mod`, beside the engine, so each
+- **Where**: `examples/platformer/`, a project with its own `go.mod`, beside the engine. Each
   change to the engine is played with it in the same commit.
 - **Scope**: one world, the forest, in three short levels. Lava and snow come later, from the same
   pieces.
 
 ## Design
 
-Four generic pieces join the engine; the demo only adds its behaviours, scenes and art.
+Four generic pieces join the engine. The demo only adds its behaviours, scenes and art.
 
 ```
 space ← physics ← engine ← editor
@@ -53,54 +53,61 @@ space ← physics ← engine ← editor
 
 **1. `physics`, a new package**: boxes that move and collide in 2D, knowing nothing of nodes.
 
-- A `Body` has a box (its size in metres), a velocity, a gravity scale and a kind: *solid*
-  (never moves), *moving* (falls and is pushed back by solids) or *trigger* (only notices what
-  touches it).
-- `World.Step(seconds)` adds gravity, then moves each moving body one axis at a time, in steps no
-  longer than half its smallest side, so a fast body cannot jump through a thin wall (R1). A body
-  that hits a solid stops on that axis only and keeps the other, which is sliding (R2); hitting a
-  floor sets `OnFloor`.
+- A `Body` has a box (its size in metres), a velocity, a gravity scale and a kind. A *solid*
+  never moves. A *moving* body falls and is pushed back by solids. A *trigger* only notices what
+  touches it.
+- `World.Step(seconds)` adds gravity, then moves each moving body one axis at a time. Its steps
+  are no longer than half the body's smallest side, so a fast body cannot jump through a thin
+  wall (R1).
+- A body that hits a solid stops on that axis only and keeps the other: that is sliding (R2).
+  Hitting a floor sets `OnFloor`.
 - Overlaps of triggers are reported once, when they begin (R6).
 - Alternatives not taken: a physics library (Box2D ports, Chipmunk). They bring rotation, joints
-  and a dependency the demo doesn't need; boxes lined up with the axes are what platformers use,
+  and a dependency the demo doesn't need. Boxes lined up with the axes are what platformers use,
   and small enough to learn from.
 
-**2. Tiles, in `engine` and `scenefile`**: a node may be a tile map: a tileset picture, the size
-of a tile in pixels, a grid of tile numbers, and which tiles are solid (R3).
+**2. Tiles, in `engine` and `scenefile`**: a node may be a tile map (R3). It has a tileset
+picture, the size of a tile in pixels, a grid of tile numbers, and which tiles are solid.
 
-- The tileset is cut into one picture per tile when it loads, so `draw2d` draws whole pictures
+- The tileset is cut into one picture per tile when it loads. So `draw2d` draws whole pictures,
   and Go Renderer needs no change.
-- Solid tiles become solid bodies, rows of them merged into one box, so a level of a thousand
-  tiles is a few dozen boxes.
-- The editor gains a tile tool in the 2D view: the tileset in the inspector to choose from, drag
-  to paint, right-drag to erase.
+- Solid tiles become solid bodies, rows of them merged into one box. A level of a thousand tiles
+  is a few dozen boxes.
+- The editor gains a tile tool in the 2D view. The tileset shows in the inspector to choose from;
+  drag to paint, right-drag to erase.
 
-**3. Animated sprites, in `engine` and `scenefile`**: a sprite may be a sheet of equal frames, with
-named animations (frames, frames per second, looping), and may face left (R4).
+**3. Animated sprites, in `engine` and `scenefile`**: a sprite may be a sheet of equal frames (R4).
+It has named animations (frames, frames per second, looping), and may face left.
 
-- Frames are cut from the sheet when it loads; facing left uses a mirrored copy made once, since
-  `draw2d` draws pictures upright.
+- Frames are cut from the sheet when it loads. `draw2d` draws pictures upright, so facing left
+  uses a mirrored copy made once.
 - A behaviour calls `node.Play("walk")` and `node.FaceLeft(true)`.
 
 **4. Bodies, triggers, the camera and scenes, in `engine`**:
 
-- A node may have a body (`"body": {"kind": "moving", "size": [0.8, 0.6]}` in the scene file);
-  the engine keeps the physics world in step with the nodes every frame: behaviours update, the
-  world steps, nodes take their bodies' positions.
+- A node may have a body: `"body": {"kind": "moving", "size": [0.8, 0.6]}` in the scene file.
+  The engine keeps the physics world in step with the nodes every frame. Behaviours update, the
+  world steps, and nodes take their bodies' positions.
 - A behaviour with `Touched(context, other *Node)` hears when its node's trigger begins touching
   another body (R6).
-- A camera may follow a node, with a smoothing time, kept inside the level's bounds: the tile
-  maps' extent, or bounds of its own (R5). The tile maps bound the sides and the bottom; the sky
-  above stays open, so the camera rises with a jump, unless the camera has a ceiling (a cave).
+- A camera may follow a node, with a smoothing time, kept inside the level's bounds (R5). The
+  bounds are the tile maps' extent, or bounds of its own.
+- The tile maps bound the sides and the bottom. The sky above stays open, so the camera rises
+  with a jump, unless the camera has a ceiling (a cave).
 - `context.RestartScene()` and `context.ChangeScene(file)` let a game restart a level or go to the
-  next, in a window, on the 3DS and in the editor's view (R6, R7).
+  next (R6, R7). They work in a window, on the 3DS and in the editor's view.
 
-**The demo**, `examples/platformer/`: a project like any other (its `go.mod` points at the engine
-beside it). Behaviours `Player` (walk, jump with Space or A, animations, facing), `Coin`
-(collected when touched), `Hazard` (spikes and water: restart the level) and `Flag` (next level);
-three forest levels: the first two converted from the reference's `World.tscn` and `World2.tscn`
-(its third is a copy of the second), the third joining them into one wider than the screen. No behaviour of the demo reaches into the engine's insides
-(R8).
+**The demo**, `examples/platformer/`, is a project like any other: its `go.mod` points at the engine
+beside it. Its behaviours are these:
+
+- `Player`: walk, jump with Space or A, animations, facing.
+- `Coin`: collected when touched.
+- `Hazard`: spikes and water restart the level.
+- `Flag`: goes to the next level.
+
+It has three forest levels. The first two are converted from the reference's `World.tscn` and
+`World2.tscn`; the reference's third is a copy of the second. Our third joins them into one level
+wider than the screen. No behaviour of the demo reaches into the engine's insides (R8).
 
 ## Tasks
 
@@ -133,31 +140,46 @@ three forest levels: the first two converted from the reference's `World.tscn` a
 
 ## Result
 
-**Built.** The `physics` package (boxes that fall, collide, slide, and triggers that report a
-touch once); bodies, tile maps with merged solid rows, animated sprites that face either way, a
-camera that follows within bounds (the sky open above the tile maps unless the camera has a
-ceiling), and restarting or changing scenes, in `engine`; inspector sections for bodies, sheets and
-following cameras and a tile tool in the editor; and the demo in `examples/platformer/`: three
-forest levels (two converted from the reference's Godot levels, the third joining them), with
-`Player`, `Coin`, `Hazard` and `Flag` as its only code.
+**Built.** In `engine`:
 
-**Checked.** Every requirement's test passes (`go test ./...` here and in the demo). The demo was
-played by a script in the editor's view and drawn after some seconds; on the 3DS it was built
-with TinyGo and played in Azahar at 60 frames a second: walking, jumping over the spikes with A,
-the camera rising with the jump, a restart on the spikes. That found a real bug: go-ui hands the
-scene a fresh copy of its input each frame, so a button was never "pressed"; the engine now keeps
-the game's keys itself (`engine/console.go`).
+- The `physics` package: boxes that fall, collide and slide, and triggers that report a touch once.
+- Bodies, and tile maps with merged solid rows.
+- Animated sprites that face either way.
+- A camera that follows within bounds. The sky stays open above the tile maps, unless the camera
+  has a ceiling.
+- Restarting or changing scenes.
 
-**Review.** The reviewer's findings were fixed: a node moved or added while playing keeps or gets
-its body; a body with no size takes short steps; a scene made by hand cannot restart and says so
-(`engine.scene-not-restartable`); a missing picture is tried once and costs nothing after; a
-restart shares the pictures already read (`TakeReplacement`, renamed because it acts); typed
-frames are checked against the sheet before a run is counted out; removing an animation forgets
-the texts typed for the others; the first animation can be unticked; a missing tileset says why;
-remove buttons have tooltips; the engine's own code and tests name no coin, spike or player.
-Not changed, on purpose: `DefaultGravity` keeps its name (its unit, metres a second each second,
-is in its comment); two long editor functions (`followMouse`, `nodeInspector`) are rewritten by
-proposal 2's Level task instead of split twice.
+In the editor: inspector sections for bodies, sheets and following cameras, and a tile tool.
+
+The demo, in `examples/platformer/`, has three forest levels. Two are converted from the
+reference's Godot levels, and the third joins them. `Player`, `Coin`, `Hazard` and `Flag` are its
+only code.
+
+**Checked.** Every requirement's test passes (`go test ./...` here and in the demo). A script
+played the demo in the editor's view, and it was drawn after some seconds. On the 3DS it was built
+with TinyGo and played in Azahar at 60 frames a second. It walked, jumped over the spikes with A,
+and restarted on the spikes; the camera rose with the jump.
+
+That found a real bug. go-ui hands the scene a fresh copy of its input each frame, so a button was
+never "pressed". The engine now keeps the game's keys itself (`engine/console.go`).
+
+**Review.** The reviewer's findings were fixed:
+
+- A node moved or added while playing keeps or gets its body.
+- A body with no size takes short steps.
+- A scene made by hand cannot restart, and says so (`engine.scene-not-restartable`).
+- A missing picture is tried once and costs nothing after.
+- A restart shares the pictures already read (`TakeReplacement`, renamed because it acts).
+- Typed frames are checked against the sheet before a run is counted out.
+- Removing an animation forgets the texts typed for the others.
+- The first animation can be unticked.
+- A missing tileset says why.
+- Remove buttons have tooltips.
+- The engine's own code and tests name no coin, spike or player.
+
+Not changed, on purpose. `DefaultGravity` keeps its name: its unit, metres a second each second,
+is in its comment. Two long editor functions (`followMouse`, `nodeInspector`) are not split now.
+Proposal 2's Level task rewrites them instead of splitting them twice.
 
 **For a person.** Play the demo on the console (T13): the jump's height, the camera and the
 frame rate on the real machine.

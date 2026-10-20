@@ -7,8 +7,8 @@
 
 Building for the 3DS and Android needs tools found outside the editor: TinyGo, devkitPro, a 3DS
 emulator, the Android SDK and NDK. Today they are found through environment variables or the
-usual folders, and when they are not, the only way out is a variable set before starting the
-editor. A person should see what the editor found and point it at what it did not, in the editor.
+usual folders. When they are not, the only way out is a variable set before starting the editor.
+A person should see what the editor found, and point it at what it did not, in the editor.
 
 ## What
 
@@ -25,17 +25,24 @@ editor. A person should see what the editor found and point it at what it did no
 
 ## Design
 
-**Tools** (`internal/build`): a `Tools` value holds the place of each tool the person chose,
-read from and saved to `go-engine/tools.json` in the user's configuration folder
-(`os.UserConfigDir`). Each finder is a method of it (`tools.FindTinyGo()`,
-`tools.FindAndroidSDK()`…): the place chosen first (a program or a folder, as the tool is), then
-the variables, then the usual folders. `project.Open` reads it into `Project.Tools`, so the builds
-use it, and keeps why it could not be read in `Project.ToolsUnread`.
+**Tools** (`internal/build`): a `Tools` value holds the place of each tool the person chose. It is
+read from and saved to `go-engine/tools.json`, in the user's configuration folder
+(`os.UserConfigDir`).
 
-**Panel**: under the Build cards, a "Tools on this computer" panel: a row per tool with its
+Each finder is a method of it (`tools.FindTinyGo()`, `tools.FindAndroidSDK()`…). It looks in
+three places, in order:
+
+1. the place chosen, a program or a folder, as the tool is;
+2. the variables;
+3. the usual folders.
+
+`project.Open` reads it into `Project.Tools`, so the builds use it. Why it could not be read is
+kept in `Project.ToolsUnread`.
+
+**Panel**: under the Build cards, a "Tools on this computer" panel. It has a row per tool: its
 name, what needs it, a field for its place, and where it was found or the error with its meaning.
-Check looks where the places typed say; saving writes the file and looks again (not while the game
-builds or plays: the build reads them). Nothing is looked for every frame.
+Check looks where the places typed say. Saving writes the file and looks again, but not while the
+game builds or plays, since the build reads them. Nothing is looked for every frame.
 
 ## Tasks
 
@@ -45,18 +52,26 @@ builds or plays: the build reads them). Nothing is looked for every frame.
 
 ## Result
 
-**Built.** `build.Tools`, kept in `go-engine/tools.json` of the user's configuration folder, with
-a finder for each tool (TinyGo, devkitPro's 3dslink, a 3DS emulator, the Android SDK and its adb,
-the NDK); a place chosen comes first, and one where the wrong thing is (nothing, a folder for a
-program, a devkitPro with no 3dslink, an SDK with no adb) is said by `build.tool-place-wrong`.
-Build's **Tools on this computer** shows each tool, what needs it, the place typed, and where it
-was found or why not, with Check and Save; a file that could not be read is said there.
+**Built.** `build.Tools` is kept in `go-engine/tools.json`, in the user's configuration folder. It
+has a finder for each tool: TinyGo, devkitPro's 3dslink, a 3DS emulator, the Android SDK and its
+adb, the NDK. A place chosen comes first.
 
-**Checked.** The tests of each requirement; captures of the panel with tools found and missing.
+A place where the wrong thing is says so with `build.tool-place-wrong`. That covers nothing there,
+a folder for a program, a devkitPro with no 3dslink, and an SDK with no adb.
+
+Build's **Tools on this computer** shows each tool, what needs it, and the place typed. It says
+where the tool was found or why not, with Check and Save. A file that could not be read is said
+there.
+
+**Checked.** The tests of each requirement pass. The panel was captured with tools found and
+missing.
 
 **Then, asked by the author.** A file picker, go-ui's own (`ui.FilePicker`, feature/3ds 3183ea9,
-committed with the author's say): **Browse** beside each tool chooses a program or a folder, as
-the tool needs, and types it in its field to check and save; Project's **Import model** chooses a
-`.glb` and copies it into `assets/models`, which nothing in the editor offered before.
+committed with the author's say):
+
+- **Browse** beside each tool chooses a program or a folder, as the tool needs. It types it in its
+  field to check and save.
+- Project's **Import model** chooses a `.glb` and copies it into `assets/models`. Nothing in the
+  editor offered that before.
 
 **For a person.** Browse with a real mouse: double clicks, and going through deep folders.

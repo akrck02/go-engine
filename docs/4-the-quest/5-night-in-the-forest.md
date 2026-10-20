@@ -94,7 +94,9 @@ sixty frames a second on a console care about that.
 
 </details>
 
-**🏮 Achievement unlocked: Lamplighter.** You lit a scene with an ambient, lamps and glows.
+![Achievement unlocked: Lamplighter](../images/quest/achievement-lamplighter.svg)
+
+You lit a scene with an ambient, lamps and glows.
 
 ---
 

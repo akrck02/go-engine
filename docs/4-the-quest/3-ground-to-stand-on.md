@@ -16,6 +16,8 @@ In **Project**, choose `forest.tileset.json` and press **Open in Art**. It cuts 
 picture into tiles of 16 pixels. The tiles tinted blue are solid: grass on top, rock and earth
 below. Click a tile on the picture to make bodies stand on it; click it again to let them through.
 
+<p align="center"><img alt="The Art workspace on forest.tileset.json: the forest's picture cut into numbered 16-pixel tiles, the solid ones tinted blue, and the list of solid tiles on the right" src="../images/quest/editor-art-tiles.png" width="680"></p>
+
 ## The map
 
 1. In **Level**, delete the green box, *Ground*: the tiles will be the ground now.
@@ -47,6 +49,8 @@ Choose the **Camera**. Under **Follows**, choose *Player*, and set the smoothing
 camera catches up gently instead of jerking. Leave **Its view keeps inside** on **The tile maps**,
 so the player never sees past the level's edges.
 
+<p align="center"><img alt="Level with the Camera chosen: it follows Player with 0.20 seconds of smoothing, and its view keeps inside the tile maps" src="../images/quest/editor-camera.png" width="680"></p>
+
 ## Checkpoint
 
 Press **Play** and run from ledge to ledge.
@@ -70,7 +74,9 @@ code.
 
 </details>
 
-**🧱 Achievement unlocked: Builder.** You painted a level and made the camera follow your hero.
+![Achievement unlocked: Builder](../images/quest/achievement-builder.svg)
+
+You painted a level and made the camera follow your hero.
 
 ---
 
