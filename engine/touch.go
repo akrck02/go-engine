@@ -3,6 +3,7 @@ package engine
 import (
 	"github.com/akrck02/go-renderer/draw2d"
 	"github.com/akrck02/go-renderer/input"
+	ui "github.com/akrck02/go-ui"
 )
 
 // Touch buttons are the console's buttons drawn on a touch screen with no keyboard (a phone): the
@@ -11,6 +12,11 @@ import (
 // camera was made for (when the camera names a width), and the buttons under it, as a handheld
 // console does; held sideways, or with a camera that names no width, the game fills the screen
 // and the buttons lie over its bottom corners.
+//
+// A person who cannot see them uses a screen reader (TalkBack), which takes the touches itself:
+// a finger moved over the screen reads what is under it, and a double tap presses it. While one
+// is on, each button is also a control of the interface, named, which a double tap presses for a
+// moment; a double tap held passes the touch through, and holds the button as a finger does.
 
 // The touch buttons' measures, in layout pixels.
 const (
@@ -22,10 +28,18 @@ const (
 	touchBandHeight   = touchButtonSide + 2*touchButtonMargin
 )
 
+// readerPressFrames is how many frames a screen reader's press holds a button's key: a fifth of a
+// second at sixty frames a second, long enough for a game to see a jump start.
+const readerPressFrames = 12
+
+// readerPressArea is a touch button's control for a screen reader, filling the button.
+var readerPressArea = ui.Layout{Width: ui.Grow(), Height: ui.Grow()}
+
 // touchButton is a button on the screen and the key it holds.
 type touchButton struct {
 	key  input.Key
 	icon string
+	name string // what a screen reader calls it
 	area draw2d.Rect
 }
 
@@ -62,33 +76,63 @@ func touchButtonsIn(band draw2d.Rect) [4]touchButton {
 	left := band.X + touchButtonMargin
 	right := band.X + band.Width - touchButtonMargin - touchButtonSide
 	return [4]touchButton{
-		{input.KeyLeft, "arrow-left", square(left)},
-		{input.KeyRight, "arrow-right", square(left + step)},
-		{input.KeyEscape, "circle-x", square(right - step)}, // B
-		{input.KeySpace, "circle-arrow-up", square(right)},  // A
+		{input.KeyLeft, "arrow-left", "Left", square(left)},
+		{input.KeyRight, "arrow-right", "Right", square(left + step)},
+		{input.KeyEscape, "circle-x", "B", square(right - step)},
+		{input.KeySpace, "circle-arrow-up", "A", square(right)},
 	}
 }
 
 // touchKeys sets a game's keys for this frame, kept from frame to frame as on the console (the
 // window hands the scene a fresh copy of its input every frame): those held on a keyboard, and
-// those whose button a finger is on.
-func touchKeys(keys, window *input.State, buttons [4]touchButton) *input.State {
+// those whose button a finger is on, and those a screen reader holds (readerHeld, by button).
+func touchKeys(keys, window *input.State, buttons [4]touchButton, readerHeld [4]bool) *input.State {
 	keys.EndFrame()
 	for key := input.KeyUnknown + 1; key <= input.KeySuper; key++ { // KeySuper is the last key
-		keys.SetKey(key, window.Down(key) || buttonHeld(window, buttons, key))
+		keys.SetKey(key, window.Down(key) || buttonHeld(window, buttons, readerHeld, key))
 	}
 	keys.StickX, keys.StickY = window.StickX, window.StickY
 	return keys
 }
 
-// buttonHeld tells whether a finger is on a button of a key.
-func buttonHeld(window *input.State, buttons [4]touchButton, key input.Key) bool {
-	for _, button := range buttons {
-		if button.key == key && touched(window, button.area) {
+// buttonHeld tells whether a finger is on a button of a key, or a screen reader holds it.
+func buttonHeld(window *input.State, buttons [4]touchButton, readerHeld [4]bool, key input.Key) bool {
+	for index, button := range buttons {
+		if button.key == key && (readerHeld[index] || touched(window, button.area)) {
 			return true
 		}
 	}
 	return false
+}
+
+// describeTouchButtons makes each touch button a control a screen reader reads by its name, while
+// one is on, and notes the ones it pressed (readerHeld). Nothing is added while none is.
+func (console *consoleInput) describeTouchButtons(context *ui.Context) {
+	if !context.ScreenReaderOn() {
+		return
+	}
+	for index, button := range console.buttons {
+		options := ui.LayerOptions{Padding: ui.Padding{Left: button.area.X, Top: button.area.Y},
+			Width: ui.Fixed(button.area.Width), Height: ui.Fixed(button.area.Height)}
+		context.Overlay(button.icon, options, func() {
+			if context.Clickable("press", readerPressArea, ui.Looks{}, nil) {
+				console.readerFrames[index] = readerPressFrames
+			}
+			context.Describe(ui.Description{Role: ui.ButtonRole, Label: button.name})
+		})
+	}
+}
+
+// readerHeld tells which buttons a screen reader's press still holds, and counts that frame off.
+func (console *consoleInput) readerHeld() [4]bool {
+	var held [4]bool
+	for index, frames := range console.readerFrames {
+		if frames > 0 {
+			held[index] = true
+			console.readerFrames[index]--
+		}
+	}
+	return held
 }
 
 // touched tells whether a finger is on an area.

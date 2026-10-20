@@ -30,8 +30,10 @@ A phone needs **USB debugging** on (in its developer options) and a cable, or an
 <p align="center"><img alt="A game on an Android emulator held upright: the level at the top, round touch buttons under it" src="../images/android-upright.png" width="280"></p>
 
 
-- **Touch buttons.** The game draws round buttons for the arrows and A; a keyboard plugged in still
-  works.
+- **Touch buttons.** The game draws round buttons for the arrows, B and A; a keyboard plugged in
+  still works.
+- **TalkBack.** With a screen reader on, the buttons are read as *Left*, *Right*, *B* and *A*. A
+  double tap presses one for a moment; a double tap held holds it, as a finger does.
 - **Held upright or sideways.** Sideways, the game fills the screen. Upright, it sits at the top at
   its camera's shape, with the buttons under it. A camera's **metres seen across** keeps the
   level's sides in view.

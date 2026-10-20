@@ -33,11 +33,12 @@ func interfaceFor(game *runner) func(context *ui.Context) {
 			}
 			drawTouchButtons(list, layout.buttons)
 		})
+		game.console.describeTouchButtons(context)
 	}
 }
 
 // consoleKeys is the game's keys on Android: a keyboard's, if one is plugged in, and the touch
 // buttons'.
 func consoleKeys(console *consoleInput, window *input.State) *input.State {
-	return touchKeys(&console.keys, window, console.buttons)
+	return touchKeys(&console.keys, window, console.buttons, console.readerHeld())
 }
