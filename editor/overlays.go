@@ -40,6 +40,12 @@ func (flat *flatView) drawOverlays(editor *Editor) {
 			return node.Visible || node == editor.Scene.Root
 		})
 	}
+	if flat.showLights {
+		editor.Scene.Root.Walk(func(node *engine.Node) bool {
+			flat.drawLightReach(node)
+			return node.Visible || node == editor.Scene.Root
+		})
+	}
 	if flat.showBounds {
 		editor.Scene.Root.Walk(func(node *engine.Node) bool {
 			flat.drawCameraBounds(editor.Scene, node)
@@ -50,6 +56,43 @@ func (flat *flatView) drawOverlays(editor *Editor) {
 		flat.drawCells(editor.Selected)
 	}
 }
+
+// drawLightReach draws where a node's light reaches: a point light's two circles, inner and outer,
+// or a sprite light's outline, in the light's colour.
+func (flat *flatView) drawLightReach(node *engine.Node) {
+	light, found := node.Light()
+	if !found {
+		return
+	}
+	colour := lightMarkColour(light.Colour)
+	if light.Kind == scenefile.SpriteLight {
+		flat.outline(node.Bounds(), colour, 1)
+		return
+	}
+	x, y := flat.view.ToScreen(flat.area, node.World().Position)
+	inner, outer := light.Radii()
+	scale := node.World().Scale
+	largest := math.Max(math.Abs(scale.X), math.Max(math.Abs(scale.Y), math.Abs(scale.Z)))
+	pixelsPerMetre := float64(flat.area.Height) / flat.view.Height
+	for _, radius := range [2]float64{inner, outer} {
+		pixels := float32(radius * largest * pixelsPerMetre)
+		circle := draw2d.Rect{X: x - pixels, Y: y - pixels, Width: 2 * pixels, Height: 2 * pixels}
+		flat.drawing.Rectangle(circle, pixels, draw2d.Transparent, colour, 1)
+	}
+}
+
+// lightMarkColour is a light's colour, a little see-through, for the marks over the view.
+func lightMarkColour(colour string) draw2d.Color {
+	if colour == "" {
+		colour = "#ffffff"
+	}
+	mark := draw2d.Hex(colour)
+	mark[3] = lightMarkAlpha
+	return mark
+}
+
+// lightMarkAlpha is how opaque the marks of a light's reach are.
+const lightMarkAlpha = 0.8
 
 // drawBody outlines a node's body: solid ones filled blue, moving ones in green (filled when they
 // can be pushed), platforms purple, triggers orange with an arrow where they pull.

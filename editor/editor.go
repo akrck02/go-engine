@@ -146,7 +146,7 @@ func (editor *Editor) Changed() {
 func (editor *Editor) Select(node *engine.Node) { editor.Selected, editor.Chosen = node, nil }
 
 // Kinds of node the editor adds.
-var Kinds = []string{"Empty", "Cube", "Sphere", "Plane", "Cylinder", "Camera"}
+var Kinds = []string{"Empty", "Cube", "Sphere", "Plane", "Cylinder", "Camera", "Light"}
 
 // SetMode makes the scene shown 3D or 2D.
 func (editor *Editor) SetMode(mode scenefile.Mode) {
@@ -169,7 +169,7 @@ func (editor *Editor) SetMode(mode scenefile.Mode) {
 }
 
 // Kinds2D are the kinds of node the editor adds to a 2D scene.
-var Kinds2D = []string{"Empty", "Square", "Circle", "Tile map", "Camera"}
+var Kinds2D = []string{"Empty", "Square", "Circle", "Tile map", "Camera", "Light"}
 
 // KindsHere are the kinds of node the scene shown takes.
 func (editor *Editor) KindsHere() []string {
@@ -193,11 +193,16 @@ func (editor *Editor) Add(kind string) *engine.Node {
 			description.Camera = &scenefile.Camera{Projection: scenefile.Orthographic, Height: 10}
 		case "Tile map":
 			description.Tiles = newTileMap()
+		case "Light":
+			description.Light = newPointLight()
 		}
 		return editor.place(description)
 	}
 	switch kind {
 	case "Empty":
+	case "Light":
+		description.Position[1] = newLampHeight
+		description.Light = newPointLight()
 	case "Camera":
 		description.Position, description.Rotation = [3]float64{0, 3, 7}, [3]float64{-20, 0, 0}
 		description.Camera = &scenefile.Camera{Projection: scenefile.Perspective, FieldOfView: 50}

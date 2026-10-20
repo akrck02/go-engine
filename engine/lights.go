@@ -34,7 +34,7 @@ const white = "#ffffff"
 // when the scene has neither lights nor an ambient.
 func (owner *Scene) drawLights(list *draw2d.List, area draw2d.Rect, view View2D) {
 	owner.lit = owner.collectLights(owner.lit[:0], owner.Root)
-	if len(owner.lit) == 0 && owner.Ambient == nil {
+	if owner.Unlit || len(owner.lit) == 0 && owner.Ambient == nil {
 		return
 	}
 	for _, node := range owner.lit {

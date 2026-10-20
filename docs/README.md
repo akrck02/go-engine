@@ -217,6 +217,15 @@ lamps that reach it, so a scene can have many, as Godot and Unity do on phones. 
 ambient sets how strong its sky light is (its colour is 2D's only); sprite lights are 2D's only.
 On the 3DS, 3D lamps light at the vertices: a floor shows a lamp's pool where it has vertices.
 
+**In the editor** a light is a kind of node (**+ → Light**, in 2D and 3D), and any node can be made
+one in the inspector's **Light** section: its kind, colour, intensity and radii. The scene's
+inspector sets its ambient. Over the 2D view, **Lights** draws how far each light reaches, and
+**Lit** shows the scene lit as the game will be, or its colours unlit.
+
+<p align="center">
+  <img alt="The editor's Level workspace on a 2D street at night: a street lamp chosen, its inner and outer circles drawn over the view, the lamp's warm pool on the ground, a window glowing on a house, and the Light section of the inspector with Point chosen, a colour, the intensity and the radii" src="images/editor-lights.png" width="640">
+</p>
+
 go-renderer draws the lights on every platform (its *2D lights* guide and its third lesson).
 
 ## Not yet

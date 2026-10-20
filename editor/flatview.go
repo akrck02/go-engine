@@ -36,9 +36,13 @@ type flatView struct {
 
 	showBodies bool // outline bodies and fill solid tiles
 	showBounds bool // draw the box following cameras keep their view in
+	showLights bool // draw where lights reach
+	showLit    bool // light the scene as the game will
 }
 
-func newFlatView() *flatView { return &flatView{view: engine.View2D{Height: 14}, showBodies: true} }
+func newFlatView() *flatView {
+	return &flatView{view: engine.View2D{Height: 14}, showBodies: true, showLights: true, showLit: true}
+}
 
 // Colours of the 2D view's grid and marks.
 var (
@@ -49,7 +53,11 @@ var (
 	flatAxisY      = draw2d.Color{0.35, 0.8, 0.4, 0.9}
 	flatChosen     = draw2d.Color{1, 0.6, 0.1, 1}
 	flatCamera     = draw2d.Color{1, 1, 1, 0.55}
+	lampMark       = draw2d.Color{1, 0.85, 0.4, 1}
 )
+
+// lampMarkSize is the side of the icon that marks a light with nothing else to show, in pixels.
+const lampMarkSize = 16
 
 // step follows the mouse in the 2D view, over the area it was last painted in; it returns what
 // go-renderer shows under the interface: the scene's world, empty in 2D.
@@ -73,6 +81,7 @@ func (flat *flatView) paint(editor *Editor, area draw2d.Rect, list *draw2d.List)
 	flat.drawing.Rectangle(area, 0, background, draw2d.Color{}, 0)
 	flat.drawing.PushClip(area)
 	flat.drawGrid()
+	editor.Scene.Unlit = !flat.showLit
 	editor.Scene.DrawContent2D(&flat.drawing, area, flat.view)
 	flat.drawOverlays(editor)
 	flat.drawMarks(editor)
@@ -266,6 +275,9 @@ func (flat *flatView) drawMarks(editor *Editor) {
 			height := engine.HeightSeen(settings, aspect)
 			half := space.NewVector(height*aspect/2, height/2, 0)
 			flat.outline(space.Box{Minimum: position.Subtract(half), Maximum: position.Add(half)}, flatCamera, 1)
+		} else if _, isLight := node.Light(); isLight && node.Bounds().IsEmpty() {
+			x, y := flat.view.ToScreen(flat.area, position)
+			flat.drawing.Icon(iconLamp, x-lampMarkSize/2, y-lampMarkSize/2, lampMarkSize, lampMark)
 		} else if node.Bounds().IsEmpty() {
 			x, y := flat.view.ToScreen(flat.area, position)
 			flat.drawing.Rectangle(draw2d.Rect{X: x - 5, Y: y - 5, Width: 10, Height: 10}, 5, draw2d.Color{0.95, 0.6, 0.1, 0.9}, draw2d.Color{}, 0)

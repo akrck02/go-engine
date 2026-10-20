@@ -99,7 +99,7 @@ computed on the processor (does not scale, and the 3DS has a GPU for it).
 - [ ] T4b — Metal: the light target and its blends, unbuilt here · go-renderer · R3
 - [x] T5 — `scenefile` and `engine`: lights on nodes, the ambient, drawn each frame without
   allocating · go-engine · R4, R6
-- [ ] T6 — Level: the inspector (2D and 3D), the ambient, the radii and a mark for each light, Play lit · go-engine · R5
+- [x] T6 — Level: the inspector (2D and 3D), the ambient, the radii and a mark for each light, Play lit · go-engine · R5
 - [ ] T7 — Io World's start screen lit from Unity's lights · go-engine-io-world · R7
 - [x] T8 — A lighting lights only its clip, on every backend; the 3DS paints its ambient instead
   of clearing it · go-renderer · R10
