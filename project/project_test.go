@@ -177,7 +177,7 @@ func TestALocalGoEngineGivesItsCommitToTheBuild(test *testing.T) {
 		test.Fatal(err)
 	}
 	flags := created.EngineFlags()
-	if len(flags) != 1 || !strings.Contains(flags[0], "engine.localRevision=") {
-		test.Fatalf("a project that replaces Go Engine with this folder builds with %v", flags)
+	if len(flags) != 1 || !strings.Contains(flags[0], "engine.localRevision=") || strings.Contains(flags[0], " ") {
+		test.Fatalf("a project that replaces Go Engine with this folder builds with %v, not one flag with no space", flags)
 	}
 }
