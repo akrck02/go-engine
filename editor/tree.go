@@ -79,6 +79,8 @@ func kindIcon(kind string) string {
 		return iconRound
 	case "Tile map":
 		return iconTileMap
+	case "Light":
+		return iconLamp
 	}
 	return iconEmpty
 }
@@ -98,6 +100,9 @@ func nodeIcon(node *engine.Node) string {
 	}
 	if _, isTileMap := node.Tiles(); isTileMap {
 		return iconTileMap
+	}
+	if _, isLight := node.Light(); isLight {
+		return iconLamp
 	}
 	return iconEmpty
 }

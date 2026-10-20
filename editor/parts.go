@@ -31,6 +31,9 @@ func (editor *Editor) GiveBody(kind scenefile.BodyKind) {
 		node.SetBodySettings(body)
 	}
 	body.Kind = kind
+	if kind != scenefile.Trigger {
+		body.Pull = nil // only a trigger pulls: kept, it would be saved and never read
+	}
 	editor.Changed()
 }
 
@@ -64,6 +67,16 @@ func (editor *Editor) SetStartsWith(name string) {
 		return
 	}
 	editor.Selected.SetStartsWith(name)
+	editor.Changed()
+}
+
+// SetZonePull gives the chosen trigger a gravity of its own, across and up, or the world's (nil).
+func (editor *Editor) SetZonePull(pull *[2]float64) {
+	body, found := editor.selectedBody()
+	if !found {
+		return
+	}
+	body.Pull = pull
 	editor.Changed()
 }
 

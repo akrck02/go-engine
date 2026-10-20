@@ -67,6 +67,7 @@ func (view *View) sceneInspector(context *ui.Context) {
 	}
 	context.Caption("3D (shapes and models) or 2D (sprites and flat shapes)")
 	view.dimensionsSwitch(context)
+	view.ambientInspector(context)
 	if editor.Scene.Is2D() {
 		perMetre := editor.Scene.PixelsPerMetre
 		if perMetre <= 0 {
@@ -144,6 +145,9 @@ func (view *View) partsInspector(context *ui.Context, node *engine.Node) {
 	}
 	if view.Editor.Scene.Is2D() && !isTileMap { // a tile map's solid tiles are its bodies
 		view.bodyInspector(context, node)
+	}
+	if !isTileMap {
+		view.lightInspector(context, node)
 	}
 }
 

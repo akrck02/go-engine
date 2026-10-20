@@ -93,9 +93,9 @@ func (view *View) themeButton(context *ui.Context) {
 // workspaceBar is the bottom bar: the editor's last word on the left, the workspaces in the
 // middle, the scene's saved state on the right.
 func (view *View) workspaceBar(context *ui.Context) {
-	layout := ui.Layout{Width: ui.Grow(), Height: ui.Fixed(52), Padding: ui.PadXY(10, 0), Gap: 8, AlignY: ui.Center}
+	layout := ui.Layout{Width: ui.Grow(), Height: ui.Fixed(workspaceBarHeight), Padding: ui.PadXY(10, 0), Gap: 8, AlignY: ui.Center}
 	bar(context, layout, func() {
-		context.Box(ui.Layout{Width: ui.Grow(), AlignY: ui.Center}, func() { view.lastWord(context) })
+		context.Box(ui.Layout{Width: ui.Grow()}, func() {}) // balances the saved state, to centre the workspaces
 		for _, workspace := range Workspaces {
 			view.workspaceButton(context, workspace)
 		}
@@ -133,21 +133,6 @@ func weightFor(shown bool) draw2d.Weight {
 func (view *View) showWorkspace(workspace Workspace) {
 	view.Editor.ShowWorkspace(workspace)
 	view.shownFor = nil
-}
-
-// lastWord is what the editor said last, and the running game's last line.
-func (view *View) lastWord(context *ui.Context) {
-	editor := view.Editor
-	style := ui.TextStyle{Color: context.Theme.InkSoft, Size: context.Theme.SmallTextSize}
-	if editor.Failed {
-		style.Color = context.Theme.Danger
-	}
-	context.Text(editor.Message, style)
-	if editor.output != nil && editor.Running() {
-		if last := editor.output.Last(); last != "" {
-			context.Text(" · "+last, ui.TextStyle{Color: context.Theme.InkQuiet, Size: context.Theme.SmallTextSize})
-		}
-	}
 }
 
 // savedState says whether the scene has changes not saved.

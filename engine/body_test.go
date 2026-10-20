@@ -143,3 +143,124 @@ func TestABodysBoxIsItsSizeOrItsNodes(test *testing.T) {
 		test.Fatal("the root has a body")
 	}
 }
+
+func TestAPushedBoxsNodeMovesWithIt(test *testing.T) {
+	description := &scenefile.Scene{Name: "Push", Mode: scenefile.Mode2D, Nodes: []scenefile.Node{
+		{Name: "Ground", Shape: "cube", Position: [3]float64{0, -0.5, 0}, Scale: [3]float64{20, 1, 1},
+			Body: &scenefile.Body{Kind: scenefile.Solid}},
+		{Name: "Box", Shape: "cube", Position: [3]float64{2, 0.5, 0}, Scale: [3]float64{1, 1, 1},
+			Body: &scenefile.Body{Kind: scenefile.Pushable}},
+		{Name: "Walker", Shape: "cube", Position: [3]float64{0, 0.5, 0}, Scale: [3]float64{1, 1, 1},
+			Body: &scenefile.Body{Kind: scenefile.Moving}},
+	}}
+	scene, err := Build(nil, description)
+	if err != nil {
+		test.Fatal(err)
+	}
+	scene.Start()
+	walker, _ := scene.Find("Walker")
+	box, _ := scene.Find("Box")
+	const frame = 1.0 / 60
+	for elapsed := 0.0; elapsed < 1; elapsed += frame {
+		body, _ := walker.Body()
+		body.Velocity.X = 3
+		scene.Update(frame, nil)
+	}
+	if x := box.World().Position.X; x <= 2.5 {
+		test.Fatalf("the box's node stayed at %v: it does not move with its body", x)
+	}
+}
+
+func TestAPlatformsNodeCarriesTheNodeOnIt(test *testing.T) {
+	description := &scenefile.Scene{Name: "Lift", Mode: scenefile.Mode2D, Nodes: []scenefile.Node{
+		{Name: "Lift", Shape: "cube", Position: [3]float64{0, -0.25, 0}, Scale: [3]float64{4, 0.5, 1},
+			Body: &scenefile.Body{Kind: scenefile.Platform}},
+		{Name: "Rider", Shape: "cube", Position: [3]float64{0, 0.5, 0}, Scale: [3]float64{1, 1, 1},
+			Body: &scenefile.Body{Kind: scenefile.Moving}},
+	}}
+	scene, err := Build(nil, description)
+	if err != nil {
+		test.Fatal(err)
+	}
+	scene.Start()
+	lift, _ := scene.Find("Lift")
+	rider, _ := scene.Find("Rider")
+	body, _ := lift.Body()
+	body.Velocity = space.NewVector(1, 0, 0)
+	playFor(scene, 1)
+	if liftX, riderX := lift.World().Position.X, rider.World().Position.X; liftX < 0.9 || math.Abs(riderX-liftX) > 1e-6 {
+		test.Fatalf("the lift's node is at %v and the rider's at %v: the rider was not carried", liftX, riderX)
+	}
+}
+
+func TestANodeInAGravityZoneFallsItsWay(test *testing.T) {
+	description := &scenefile.Scene{Name: "Field", Mode: scenefile.Mode2D, Nodes: []scenefile.Node{
+		{Name: "Ceiling", Shape: "cube", Position: [3]float64{0, 6.5, 0}, Scale: [3]float64{20, 1, 1},
+			Body: &scenefile.Body{Kind: scenefile.Solid}},
+		{Name: "Field", Shape: "cube", Position: [3]float64{0, 3, 0}, Scale: [3]float64{10, 10, 1},
+			Body: &scenefile.Body{Kind: scenefile.Trigger, Pull: &[2]float64{0, 9.81}}},
+		{Name: "Crate", Shape: "cube", Position: [3]float64{0, 1, 0}, Scale: [3]float64{1, 1, 1},
+			Body: &scenefile.Body{Kind: scenefile.Moving}},
+	}}
+	scene, err := Build(nil, description)
+	if err != nil {
+		test.Fatal(err)
+	}
+	scene.Start()
+	playFor(scene, 2)
+	crate, _ := scene.Find("Crate")
+	if top := crate.World().Position.Y + 0.5; math.Abs(top-6) > 1e-6 {
+		test.Fatalf("the crate's top is at %v: the field should pull it up to the ceiling at 6", top)
+	}
+}
+
+func TestMarkingAnotherCameraMainChangesTheView(test *testing.T) {
+	description := &scenefile.Scene{Name: "Two rooms", Mode: scenefile.Mode2D, Nodes: []scenefile.Node{
+		{Name: "First room", Position: [3]float64{0, 0, 0}, Camera: &scenefile.Camera{Projection: scenefile.Orthographic, Height: 8, Main: true}},
+		{Name: "Second room", Position: [3]float64{30, 0, 0}, Camera: &scenefile.Camera{Projection: scenefile.Orthographic, Height: 8}},
+	}}
+	scene, err := Build(nil, description)
+	if err != nil {
+		test.Fatal(err)
+	}
+	scene.Start()
+	if centre := scene.View2D().Centre.X; centre != 0 {
+		test.Fatalf("the scene is seen from %v, not the first room's camera", centre)
+	}
+	first, _ := scene.Find("First room")
+	second, _ := scene.Find("Second room")
+	firstCamera, _ := first.Camera()
+	secondCamera, _ := second.Camera()
+	firstCamera.Main, secondCamera.Main = false, true
+	if centre := scene.View2D().Centre.X; centre != 30 {
+		test.Fatalf("with the second camera marked Main the scene is seen from %v, not 30", centre)
+	}
+}
+
+func TestAFrameWithABoxALiftAndAFieldAllocatesNothing(test *testing.T) {
+	description := &scenefile.Scene{Name: "Factory", Mode: scenefile.Mode2D, Nodes: []scenefile.Node{
+		{Name: "Ground", Shape: "cube", Position: [3]float64{0, -0.5, 0}, Scale: [3]float64{40, 1, 1},
+			Body: &scenefile.Body{Kind: scenefile.Solid}},
+		{Name: "Box", Shape: "cube", Position: [3]float64{2, 0.5, 0}, Scale: [3]float64{1, 1, 1},
+			Body: &scenefile.Body{Kind: scenefile.Pushable}},
+		{Name: "Lift", Shape: "cube", Position: [3]float64{8, 1, 0}, Scale: [3]float64{3, 0.5, 1},
+			Body: &scenefile.Body{Kind: scenefile.Platform}},
+		{Name: "Field", Shape: "cube", Position: [3]float64{-8, 3, 0}, Scale: [3]float64{4, 6, 1},
+			Body: &scenefile.Body{Kind: scenefile.Trigger, Pull: &[2]float64{0, 9.81}}},
+		{Name: "Walker", Shape: "cube", Position: [3]float64{0, 0.5, 0}, Scale: [3]float64{1, 1, 1},
+			Body: &scenefile.Body{Kind: scenefile.Moving}},
+	}}
+	scene, err := Build(nil, description)
+	if err != nil {
+		test.Fatal(err)
+	}
+	scene.Start()
+	lift, _ := scene.Find("Lift")
+	body, _ := lift.Body()
+	body.Velocity = space.NewVector(0, 0.2, 0)
+	playFor(scene, 1)
+	allocations := testing.AllocsPerRun(100, func() { scene.Update(1.0/60, nil) })
+	if allocations != 0 {
+		test.Fatalf("a frame with a box, a lift and a field allocates %v times", allocations)
+	}
+}

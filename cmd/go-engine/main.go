@@ -3,6 +3,7 @@
 //	go run ./cmd/go-engine new ~/games/harbour "Harbour lights"
 //	go run ./cmd/go-engine ~/games/harbour
 //	go run ./cmd/go-engine -capture editor.png ~/games/harbour
+//	go run ./cmd/go-engine -update ~/games/harbour
 //
 // The editor runs inside the project's own game, so it plays the game's code in its view: this
 // command builds the game with the editor in it (into build/editor) and starts it. The game's
@@ -33,22 +34,41 @@ func main() {
 	flags.Bool("play", false, "play the scene in the view when the editor opens (for captures)")
 	flags.Bool("3ds", false, "show the game played at the 3DS's screens (for captures)")
 	flags.String("workspace", "", "the workspace to open in: project, art, level, code, play or build (for captures)")
+	update := flags.Bool("update", false, "update the project to go-engine's latest version, and do not open the editor")
+	version := flags.String("engine", project.LatestEngine, "with -update: the go-engine version to update to (a branch, a tag or a commit)")
 	flags.Usage = func() {
 		output := flags.Output()
 		fmt.Fprintln(output, "usage: go-engine [flags] [project folder]")
 		fmt.Fprintln(output, "       go-engine new <folder> [name]")
+		fmt.Fprintln(output, "       go-engine -update [-engine version] [project folder]")
 		flags.PrintDefaults()
 	}
-	flags.Parse(os.Args[1:])
-	positional := flags.Args()
-	passed := os.Args[1 : len(os.Args)-len(positional)]
+	passed, positional := parseAnywhere(flags, os.Args[1:])
 	opened, err := projectFrom(positional)
-	if err == nil {
+	switch {
+	case err != nil:
+	case *update:
+		err = updateEngine(opened, *version)
+	default:
 		err = edit(opened, passed)
 	}
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
+	}
+}
+
+// parseAnywhere parses flags before, between and after the other arguments (Go's flag stops at
+// the first argument that is not one), and returns the flags as given and the other arguments.
+func parseAnywhere(flags *flag.FlagSet, arguments []string) (passed, positional []string) {
+	for {
+		flags.Parse(arguments) // ExitOnError: a wrong flag ends the program with its usage
+		rest := flags.Args()
+		passed = append(passed, arguments[:len(arguments)-len(rest)]...)
+		if len(rest) == 0 {
+			return passed, positional
+		}
+		positional, arguments = append(positional, rest[0]), rest[1:]
 	}
 }
 
@@ -78,6 +98,25 @@ func projectFrom(arguments []string) (*project.Project, error) {
 		return nil, failure.Wrap(project.NotAProject, folder, err)
 	}
 	return opened, nil
+}
+
+// updateEngine moves the project to go-engine at a version, and says from which to which.
+func updateEngine(opened *project.Project, version string) error {
+	before, _, err := opened.EngineVersion()
+	if err != nil {
+		return err
+	}
+	fmt.Printf("Updating %s to go-engine@%s…\n", opened.Settings.Name, version)
+	after, err := opened.UpdateEngine(version)
+	if err != nil {
+		return err
+	}
+	if after == before {
+		fmt.Printf("Already at the latest: %s\n", after)
+		return nil
+	}
+	fmt.Printf("go-engine %s → %s\n", before, after)
+	return nil
 }
 
 // edit builds the project's game with the editor in it and starts it, in the project's folder.

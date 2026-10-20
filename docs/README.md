@@ -175,13 +175,64 @@ func (bob *Bob) Update(context *engine.Context) {
 `engine.Behaviour[Bob](node)` finds a node's behaviour from another; `node.Attach(&Bob{…})` adds
 one while the game runs.
 
+## Bodies
+
+A 2D node with a body moves by the scene's physics while the game plays. Its kind says how:
+
+| Kind | What it does |
+|---|---|
+| Solid | Never moves; the others stand on it and stop against it (ground, walls) |
+| Moving | Falls with gravity, moves at its velocity; stopped by solids, platforms and pushable bodies, not by other moving ones |
+| Pushable | Falls like a moving body; a moving body stands on it, and walking into it pushes it, with the row behind it, until a solid stops them (a box) |
+| Platform | Moves at the velocity its behaviours give it, through solids, carrying what stands on it and pushing what is in its way; it stops against what it cannot move (a lift) |
+| Trigger | Stops nothing; its behaviours hear (`Touched`) when a moving or pushable body begins touching it. With a `pull` it is a gravity zone: what falls inside is pulled that way instead (a field) |
+
+"On the floor" is the side a body's gravity pulls it to, so a body pulled up stands on a ceiling.
+
+## Lights
+
+A scene can be lit, in 2D and in 3D, with the same `light` on its nodes. A 2D scene is lit the
+way Unity lights its 2D scenes. Its **ambient** (`"ambient"` in the
+scene's file: a colour and an intensity) is the light that reaches everything: white at 1 leaves
+the colours as they are, a dark blue at 0.4 is a night. **Lights** on its nodes (`"light"`) add to
+it where they shine, and can brighten up to twice:
+
+| Kind | What it does |
+|---|---|
+| Point | Shines all around the node: full within its inner radius, fading to nothing at its outer one, in metres (a lamp) |
+| Sprite | Shines through the node's sprite, in its place; the sprite itself is not drawn (a glowing sign, a window) |
+
+```json
+"ambient": {"colour": "#203050", "intensity": 0.4},
+"nodes": [{"name": "Lamp", "position": [2, 1, 0], "light": {"kind": "point", "colour": "#ffd27a", "inner": 0.5, "outer": 3.5}}]
+```
+
+A scene with lights and no ambient is lit by daylight (white at 1); a scene with neither is drawn
+unlit, at no cost. A light's radii grow with its node's scale, and a light out of sight is not
+drawn.
+
+**In 3D** a point light is a lamp: it lights the shapes and models around it besides the sun,
+with the same fade, and follows its node as it moves. Each thing drawn takes the four nearest
+lamps that reach it, so a scene can have many, as Godot and Unity do on phones. A 3D scene's
+ambient sets how strong its sky light is (its colour is 2D's only); sprite lights are 2D's only.
+On the 3DS, 3D lamps light at the vertices: a floor shows a lamp's pool where it has vertices.
+
+**In the editor** a light is a kind of node (**+ → Light**, in 2D and 3D), and any node can be made
+one in the inspector's **Light** section: its kind, colour, intensity and radii. The scene's
+inspector sets its ambient. Over the 2D view, **Lights** draws how far each light reaches, and
+**Lit** shows the scene lit as the game will be, or its colours unlit. In the 3D view a chosen lamp
+shows two rings, where its light is full and where it ends.
+
+<p align="center">
+  <img alt="The editor's Level workspace on a 2D street at night: a street lamp chosen, its inner and outer circles drawn over the view, the lamp's warm pool on the ground, a window glowing on a house, and the Light section of the inspector with Point chosen, a colour, the intensity and the radii" src="images/editor-lights.png" width="640">
+</p>
+
+go-renderer draws the lights on every platform (its *2D lights* guide and its third lesson).
+
 ## Not yet
 
-- 2D: turned and flipped sprites, sprite sheets and animation, tile maps, the grid prototype's
-  games on the engine.
+- Bodies that turn, slopes, and shapes other than boxes.
 - Textures and materials from the models (they are drawn with their vertex colours), lights of
-  one's own, sound (go-sound), a game's own interface (go-ui).
+  one's own in 3D scenes, sound (go-sound), a game's own interface (go-ui).
 - Moving, turning and scaling with handles in the view (the inspector and dragging do it now),
-  undo, dragging nodes in the tree, choosing the code editor in the editor (Open project opens Zed;
-  engine.json's codeEditor is kept for later).
-- Changing scenes while playing; physics and collisions.
+  dragging nodes in the tree.

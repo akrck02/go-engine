@@ -64,7 +64,11 @@ func (owner *Scene) addBody(node *Node) {
 	size := node.bodySize()
 	body := &physics.Body{
 		Kind: physicsKinds[node.body.Kind], Position: node.World().Position, Size: size,
-		GravityScale: node.body.Gravity(),
+		GravityScale: node.body.Gravity(), IgnoresZones: node.body.IgnoresZones,
+	}
+	if pull := node.body.Pull; pull != nil && node.body.Kind == scenefile.Trigger {
+		gravity := space.NewVector(pull[0], pull[1], 0)
+		body.ZonePull = &gravity
 	}
 	node.physicsBody = body
 	owner.bodyOwners[body] = node
@@ -96,6 +100,7 @@ func (node *Node) BodyBox() (space.Box, bool) {
 // physicsKinds are the scene file's kinds of body, as the physics names them.
 var physicsKinds = map[scenefile.BodyKind]physics.Kind{
 	scenefile.Solid: physics.Solid, scenefile.Moving: physics.Moving, scenefile.Trigger: physics.Trigger,
+	scenefile.Pushable: physics.Pushable, scenefile.Platform: physics.Platform,
 }
 
 // removeBodies takes a node's body, and those of what hangs from it, out of the physics.
@@ -140,7 +145,7 @@ func (owner *Scene) stepPhysics(seconds float64) {
 	}
 	owner.physics.Step(seconds)
 	for _, node := range owner.bodied {
-		if node.physicsBody.Kind == physics.Moving {
+		if node.physicsBody.Kind.Moves() {
 			owner.placeAt(node, node.physicsBody.Position)
 		}
 	}

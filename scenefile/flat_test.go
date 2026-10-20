@@ -60,6 +60,9 @@ func TestImpossible2DPartsAreRefusedWithTheirCodes(test *testing.T) {
 		{"a frame beyond the sheet", func(scene *Scene) { scene.Nodes[1].Sheet.Animations[1].Frames[0] = 10 }, FrameOutsideSheet},
 		{"two animations with one name", func(scene *Scene) { scene.Nodes[1].Sheet.Animations[1].Name = "idle" }, SameAnimationName},
 		{"a start that does not exist", func(scene *Scene) { scene.Nodes[1].Sheet.Start = "fly" }, UnknownAnimation},
+		{"a light of no kind", func(scene *Scene) { scene.Nodes[2].Light = &Light{Kind: "torch"} }, UnknownLightKind},
+		{"a light inner beyond outer", func(scene *Scene) { scene.Nodes[2].Light = &Light{Kind: PointLight, Inner: 4, Outer: 2} }, LightRadiiWrong},
+		{"a light of negative radius", func(scene *Scene) { scene.Nodes[2].Light = &Light{Kind: PointLight, Outer: -1} }, LightRadiiWrong},
 	}
 	for _, each := range cases {
 		scene := flatScene()
@@ -101,5 +104,14 @@ func TestACameraThatFollowsComesBackAsWritten(test *testing.T) {
 	again := read.Nodes[0].Camera
 	if again.Follow != "Keeper" || again.SmoothingSeconds != 0.25 || !again.Ceiling || again.Bounds == nil || again.Bounds[2] != 40 {
 		test.Fatalf("the camera came back as %+v", again)
+	}
+}
+
+func TestACopyOfABodyKeepsAPullOfItsOwn(test *testing.T) {
+	body := &Body{Kind: Trigger, Pull: &[2]float64{0, 5}}
+	copied := body.Copy()
+	copied.Pull[1] = -9
+	if body.Pull[1] != 5 {
+		test.Fatal("changing the copy's pull changed the original's")
 	}
 }

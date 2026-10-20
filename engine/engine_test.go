@@ -220,7 +220,7 @@ func TestA2DSceneDrawsSpritesAtTheirSizeFurthestFirst(test *testing.T) {
 	if back := view.FromScreen(area, 450, 150); !back.Near(space.NewVector(3, 2, 0), 1e-9) {
 		test.Fatalf("the screen point came back as %v", back)
 	}
-	order := flat.drawOrder()
+	order := flat.drawOrder(true)
 	if len(order) != 2 || order[0].Name != "Hero" || order[1].Name != "Square" {
 		test.Fatalf("drawn in the order %v, %v", order[0].Name, order[1].Name)
 	}

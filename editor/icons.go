@@ -45,6 +45,8 @@ const (
 	iconInstall    = "download"
 	iconFound      = "circle-check"
 	iconMissing    = "circle-alert"
+	iconNotice     = "info"
+	iconProblem    = "triangle-alert"
 	iconOutput     = "terminal"
 	iconLog        = "scroll-text"
 	iconWatch      = "activity"
@@ -59,6 +61,8 @@ const (
 	iconTileMap   = "grid-3x3"
 	iconAnimation = "film"
 	iconBody      = "weight"
+	iconLamp      = "lightbulb" // a light: a node that is one, and the view's light marks
+	iconLit       = "lamp"      // the view drawn lit, as the game will be
 
 	// acting on nodes
 	iconAdd         = "plus"

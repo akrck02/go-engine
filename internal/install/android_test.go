@@ -51,8 +51,8 @@ func androidServer(test *testing.T, calls string) *httptest.Server {
 	}))
 }
 
-// fakeJava makes a JDK of a made-up java, and sets $JAVA_HOME to it.
-func fakeJava(test *testing.T) {
+// fakeJava makes a JDK of a made-up java, and returns its folder.
+func fakeJava(test *testing.T) string {
 	home := test.TempDir()
 	if err := os.MkdirAll(filepath.Join(home, "bin"), 0o755); err != nil {
 		test.Fatal(err)
@@ -60,7 +60,7 @@ func fakeJava(test *testing.T) {
 	if err := os.WriteFile(filepath.Join(home, "bin", "java"), []byte("#!/bin/sh\n"), 0o755); err != nil {
 		test.Fatal(err)
 	}
-	test.Setenv("JAVA_HOME", home)
+	return home
 }
 
 func TestAndroidsLicenceIsReadAndItsPackagesInstalled(test *testing.T) {
@@ -70,13 +70,13 @@ func TestAndroidsLicenceIsReadAndItsPackagesInstalled(test *testing.T) {
 	calls := filepath.Join(test.TempDir(), "calls")
 	server := androidServer(test, calls)
 	defer server.Close()
-	fakeJava(test)
+	javaHome := fakeJava(test)
 	installer := Installer{Folder: test.TempDir(), AndroidRepository: server.URL + "/", System: "linux-amd64"}
 	if licence, err := installer.AndroidLicence(); err != nil || licence != "Use the lighthouse kindly." {
 		test.Fatalf("the licence reads %q, %v", licence, err)
 	}
 	licence, _ := installer.AndroidLicence()
-	sdk, err := installer.AndroidSDK(licence)
+	sdk, err := installer.AndroidSDK(licence, javaHome)
 	if !errors.Is(err, LicenceNotAccepted) {
 		test.Fatalf("a licence not read was not refused: %v", err)
 	}
@@ -91,9 +91,7 @@ func TestAndroidsLicenceIsReadAndItsPackagesInstalled(test *testing.T) {
 }
 
 func TestAndroidWithoutJavaIsSaidByItsCode(test *testing.T) {
-	test.Setenv("JAVA_HOME", "")
-	test.Setenv("PATH", test.TempDir())
-	if _, err := (Installer{Folder: test.TempDir()}).AndroidSDK("a licence"); !errors.Is(err, JavaNotFound) {
+	if _, err := (Installer{Folder: test.TempDir()}).AndroidSDK("a licence", ""); !errors.Is(err, JavaNotFound) {
 		test.Fatalf("no Java gives %v", err)
 	}
 }
@@ -119,7 +117,7 @@ func TestEachSystemGetsItsOwnCommandLineTools(test *testing.T) {
 }
 
 func TestNothingIsInstalledWithoutTheLicenceAccepted(test *testing.T) {
-	if _, err := (Installer{Folder: test.TempDir()}).AndroidSDK(" "); !errors.Is(err, LicenceNotAccepted) {
+	if _, err := (Installer{Folder: test.TempDir()}).AndroidSDK(" ", test.TempDir()); !errors.Is(err, LicenceNotAccepted) {
 		test.Fatalf("no licence accepted gives %v", err)
 	}
 }

@@ -16,6 +16,7 @@ import (
 var (
 	bodySizeLimits     = numberLimits{0, 1000, 0.05}
 	gravityScaleLimits = numberLimits{-10, 10, 0.05}
+	zonePullLimits     = numberLimits{-100, 100, 0.5}
 	sheetCellLimits    = numberLimits{1, 256, 1}
 	paceLimits         = numberLimits{1, 120, 1}
 	smoothingLimits    = numberLimits{0, 10, 0.05}
@@ -29,7 +30,9 @@ var newCameraBounds = [4]float64{-10, -10, 10, 10}
 var bodyKindNotes = []string{
 	"Solid: never moves; moving bodies stand on it and stop against it.",
 	"Moving: falls with gravity, moves with its velocity, and is stopped by solids.",
-	"Trigger: stops nothing; its behaviours hear (Touched) when a moving body begins touching it.",
+	"Trigger: stops nothing; its behaviours hear (Touched) when a moving or pushable body begins touching it.",
+	"Pushable: falls as a moving body does; moving bodies stand on it, and push it by walking into it.",
+	"Platform: moves at the velocity its behaviours give it, through solids and with no gravity, carrying what stands on it.",
 }
 
 func (view *View) bodyInspector(context *ui.Context, node *engine.Node) {
@@ -54,17 +57,46 @@ func (view *View) bodyInspector(context *ui.Context, node *engine.Node) {
 		return
 	}
 	kind := max(0, indexOf(scenefile.BodyKinds, body.Kind))
-	if context.Tabs("Body kind", &kind, "Solid", "Moving", "Trigger") {
+	if context.Tabs("Body kind", &kind, "Solid", "Moving", "Trigger", "Pushable", "Platform") {
 		editor.GiveBody(scenefile.BodyKinds[kind])
 	}
 	note(context, bodyKindNotes[kind])
 	view.bodySizeFields(context, body)
 	gravity := body.Gravity()
-	if body.Kind == scenefile.Moving {
+	if body.Kind == scenefile.Moving || body.Kind == scenefile.Pushable {
 		context.Caption("Gravity: 1 pulls fully, 0 not at all")
 		if numberField(context, "Gravity scale", &gravity, gravityScaleLimits, "%.2f×") {
 			editor.SetGravityScale(gravity)
 		}
+		if context.Checkbox("Keeps the world's gravity inside zones", &body.IgnoresZones) {
+			editor.Changed()
+		}
+	}
+	if body.Kind == scenefile.Trigger {
+		view.zonePullFields(context, body)
+	}
+}
+
+// zonePullFields give a trigger a gravity of its own, or leave the world's.
+func (view *View) zonePullFields(context *ui.Context, body *scenefile.Body) {
+	editor := view.Editor
+	pulls := body.Pull != nil
+	if context.Checkbox("A gravity of its own, for what falls inside", &pulls) {
+		if pulls {
+			editor.SetZonePull(&[2]float64{0, engine.DefaultGravity})
+		} else {
+			editor.SetZonePull(nil)
+		}
+	}
+	if body.Pull == nil {
+		return
+	}
+	pull := *body.Pull
+	context.Caption("Pull across and up, in m/s² (the world's: 0, -9.81)")
+	across := numberField(context, "Pull across", &pull[0], zonePullLimits, "→ %.1f")
+	up := numberField(context, "Pull up", &pull[1], zonePullLimits, "↑ %.1f")
+	if across || up {
+		editor.SetZonePull(&pull)
 	}
 }
 

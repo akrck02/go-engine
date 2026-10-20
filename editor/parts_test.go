@@ -164,3 +164,37 @@ func TestTheAnimationANodeStartsWithIsSaved(test *testing.T) {
 		test.Fatalf("the node starts with %q", again.StartsWith())
 	}
 }
+
+func TestAZonesGravityIsSaved(test *testing.T) {
+	editor := openFlat(test)
+	editor.GiveBody(scenefile.Trigger)
+	editor.SetZonePull(&[2]float64{4.5, 0})
+	zone := saveAndOpenAgain(test, editor, editor.Selected.Path())
+	saved, found := zone.BodySettings()
+	if !found || saved.Kind != scenefile.Trigger || saved.Pull == nil || *saved.Pull != [2]float64{4.5, 0} {
+		test.Fatalf("the zone came back as %+v", saved)
+	}
+	editor.Select(zone)
+	editor.SetZonePull(nil)
+	if saved, _ := zone.BodySettings(); saved.Pull != nil {
+		test.Fatal("the zone kept its gravity after it was taken")
+	}
+}
+
+func TestAZonesArrowPointsTheWayItPullsMost(test *testing.T) {
+	cases := []struct {
+		across, up float64
+		icon       string
+	}{{0, 9.81, "arrow-up"}, {0, -3, "arrow-down"}, {5, 1, "arrow-right"}, {-5, 4, "arrow-left"}}
+	for _, each := range cases {
+		if icon := pullIcon(each.across, each.up); icon != each.icon {
+			test.Errorf("a pull of %v across and %v up is drawn %q, not %q", each.across, each.up, icon, each.icon)
+		}
+	}
+}
+
+func TestEveryKindOfBodyHasItsNote(test *testing.T) {
+	if len(bodyKindNotes) != len(scenefile.BodyKinds) {
+		test.Fatalf("%d kinds of body, %d notes", len(scenefile.BodyKinds), len(bodyKindNotes))
+	}
+}
