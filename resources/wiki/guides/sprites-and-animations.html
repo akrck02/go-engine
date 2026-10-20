@@ -19,6 +19,8 @@ order. Set its frames a second, and whether it <strong>Loops</strong>.</li>
 
 <p>The sprite is a file, <code>name.sprite.json</code>, that every scene shares. Place it like a picture.</p>
 
+<p align="center"><img alt="A sprite in Art: the picture cut into numbered frames, its animations on the right, a preview under it" src="./images/quest/editor-art-slime.png" width="680"></p>
+
 <h2 id="from-code">From code</h2>
 <pre><code class="language-go"><span class="kd">func</span> <span class="p">(</span><span class="nx">hero</span> <span class="o">*</span><span class="nx">Hero</span><span class="p">)</span> <span class="nf">Update</span><span class="p">(</span><span class="nx">context</span> <span class="o">*</span><span class="nx">engine</span><span class="p">.</span><span class="nx">Context</span><span class="p">)</span> <span class="p">{</span>
 	<span class="k">if</span> <span class="nx">context</span><span class="p">.</span><span class="nx">Input</span><span class="p">.</span><span class="nf">Move</span><span class="p">().</span><span class="nx">X</span> <span class="o">!=</span> <span class="mi">0</span> <span class="p">{</span>

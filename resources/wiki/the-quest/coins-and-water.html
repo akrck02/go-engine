@@ -58,7 +58,10 @@ collects coins. Give <code>Player</code> somewhere to count them, a field the sc
 </code></pre>
 
 <p>Each file starts with <code>package main</code> and imports <code>engine</code>, as <code>player.go</code> does. Register them in
-<code>main.go</code>, <code>engine.Register(Spin{}, Player{}, Coin{}, Hazard{}, Flag{})</code>, and press <strong>Rebuild</strong>.</p>
+<code>main.go</code>, <code>engine.Register(Spin{}, Player{}, Coin{}, Hazard{}, Flag{})</code>, and press <strong>Rebuild</strong>.
+<strong>Code</strong> then lists them, with where each is used:</p>
+
+<p align="center"><img alt="The Code workspace: the behaviours Coin, Flag, Hazard, Player and Spin listed on the left; Coin chosen, with its file coin.go, its comment, the method the engine calls, Touched, and the scenes that use it" src="./images/quest/editor-code.png" width="680"></p>
 
 <h2 id="coins">Coins</h2>
 
@@ -80,6 +83,8 @@ animation by itself.</li>
 
 <p>It is invisible, and needs not be seen: falling off is the danger. <strong>Bodies</strong> over the view draws
 triggers in orange.</p>
+
+<p align="center"><img alt="Level with Water chosen: a wide orange box under the ledges, the coins and the sign outlined in orange too; Water's inspector shows a Trigger body 29.12 by 3.88 metres and the Hazard behaviour" src="./images/quest/editor-bodies.png" width="680"></p>
 
 <h2 id="the-sign">The sign</h2>
 
@@ -117,7 +122,9 @@ inspector, and repaint its ledges. In the first level, set the sign's **next** t
 
 </details>
 
-<p><strong>🪙 Achievement unlocked: Collector.</strong> Your level can be won and lost.</p>
+<p><img src="./images/quest/achievement-collector.svg" alt="Achievement unlocked: Collector" /></p>
+
+<p>Your level can be won and lost.</p>
 
 <hr>
 

@@ -74,6 +74,9 @@ comes from its parts:</p>
 </tr>
 </tbody>
 </table>
+
+<p align="center"><img alt="A scene's tree in the editor: Hills, Trees, Ground, Player with its child Sprite, and Camera; Player chosen, with its body in the inspector" src="./images/quest/editor-body.png" width="560"></p>
+
 <p>Each node has a <strong>transform</strong>: where it is, how it is turned and how large it is, <strong>relative to its
 parent</strong>. Move a ship and its sailors move with it. <code>node.World()</code> says where a node is in the world.</p>
 
@@ -213,6 +216,9 @@ Isometric is 3D seen from a fixed angle, so the three axes look the same length.
 </tr>
 </tbody>
 </table>
+
+<p align="center"><img alt="A level's bodies drawn over it: the ledges' solid tiles, and triggers in orange round the coins, the sign and the water below" src="./images/quest/editor-bodies.png" width="560"></p>
+
 <p>A falling body has a <strong>gravity scale</strong>: 1 is Earth&rsquo;s pull, 2 twice as strong, 0 none. A trigger
 can have a gravity of its own, a <strong>pull</strong>: what falls inside it is pulled that way.
 &ldquo;On the floor&rdquo; is wherever a body&rsquo;s gravity pulls it, so a body pulled up stands on a ceiling.</p>
@@ -222,7 +228,11 @@ can have a gravity of its own, a <strong>pull</strong>: what falls inside it is 
 <p>A scene can be lit. Its <strong>ambient</strong> is the light that reaches everything: white at 1 leaves the
 colours as they are, a dark blue at 0.4 is a night. Lights on nodes add to it where they shine,
 like lamps in a dark room, and can brighten up to twice. A scene with neither is drawn unlit, at no
-cost. A 3D scene always has a sun and a sky, which light it by day or night; its lights are lamps
+cost.</p>
+
+<p align="center"><img alt="The same level by day, unlit, and at night: a dark blue ambient, a warm lamp over the sign, glowing coins and a cold moonlight" src="./images/lit-and-unlit.png" width="720"></p>
+
+<p>A 3D scene always has a sun and a sky, which light it by day or night; its lights are lamps
 that shine on the shapes around them besides.</p>
 
 <h2 id="not-yet">Not yet</h2>

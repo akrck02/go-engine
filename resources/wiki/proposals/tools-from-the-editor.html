@@ -9,8 +9,8 @@ se pueda configurar tinygo y android desde ui&rdquo;: approved together)</p>
 
 <p>Building for the 3DS and Android needs tools found outside the editor: TinyGo, devkitPro, a 3DS
 emulator, the Android SDK and NDK. Today they are found through environment variables or the
-usual folders, and when they are not, the only way out is a variable set before starting the
-editor. A person should see what the editor found and point it at what it did not, in the editor.</p>
+usual folders. When they are not, the only way out is a variable set before starting the editor.
+A person should see what the editor found, and point it at what it did not, in the editor.</p>
 
 <h2 id="what">What</h2>
 
@@ -53,17 +53,26 @@ editor. A person should see what the editor found and point it at what it did no
 
 <h2 id="design">Design</h2>
 
-<p><strong>Tools</strong> (<code>internal/build</code>): a <code>Tools</code> value holds the place of each tool the person chose,
-read from and saved to <code>go-engine/tools.json</code> in the user&rsquo;s configuration folder
-(<code>os.UserConfigDir</code>). Each finder is a method of it (<code>tools.FindTinyGo()</code>,
-<code>tools.FindAndroidSDK()</code>…): the place chosen first (a program or a folder, as the tool is), then
-the variables, then the usual folders. <code>project.Open</code> reads it into <code>Project.Tools</code>, so the builds
-use it, and keeps why it could not be read in <code>Project.ToolsUnread</code>.</p>
+<p><strong>Tools</strong> (<code>internal/build</code>): a <code>Tools</code> value holds the place of each tool the person chose. It is
+read from and saved to <code>go-engine/tools.json</code>, in the user&rsquo;s configuration folder
+(<code>os.UserConfigDir</code>).</p>
 
-<p><strong>Panel</strong>: under the Build cards, a &ldquo;Tools on this computer&rdquo; panel: a row per tool with its
+<p>Each finder is a method of it (<code>tools.FindTinyGo()</code>, <code>tools.FindAndroidSDK()</code>…). It looks in
+three places, in order:</p>
+
+<ol>
+<li>the place chosen, a program or a folder, as the tool is;</li>
+<li>the variables;</li>
+<li>the usual folders.</li>
+</ol>
+
+<p><code>project.Open</code> reads it into <code>Project.Tools</code>, so the builds use it. Why it could not be read is
+kept in <code>Project.ToolsUnread</code>.</p>
+
+<p><strong>Panel</strong>: under the Build cards, a &ldquo;Tools on this computer&rdquo; panel. It has a row per tool: its
 name, what needs it, a field for its place, and where it was found or the error with its meaning.
-Check looks where the places typed say; saving writes the file and looks again (not while the game
-builds or plays: the build reads them). Nothing is looked for every frame.</p>
+Check looks where the places typed say. Saving writes the file and looks again, but not while the
+game builds or plays, since the build reads them. Nothing is looked for every frame.</p>
 
 <h2 id="tasks">Tasks</h2>
 
@@ -75,18 +84,28 @@ builds or plays: the build reads them). Nothing is looked for every frame.</p>
 
 <h2 id="result">Result</h2>
 
-<p><strong>Built.</strong> <code>build.Tools</code>, kept in <code>go-engine/tools.json</code> of the user&rsquo;s configuration folder, with
-a finder for each tool (TinyGo, devkitPro&rsquo;s 3dslink, a 3DS emulator, the Android SDK and its adb,
-the NDK); a place chosen comes first, and one where the wrong thing is (nothing, a folder for a
-program, a devkitPro with no 3dslink, an SDK with no adb) is said by <code>build.tool-place-wrong</code>.
-Build&rsquo;s <strong>Tools on this computer</strong> shows each tool, what needs it, the place typed, and where it
-was found or why not, with Check and Save; a file that could not be read is said there.</p>
+<p><strong>Built.</strong> <code>build.Tools</code> is kept in <code>go-engine/tools.json</code>, in the user&rsquo;s configuration folder. It
+has a finder for each tool: TinyGo, devkitPro&rsquo;s 3dslink, a 3DS emulator, the Android SDK and its
+adb, the NDK. A place chosen comes first.</p>
 
-<p><strong>Checked.</strong> The tests of each requirement; captures of the panel with tools found and missing.</p>
+<p>A place where the wrong thing is says so with <code>build.tool-place-wrong</code>. That covers nothing there,
+a folder for a program, a devkitPro with no 3dslink, and an SDK with no adb.</p>
+
+<p>Build&rsquo;s <strong>Tools on this computer</strong> shows each tool, what needs it, and the place typed. It says
+where the tool was found or why not, with Check and Save. A file that could not be read is said
+there.</p>
+
+<p><strong>Checked.</strong> The tests of each requirement pass. The panel was captured with tools found and
+missing.</p>
 
 <p><strong>Then, asked by the author.</strong> A file picker, go-ui&rsquo;s own (<code>ui.FilePicker</code>, feature/3ds 3183ea9,
-committed with the author&rsquo;s say): <strong>Browse</strong> beside each tool chooses a program or a folder, as
-the tool needs, and types it in its field to check and save; Project&rsquo;s <strong>Import model</strong> chooses a
-<code>.glb</code> and copies it into <code>assets/models</code>, which nothing in the editor offered before.</p>
+committed with the author&rsquo;s say):</p>
+
+<ul>
+<li><strong>Browse</strong> beside each tool chooses a program or a folder, as the tool needs. It types it in its
+field to check and save.</li>
+<li>Project&rsquo;s <strong>Import model</strong> chooses a <code>.glb</code> and copies it into <code>assets/models</code>. Nothing in the
+editor offered that before.</li>
+</ul>
 
 <p><strong>For a person.</strong> Browse with a real mouse: double clicks, and going through deep folders.</p>
