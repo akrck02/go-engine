@@ -97,7 +97,7 @@ func buildWith(library *assets, description *scenefile.Scene) (*Scene, error) {
 	built.Name, built.Mode, built.PixelsPerMetre = description.Name, description.Mode, description.PixelsPerMetre
 	built.Ambient = description.Ambient.Copy()
 	built.description = description
-	built.SetSky(description.Sky)
+	built.SetSky(description.Sky) // applies the ambient too
 	var firstError error
 	for _, node := range description.Nodes {
 		child, err := built.buildNode(node)
@@ -221,13 +221,17 @@ func (owner *Scene) SetSky(colour string) {
 		}
 	}
 	owner.world.Environment = environment
+	owner.applyAmbient()
 }
 
 // World is what go-renderer draws, transforms brought up to date.
 func (owner *Scene) World() *scene.Scene { return owner.world }
 
 // Sync brings what go-renderer draws up to date with the nodes' transforms.
-func (owner *Scene) Sync() { owner.Root.sync() }
+func (owner *Scene) Sync() {
+	owner.Root.sync()
+	owner.syncLights()
+}
 
 // Time is the seconds the scene has been playing.
 func (owner *Scene) Time() float64 { return owner.clock }

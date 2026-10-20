@@ -197,7 +197,7 @@ func (owner *Scene) drawFlat(list *draw2d.List, area draw2d.Rect, view View2D, n
 		owner.drawTiles(list, area, view, node)
 		return
 	}
-	rect, shown := owner.screenRect(area, view, node)
+	rect, shown := owner.shownRect(area, view, node)
 	if !shown {
 		return
 	}
@@ -213,6 +213,15 @@ func (owner *Scene) drawFlat(list *draw2d.List, area draw2d.Rect, view View2D, n
 		radius = min(rect.Width, rect.Height) / 2
 	}
 	list.Rectangle(rect, radius, colour, draw2d.Color{}, 0)
+}
+
+// shownRect is where a node's sprite or shape falls on the screen, if it shows anything.
+func (owner *Scene) shownRect(area draw2d.Rect, view View2D, node *Node) (draw2d.Rect, bool) {
+	box := node.flatBounds()
+	if box.IsEmpty() {
+		return draw2d.Rect{}, false
+	}
+	return screenRect(area, view, box), true
 }
 
 // flatColour is a shape's colour, read from its text once and kept: a frame reads no text.

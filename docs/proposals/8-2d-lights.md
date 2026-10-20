@@ -103,7 +103,7 @@ computed on the processor (does not scale, and the 3DS has a GPU for it).
 - [ ] T7 — Io World's start screen lit from Unity's lights · go-engine-io-world · R7
 - [x] T8 — A lighting lights only its clip, on every backend; the 3DS paints its ambient instead
   of clearing it · go-renderer · R10
-- [ ] T9 — 3D point lights: `scene`, the choice in `sceneplan`, OpenGL and GL ES shading · go-renderer · R8, R9
-- [ ] T10 — 3D lights baked on the 3DS · go-renderer · R8
-- [ ] T11 — The engine's 3D lights and ambient; the audit's 2D fixes (culling, node scale, one
+- [x] T9 — 3D point lights: `scene`, the choice in `sceneplan`, OpenGL and GL ES shading · go-renderer · R8, R9
+- [x] T10 — 3D lights baked on the 3DS · go-renderer · R8
+- [x] T11 — The engine's 3D lights and ambient; the audit's 2D fixes (culling, node scale, one
   screen rectangle) · go-engine · R8, R9

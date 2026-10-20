@@ -3,7 +3,7 @@ module github.com/akrck02/go-engine
 go 1.25.6
 
 require (
-	github.com/akrck02/go-renderer v0.1.1-0.20261019224303-3023124a4320
+	github.com/akrck02/go-renderer v0.1.1-0.20261020060749-91bd11f6d787
 	github.com/akrck02/go-scene-builder v0.1.0
 	github.com/akrck02/go-ui v0.1.1
 )

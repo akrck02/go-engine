@@ -1,10 +1,13 @@
 package engine
 
 import (
+	"math"
+
 	"github.com/akrck02/go-renderer/draw2d"
+	"github.com/akrck02/go-renderer/graphics"
+	"github.com/akrck02/go-renderer/scene"
 
 	"github.com/akrck02/go-engine/scenefile"
-	"github.com/akrck02/go-engine/space"
 )
 
 // A 2D scene with lights is drawn as Unity draws its 2D lights: its sprites and shapes first,
@@ -68,16 +71,29 @@ func (owner *Scene) drawLight(list *draw2d.List, area draw2d.Rect, view View2D, 
 	colour := owner.lightColour(light.Colour, light.Strength())
 	if light.Kind == scenefile.SpriteLight {
 		picture, found := owner.spritePicture(node)
-		rect, shown := owner.screenRect(area, view, node)
-		if found && shown {
+		rect, shown := owner.shownRect(area, view, node)
+		if found && shown && !rect.Intersect(area).IsEmpty() {
 			list.SpriteLight(picture, rect, colour)
 		}
 		return
 	}
 	x, y := view.ToScreen(area, node.World().Position)
-	inner, outer := light.Radii()
-	scale := view.scale(area)
-	list.PointLight(x, y, float32(inner*scale), float32(outer*scale), colour)
+	inner, outer := node.lightRadii()
+	scale := float32(view.scale(area))
+	reach := draw2d.Rect{X: x - float32(outer)*scale, Y: y - float32(outer)*scale, Width: 2 * float32(outer) * scale, Height: 2 * float32(outer) * scale}
+	if reach.Intersect(area).IsEmpty() {
+		return // shines on nothing in sight
+	}
+	list.PointLight(x, y, float32(inner)*scale, float32(outer)*scale, colour)
+}
+
+// lightRadii are a point light's radii in metres, times its node's largest scale: a lamp scaled
+// up reaches further.
+func (node *Node) lightRadii() (inner, outer float64) {
+	inner, outer = node.light.Radii()
+	scale := node.World().Scale
+	largest := max(math.Abs(scale.X), math.Abs(scale.Y), math.Abs(scale.Z))
+	return inner * largest, outer * largest
 }
 
 // lightColour is a light's colour with its intensity as the alpha, as draw2d's lights take it.
@@ -90,13 +106,51 @@ func (owner *Scene) lightColour(colour string, intensity float64) draw2d.Color {
 	return lit
 }
 
-// screenRect is where a node's sprite or shape falls on the screen, if it shows anything.
-func (owner *Scene) screenRect(area draw2d.Rect, view View2D, node *Node) (draw2d.Rect, bool) {
-	box := node.flatBounds()
-	if box.IsEmpty() {
-		return draw2d.Rect{}, false
+// syncLights gives go-renderer a 3D scene's point lights, where their nodes are now: called by
+// Sync, every frame the scene plays. A 2D scene draws its lights itself (drawLights).
+func (owner *Scene) syncLights() {
+	lights := owner.world.Lights[:0]
+	if !owner.Is2D() {
+		owner.lit = owner.collectLights(owner.lit[:0], owner.Root)
+		for _, node := range owner.lit {
+			if node.light.Kind != scenefile.PointLight {
+				continue // a sprite light shines in 2D only
+			}
+			lights = append(lights, owner.pointLight(node))
+		}
 	}
-	left, top := view.ToScreen(area, space.NewVector(box.Minimum.X, box.Maximum.Y, 0))
-	right, bottom := view.ToScreen(area, space.NewVector(box.Maximum.X, box.Minimum.Y, 0))
-	return draw2d.Rect{X: left, Y: top, Width: right - left, Height: bottom - top}, true
+	owner.world.Lights = lights
+}
+
+// pointLight is a 3D node's light as go-renderer takes it: in the world, its colour linear.
+func (owner *Scene) pointLight(node *Node) scene.PointLight {
+	position := node.World().Position
+	inner, outer := node.lightRadii()
+	colour := owner.lightColour(node.light.Colour, node.light.Strength())
+	return scene.PointLight{
+		Position: graphics.Vec4{float32(position.X), float32(position.Y), float32(position.Z), 1},
+		Color:    graphics.Vec4{linear(colour[0]), linear(colour[1]), linear(colour[2]), colour[3]},
+		Inner:    float32(inner), Outer: float32(outer),
+	}
+}
+
+// screenGamma is the gamma colours written as "#rrggbb" are in; 3D shading works in linear light.
+const screenGamma = 2.2
+
+// linear turns a channel of a screen colour into linear light.
+func linear(channel float32) float32 { return float32(math.Pow(float64(channel), screenGamma)) }
+
+// SetAmbient sets the scene's ambient light (nil for none): in 2D the light that reaches
+// everything; in 3D how strong its sky light is, from 0 (none) to 2 (twice the default).
+func (owner *Scene) SetAmbient(ambient *scenefile.Ambient) {
+	owner.Ambient = ambient
+	owner.applyAmbient()
+}
+
+// applyAmbient makes a 3D scene's sky light as strong as its ambient says.
+func (owner *Scene) applyAmbient() {
+	owner.world.Environment.Ambient = scene.DefaultEnvironment().Ambient
+	if owner.Ambient != nil {
+		owner.world.Environment.Ambient *= float32(owner.Ambient.Strength())
+	}
 }

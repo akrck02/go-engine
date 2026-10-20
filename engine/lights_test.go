@@ -123,3 +123,68 @@ func TestALitFrameAllocatesNothing(test *testing.T) {
 		test.Fatalf("a lit frame allocates %v times", allocations)
 	}
 }
+
+// litScene3D is a 3D scene with a lamp scaled to twice its size and a sprite light, which 3D leaves out.
+func litScene3D(test *testing.T, ambient *scenefile.Ambient) *Scene {
+	description := &scenefile.Scene{Name: "Lit 3D", Ambient: ambient, Nodes: []scenefile.Node{
+		{Name: "Lamp", Position: [3]float64{1, 2, 3}, Scale: [3]float64{2, 2, 2},
+			Light: &scenefile.Light{Kind: scenefile.PointLight, Colour: "#808080", Inner: 0.5, Outer: 2}},
+		{Name: "Sign", Scale: [3]float64{1, 1, 1}, Light: &scenefile.Light{Kind: scenefile.SpriteLight}},
+	}}
+	built, err := Build(fstest.MapFS{}, description)
+	if err != nil {
+		test.Fatal(err)
+	}
+	return built
+}
+
+func TestA3DLampLightsTheWorldWhereItsNodeIs(test *testing.T) {
+	scene := litScene3D(test, nil)
+	lights := scene.World().Lights
+	if len(lights) != 1 {
+		test.Fatalf("the world has %d lights; wanted the lamp only (a sprite light is 2D)", len(lights))
+	}
+	lamp := lights[0]
+	if lamp.Position[0] != 1 || lamp.Position[2] != 3 || lamp.Outer != 4 || lamp.Inner != 1 {
+		test.Errorf("the lamp is %+v; wanted it at its node, its radii twice for its scale", lamp)
+	}
+	if grey := lamp.Color[0]; grey < 0.2 || grey > 0.23 || lamp.Color[3] != 1 {
+		test.Errorf("the lamp's colour is %v; wanted #808080 in linear light (about 0.22), at 1", lamp.Color)
+	}
+	node, _ := scene.Find("Lamp")
+	node.Transform.Position.X = 5
+	scene.Sync()
+	if scene.World().Lights[0].Position[0] != 5 {
+		test.Error("a lamp that moved still lights from where it was")
+	}
+}
+
+func TestA3DAmbientScalesTheSkyLight(test *testing.T) {
+	dim := 0.5
+	daylight := litScene3D(test, nil).World().Environment.Ambient
+	dimmed := litScene3D(test, &scenefile.Ambient{Intensity: &dim}).World().Environment.Ambient
+	if dimmed != daylight/2 {
+		test.Fatalf("an ambient at 0.5 makes the sky light %v; wanted half of %v", dimmed, daylight)
+	}
+}
+
+func TestSyncingLampsAllocatesNothing(test *testing.T) {
+	scene := litScene3D(test, nil)
+	allocations := testing.AllocsPerRun(100, scene.Sync)
+	if allocations != 0 {
+		test.Fatalf("syncing a scene with lamps allocates %v times", allocations)
+	}
+}
+
+func TestALightOutOfSightIsNotDrawn(test *testing.T) {
+	scene := litScene(test, nil)
+	lamp, _ := scene.Find("Lamp")
+	lamp.Transform.Position.X = 100
+	var list draw2d.List
+	scene.DrawContent2D(&list, draw2d.Rect{Width: 80, Height: 80}, View2D{Height: 10})
+	for _, kind := range kinds(&list) {
+		if kind == draw2d.PointLightKind {
+			test.Fatal("a lamp a hundred metres out of sight was drawn")
+		}
+	}
+}

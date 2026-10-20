@@ -191,7 +191,8 @@ A 2D node with a body moves by the scene's physics while the game plays. Its kin
 
 ## Lights
 
-A 2D scene can be lit the way Unity lights its 2D scenes. Its **ambient** (`"ambient"` in the
+A scene can be lit, in 2D and in 3D, with the same `light` on its nodes. A 2D scene is lit the
+way Unity lights its 2D scenes. Its **ambient** (`"ambient"` in the
 scene's file: a colour and an intensity) is the light that reaches everything: white at 1 leaves
 the colours as they are, a dark blue at 0.4 is a night. **Lights** on its nodes (`"light"`) add to
 it where they shine, and can brighten up to twice:
@@ -207,8 +208,16 @@ it where they shine, and can brighten up to twice:
 ```
 
 A scene with lights and no ambient is lit by daylight (white at 1); a scene with neither is drawn
-unlit, at no cost. go-renderer draws the lights on every platform, the 3DS too (its
-*2D lights* guide). The editor shows and edits them next (proposal 8).
+unlit, at no cost. A light's radii grow with its node's scale, and a light out of sight is not
+drawn.
+
+**In 3D** a point light is a lamp: it lights the shapes and models around it besides the sun,
+with the same fade, and follows its node as it moves. Each thing drawn takes the four nearest
+lamps that reach it, so a scene can have many, as Godot and Unity do on phones. A 3D scene's
+ambient sets how strong its sky light is (its colour is 2D's only); sprite lights are 2D's only.
+On the 3DS, 3D lamps light at the vertices: a floor shows a lamp's pool where it has vertices.
+
+go-renderer draws the lights on every platform (its *2D lights* guide and its third lesson).
 
 ## Not yet
 
