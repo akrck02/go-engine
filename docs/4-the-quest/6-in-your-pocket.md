@@ -16,6 +16,8 @@ In **Build**, the card **This computer** has **Build**: it writes the game into 
 the editor inside, with the notices of the code it carries beside it. **Play** opens it in a window
 of its own. Send that folder to a friend on the same system, and they can play.
 
+<p align="center"><img alt="The Build workspace: three cards, This computer, Nintendo 3DS and Android, each with Build and Log, and Play, Send, Emulator or Play on device" src="../images/quest/editor-build.png" width="680"></p>
+
 ## On a Nintendo 3DS
 
 The 3DS needs two tools. Open the **Tools** tab:
@@ -40,6 +42,8 @@ In **Tools**, install the **Android SDK**, which brings the **Android NDK** with
 accept its licence first), and a **JDK** if the computer has none. Plug a phone in with USB debugging on, or start an emulator, then press
 **Play on device** on the **Android** card. The game shows round buttons to walk and jump, and its
 log streams into the editor while it runs.
+
+<p align="center"><img alt="The game on an Android emulator held upright: the level across the top, and round touch buttons for left, right, B and A under it" src="../images/android-upright.png" width="280"></p>
 
 ## Checkpoint
 
@@ -100,7 +104,11 @@ at the cliff's foot, give it a body of the kind **Platform** and the behaviour *
 
 </details>
 
-**🎒 Achievement unlocked: Traveller.** Your game runs on a computer, a console and a phone.
+![Achievement unlocked: Lift engineer](../images/quest/achievement-final.svg)
+
+![Achievement unlocked: Traveller](../images/quest/achievement-traveller.svg)
+
+Your game runs on a computer, a console and a phone.
 
 You finished the quest. 🎉 The [guides](../5-guides/1-a-2d-level-with-tiles.md) go further into each
 part, and the [complete game](https://github.com/akrck02/go-engine/tree/main/examples/platformer) has

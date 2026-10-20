@@ -5,12 +5,14 @@
 
 ## Why
 
-The editor is one screen that does six jobs at once: with a coin chosen, the inspector asks for
-its place in the level, the cut and timing of its picture, and its code, while the top bar offers
+The editor is one screen that does six jobs at once. With a coin chosen, the inspector asks for
+its place in the level, the cut and timing of its picture, and its code. The top bar offers
 testing, building and the project. A level designer scrolls past animation settings on every
-coin; an artist has no screen of their own; a solo developer is offered every job at every
-moment. DaVinci Resolve answers this with pages, one screen per stage of the work. The study
-behind this change: "Editor workspaces" (a private page of the author's).
+coin. An artist has no screen of their own. A solo developer is offered every job at every
+moment.
+
+DaVinci Resolve answers this with pages, one screen per stage of the work. The study behind this
+change is "Editor workspaces", a private page of the author's.
 
 ## What
 
@@ -30,49 +32,67 @@ behind this change: "Editor workspaces" (a private page of the author's).
 ## Out of scope
 
 - A code editor inside the editor (Zed is the project's code editor).
-- Undo and redo, choosing several nodes, sharp pixel art (a go-renderer filter): findings of the
-  first study that belong to their own changes.
-- 3D scenes in Art (models are not cut or animated here); 3D keeps today's Level view.
+- Undo and redo, choosing several nodes, sharp pixel art (a go-renderer filter). The first study
+  found them; they belong to their own changes.
+- 3D scenes in Art (models are not cut or animated here). 3D keeps today's Level view.
 - Documentation chapters: v0.0.1 is not documented yet.
 
 ## Design
 
-**Workspaces in the editor.** `Editor.Workspace` (a small type with the six values) and
-`SetWorkspace`; entering Play plays the scene, leaving it stops. `View.Build` draws the top bar
-(project, scene, saved state), the chosen workspace's panels, and the workspace bar with the status
-line. Each workspace is its own file of panels (`workspace_project.go`, `workspace_art.go`, …);
-what is shared (tree, inspector sections) stays where it is. Code says "workspace" because
-"mode" already means 2D or 3D.
+**Workspaces in the editor.** `Editor.Workspace` is a small type with the six values, set with
+`SetWorkspace`. Entering Play plays the scene, and leaving it stops. `View.Build` draws three
+things: the top bar (project, scene, saved state), the chosen workspace's panels, and the
+workspace bar with the status line.
 
-**Sprites and tilesets as assets** (`scenefile`). `Sprite{Picture, Columns, Rows, Animations,
-Start}` in `*.sprite.json` and `Tileset{Picture, TileSize, Solid}` in `*.tileset.json`, read and
-checked like scenes. A node's `sprite` may name a picture (as today) or a sprite file; a tile map's
-`tileset` may name a picture (with its own tile size and solid tiles, as today) or a tileset file.
-The engine resolves them when a scene is built, once, through its asset cache; an inline `sheet`
-still works and wins, so old scenes play. Alternatives not taken: moving every sheet into files at
-once (breaks scenes) and per-scene resources (the coins of two levels would still disagree).
+Each workspace is its own file of panels (`workspace_project.go`, `workspace_art.go`, …). What is
+shared (tree, inspector sections) stays where it is. Code says "workspace" because "mode" already
+means 2D or 3D.
 
-**Art** edits these files through `editor/art.go` (no interface in it, so it is tested): make a
-sprite or tileset from a picture, set the cut, add, rename and remove animations, add a clicked
-frame, toggle a solid tile, save. Its panels: list, canvas (the picture with its cut, frames
-numbered), cut and collision on the right, the animation strip with a preview underneath.
+**Sprites and tilesets as assets** (`scenefile`). They are read and checked like scenes:
 
-**Level** gets `Tool` (select, paint, erase, fill, hand) instead of the paint checkbox, an overlay
-switch for bodies and camera bounds, the tile map's cell grid while it is chosen, a flood fill, and
-a palette in the tileset's own columns. The inspector loses the sheet and animations (they are in
-Art: it shows the sprite, a "Starts with" choice and a button to open it in Art), the tile size and
-solid tiles (in the tileset), Go types in behaviour fields, and the 3D/2D tab (moved to Project's
-scene settings).
+- `Sprite{Picture, Columns, Rows, Animations, Start}` in `*.sprite.json`.
+- `Tileset{Picture, TileSize, Solid}` in `*.tileset.json`.
 
-**Play** uses the editor's play-in-the-view, with `Pause`, `StepFrame` and `Restart`, a target
-shape, a watch of the chosen node (exported behaviour fields read by reflection), and a log fed by
-an `slog` handler the editor installs while playing.
+A node's `sprite` may name a picture (as today) or a sprite file. A tile map's `tileset` may name
+a picture (with its own tile size and solid tiles, as today) or a tileset file. The engine
+resolves them once, when a scene is built, through its asset cache. An inline `sheet` still works
+and wins, so old scenes play.
+
+Alternatives not taken:
+
+- Moving every sheet into files at once: it breaks scenes.
+- Resources per scene: the coins of two levels would still disagree.
+
+**Art** edits these files through `editor/art.go`. It has no interface in it, so it is tested. It
+makes a sprite or tileset from a picture, sets the cut, and adds, renames and removes animations.
+It adds a clicked frame, toggles a solid tile, and saves. Its panels:
+
+- the list;
+- the canvas: the picture with its cut, frames numbered;
+- the cut and collision, on the right;
+- the animation strip with a preview, underneath.
+
+**Level** gets a `Tool` (select, paint, erase, fill, hand) instead of the paint checkbox. It also
+gets an overlay switch for bodies and camera bounds, and the tile map's cell grid while it is
+chosen. A flood fill and a palette in the tileset's own columns join them.
+
+The inspector loses what moved elsewhere:
+
+- the sheet and animations, now in Art (it shows the sprite, a "Starts with" choice and a button
+  to open it in Art);
+- the tile size and solid tiles, now in the tileset;
+- Go types in behaviour fields;
+- the 3D/2D tab, moved to Project's scene settings.
+
+**Play** uses the editor's play-in-the-view, with `Pause`, `StepFrame` and `Restart`. It adds a
+target shape and a watch of the chosen node, whose exported behaviour fields are read by
+reflection. A log is fed by an `slog` handler the editor installs while playing.
 
 **Project**, **Code** and **Build** are lists and details over what the editor already knows:
 `Project.AssetTree`, `Project.Behaviours`, the scenes' descriptions (to find uses), and the builds
 it runs (kept per target).
 
-**Icons** are named constants in `editor/icons.go`, one per meaning, with a test that no two
+**Icons** are named constants in `editor/icons.go`, one per meaning. A test checks that no two
 meanings share an icon.
 
 ## Tasks
@@ -105,38 +125,46 @@ meanings share an icon.
 
 ## Result
 
-**Built.** Sprites and tilesets are files of their own, which the engine reads once and nodes and
-tile maps point to; a node may name the animation it starts with, so nodes that share a sprite
-start differently. The editor is six workspaces along a bottom bar (keys 1 to 6, in Play too):
+**Built.** Sprites and tilesets are files of their own. The engine reads them once, and nodes and
+tile maps point to them. A node may name the animation it starts with, so nodes that share a
+sprite start differently.
 
-- Level, with a tool rail, fill, overlays, a palette in the tileset's columns and an inspector that
-  only places (with "Starts with");
-- Art, with the picture large and its cut numbered, frames clicked into animations, a preview and
-  solid tiles;
-- Play, with pause, a step, a restart, a screen's shape, a live watch of the scene playing and the
-  log;
-- Project, with thumbnails, filters, uses and settings;
-- Code, with the behaviours, their fields and methods, their uses, the missing ones and the output;
-- Build, with a card and a log per target.
+The editor is six workspaces along a bottom bar (keys 1 to 6, in Play too):
 
-Icons are constants with one meaning each. The demo's coins share one sprite file and its levels
-one tileset file; it plays on the 3DS from them.
+- Level: a tool rail, fill, overlays, a palette in the tileset's columns, and an inspector that
+  only places (with "Starts with").
+- Art: the picture large with its cut numbered, frames clicked into animations, a preview, and
+  solid tiles.
+- Play: pause, a step, a restart, a screen's shape, a live watch of the scene playing, and the log.
+- Project: thumbnails, filters, uses and settings.
+- Code: the behaviours, their fields and methods, their uses, the missing ones, and the output.
+- Build: a card and a log per target.
 
-**Checked.** Every task's tests pass, with the order shuffled too; each workspace was captured
-with the demo open (on the author's private progress page: docs are not written for v0.0.1); the
+Icons are constants with one meaning each. The demo's coins share one sprite file, and its levels
+one tileset file. It plays on the 3DS from them.
+
+**Checked.** Every task's tests pass, with the order shuffled too. Each workspace was captured
+with the demo open, on the author's private progress page (docs are not written for v0.0.1). The
 demo was played in Azahar.
 
-**Review.** The reviewer's findings were fixed: the play log gives the log package back and is
-only taken when a game starts; opening a scene or an Art file over unsaved changes is refused, a
-shared sprite is never written over, builds save first; only Level and Play take the view's input;
-Play's tree is the scene playing; Open in Art opens that node's sprite; a sprite file chosen drops
-the node's own sheet; the screen's shape is offered for 2D games only; rebuilding's errors show in
-Code; Code reads the scenes at most every two seconds; sprites, tilesets and clearing have icons of
-their own; new error codes have tests.
+**Review.** The reviewer's findings were fixed:
 
-**Not done.** Undo and redo, choosing several nodes, and sharp pixel art (a go-renderer filter), as
-the proposal said. In a 3D scene, Level keeps its old view.
+- The play log gives the log package back, and is only taken when a game starts.
+- Opening a scene or an Art file over unsaved changes is refused.
+- A shared sprite is never written over, and builds save first.
+- Only Level and Play take the view's input.
+- Play's tree is the scene playing.
+- Open in Art opens that node's sprite.
+- A sprite file chosen drops the node's own sheet.
+- The screen's shape is offered for 2D games only.
+- Rebuilding's errors show in Code.
+- Code reads the scenes at most every two seconds.
+- Sprites, tilesets and clearing have icons of their own.
+- New error codes have tests.
+
+**Not done.** Undo and redo, choosing several nodes, and sharp pixel art (a go-renderer filter),
+as the proposal said. In a 3D scene, Level keeps its old view.
 
 **For a person.** Use the mouse: painting and filling, dragging in Select, clicking frames and
-tiles in Art, the palette. The tests cover the model and one simulated click; nobody has painted
+tiles in Art, the palette. The tests cover the model and one simulated click. Nobody has painted
 a level by hand yet.

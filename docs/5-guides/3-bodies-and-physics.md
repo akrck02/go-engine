@@ -14,7 +14,11 @@ Choose the node, and under **Body** press **Give it a body**. Choose its kind:
 | Platform | Lifts: moves as its behaviours say, carrying what stands on it |
 | Trigger | Coins, doors, water: stops nothing, hears what touches it |
 
-Its **size** is in metres; 0 is the node's own picture or shape. Moving and pushable bodies have a
+Its **size** is in metres; 0 is the node's own picture or shape.
+
+<p align="center"><img alt="Bodies drawn over a level: triggers in orange, the water's wide box under the ledges, and the inspector of a Trigger body" src="../images/quest/editor-bodies.png" width="680"></p>
+
+ Moving and pushable bodies have a
 **gravity** scale: 1 is Earth's, more falls faster, 0 floats.
 
 ## Move it from code

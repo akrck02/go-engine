@@ -1,5 +1,7 @@
 # 🗺️ The quest: a forest platformer
 
+![The quest's map: from the start, Explorer, Puppeteer, Builder, Collector, Lamplighter and Traveller, then the final challenge, Lift engineer](../images/quest/quest-map.svg)
+
 In six levels you make one game, a step at a time. A slime walks and jumps through a forest. It
 collects coins, avoids the water and reaches a sign at the end, at night, under lamps. Then you play
 it on a Nintendo 3DS. Each level adds a little to the game before it, and ends with something you
@@ -27,7 +29,10 @@ Every level has the same shape:
 | [5. Night in the forest](5-night-in-the-forest.md) | The ambient, point lights, sprite lights | The forest at night, lit by lamps | 🏮 Lamplighter |
 | [6. In your pocket](6-in-your-pocket.md) | Building for a computer, the 3DS and Android | Your game on a console | 🎒 Traveller |
 
-A **final challenge** waits at the end of level 6: a lift that carries the slime up a cliff.
+A **final challenge** waits at the end of level 6: a lift that carries the slime up a cliff. These
+are the achievements to collect on the way:
+
+![The seven achievements: Explorer, Puppeteer, Builder, Collector, Lamplighter, Traveller and Lift engineer](../images/quest/achievements-all.svg)
 
 > 💡 **The pictures** come from [godot-generic-platformer](https://github.com/akrck02/godot-generic-platformer),
 > under the MIT licence. The finished game is in

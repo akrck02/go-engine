@@ -39,6 +39,8 @@ comes from its parts:
 | a light | a lamp, or a glowing sign |
 | behaviours | something your code moves |
 
+<p align="center"><img alt="A scene's tree in the editor: Hills, Trees, Ground, Player with its child Sprite, and Camera; Player chosen, with its body in the inspector" src="images/quest/editor-body.png" width="560"></p>
+
 Each node has a **transform**: where it is, how it is turned and how large it is, **relative to its
 parent**. Move a ship and its sailors move with it. `node.World()` says where a node is in the world.
 
@@ -107,6 +109,8 @@ A 2D node with a **body** is moved by the scene's physics while the game plays. 
 | Platform | Never falls, moves through solids at its velocity, carrying what stands on it (a lift) |
 | Trigger | Stops nothing; its behaviours hear what touches it (a coin, a door) |
 
+<p align="center"><img alt="A level's bodies drawn over it: the ledges' solid tiles, and triggers in orange round the coins, the sign and the water below" src="images/quest/editor-bodies.png" width="560"></p>
+
 A falling body has a **gravity scale**: 1 is Earth's pull, 2 twice as strong, 0 none. A trigger
 can have a gravity of its own, a **pull**: what falls inside it is pulled that way.
 "On the floor" is wherever a body's gravity pulls it, so a body pulled up stands on a ceiling.
@@ -116,7 +120,11 @@ can have a gravity of its own, a **pull**: what falls inside it is pulled that w
 A scene can be lit. Its **ambient** is the light that reaches everything: white at 1 leaves the
 colours as they are, a dark blue at 0.4 is a night. Lights on nodes add to it where they shine,
 like lamps in a dark room, and can brighten up to twice. A scene with neither is drawn unlit, at no
-cost. A 3D scene always has a sun and a sky, which light it by day or night; its lights are lamps
+cost.
+
+<p align="center"><img alt="The same level by day, unlit, and at night: a dark blue ambient, a warm lamp over the sign, glowing coins and a cold moonlight" src="images/lit-and-unlit.png" width="720"></p>
+
+A 3D scene always has a sun and a sky, which light it by day or night; its lights are lamps
 that shine on the shapes around them besides.
 
 ## Not yet

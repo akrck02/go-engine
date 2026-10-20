@@ -7,6 +7,8 @@ Make a 2D camera follow the player, smoothly, without showing past the level's e
 Choose the **Camera**. Under **Follows**, choose the node to follow (*Player*), and set how many
 seconds it takes to catch up: 0 stays right on it, 0.2 feels smooth. That is all.
 
+<p align="center"><img alt="A camera's inspector: metres seen, the main camera, Follows Player, 0.20 seconds, its view kept inside the tile maps" src="../images/quest/editor-camera.png" width="680"></p>
+
 ## What it sees
 
 | Setting | What it means |

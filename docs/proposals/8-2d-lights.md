@@ -6,15 +6,20 @@
 
 ## Why
 
-io-world's start screen in Unity was lit: a global light at 72 % dimmed the whole scene, the lamp
-cast a warm circle (`#faffa0`, 3.5 metres), the logo, "Press start" and the snail glowed through
-their own pictures, and two thin lights lined "Demo". Made again in Go Engine (proposal 7), it
-is flat: the engine draws 2D with no light at all. Light is what gives a factory its gloom and a
-lamp its warmth; any 2D game will want it, on the desktop, on phones and on the 3DS.
+io-world's start screen in Unity was lit:
 
-Unity draws 2D lights in a pass of their own: it paints the lights into a light picture, cleared
+- a global light at 72 % dimmed the whole scene;
+- the lamp cast a warm circle (`#faffa0`, 3.5 metres);
+- the logo, "Press start" and the snail glowed through their own pictures;
+- two thin lights lined "Demo".
+
+Made again in Go Engine (proposal 7), it is flat: the engine draws 2D with no light at all. Light
+is what gives a factory its gloom and a lamp its warmth. Any 2D game will want it, on the
+desktop, on phones and on the 3DS.
+
+Unity draws 2D lights in a pass of their own. It paints the lights into a light picture, cleared
 to the global light, and then multiplies the sprites by it. go-renderer's 2D drawing only paints
-one thing over another, with transparency: it has no way to add light nor to multiply by it.
+one thing over another, with transparency. It has no way to add light, nor to multiply by it.
 
 ## What
 
@@ -33,9 +38,10 @@ one thing over another, with transparency: it has no way to add light nor to mul
 
 ## Out of scope
 
-- Shadows cast by sprites or by 3D lights, normal maps, spot lights (a later kind of the same
-  `light`), and dynamic lights on the 3DS's GPU (its fragment lighting: 3D lights are baked into
-  vertex colours there, which suits lights that seldom move).
+- Shadows cast by sprites or by 3D lights, normal maps, and spot lights (a later kind of the same
+  `light`).
+- Dynamic lights on the 3DS's GPU (its fragment lighting). 3D lights are baked into vertex
+  colours there, which suits lights that seldom move.
 - Blend modes as a general tool for programs (only what the light layer needs).
 
 ## Design
@@ -43,56 +49,69 @@ one thing over another, with transparency: it has no way to add light nor to mul
 **go-renderer** (`draw2d`, `opengl`, `gles`, `ctr`), on `feature/lights`:
 
 - `draw2d`: `list.PointLight(x, y, inner, outer, colour)` and `list.SpriteLight(picture, area,
-  colour)` add lights (a colour's alpha is its intensity), and `list.Lighting(ambient)` lights
-  everything drawn before it with the lights since the last one, inside the clip it is made in;
-  what comes after (an interface) stays unlit. *(Built so instead of BeginLights/EndLights: one
-  command marks where lighting happens, and nothing has to be closed.)*
-- OpenGL and GL ES: a light target the size of the screen, at half its resolution (lights are
-  soft), made like the backdrop's targets and kept between frames: cleared to the ambient
-  colour, lights drawn into it additively (a point light is one quad whose shader makes its
-  falloff), then drawn over the frame with a multiplying blend. One more draw call per light layer.
-- 3DS (`ctr`): citro3d draws into a texture render target (`C3D_RenderTargetCreateFromTex`) at
-  half the top screen's resolution, 256 by 128 (sides that are powers of two), and the PICA200
-  adds and multiplies with its own blend modes (`GPU_BLEND_ADD`, `GPU_DST_COLOR`). With no
-  fragment shader, a point light's fade is read from a texture of sixteen discs, and the ambient
-  is painted in, since citro3d's clears run before a frame's draws.
-- Metal: the same light target as a texture of its own, drawn with the same blends; written as
-  the backdrop's Metal part was. It cannot be built nor run where this is written (Linux): the
+  colour)` add lights. A colour's alpha is its intensity.
+- `list.Lighting(ambient)` lights everything drawn before it with the lights since the last one,
+  inside the clip it is made in. What comes after (an interface) stays unlit. *(Built so instead
+  of BeginLights/EndLights: one command marks where lighting happens, and nothing has to be
+  closed.)*
+- OpenGL and GL ES: a light target the size of the screen, at half its resolution, since lights
+  are soft. It is made like the backdrop's targets, and kept between frames. It is cleared to the
+  ambient colour, and lights are drawn into it additively. A point light is one quad whose shader
+  makes its falloff. Then it is drawn over the frame with a multiplying blend: one more draw call
+  per light layer.
+- 3DS (`ctr`): citro3d draws into a texture render target (`C3D_RenderTargetCreateFromTex`). It
+  is at half the top screen's resolution, 256 by 128, since its sides must be powers of two. The
+  PICA200 adds and multiplies with its own blend modes (`GPU_BLEND_ADD`, `GPU_DST_COLOR`).
+- With no fragment shader on the 3DS, a point light's fade is read from a texture of sixteen
+  discs. The ambient is painted in, since citro3d's clears run before a frame's draws.
+- Metal: the same light target as a texture of its own, drawn with the same blends, written as
+  the backdrop's Metal part was. It cannot be built nor run where this is written (Linux). The
   author checks it on a Mac.
 
 **go-engine**:
 
-- `scenefile`: a node's `light`: `{kind: point|sprite, colour, intensity, inner, outer}`; a
-  sprite light uses the node's own picture, which it is drawn as instead of being shown. A
-  scene's `ambient` colour and intensity is its global light; a scene with lights and no ambient
-  is lit by daylight. *(Changed while building: no "global" kind on nodes, since the scene's
-  ambient is the global light, and no falloff setting: every backend fades with the same smooth
-  curve.)*
+- `scenefile`: a node's `light` is `{kind: point|sprite, colour, intensity, inner, outer}`. A
+  sprite light uses the node's own picture, and is drawn as a light instead of being shown.
+- A scene's `ambient` colour and intensity is its global light. A scene with lights and no
+  ambient is lit by daylight.
+- *(Changed while building: no "global" kind on nodes, since the scene's ambient is the global
+  light. And no falloff setting: every backend fades with the same smooth curve.)*
 - `engine`: a 2D scene draws its sprites, then its lights (in their nodes' places and scales)
-  into one light layer, then what goes above (the interface). Lights are found once a frame
-  into a reused list, as the drawn nodes are.
-- `editor`: a Light section in Level's inspector (kind, colour, intensity, radii), radii drawn
-  as circles over the view when "Lights" is on, and Play drawn lit.
+  into one light layer, then what goes above (the interface). Lights are found once a frame into
+  a reused list, as the drawn nodes are.
+- `editor`: a Light section in Level's inspector (kind, colour, intensity, radii). Radii are drawn
+  as circles over the view when "Lights" is on, and Play is drawn lit.
 
-**Io World**: `tools/make_start_screen.py` reads the Unity menu's `Light2D` components (type,
-colour, intensity, radii, the sprite a sprite light uses) into the start screen's nodes.
+**Io World**: `tools/make_start_screen.py` reads the Unity menu's `Light2D` components into the
+start screen's nodes: type, colour, intensity, radii, and the sprite a sprite light uses.
 
-**3D (added with R8–R9).** go-renderer's `scene` gets a list of point lights (position, linear
-colour times intensity, inner and outer radius). `sceneplan` chooses, for each draw, the four
-nearest lights whose outer sphere meets its bounds (*built as "nearest", not "strongest": the
-simpler rule Godot's mobile renderer uses, and stable while nothing moves*), listed by index, so
-every backend gets the same short list.
-OpenGL and GL ES add them in their lit shading next to the sun, as Lambert light times the same
-smoothstep fade as 2D, from a fixed array of four uniforms (within OpenGL ES 2's uniform budget,
-and no light loop beyond four). The 3DS bakes them into its vertex colours with the sun, and bakes
-again when a light changes. Metal follows with T4b. The engine fills the list each frame from the
-3D nodes that are lights, and a 3D scene's `ambient` multiplies its sky light. Researched against
-Unity URP (Light2D, forward's per-object light list), Godot 4 (CanvasModulate, PointLight2D, 8+8
-lights per mesh on mobile), Bevy and the PICA200's fragment lighting.
+**3D (added with R8–R9).** go-renderer's `scene` gets a list of point lights: position, linear
+colour times intensity, inner and outer radius.
 
-**Alternatives not taken**: drawing lights as translucent halos with no light picture (option A,
-cheap, but light cannot darken what it does not cover nor multiply colours); a light per sprite
-computed on the processor (does not scale, and the 3DS has a GPU for it).
+`sceneplan` chooses, for each draw, the four nearest lights whose outer sphere meets its bounds.
+It lists them by index, so every backend gets the same short list. *(Built as "nearest", not
+"strongest": the simpler rule Godot's mobile renderer uses, and stable while nothing moves.)*
+
+OpenGL and GL ES add them in their lit shading next to the sun. Each is Lambert light times the
+same smoothstep fade as 2D. They come from a fixed array of four uniforms: within OpenGL ES 2's
+uniform budget, and no light loop beyond four.
+
+The 3DS bakes them into its vertex colours with the sun, and bakes again when a light changes.
+Metal follows with T4b. The engine fills the list each frame from the 3D nodes that are lights.
+A 3D scene's `ambient` multiplies its sky light.
+
+This was researched against several engines:
+
+- Unity URP: Light2D, and forward's light list per object.
+- Godot 4: CanvasModulate, PointLight2D, 8+8 lights per mesh on mobile.
+- Bevy.
+- The PICA200's fragment lighting.
+
+**Alternatives not taken**:
+
+- Drawing lights as translucent halos with no light picture (option A). It is cheap, but light
+  cannot darken what it does not cover, nor multiply colours.
+- A light per sprite computed on the processor. It does not scale, and the 3DS has a GPU for it.
 
 ## Tasks
 
@@ -143,8 +162,8 @@ What the author still has to review or check:
   - the broken GLB test deleted at the author's word;
   - a one-frame flicker of backdrops fixed in OpenGL.
 
-Researched against Unity URP's Light2D, Godot 4 (CanvasModulate, PointLight2D, mobile's light
-limits), Bevy and the PICA200's fragment lighting; audited by a sister session, whose findings
-(clip, culling, node scale, banding, the order of lights) are in; reviewed after, and its
-findings fixed but the GL ES framebuffer (noted above).
+It was researched against Unity URP's Light2D, Godot 4 (CanvasModulate, PointLight2D, mobile's
+light limits), Bevy and the PICA200's fragment lighting. A sister session audited it, and its
+findings are in: clip, culling, node scale, banding, the order of lights. It was reviewed after,
+and the review's findings were fixed, except the GL ES framebuffer (noted above).
 

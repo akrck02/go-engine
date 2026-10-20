@@ -6,8 +6,8 @@
 ## Why
 
 Proposal 2 left four things out on purpose: undo, choosing several nodes, pixel art drawn sharp,
-and a 3D Level like the 2D one. Without undo one wrong click loses work; one node at a time makes
-ten coins ten jobs; pixel art drawn blurred misleads about how the game looks. And nobody can tell
+and a 3D Level like the 2D one. Without undo, one wrong click loses work. One node at a time makes
+ten coins ten jobs. Pixel art drawn blurred misleads about how the game looks. And nobody can tell
 which Go Engine an editor or a game was built with.
 
 ## What
@@ -28,16 +28,16 @@ which Go Engine an editor or a game was built with.
 
 ## Design
 
-**Version** (done first): `engine.Version()` reads the program's build information; for a local
-copy (a `go.work` or a folder `replace`) go-engine passes the commit with `-ldflags -X`.
+**Version** (done first): `engine.Version()` reads the program's build information. For a local
+copy (a `go.work` or a folder `replace`), go-engine passes the commit with `-ldflags -X`.
 
-**Undo**: the editor keeps the scene's description after each change (a list and a place in it);
-undo builds the scene again from the one before, keeping the chosen nodes by path. Changes within
-half a second of each other are one step, so a drag or typing a number is undone at once.
+**Undo**: the editor keeps the scene's description after each change, in a list with a place in
+it. Undo builds the scene again from the one before, keeping the chosen nodes by path. Changes
+within half a second of each other are one step, so a drag or typing a number is undone at once.
 
 **Several nodes**: `Editor.Chosen` holds the nodes besides `Selected`, the one the inspector shows.
 
-**Sharp pixels**: go-renderer's 2D pictures get a filter setting; a 2D scene draws its sprites
+**Sharp pixels**: go-renderer's 2D pictures get a filter setting. A 2D scene draws its sprites
 and tiles with the nearest pixel. That change belongs to go-renderer, on its `feature/3ds`
 branch, committed only with the author's say.
 
@@ -57,16 +57,20 @@ branch, committed only with the author's say.
 
 ## Result
 
-**Built.** The version of Go Engine in the editor's title and top bar and in the logs of the
-editor, the game and the go-engine command, with the commit of a local copy and whether it has
-changes; undo and redo of every change to the scene, a drag or a number typed being one step;
-several nodes chosen with Shift, dragged, deleted and duplicated together; tests that press, move
-and let go the mouse over the 2D view; Level's tool rail in 3D (Select and Hand); pixel art drawn
-sharp, through go-renderer's `draw2d.Image.Sharp` (feature/3ds 3b08cd9, committed with the
-author's say), which the engine sets on every sprite, frame and tile.
+**Built.**
 
-**Checked.** Every task's tests; sharp pixels compared before and after in captures, on the desktop
-and in the 3DS emulator.
+- The version of Go Engine shows in the editor's title and top bar. The logs of the editor, the
+  game and the go-engine command say it too, with the commit of a local copy and whether it has
+  changes.
+- Undo and redo of every change to the scene. A drag or a number typed is one step.
+- Several nodes chosen with Shift, then dragged, deleted and duplicated together.
+- Tests that press, move and let go the mouse over the 2D view.
+- Level's tool rail in 3D (Select and Hand).
+- Pixel art drawn sharp, through go-renderer's `draw2d.Image.Sharp` (feature/3ds 3b08cd9,
+  committed with the author's say). The engine sets it on every sprite, frame and tile.
+
+**Checked.** Every task's tests pass. Sharp pixels were compared before and after in captures, on
+the desktop and in the 3DS emulator.
 
 **Not done.** Metal draws sharp pictures blended, as before: it is hand-written and was not
 touched. Changes to sprite and tileset files are not undone (Art saves them itself). Choosing

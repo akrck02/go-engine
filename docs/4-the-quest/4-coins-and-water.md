@@ -67,6 +67,9 @@ func (flag *Flag) Touched(context *engine.Context, other *engine.Node) {
 
 Each file starts with `package main` and imports `engine`, as `player.go` does. Register them in
 `main.go`, `engine.Register(Spin{}, Player{}, Coin{}, Hazard{}, Flag{})`, and press **Rebuild**.
+**Code** then lists them, with where each is used:
+
+<p align="center"><img alt="The Code workspace: the behaviours Coin, Flag, Hazard, Player and Spin listed on the left; Coin chosen, with its file coin.go, its comment, the method the engine calls, Touched, and the scenes that use it" src="../images/quest/editor-code.png" width="680"></p>
 
 ## Coins
 
@@ -84,6 +87,8 @@ Under the ledges, the slime falls forever. Catch it:
 
 It is invisible, and needs not be seen: falling off is the danger. **Bodies** over the view draws
 triggers in orange.
+
+<p align="center"><img alt="Level with Water chosen: a wide orange box under the ledges, the coins and the sign outlined in orange too; Water's inspector shows a Trigger body 29.12 by 3.88 metres and the Hazard behaviour" src="../images/quest/editor-bodies.png" width="680"></p>
 
 ## The sign
 
@@ -119,7 +124,9 @@ inspector, and repaint its ledges. In the first level, set the sign's **next** t
 
 </details>
 
-**🪙 Achievement unlocked: Collector.** Your level can be won and lost.
+![Achievement unlocked: Collector](../images/quest/achievement-collector.svg)
+
+Your level can be won and lost.
 
 ---
 

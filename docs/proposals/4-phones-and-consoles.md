@@ -7,7 +7,7 @@
 
 The demo plays on the 3DS, but getting it there is work outside the editor: build, copy the
 .3dsx, start the Homebrew Launcher. Android is not offered at all, though go-ui runs there
-(go-ui-android). A game is tried where it will be played; the editor should take it there.
+(go-ui-android). A game is tried where it will be played, so the editor should take it there.
 
 ## What
 
@@ -29,22 +29,27 @@ The demo plays on the 3DS, but getting it there is work outside the editor: buil
 ## Design
 
 **Android build**: go-ui-apk, run as a tool of the game's module (`go tool go-ui-apk`), at a
-version go-engine names; the build adds the tool and the go-ui version go-engine uses to the
-game's go.mod when missing. `-tags release` leaves the editor out. The package carries arm64 (phones)
-and x86_64 (the emulator on a PC).
+version go-engine names. The build adds the tool, and the go-ui version go-engine uses, to the
+game's go.mod when missing. `-tags release` leaves the editor out. The package carries arm64
+(phones) and x86_64 (the emulator on a PC).
 
-**Playing on a device**: `adb install -r`, `adb shell monkey` to start the launcher activity,
-`adb logcat -s Go` streamed into the card's log, `adb shell am force-stop` to stop.
+**Playing on a device**, through adb:
+
+- `adb install -r` installs it.
+- `adb shell monkey` starts the launcher activity.
+- `adb logcat -s Go` streams into the card's log.
+- `adb shell am force-stop` stops it.
 
 **Touch buttons**: on Android, the interface that paints the scene paints four buttons over its
-bottom corners; each frame the fingers over them set the keys, kept from frame to frame as on the
+bottom corners. Each frame, the fingers over them set the keys, kept from frame to frame as on the
 console. Where the buttons go is one function of the screen's size, used to draw and to read.
 
-**3DS**: `3dslink` (devkitPro's tools) sends to the netloader (Y in the Homebrew Launcher); the
+**3DS**: `3dslink` (devkitPro's tools) sends to the netloader (Y in the Homebrew Launcher). The
 emulator is Azahar, or Citra, found on the path.
 
-**go-renderer**: the GL ES shaders of sharp pictures did not link on Android (a uniform declared
-with different precisions); the fix is go-renderer's, committed with the author's say.
+**go-renderer**: the GL ES shaders of sharp pictures did not link on Android, because a uniform
+was declared with different precisions. The fix is go-renderer's, committed with the author's
+say.
 
 ## Tasks
 
@@ -57,30 +62,38 @@ with different precisions); the fix is go-renderer's, committed with the author'
 
 ## Result
 
-**Built.** A 2D game draws on Android; a 2D camera's width is the least it sees across, so an
-upright phone sees more height instead of losing the sides (the demo's 15.5 m keeps the 3DS's view
-as it was), and the Level view's camera frame follows the same rule. On a phone the game sits at
-the top at its camera's shape with touch buttons under it (left, right, B, A), or fills the screen
-held sideways with the buttons over its corners; every key of a plugged-in keyboard still reaches
-the game. The Build workspace builds an `.apk` without the editor (go-ui-apk as a tool of the
-game's module; go-ui's replace is written again on every build, from the go-ui the game's
-go-engine asks for), plays it on the first device adb sees with its log (which ends when the game
-does) and stops it there; it sends a `.3dsx` with 3dslink or opens it in Azahar or Citra. Play's
-3DS shape shows both screens. The settings keep the application id (its form checked) and the
-3DS's address.
+**Built.**
 
-**Checked.** Every task's tests; the package built, installed, started, logged and stopped on
-the Android emulator; touch buttons pressed with adb (walking and jumping); captures of Play's two
-screens and the Build cards.
+- A 2D game draws on Android. A 2D camera's width is the least it sees across. So an upright
+  phone sees more height instead of losing the sides. The demo's 15.5 m keeps the 3DS's view as it
+  was, and the Level view's camera frame follows the same rule.
+- On a phone held upright, the game sits at the top at its camera's shape, with touch buttons
+  under it (left, right, B, A). Held sideways, it fills the screen with the buttons over its
+  corners. Every key of a plugged-in keyboard still reaches the game.
+- The Build workspace builds an `.apk` without the editor, with go-ui-apk as a tool of the game's
+  module. go-ui's replace is written again on every build, from the go-ui the game's go-engine
+  asks for.
+- It plays the `.apk` on the first device adb sees, with its log, and stops it there. The log
+  ends when the game does.
+- It sends a `.3dsx` with 3dslink, or opens it in Azahar or Citra.
+- Play's 3DS shape shows both screens.
+- The settings keep the application id (its form checked) and the 3DS's address.
 
-**Not done.** The touch buttons are painted, with nothing for TalkBack to read: a blind player
-cannot find them yet. A local Go Engine's commit does not reach the `.apk` (it cannot go in
-`GOFLAGS`). Choosing among several devices, and signing for a store, were out of scope. Sending to
-a real 3DS was not tried here (no console on the network).
+**Checked.** Every task's tests pass. On the Android emulator, the package built, installed,
+started, logged and stopped. Touch buttons were pressed with adb, walking and jumping. Play's two
+screens and the Build cards were captured.
 
-**Fixed in go-renderer.** Pictures drew nothing on Android: go-renderer's GL ES shaders for
-sharp pictures (feature/3ds 3b08cd9) declared a uniform with different precisions in two stages,
-and the program did not link. feature/3ds bb1c275 passes it as a varying, with the author's say.
+**Not done.**
 
-**For a person.** Play on a real phone: the buttons' size and place under a thumb; send to the 3DS
-over the network.
+- The touch buttons are painted, with nothing for TalkBack to read. A blind player cannot find
+  them yet.
+- A local Go Engine's commit does not reach the `.apk`: it cannot go in `GOFLAGS`.
+- Choosing among several devices, and signing for a store, were out of scope.
+- Sending to a real 3DS was not tried here, with no console on the network.
+
+**Fixed in go-renderer.** Pictures drew nothing on Android. go-renderer's GL ES shaders for sharp
+pictures (feature/3ds 3b08cd9) declared a uniform with different precisions in two stages, so the
+program did not link. feature/3ds bb1c275 passes it as a varying, with the author's say.
+
+**For a person.** Play on a real phone: the buttons' size and place under a thumb. Send to the
+3DS over the network.

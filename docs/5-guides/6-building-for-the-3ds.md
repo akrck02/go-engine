@@ -29,6 +29,8 @@ On the **Nintendo 3DS** card:
 
 The console's address is found on the network; if it is not, set it in **Project → Settings**.
 
+<p align="center"><img alt="A game in Azahar: the forest at night on the 3DS's top screen, at 60 frames a second" src="../images/quest/3ds.png" width="560"></p>
+
 ## How the game behaves there
 
 | | |
