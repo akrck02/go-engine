@@ -130,7 +130,7 @@ the tiles 14 pixels.
 5. **Touching needs overlapping.** A pad's trigger, level with the ground it is on, never notices
    what stands on it: it has to reach above it. Easy to get wrong, and silent.
 6. **`go-engine new` opens the editor**, so it needs a display. Making a project on a server
-   needed `project.Create` from Go.
+   needed `project.Create` from Go. *(Fixed later: `go-engine new -open=false` only makes it.)*
 7. **Choices the original left open.** The field pulled left in the level and up in its prefab,
    and worked in neither. The button only printed. Here the field pulls up (the inspector changes
    it), and the button starts the rail, as io-world's first, Unity version did.

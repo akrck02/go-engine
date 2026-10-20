@@ -1,6 +1,7 @@
 // Command go-engine opens the editor on a game's project, or makes a new project and opens it:
 //
 //	go run ./cmd/go-engine new ~/games/harbour "Harbour lights"
+//	go run ./cmd/go-engine new -open=false ~/games/harbour "Harbour lights"
 //	go run ./cmd/go-engine ~/games/harbour
 //	go run ./cmd/go-engine -capture editor.png ~/games/harbour
 //	go run ./cmd/go-engine -update ~/games/harbour
@@ -16,6 +17,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/akrck02/go-ui/window"
 
@@ -36,10 +38,11 @@ func main() {
 	flags.String("workspace", "", "the workspace to open in: project, art, level, code, play or build (for captures)")
 	update := flags.Bool("update", false, "update the project to go-engine's latest version, and do not open the editor")
 	version := flags.String("engine", project.LatestEngine, "with -update: the go-engine version to update to (a branch, a tag or a commit)")
+	open := flags.Bool("open", true, "open the editor on the project; false only makes it (new) or opens nothing, as on a server with no display")
 	flags.Usage = func() {
 		output := flags.Output()
 		fmt.Fprintln(output, "usage: go-engine [flags] [project folder]")
-		fmt.Fprintln(output, "       go-engine new <folder> [name]")
+		fmt.Fprintln(output, "       go-engine new [-open=false] <folder> [name]")
 		fmt.Fprintln(output, "       go-engine -update [-engine version] [project folder]")
 		flags.PrintDefaults()
 	}
@@ -49,8 +52,10 @@ func main() {
 	case err != nil:
 	case *update:
 		err = updateEngine(opened, *version)
+	case !*open:
+		fmt.Printf("%s is ready in %s\n", opened.Settings.Name, opened.Folder)
 	default:
-		err = edit(opened, passed)
+		err = edit(opened, withoutFlag(passed, "open"))
 	}
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -70,6 +75,20 @@ func parseAnywhere(flags *flag.FlagSet, arguments []string) (passed, positional 
 		}
 		positional, arguments = append(positional, rest[0]), rest[1:]
 	}
+}
+
+// withoutFlag is the flags as given, without a boolean flag of this name, which only this command
+// reads: the editor would refuse it.
+func withoutFlag(passed []string, name string) []string {
+	var kept []string
+	for _, given := range passed {
+		bare, _, _ := strings.Cut(strings.TrimLeft(given, "-"), "=")
+		if strings.HasPrefix(given, "-") && bare == name {
+			continue
+		}
+		kept = append(kept, given)
+	}
+	return kept
 }
 
 // missingFolder is go-engine new without its folder.

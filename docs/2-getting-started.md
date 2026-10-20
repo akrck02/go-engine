@@ -41,7 +41,8 @@ inside; the command writes it, fetches the engine as `go` does any module, and o
 
 <p align="center"><img alt="The editor's Level workspace on the new project: the cube chosen on the green ground, its inspector on the right with a Spin behaviour" src="images/editor-level.png" width="720"></p>
 
-Next time, open the project with `go-engine ~/games/harbour`.
+Next time, open the project with `go-engine ~/games/harbour`. On a computer with no screen (a
+server), `go-engine new -open=false` makes the project without opening the editor.
 
 ## 3. Look around
 
