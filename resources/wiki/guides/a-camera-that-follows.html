@@ -1,0 +1,61 @@
+<h1 id="a-camera-that-follows">🎥 A camera that follows</h1>
+
+<p>Make a 2D camera follow the player, smoothly, without showing past the level&rsquo;s edges.</p>
+
+<h2 id="the-shortest-way">The shortest way</h2>
+
+<p>Choose the <strong>Camera</strong>. Under <strong>Follows</strong>, choose the node to follow (<em>Player</em>), and set how many
+seconds it takes to catch up: 0 stays right on it, 0.2 feels smooth. That is all.</p>
+
+<h2 id="what-it-sees">What it sees</h2>
+
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>What it means</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>Metres seen, top to bottom</td>
+<td>How much of the world fits on the screen&rsquo;s height</td>
+</tr>
+
+<tr>
+<td>Metres seen across, at least</td>
+<td>A width it never shows less of: on a phone held upright, the camera sees more height instead of losing the sides</td>
+</tr>
+
+<tr>
+<td>The scene is seen through this camera</td>
+<td>The main camera; a scene with several plays through this one</td>
+</tr>
+</tbody>
+</table>
+
+<h2 id="keeping-inside-the-level">Keeping inside the level</h2>
+
+<p><strong>Its view keeps inside</strong> chooses the limits:</p>
+
+<ul>
+<li><strong>The tile maps</strong> (the default): the camera stops where the tiles end, at the sides and the
+bottom. The sky stays open, so it rises with a jump. Tick <strong>The top of the tile maps is a
+ceiling</strong> for a cave.</li>
+<li><strong>A box of its own</strong>: four numbers, the lowest and highest X and Y it may show.</li>
+</ul>
+
+<p><strong>Camera bounds</strong>, over the view, draws the box a following camera keeps its view in.</p>
+
+<h2 id="variations">Variations</h2>
+
+<ul>
+<li><strong>Following a moving platform.</strong> Follow the platform&rsquo;s node instead: anything can be followed.</li>
+<li><strong>Look through it while editing.</strong> A camera&rsquo;s inspector has <strong>Look through it</strong>, to see the scene
+from it in the editor&rsquo;s view.</li>
+</ul>
+
+<hr>
+
+<p><a href="./guides/lights">← Lights</a> · <a href="./guides/building-for-the-3ds">Building for the 3DS →</a></p>

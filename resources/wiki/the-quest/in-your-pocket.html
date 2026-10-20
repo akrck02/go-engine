@@ -1,0 +1,113 @@
+<h1 id="level-6-in-your-pocket">🎒 Level 6: in your pocket</h1>
+
+<p>Your forest is a game. Now it leaves the editor: a program for your computer, a <code>.3dsx</code> for a
+Nintendo 3DS, and an <code>.apk</code> for an Android phone. Then a final challenge.</p>
+
+<h4 id="the-idea">The idea</h4>
+
+<p>The same Go code becomes three programs. For a computer, Go builds it as it is. For the 3DS,
+<a href="https://github.com/akrck02/tinygo-3ds" target="_blank">TinyGo for the 3DS</a> builds it for the console&rsquo;s processor,
+and devkitPro packs it for the Homebrew Launcher. For Android, the phone&rsquo;s tools wrap it in an app.
+The editor runs each of them for you, from <strong>Build</strong> (key 6).</p>
+
+<h2 id="on-your-computer">On your computer</h2>
+
+<p>In <strong>Build</strong>, the card <strong>This computer</strong> has <strong>Build</strong>: it writes the game into <code>build/</code>, without
+the editor inside, with the notices of the code it carries beside it. <strong>Play</strong> opens it in a window
+of its own. Send that folder to a friend on the same system, and they can play.</p>
+
+<h2 id="on-a-nintendo-3ds">On a Nintendo 3DS</h2>
+
+<p>The 3DS needs two tools. Open the <strong>Tools</strong> tab:</p>
+
+<ol>
+<li>Beside <strong>TinyGo</strong>, press <strong>Install</strong>. It downloads TinyGo for the 3DS&rsquo;s latest release and
+remembers where it put it.</li>
+<li>Beside <strong>devkitPro</strong>, press <strong>Install</strong>. Its own installer opens in a terminal and asks for your
+password: it installs <code>3ds-dev</code>.</li>
+<li>For an emulator, press <strong>Install</strong> beside <strong>3DS emulator</strong>: it fetches Azahar.</li>
+</ol>
+
+<p>Back in <strong>Platforms</strong>, the <strong>Nintendo 3DS</strong> card&rsquo;s <strong>Build</strong> writes <code>build/forest.3dsx</code>.
+<strong>Emulator</strong> opens it in Azahar:</p>
+
+<p align="center"><img alt="Azahar: the forest at night on the 3DS's top screen, the lamp, the glowing coins and the moonlight, at 60 frames a second" src="./images/quest/3ds.png" width="560"></p>
+
+<p>On a real console with the Homebrew Launcher, open the Launcher and press Y, then press <strong>Send</strong>: the
+game travels over Wi-Fi and starts. The cross walks, A jumps.</p>
+
+<h2 id="on-an-android-phone">On an Android phone</h2>
+
+<p>In <strong>Tools</strong>, install the <strong>Android SDK</strong>, which brings the <strong>Android NDK</strong> with it (you read and
+accept its licence first), and a <strong>JDK</strong> if the computer has none. Plug a phone in with USB debugging on, or start an emulator, then press
+<strong>Play on device</strong> on the <strong>Android</strong> card. The game shows round buttons to walk and jump, and its
+log streams into the editor while it runs.</p>
+
+<h2 id="checkpoint">Checkpoint</h2>
+
+<p>Your game runs somewhere other than the editor. On the 3DS it holds 60 frames a second, lights and
+all.</p>
+
+<h2 id="final-challenge-a-lift">🏆 Final challenge: a lift</h2>
+
+<p>The level&rsquo;s far end gets a cliff too high to jump. Build a lift: a ledge that rises and sinks, and
+carries the slime up.</p>
+
+<p>Hints: a body of the kind <strong>Platform</strong> moves at the velocity its behaviours give it, and carries
+what stands on it. A behaviour can remember where its node started in <code>Start</code>.</p>
+
+<details>
+<summary>🔓 Show the solution</summary>
+
+`lift.go`:
+
+```go
+package main
+
+import "github.com/akrck02/go-engine/engine"
+
+// Lift rises and sinks between where it starts and some metres higher, carrying what stands on
+// it. Its node has a body of the kind Platform.
+type Lift struct {
+	Speed    float64 `json:"speed"`    // metres a second
+	Distance float64 `json:"distance"` // metres it rises
+
+	bottom float64 // where it starts
+}
+
+// Start remembers where the lift starts.
+func (lift *Lift) Start(context *engine.Context) {
+	lift.bottom = context.Node.World().Position.Y
+}
+
+// Update turns the lift round at the top and at the bottom.
+func (lift *Lift) Update(context *engine.Context) {
+	body, found := context.Node.Body()
+	if !found {
+		return
+	}
+	height := context.Node.World().Position.Y - lift.bottom
+	switch {
+	case height >= lift.Distance:
+		body.Velocity.Y = -lift.Speed
+	case height <= 0 || body.Velocity.Y == 0:
+		body.Velocity.Y = lift.Speed
+	}
+}
+```
+
+Register `Lift{}` and press **Rebuild**. Place a ledge picture (or a **Square**, 3 by 0.5 metres)
+at the cliff's foot, give it a body of the kind **Platform** and the behaviour **Lift**, with a
+**speed** of 1.5 and a **distance** of 4. In Play, the slime rides it up.
+
+</details>
+
+<p><strong>🎒 Achievement unlocked: Traveller.</strong> Your game runs on a computer, a console and a phone.</p>
+
+<p>You finished the quest. 🎉 The <a href="./guides/a-2d-level-with-tiles">guides</a> go further into each
+part, and the <a href="https://github.com/akrck02/go-engine/tree/main/examples/platformer" target="_blank">complete game</a> has
+three levels to compare with yours.</p>
+
+<hr>
+
+<p><a href="./the-quest/night-in-the-forest">← Level 5</a> · <a href="./guides/a-2d-level-with-tiles">The guides →</a></p>

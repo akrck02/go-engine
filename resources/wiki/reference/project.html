@@ -1,0 +1,343 @@
+<h1 id="project">project</h1>
+<pre><code class="language-go"><span class="kn">import</span> <span class="s">&#34;github.com/akrck02/go-engine/project&#34;</span>
+</code></pre>
+
+<p>Package project is a game made with go-engine, as a folder: a Go module whose
+main runs the engine, the game&rsquo;s own Go code beside it, its scenes in scenes/
+and what it imports in assets/. It is an ordinary Go module, so any editor with
+Go&rsquo;s language server (Zed, Neovim, Visual Studio Code, GoLand…) edits the code,
+and <code>go run .</code> plays it.</p>
+
+<h3 id="functions">Functions</h3>
+
+<table>
+<thead>
+<tr>
+<th>Function</th>
+<th></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>func RunInTerminal(words []string) error</code></td>
+<td>RunInTerminal runs a command in a new terminal window, left open until the person presses Enter: its questions (a password) and what it says are theirs to answer and read.</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="constants-and-variables">Constants and variables</h3>
+<pre><code class="language-go"><span class="kd">const</span> <span class="p">(</span>
+	<span class="nx">ScenesFolder</span> <span class="p">=</span> <span class="s">&#34;scenes&#34;</span>
+	<span class="nx">AssetsFolder</span> <span class="p">=</span> <span class="s">&#34;assets&#34;</span>
+	<span class="nx">ModelsFolder</span> <span class="p">=</span> <span class="s">&#34;assets/models&#34;</span>
+	<span class="nx">SceneSuffix</span>  <span class="p">=</span> <span class="s">&#34;.scene.json&#34;</span>
+<span class="p">)</span>
+</code></pre>
+
+<p>Folders in a project.</p>
+<pre><code class="language-go"><span class="kd">const</span> <span class="nx">EditorFile</span> <span class="p">=</span> <span class="s">&#34;editor.go&#34;</span>
+</code></pre>
+
+<p>EditorFile is the file that installs the editor in a project&rsquo;s game.</p>
+<pre><code class="language-go"><span class="kd">const</span> <span class="nx">LatestEngine</span> <span class="p">=</span> <span class="s">&#34;main&#34;</span>
+</code></pre>
+
+<p>LatestEngine is the branch go-engine&rsquo;s latest version is taken from.</p>
+<pre><code class="language-go"><span class="kd">var</span> <span class="p">(</span>
+	<span class="nx">NotAProject</span>        <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;project.not-a-project&#34;</span><span class="p">,</span> <span class="s">&#34;the folder is not a go-engine project; make one with: go-engine new &lt;folder&gt;&#34;</span><span class="p">)</span>
+	<span class="nx">FolderNotEmpty</span>     <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;project.folder-not-empty&#34;</span><span class="p">,</span> <span class="s">&#34;a new project needs an empty folder&#34;</span><span class="p">)</span>
+	<span class="nx">SceneExists</span>        <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;project.scene-exists&#34;</span><span class="p">,</span> <span class="s">&#34;a scene of that name exists already&#34;</span><span class="p">)</span>
+	<span class="nx">ImportFormat</span>       <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;project.import-format&#34;</span><span class="p">,</span> <span class="s">&#34;only .glb models can be imported for now (export glTF as binary .glb)&#34;</span><span class="p">)</span>
+	<span class="nx">ImportFailed</span>       <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;project.import-failed&#34;</span><span class="p">,</span> <span class="s">&#34;the file could not be copied into the project&#34;</span><span class="p">)</span>
+	<span class="nx">CodeEditorNotFound</span> <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;project.code-editor-not-found&#34;</span><span class="p">,</span> <span class="s">&#34;no code editor found: set codeEditor in engine.json (\&#34;code\&#34;, \&#34;zed\&#34;, \&#34;nvim\&#34;…) or $VISUAL&#34;</span><span class="p">)</span>
+	<span class="nx">TerminalNotFound</span>   <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;project.terminal-not-found&#34;</span><span class="p">,</span> <span class="s">&#34;the code editor runs in a terminal, and no terminal was found&#34;</span><span class="p">)</span>
+	<span class="nx">SettingsNotSaved</span>   <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;project.settings-not-saved&#34;</span><span class="p">,</span> <span class="s">&#34;engine.json could not be written&#34;</span><span class="p">)</span>
+	<span class="nx">ApplicationIDWrong</span> <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;project.application-id-wrong&#34;</span><span class="p">,</span> <span class="s">&#34;an Android application id is two words or more joined by dots, each starting with a letter, as io.example.game&#34;</span><span class="p">)</span>
+	<span class="nx">EngineNotRead</span>      <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;project.engine-not-read&#34;</span><span class="p">,</span> <span class="s">&#34;the version of go-engine the project requires could not be read from its go.mod&#34;</span><span class="p">)</span>
+	<span class="nx">EngineNotUpdated</span>   <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;project.engine-not-updated&#34;</span><span class="p">,</span> <span class="s">&#34;go-engine could not be updated: check the network, and that the version exists&#34;</span><span class="p">)</span>
+	<span class="nx">NoAndroidDevice</span>    <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;project.no-android-device&#34;</span><span class="p">,</span> <span class="s">&#34;adb sees no Android device: plug a phone in with USB debugging on, or start the emulator&#34;</span><span class="p">)</span>
+<span class="p">)</span>
+</code></pre>
+
+<p>Error codes of the project package.</p>
+
+<h3 id="assetentry">AssetEntry</h3>
+
+<p>AssetEntry is a file or a folder of the project&rsquo;s assets, as the editor&rsquo;s
+tree shows them.</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">AssetEntry</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">Name</span>     <span class="kt">string</span>
+	<span class="nx">Path</span>     <span class="kt">string</span> <span class="c1">// in the project, as &#34;assets/models/house.glb&#34;</span>
+	<span class="nx">Folder</span>   <span class="kt">bool</span>
+	<span class="nx">Children</span> <span class="p">[]</span><span class="nx">AssetEntry</span>
+<span class="p">}</span>
+</code></pre>
+
+<h3 id="assetkind">AssetKind</h3>
+
+<p>AssetKind is what a file of the assets is, by its extension.</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">AssetKind</span> <span class="kt">int</span>
+</code></pre>
+<pre><code class="language-go"><span class="kd">const</span> <span class="p">(</span>
+	<span class="nx">OtherAsset</span> <span class="nx">AssetKind</span> <span class="p">=</span> <span class="kc">iota</span>
+	<span class="nx">ModelAsset</span>           <span class="c1">// .glb</span>
+	<span class="nx">ImageAsset</span>           <span class="c1">// .png, .jpg: a sprite</span>
+	<span class="nx">SoundAsset</span>           <span class="c1">// .wav, .ogg, .mp3</span>
+<span class="p">)</span>
+</code></pre>
+
+<table>
+<thead>
+<tr>
+<th>Function or method</th>
+<th></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>func KindOf(file string) AssetKind</code></td>
+<td>KindOf tells what an asset file is.</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="behaviour">Behaviour</h3>
+
+<p>Behaviour is a behaviour the project&rsquo;s code defines: a struct type with one
+of the methods the engine calls (behaviourMethods), as the editor offers it.</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">Behaviour</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">Name</span>    <span class="kt">string</span>
+	<span class="nx">Doc</span>     <span class="kt">string</span> <span class="c1">// the type&#39;s comment, first sentence</span>
+	<span class="nx">File</span>    <span class="kt">string</span> <span class="c1">// where it is defined, in the project</span>
+	<span class="nx">Fields</span>  <span class="p">[]</span><span class="nx">Field</span>
+	<span class="nx">Methods</span> <span class="p">[]</span><span class="kt">string</span> <span class="c1">// the methods the engine calls that it has: Start, Update, Touched</span>
+<span class="p">}</span>
+</code></pre>
+
+<h3 id="built">Built</h3>
+
+<p>Built is what a build made: the program, and the notices of what it carries.</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">Built</span> <span class="kd">struct</span><span class="p">{</span> <span class="nx">Program</span><span class="p">,</span> <span class="nx">Notices</span> <span class="kt">string</span> <span class="p">}</span>
+</code></pre>
+
+<h3 id="field">Field</h3>
+
+<p>Field is a field the scene can set: an exported field, by its JSON name.</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">Field</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">Name</span>    <span class="kt">string</span> <span class="c1">// as the scene names it: the JSON name, or the field&#39;s own</span>
+	<span class="nx">Type</span>    <span class="kt">string</span> <span class="c1">// as written in the code: float64, string, bool, space.Vector…</span>
+	<span class="nx">Comment</span> <span class="kt">string</span>
+<span class="p">}</span>
+</code></pre>
+
+<h3 id="project-1">Project</h3>
+
+<p>Project is a game&rsquo;s folder.</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">Project</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">Folder</span>   <span class="kt">string</span>
+	<span class="nx">Settings</span> <span class="nx">engine</span><span class="p">.</span><span class="nx">Settings</span>
+	<span class="c1">// Tools are the places of the tools that build for consoles and phones, kept on this</span>
+	<span class="c1">// computer for every project.</span>
+	<span class="nx">Tools</span> <span class="nx">build</span><span class="p">.</span><span class="nx">Tools</span>
+	<span class="c1">// ToolsUnread is why the places kept could not be read, when they could not: the builds look</span>
+	<span class="c1">// for the tools as if none were kept, and saving writes them anew.</span>
+	<span class="nx">ToolsUnread</span> <span class="kt">error</span>
+<span class="p">}</span>
+</code></pre>
+
+<table>
+<thead>
+<tr>
+<th>Function or method</th>
+<th></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>func Create(folder, name string) (*Project, error)</code></td>
+<td>Create makes a new project in a folder (which must be empty or not exist): its settings, a scene with a ground, a cube and a camera, a main and a first behaviour, and the code editors&rsquo; settings.</td>
+</tr>
+
+<tr>
+<td><code>func Open(folder string) (*Project, error)</code></td>
+<td>Open opens a project&rsquo;s folder.</td>
+</tr>
+
+<tr>
+<td><code>func (project *Project) AndroidPackage() string</code></td>
+<td>AndroidPackage is where the Android package goes.</td>
+</tr>
+
+<tr>
+<td><code>func (project *Project) ApplicationID() string</code></td>
+<td>ApplicationID is the game&rsquo;s name on Android, as io.example.game: the settings&rsquo; AndroidID, or one made from the game&rsquo;s name.</td>
+</tr>
+
+<tr>
+<td><code>func (project *Project) AssetTree() AssetEntry</code></td>
+<td>AssetTree reads the project&rsquo;s assets folder as a tree: folders first, then files, by name; hidden files (as .gitkeep) left out.</td>
+</tr>
+
+<tr>
+<td><code>func (project *Project) Behaviours() []Behaviour</code></td>
+<td>Behaviours reads the project&rsquo;s Go files (not compiling them) and finds its behaviours, so the editor can offer them while the code is being written in another editor.</td>
+</tr>
+
+<tr>
+<td><code>func (project *Project) BehavioursUsed() map[string][]Use</code></td>
+<td>BehavioursUsed are the behaviours the project&rsquo;s scenes give their nodes, by name, with the nodes that have each.</td>
+</tr>
+
+<tr>
+<td><code>func (project *Project) Build3DS() (Built, error)</code></td>
+<td>Build3DS builds the game for the Nintendo 3DS into build/, with TinyGo.</td>
+</tr>
+
+<tr>
+<td><code>func (project *Project) BuildAndroid() (Built, error)</code></td>
+<td>BuildAndroid builds the game for Android into build/, a package signed for trying (not for a store), without the editor.</td>
+</tr>
+
+<tr>
+<td><code>func (project *Project) BuildDesktop() (Built, error)</code></td>
+<td>BuildDesktop builds the game for this computer into build/.</td>
+</tr>
+
+<tr>
+<td><code>func (project *Project) BuildEditor() error</code></td>
+<td>BuildEditor builds the game with the editor in it, for go-engine to start.</td>
+</tr>
+
+<tr>
+<td><code>func (project *Project) CodeChangedSince(built time.Time) bool</code></td>
+<td>CodeChangedSince tells whether a Go file of the project changed after a time: the game the editor runs in is older than its code.</td>
+</tr>
+
+<tr>
+<td><code>func (project *Project) EditorProgram() string</code></td>
+<td>EditorProgram is where the game built with the editor in it goes.</td>
+</tr>
+
+<tr>
+<td><code>func (project *Project) EmulatorCommand() (*exec.Cmd, error)</code></td>
+<td>EmulatorCommand builds the game for the 3DS and returns the command that opens it in an emulator (Azahar, or Citra), not started: the editor shows what it prints and can stop it.</td>
+</tr>
+
+<tr>
+<td><code>func (project *Project) EngineFlags() []string</code></td>
+<td>EngineFlags tell a build which commit a local copy of Go Engine is at (one the project&rsquo;s go.mod replaces with a folder, or a go.work uses), so the program can say it (engine.Version): a local copy&rsquo;s build information does not.</td>
+</tr>
+
+<tr>
+<td><code>func (project *Project) EngineVersion() (version, localCopy string, err error)</code></td>
+<td>EngineVersion is the version of go-engine the project&rsquo;s go.mod requires, and the folder that stands in for it when go.mod replaces it with a local copy (empty when none does).</td>
+</tr>
+
+<tr>
+<td><code>func (project *Project) EnsureEditor() (bool, error)</code></td>
+<td>EnsureEditor adds editor.go to a project made before it existed; it tells whether it did.</td>
+</tr>
+
+<tr>
+<td><code>func (project *Project) Files() fs.FS</code></td>
+<td>Files are the project&rsquo;s files, as the engine reads them.</td>
+</tr>
+
+<tr>
+<td><code>func (project *Project) Import(source string) (string, error)</code></td>
+<td>Import copies a file into the project&rsquo;s assets, and returns its path in the project.</td>
+</tr>
+
+<tr>
+<td><code>func (project *Project) Models() []string</code></td>
+<td>Models are the project&rsquo;s models, as &ldquo;assets/models/tree.glb&rdquo;.</td>
+</tr>
+
+<tr>
+<td><code>func (project *Project) NewScene(name string, mode scenefile.Mode) (string, error)</code></td>
+<td>NewScene adds a scene, 3D or 2D, with a ground and a camera, and returns its file.</td>
+</tr>
+
+<tr>
+<td><code>func (project *Project) OpenCode() (string, error)</code></td>
+<td>OpenCode opens the project&rsquo;s folder in the code editor: the settings&rsquo; CodeEditor, <span class="math inline">\(VISUAL, \)</span>EDITOR, or the first of Zed, Visual Studio Code and GoLand found.</td>
+</tr>
+
+<tr>
+<td><code>func (project *Project) Path(file string) string</code></td>
+<td>Path is where a file of the project is on disk, from its path in the project.</td>
+</tr>
+
+<tr>
+<td><code>func (project *Project) PlayCommand() (*exec.Cmd, error)</code></td>
+<td>PlayCommand builds the game for this computer, as BuildDesktop does, and returns the command that runs it from the project&rsquo;s folder, not started: the editor shows its output and can stop it (a program started through go run would outlive its stopping).</td>
+</tr>
+
+<tr>
+<td><code>func (project *Project) PlayOnAndroid() (*exec.Cmd, error)</code></td>
+<td>PlayOnAndroid builds the game for Android, installs it on the first device adb sees (a phone plugged in, or the emulator) and starts it.</td>
+</tr>
+
+<tr>
+<td><code>func (project *Project) ReadScene(file string) (*scenefile.Scene, error)</code></td>
+<td>ReadScene reads a scene file of the project.</td>
+</tr>
+
+<tr>
+<td><code>func (project *Project) SaveSettings() error</code></td>
+<td>SaveSettings writes the project&rsquo;s settings, when its Android application id has the form one has.</td>
+</tr>
+
+<tr>
+<td><code>func (project *Project) Scenes() []string</code></td>
+<td>Scenes are the project&rsquo;s scene files, as &ldquo;scenes/main.scene.json&rdquo;.</td>
+</tr>
+
+<tr>
+<td><code>func (project *Project) SendTo3DS() error</code></td>
+<td>SendTo3DS builds the game for the 3DS and sends it to the console&rsquo;s Homebrew Launcher, which starts it.</td>
+</tr>
+
+<tr>
+<td><code>func (project *Project) StopOnAndroid() error</code></td>
+<td>StopOnAndroid stops the game on the first device adb sees.</td>
+</tr>
+
+<tr>
+<td><code>func (project *Project) Tidy() error</code></td>
+<td>Tidy brings the project&rsquo;s go.mod up to date with its code and with the go-engine it builds against, as <code>go mod tidy</code> does: an engine of a newer version may need other versions of its libraries.</td>
+</tr>
+
+<tr>
+<td><code>func (project *Project) UpdateEngine(version string) (string, error)</code></td>
+<td>UpdateEngine requires go-engine at a version (a branch as LatestEngine, a tag or a commit) with its replaces, and tidies go.mod; it returns the version required now.</td>
+</tr>
+
+<tr>
+<td><code>func (project *Project) UsesOf(asset string) []Use</code></td>
+<td>UsesOf finds where an asset is used: the nodes of every scene that show it (as a sprite, a model or a tile map&rsquo;s tileset), and the sprites and tilesets cut from it.</td>
+</tr>
+
+<tr>
+<td><code>func (project *Project) WriteScene(file string, scene *scenefile.Scene) error</code></td>
+<td>WriteScene writes a scene file of the project.</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="use">Use</h3>
+
+<p>Use is a place an asset is used: a node of a scene, by its path, or a
+sprite&rsquo;s or tileset&rsquo;s file that cuts a picture (Node is then empty).</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">Use</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">File</span> <span class="kt">string</span> <span class="c1">// the scene, or the sprite&#39;s or tileset&#39;s file</span>
+	<span class="nx">Node</span> <span class="kt">string</span> <span class="c1">// the node&#39;s path in the scene, as &#34;Harbour/Lamp&#34;</span>
+<span class="p">}</span>
+</code></pre>
+
+<hr>
+
+<p><a href="./reference/packages">← Reference</a> · generated from the doc comments by <code>generate.py</code></p>

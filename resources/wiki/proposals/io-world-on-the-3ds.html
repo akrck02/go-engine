@@ -1,0 +1,186 @@
+<h1 id="7-pushing-riding-and-pulling-io-world-on-the-3ds">7. Pushing, riding and pulling: io-world on the 3DS</h1>
+
+<blockquote>
+<p>Status: done (the console check is the author&rsquo;s) · Author&rsquo;s approval: proposal ☑ plan ☑ (2026-10-19, &ldquo;sigue&rdquo;: together; the io-world repository private)</p>
+</blockquote>
+
+<h2 id="why">Why</h2>
+
+<p><a href="https://github.com/akrck02/io-world" target="_blank">io-world</a> is a small puzzle-platformer made with Godot 3:
+one level of 100-pixel tiles, a player of three pictures (body, tail, eyes), jump pads, a magnet
+the player pushes and stands on, a platform on a rail, and a magnetic field that pulls the other
+way. Made again from nothing in Go Engine and played on the 3DS, it answers two questions: can a
+person make a game from scratch with the editor, and what does the engine still lack?</p>
+
+<p>The engine&rsquo;s physics has three kinds of body: solids that never move, moving bodies that only
+meet solids, and triggers. Three of io-world&rsquo;s mechanics need more, and any puzzle-platformer
+will want the same:</p>
+
+<ul>
+<li><strong>Something to push</strong>: a box the player pushes along the floor and stands on.</li>
+<li><strong>Something to ride</strong>: a platform that moves and carries what stands on it.</li>
+<li><strong>Somewhere gravity turns</strong>: an area where bodies fall another way.</li>
+</ul>
+
+<h2 id="what">What</h2>
+
+<table>
+<thead>
+<tr>
+<th>Id</th>
+<th>Requirement</th>
+<th>Check</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>R1</td>
+<td>A <strong>pushable</strong> body falls like a moving one, stops against solids, holds up a moving body that stands on it, and is pushed by one that walks into it, until a solid stops both</td>
+<td>tests <code>a body pushes a box until a wall stops both</code>, <code>a body stands on a box</code></td>
+</tr>
+
+<tr>
+<td>R2</td>
+<td>A <strong>platform</strong> body moves at its velocity, ignores gravity and solids, carries the bodies standing on it, and pushes those in its way</td>
+<td>tests <code>a platform carries what stands on it</code>, <code>a platform pushes a body in its way</code></td>
+</tr>
+
+<tr>
+<td>R3</td>
+<td>A trigger with a <strong>gravity</strong> pulls the moving and pushable bodies inside it that way instead of the world&rsquo;s; &ldquo;on the floor&rdquo; is then the side it pulls them to</td>
+<td>tests <code>a body falls the way its zone pulls</code>, <code>a body stands on the floor its gravity pulls it to</code></td>
+</tr>
+
+<tr>
+<td>R4</td>
+<td>A behaviour changes the camera the scene is seen through by marking another one Main</td>
+<td>test <code>marking another camera Main changes the view</code></td>
+</tr>
+
+<tr>
+<td>R5</td>
+<td>The three kinds and the gravity are chosen in Level&rsquo;s inspector, and drawn over the view when bodies are shown</td>
+<td>capture</td>
+</tr>
+
+<tr>
+<td>R6</td>
+<td>io-world, made with the editor (Art, Level, Code), plays on the 3DS: walk, jump, jump pads, the magnet, the rail and the field</td>
+<td>the author on the console; captures from Azahar</td>
+</tr>
+
+<tr>
+<td>R7</td>
+<td>What was hard while making it is written down, to become the next proposals</td>
+<td>the list in this proposal&rsquo;s Result</td>
+</tr>
+</tbody>
+</table>
+
+<h2 id="out-of-scope">Out of scope</h2>
+
+<ul>
+<li>Bodies that turn, slopes, and shapes other than boxes.</li>
+<li>io-world&rsquo;s sounds, menus and levels beyond its first.</li>
+<li>Converting Godot scenes in the editor: a one-off script, kept in the game&rsquo;s own repository, as
+the platformer demo&rsquo;s was.</li>
+</ul>
+
+<h2 id="design">Design</h2>
+
+<p><strong>Physics</strong> (<code>physics</code>): two new kinds beside <code>Solid</code>, <code>Moving</code> and <code>Trigger</code>.</p>
+
+<ul>
+<li><code>Pushable</code> moves as <code>Moving</code> does. A moving body that runs into it along X moves it by as much
+as it is not blocked (a chain of boxes moves together); along Y it stops the body, which stands
+on it. Solids stop it as they stop any moving body.</li>
+<li><code>Platform</code> moves by its velocity before the others each step. Bodies whose feet rest on it move
+with it, and a body in its way is moved out of it, as a pushable is.</li>
+<li>A trigger&rsquo;s <code>Gravity</code>, when set, replaces the world&rsquo;s for the bodies inside it during that step.
+A body knows which way gravity pulled it, and <code>OnFloor</code> means &ldquo;stopped going that way&rdquo;.</li>
+</ul>
+
+<p>The order of a step: platforms, then moving and pushable bodies, then triggers.</p>
+
+<p><strong>Scene files</strong>: <code>BodyKind</code> gains <code>&quot;pushable&quot;</code> and <code>&quot;platform&quot;</code>; <code>Body</code> gains <code>gravity: [x, y]</code>,
+read for triggers.</p>
+
+<p><strong>Editor</strong>: Level&rsquo;s body inspector offers the five kinds, and a gravity field for triggers; the
+body overlay draws a platform&rsquo;s direction and a zone&rsquo;s arrow.</p>
+
+<p><strong>io-world</strong>: a new private repository, <code>akrck02/go-engine-io-world</code> (as the platformer&rsquo;s), made
+with <code>go-engine new</code>. The art comes from io-world&rsquo;s PNGs through Art (sprites and a tileset of
+100-pixel tiles); the level is drawn in Level, or converted once from <code>Level1.tscn</code> by a script in
+the repository. Its behaviours in Go: <code>Player</code> (run, jump, reset), <code>Jumper</code> (a push along its
+direction), <code>Rail</code> (a platform going back and forth), <code>Field</code> (a gravity zone the player can turn)
+and the cameras. Built with tinygo-3ds from Build&rsquo;s Install and sent with 3dslink.</p>
+
+<p><strong>Branches</strong>: the engine&rsquo;s part on <code>feature/physics</code>, from <code>feature/engine</code> (where the other
+session&rsquo;s work is); io-world in its own repository.</p>
+
+<h2 id="tasks">Tasks</h2>
+
+<ul>
+<li>[x] T1 — pushable bodies · <code>physics</code>, <code>scenefile</code>, <code>engine</code> · R1 · tests of R1</li>
+<li>[x] T2 — platforms · <code>physics</code>, <code>scenefile</code>, <code>engine</code> · R2 · tests of R2</li>
+<li>[x] T3 — gravity zones · <code>physics</code>, <code>scenefile</code>, <code>engine</code> · R3 · tests of R3</li>
+<li>[x] T4 — switching cameras, tested · <code>engine</code> · R4</li>
+<li>[x] T5 — the kinds and the gravity in Level · <code>editor</code> · R5 · capture</li>
+<li>[x] T6 — io-world: project, art, level, behaviours · new repository · R6 · captures</li>
+<li>[x] T7 — io-world on the 3DS, and the list of what was hard · R6, R7</li>
+<li>[x] T8 — asked while building: a menu of the scenes on the 3DS&rsquo;s bottom screen (<code>sceneMenu</code>), and
+<code>SetBottomScreen</code> for a game to draw it its own way · <code>engine</code>, <code>editor</code> · tests <code>the menu lists
+the scenes by their names</code>, <code>a game's own bottom screen is given its scenes</code></li>
+</ul>
+
+<h2 id="result">Result</h2>
+
+<p><strong>Built.</strong> Two new kinds of body, <code>pushable</code> and <code>platform</code>, and gravity zones (a trigger&rsquo;s
+<code>pull</code>), in the physics, the scene files and Level&rsquo;s inspector, each drawn its own way. A body&rsquo;s
+floor is the side its gravity pulls it to. Pushing goes across that gravity, in a row of at most
+eight, and never round a ring. A platform carries the stacks standing on it, pushes what is in its
+way, and stops against what it cannot move. Triggers notice pushable bodies too. On the 3DS, a
+menu of the scenes on the bottom screen (<code>sceneMenu</code>), or the game&rsquo;s own (<code>SetBottomScreen</code>).
+<a href="https://github.com/akrck02/go-engine-io-world" target="_blank">Io World</a> (private) has io-world&rsquo;s first level and
+its dev branch&rsquo;s version (a button that starts a rail that waits, a cube), with a menu of levels
+made of the game&rsquo;s own pieces. It was sent to the author&rsquo;s 3DS by FTP.</p>
+
+<p><strong>Checked.</strong> Every requirement&rsquo;s tests: the physics&rsquo;, the engine&rsquo;s allocations with the new kinds,
+the editor&rsquo;s, and Io World&rsquo;s own (landing, running, pads, the magnet, the rail, the field, the
+button, the cube). Captures of the editor, and the game in Azahar, with the menu changing the level
+by a touch.</p>
+
+<p><strong>Not done.</strong> Bodies that turn, slopes, tiles&rsquo; own shapes (io-world&rsquo;s attractor tiles are partial
+polygons, here whole squares) and flipped tiles (drawn unflipped). The original&rsquo;s two fixed
+screens became one camera that follows Io: at 400 pixels, a whole screen&rsquo;s width made the tiles
+14 pixels.</p>
+
+<p><strong>What was hard, making it</strong> (for the next proposals):</p>
+
+<ol>
+<li><strong>The editor was not where it was made.</strong> The level came from a script (<code>tools/convert_level.py</code>)
+and the behaviours from a code editor; the editor opened, played and changed it. Drawing a
+90-by-37 level of 100-pixel tiles by hand in Level, and five jump pads, would take an afternoon:
+there are no prefabs to place again and again.</li>
+<li><strong>Prefabs.</strong> io-world&rsquo;s jump pad, rail and button are small scenes placed many times; here each is
+written out in full. Instancing a scene in another is the biggest missing piece.</li>
+<li><strong>Sprites made of tiles.</strong> The pad and the rail are rows of a tile picture; Art cannot compose
+them, so the script did, into new pictures.</li>
+<li><strong>One tileset per tile map.</strong> Godot&rsquo;s tile set mixes pictures: one level became two tile maps.</li>
+<li><strong>Touching needs overlapping.</strong> A pad&rsquo;s trigger level with the ground it is on never notices what
+stands on it: it has to reach above it. Easy to get wrong, and silent.</li>
+<li><strong><code>go-engine new</code> opens the editor</strong>, so it needs a display; making a project on a server needed
+<code>project.Create</code> from Go.</li>
+<li><strong>Choices the original left open</strong>: the field pulled left in the level and up in its prefab, and
+worked in neither; the button only printed. Here the field pulls up (the inspector changes it)
+and the button starts the rail, as io-world&rsquo;s first, Unity version did.</li>
+</ol>
+
+<p><strong>The original&rsquo;s other scenes.</strong> io-world began in Unity: <code>Demoivania</code> (December 2022: a menu with
+music and lights, a long level with levels 2 and 3 started, buttons, a cube, rails, magnets,
+liquids, another character, ~710 brick sprites and ~30 C# scripts) and <code>MainMenu</code>. They went away
+when it moved to Godot, which only ever had <code>Level1</code>. They could come here too, as a later proposal.</p>
+
+<p><strong>For a person.</strong> Play both levels on the console: the controls, the rail and the field&rsquo;s feel, and
+the menu under a thumb.</p>

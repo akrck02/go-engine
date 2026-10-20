@@ -1,0 +1,117 @@
+<h1 id="building-for-the-3ds">🎮 Building for the 3DS</h1>
+
+<p>Turn a game into a <code>.3dsx</code> for the Nintendo 3DS&rsquo;s Homebrew Launcher, try it in an emulator, and
+send it to a console over Wi-Fi.</p>
+
+<h2 id="the-tools">The tools</h2>
+
+<p>Open <strong>Build</strong>, then its <strong>Tools</strong> tab, and press <strong>Install</strong> beside each:</p>
+
+<table>
+<thead>
+<tr>
+<th>Tool</th>
+<th>What it is for</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>TinyGo</td>
+<td>Builds Go for the 3DS&rsquo;s processor: <a href="https://github.com/akrck02/tinygo-3ds" target="_blank">TinyGo for the 3DS</a>&rsquo;s release</td>
+</tr>
+
+<tr>
+<td>devkitPro</td>
+<td>Packs the program for the Homebrew Launcher, and sends it with <code>3dslink</code>; its installer runs in a terminal and asks for your password</td>
+</tr>
+
+<tr>
+<td>3DS emulator</td>
+<td>Azahar, to try the game without a console</td>
+</tr>
+</tbody>
+</table>
+<p>Each tool can also be set by hand: type its place, or <strong>Browse</strong>, then <strong>Check</strong>. The places are
+kept for every project in <code>go-engine/tools.json</code> of your configuration folder.</p>
+
+<h2 id="build-and-play">Build and play</h2>
+
+<p>On the <strong>Nintendo 3DS</strong> card:</p>
+
+<table>
+<thead>
+<tr>
+<th>Button</th>
+<th>What it does</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><strong>Build</strong></td>
+<td>Writes <code>build/&lt;name&gt;.3dsx</code>, without the editor, with the notices of the code it carries</td>
+</tr>
+
+<tr>
+<td><strong>Emulator</strong></td>
+<td>Builds, and opens the game in the emulator</td>
+</tr>
+
+<tr>
+<td><strong>Send</strong></td>
+<td>Builds, and sends the game to a console: open the Homebrew Launcher there and press Y first</td>
+</tr>
+
+<tr>
+<td><strong>Log</strong></td>
+<td>What building said</td>
+</tr>
+</tbody>
+</table>
+<p>The console&rsquo;s address is found on the network; if it is not, set it in <strong>Project → Settings</strong>.</p>
+
+<h2 id="how-the-game-behaves-there">How the game behaves there</h2>
+
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>Screens</td>
+<td>The game is drawn on the top screen, 400 × 240; the bottom screen is free (see <a href="./guides/the-3ds-bottom-screen">the bottom screen</a>)</td>
+</tr>
+
+<tr>
+<td>Buttons</td>
+<td>The cross and the circle pad are the arrows (<code>Input.Move()</code>), A is Space, B is Escape, X and Y their keys</td>
+</tr>
+
+<tr>
+<td>Speed</td>
+<td>60 frames a second is the aim: lights, tiles and dozens of sprites keep it in the emulator</td>
+</tr>
+
+<tr>
+<td>Files</td>
+<td>The scenes and assets are inside the <code>.3dsx</code>; the SD card is not read</td>
+</tr>
+</tbody>
+</table>
+
+<h2 id="variations">Variations</h2>
+
+<ul>
+<li><strong>Without the editor.</strong> In a terminal, in the project&rsquo;s folder:
+<code>tinygo build -target=nintendo3ds -o game.3dsx .</code> does what Build does, given TinyGo for the 3DS
+and devkitPro.</li>
+</ul>
+
+<hr>
+
+<p><a href="./guides/a-camera-that-follows">← A camera that follows</a> · <a href="./guides/building-for-android">Building for Android →</a></p>

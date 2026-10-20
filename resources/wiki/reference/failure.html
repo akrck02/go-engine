@@ -1,0 +1,125 @@
+<h1 id="failure">failure</h1>
+<pre><code class="language-go"><span class="kn">import</span> <span class="s">&#34;github.com/akrck02/go-engine/failure&#34;</span>
+</code></pre>
+
+<p>Package failure gives every error go-engine returns a code: a stable name, as
+&ldquo;engine.scene-not-found&rdquo;, that a program can check and a person can search for.</p>
+
+<p>A code is declared once, as a package-level variable, and is itself an error:</p>
+<pre><code class="language-go"><span class="kd">var</span> <span class="nx">SceneNotFound</span> <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;engine.scene-not-found&#34;</span><span class="p">,</span> <span class="s">&#34;the scene file does not exist&#34;</span><span class="p">)</span>
+</code></pre>
+
+<p>Returning the code alone allocates nothing and comparing it is comparing two
+pointers, as cheap as Go&rsquo;s own sentinel errors. When the error needs its details
+(which file, what went wrong underneath), Wrap makes one error with them;
+that happens while loading or building, never in a game&rsquo;s frame.</p>
+
+<p>Callers check an error by its code, wrapped or not:</p>
+<pre><code class="language-go"><span class="k">if</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Is</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">engine</span><span class="p">.</span><span class="nx">SceneNotFound</span><span class="p">)</span> <span class="p">{</span> <span class="err">…</span> <span class="p">}</span>
+</code></pre>
+
+<p>errors.Is works the same way, since an error made by Wrap answers to its code.</p>
+
+<h3 id="functions">Functions</h3>
+
+<table>
+<thead>
+<tr>
+<th>Function</th>
+<th></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>func Is(err error, code *Code) bool</code></td>
+<td>Is tells whether an error, or any error it wraps, has a code.</td>
+</tr>
+
+<tr>
+<td><code>func Wrap(code *Code, details string, cause error) error</code></td>
+<td>Wrap makes an error of a code with its details and the error underneath (nil if none).</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="code">Code</h3>
+
+<p>Code is a kind of error: its stable name and what it means. Declare codes
+with Define.</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">Code</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="c1">// Has unexported fields.</span>
+<span class="p">}</span>
+</code></pre>
+
+<table>
+<thead>
+<tr>
+<th>Function or method</th>
+<th></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>func CodeOf(err error) *Code</code></td>
+<td>CodeOf is the code of an error, the outermost one that has one; nil for an error without a code (one from outside go-engine).</td>
+</tr>
+
+<tr>
+<td><code>func Define(name, meaning string) *Code</code></td>
+<td>Define declares a code.</td>
+</tr>
+
+<tr>
+<td><code>func (code *Code) Error() string</code></td>
+<td>Error is the code&rsquo;s name and meaning: a code is an error on its own.</td>
+</tr>
+
+<tr>
+<td><code>func (code *Code) Name() string</code></td>
+<td>Name is the code&rsquo;s stable name, as &ldquo;engine.scene-not-found&rdquo;.</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="error">Error</h3>
+
+<p>Error is a coded error with its details: what the code means here, and the
+error underneath.</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">Error</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">Code</span>    <span class="o">*</span><span class="nx">Code</span>
+	<span class="nx">Details</span> <span class="kt">string</span> <span class="c1">// what is particular to this error: a file, a name</span>
+	<span class="nx">Cause</span>   <span class="kt">error</span>  <span class="c1">// the error underneath, if any</span>
+<span class="p">}</span>
+</code></pre>
+
+<table>
+<thead>
+<tr>
+<th>Function or method</th>
+<th></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>func (failed *Error) Error() string</code></td>
+<td>Error is the code&rsquo;s name, the details, and the error underneath.</td>
+</tr>
+
+<tr>
+<td><code>func (failed *Error) Is(target error) bool</code></td>
+<td>Is tells whether the error has a code: errors.Is(err, code) asks it.</td>
+</tr>
+
+<tr>
+<td><code>func (failed *Error) Unwrap() error</code></td>
+<td>Unwrap is the error underneath, so errors.Is and errors.As reach it.</td>
+</tr>
+</tbody>
+</table>
+
+<hr>
+
+<p><a href="./reference/packages">← Reference</a> · generated from the doc comments by <code>generate.py</code></p>

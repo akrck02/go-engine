@@ -1,0 +1,575 @@
+<h1 id="scenefile">scenefile</h1>
+<pre><code class="language-go"><span class="kn">import</span> <span class="s">&#34;github.com/akrck02/go-engine/scenefile&#34;</span>
+</code></pre>
+
+<p>Package scenefile is how a scene is kept: a JSON file of nodes, each with its
+transform (position in metres, rotation in degrees, scale), what it shows (a
+shape, a model from the project&rsquo;s assets, a camera) and the behaviours the
+game&rsquo;s own Go code gives it. The editor writes these files; the engine reads
+them.</p>
+
+<h3 id="functions">Functions</h3>
+
+<table>
+<thead>
+<tr>
+<th>Function</th>
+<th></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>func IsSpriteFile(path string) bool</code></td>
+<td>IsSpriteFile tells whether a path names a sprite&rsquo;s file.</td>
+</tr>
+
+<tr>
+<td><code>func IsTilesetFile(path string) bool</code></td>
+<td>IsTilesetFile tells whether a path names a tileset&rsquo;s file.</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="constants-and-variables">Constants and variables</h3>
+<pre><code class="language-go"><span class="kd">const</span> <span class="p">(</span>
+	<span class="nx">SpriteSuffix</span>  <span class="p">=</span> <span class="s">&#34;.sprite.json&#34;</span>
+	<span class="nx">TilesetSuffix</span> <span class="p">=</span> <span class="s">&#34;.tileset.json&#34;</span>
+<span class="p">)</span>
+</code></pre>
+
+<p>The files of sprites and tilesets end with these.</p>
+<pre><code class="language-go"><span class="kd">const</span> <span class="p">(</span>
+	<span class="nx">DefaultIntensity</span>  <span class="p">=</span> <span class="mf">1.0</span>
+	<span class="nx">DefaultLightOuter</span> <span class="p">=</span> <span class="mf">3.0</span> <span class="c1">// metres</span>
+	<span class="c1">// MostIntensity is the strongest a light or an ambient can be: twice as bright.</span>
+	<span class="nx">MostIntensity</span> <span class="p">=</span> <span class="mf">2.0</span>
+<span class="p">)</span>
+</code></pre>
+
+<p>The defaults of what a light or an ambient leaves unsaid.</p>
+<pre><code class="language-go"><span class="kd">const</span> <span class="nx">DefaultPixelsPerMetre</span> <span class="p">=</span> <span class="mi">32</span>
+</code></pre>
+
+<p>DefaultPixelsPerMetre is a 2D scene&rsquo;s when it does not say.</p>
+<pre><code class="language-go"><span class="kd">const</span> <span class="nx">EmptyTile</span> <span class="p">=</span> <span class="o">-</span><span class="mi">1</span>
+</code></pre>
+
+<p>EmptyTile is a cell with no tile.</p>
+<pre><code class="language-go"><span class="kd">var</span> <span class="p">(</span>
+	<span class="nx">Unreadable</span>      <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;scenefile.unreadable&#34;</span><span class="p">,</span> <span class="s">&#34;the file is not a scene&#39;s JSON&#34;</span><span class="p">)</span>
+	<span class="nx">NodeWithoutName</span> <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;scenefile.node-without-name&#34;</span><span class="p">,</span> <span class="s">&#34;a node has no name&#34;</span><span class="p">)</span>
+	<span class="nx">SlashInName</span>     <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;scenefile.slash-in-name&#34;</span><span class="p">,</span> <span class="s">&#34;a node&#39;s name has a slash, which separates the names of a path&#34;</span><span class="p">)</span>
+	<span class="nx">SameName</span>        <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;scenefile.same-name&#34;</span><span class="p">,</span> <span class="s">&#34;two nodes under the same parent have the same name&#34;</span><span class="p">)</span>
+	<span class="nx">UnknownShape</span>    <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;scenefile.unknown-shape&#34;</span><span class="p">,</span> <span class="s">&#34;a node is a shape that does not exist&#34;</span><span class="p">)</span>
+
+	<span class="nx">UnknownBodyKind</span>   <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;scenefile.unknown-body-kind&#34;</span><span class="p">,</span> <span class="s">&#34;a body&#39;s kind is not one of BodyKinds&#34;</span><span class="p">)</span>
+	<span class="nx">TileSizeWrong</span>     <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;scenefile.tile-size-wrong&#34;</span><span class="p">,</span> <span class="s">&#34;a tile map&#39;s tiles have no size&#34;</span><span class="p">)</span>
+	<span class="nx">TileCountWrong</span>    <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;scenefile.tile-count-wrong&#34;</span><span class="p">,</span> <span class="s">&#34;a tile map&#39;s tiles don&#39;t fill its columns and rows&#34;</span><span class="p">)</span>
+	<span class="nx">SheetSizeWrong</span>    <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;scenefile.sheet-size-wrong&#34;</span><span class="p">,</span> <span class="s">&#34;a sprite sheet has no columns or no rows&#34;</span><span class="p">)</span>
+	<span class="nx">FrameOutsideSheet</span> <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;scenefile.frame-outside-sheet&#34;</span><span class="p">,</span> <span class="s">&#34;an animation shows a frame the sheet does not have&#34;</span><span class="p">)</span>
+	<span class="nx">SameAnimationName</span> <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;scenefile.same-animation-name&#34;</span><span class="p">,</span> <span class="s">&#34;two animations of a sheet have the same name&#34;</span><span class="p">)</span>
+	<span class="nx">UnknownAnimation</span>  <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;scenefile.unknown-animation&#34;</span><span class="p">,</span> <span class="s">&#34;a sheet starts with an animation it does not have&#34;</span><span class="p">)</span>
+	<span class="nx">NoPicture</span>         <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;scenefile.no-picture&#34;</span><span class="p">,</span> <span class="s">&#34;a sprite or a tileset names no picture&#34;</span><span class="p">)</span>
+	<span class="nx">UnknownLightKind</span>  <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;scenefile.unknown-light-kind&#34;</span><span class="p">,</span> <span class="s">&#34;a light&#39;s kind is not point or sprite&#34;</span><span class="p">)</span>
+	<span class="nx">LightRadiiWrong</span>   <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;scenefile.light-radii-wrong&#34;</span><span class="p">,</span> <span class="s">&#34;a light&#39;s radii are below zero, or the inner one is beyond the outer&#34;</span><span class="p">)</span>
+<span class="p">)</span>
+</code></pre>
+
+<p>Error codes of the scenefile package.</p>
+<pre><code class="language-go"><span class="kd">var</span> <span class="nx">BodyKinds</span> <span class="p">=</span> <span class="p">[]</span><span class="nx">BodyKind</span><span class="p">{</span><span class="nx">Solid</span><span class="p">,</span> <span class="nx">Moving</span><span class="p">,</span> <span class="nx">Trigger</span><span class="p">,</span> <span class="nx">Pushable</span><span class="p">,</span> <span class="nx">Platform</span><span class="p">}</span>
+</code></pre>
+
+<p>BodyKinds are the kinds of body, in the order the editor offers them.</p>
+<pre><code class="language-go"><span class="kd">var</span> <span class="nx">IsometricAngles</span> <span class="p">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="kt">float64</span><span class="p">{</span><span class="o">-</span><span class="mf">35.264389682754654</span><span class="p">,</span> <span class="mi">45</span><span class="p">,</span> <span class="mi">0</span><span class="p">}</span>
+</code></pre>
+
+<p>IsometricAngles are the rotation, in degrees, of an isometric camera: the three axes look the same length on screen.</p>
+<pre><code class="language-go"><span class="kd">var</span> <span class="nx">LightKinds</span> <span class="p">=</span> <span class="p">[]</span><span class="nx">LightKind</span><span class="p">{</span><span class="nx">PointLight</span><span class="p">,</span> <span class="nx">SpriteLight</span><span class="p">}</span>
+</code></pre>
+
+<p>LightKinds are the kinds of light, in the order the editor offers them.</p>
+<pre><code class="language-go"><span class="kd">var</span> <span class="nx">Projections</span> <span class="p">=</span> <span class="p">[]</span><span class="nx">Projection</span><span class="p">{</span><span class="nx">Perspective</span><span class="p">,</span> <span class="nx">Orthographic</span><span class="p">,</span> <span class="nx">Isometric</span><span class="p">}</span>
+</code></pre>
+
+<p>Projections are the projections in the order the editor offers them.</p>
+<pre><code class="language-go"><span class="kd">var</span> <span class="nx">Shapes</span> <span class="p">=</span> <span class="p">[]</span><span class="kt">string</span><span class="p">{</span><span class="s">&#34;cube&#34;</span><span class="p">,</span> <span class="s">&#34;sphere&#34;</span><span class="p">,</span> <span class="s">&#34;plane&#34;</span><span class="p">,</span> <span class="s">&#34;cylinder&#34;</span><span class="p">}</span>
+</code></pre>
+
+<p>Shapes are the shapes a node may be, each a metre across.</p>
+
+<h3 id="ambient">Ambient</h3>
+
+<p>Ambient is the light that reaches everything: daylight is white at 1,
+a dim room a dark blue at 0.4. A 3D scene takes its intensity only, as the
+strength of its sky light.</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">Ambient</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">Colour</span> <span class="kt">string</span> <span class="s">`json:&#34;colour,omitempty&#34;`</span> <span class="c1">// &#34;#rrggbb&#34;; empty is white</span>
+	<span class="c1">// Intensity is how strong it is: 1 (the default) leaves the scene&#39;s colours as they are, less</span>
+	<span class="c1">// darkens them, up to 2 brightens them.</span>
+	<span class="nx">Intensity</span> <span class="o">*</span><span class="kt">float64</span> <span class="s">`json:&#34;intensity,omitempty&#34;`</span>
+<span class="p">}</span>
+</code></pre>
+
+<table>
+<thead>
+<tr>
+<th>Function or method</th>
+<th></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>func (ambient *Ambient) Copy() *Ambient</code></td>
+<td>Copy is an ambient that shares nothing with this one; nil for none.</td>
+</tr>
+
+<tr>
+<td><code>func (ambient *Ambient) Strength() float64</code></td>
+<td>Strength is the ambient&rsquo;s intensity, or 1.</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="animation">Animation</h3>
+
+<p>Animation is a run of frames of a sheet, shown at a pace.</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">Animation</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">Name</span>            <span class="kt">string</span>  <span class="s">`json:&#34;name&#34;`</span>
+	<span class="nx">Frames</span>          <span class="p">[]</span><span class="kt">int</span>   <span class="s">`json:&#34;frames&#34;`</span>
+	<span class="nx">FramesPerSecond</span> <span class="kt">float64</span> <span class="s">`json:&#34;framesPerSecond&#34;`</span>
+	<span class="nx">Loop</span>            <span class="kt">bool</span>    <span class="s">`json:&#34;loop,omitempty&#34;`</span> <span class="c1">// starts again after its last frame; otherwise stays on it</span>
+<span class="p">}</span>
+</code></pre>
+
+<h3 id="behaviour">Behaviour</h3>
+
+<p>Behaviour is a piece of the game&rsquo;s own Go code attached to a node, by the
+name it was registered with, and the values of its fields.</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">Behaviour</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">Name</span>   <span class="kt">string</span>         <span class="s">`json:&#34;name&#34;`</span>
+	<span class="nx">Fields</span> <span class="kd">map</span><span class="p">[</span><span class="kt">string</span><span class="p">]</span><span class="kt">any</span> <span class="s">`json:&#34;fields,omitempty&#34;`</span>
+<span class="p">}</span>
+</code></pre>
+
+<h3 id="body">Body</h3>
+
+<p>Body gives a node a body in the physics of a 2D scene.</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">Body</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">Kind</span> <span class="nx">BodyKind</span>   <span class="s">`json:&#34;kind&#34;`</span>
+	<span class="nx">Size</span> <span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="kt">float64</span> <span class="s">`json:&#34;size,omitempty&#34;`</span> <span class="c1">// width and height in metres; zero is the node&#39;s own sprite or shape</span>
+	<span class="c1">// GravityScale is how much gravity pulls a moving body: 1 (the default) fully, 0 not at all.</span>
+	<span class="nx">GravityScale</span> <span class="o">*</span><span class="kt">float64</span> <span class="s">`json:&#34;gravityScale,omitempty&#34;`</span>
+	<span class="c1">// Pull, on a trigger, is the gravity of the area it covers, in metres a second each second</span>
+	<span class="c1">// across and up: the falling bodies inside are pulled this way instead of the world&#39;s. Nil</span>
+	<span class="c1">// leaves the world&#39;s.</span>
+	<span class="nx">Pull</span> <span class="o">*</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="kt">float64</span> <span class="s">`json:&#34;pull,omitempty&#34;`</span>
+	<span class="c1">// IgnoresZones, on a moving or pushable body, keeps the world&#39;s gravity for it inside zones too.</span>
+	<span class="nx">IgnoresZones</span> <span class="kt">bool</span> <span class="s">`json:&#34;ignoresZones,omitempty&#34;`</span>
+<span class="p">}</span>
+</code></pre>
+
+<table>
+<thead>
+<tr>
+<th>Function or method</th>
+<th></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>func (body *Body) Copy() *Body</code></td>
+<td>Copy is an independent copy of the body: changing one leaves the other alone.</td>
+</tr>
+
+<tr>
+<td><code>func (body *Body) Gravity() float64</code></td>
+<td>Gravity is how much gravity pulls the body: its GravityScale, or 1.</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="bodykind">BodyKind</h3>
+
+<p>BodyKind is what a body does: as physics.Kind, by name.</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">BodyKind</span> <span class="kt">string</span>
+</code></pre>
+<pre><code class="language-go"><span class="kd">const</span> <span class="p">(</span>
+	<span class="c1">// Solid never moves; moving bodies stop against it.</span>
+	<span class="nx">Solid</span> <span class="nx">BodyKind</span> <span class="p">=</span> <span class="s">&#34;solid&#34;</span>
+	<span class="c1">// Moving falls, moves and is stopped by solids.</span>
+	<span class="nx">Moving</span> <span class="nx">BodyKind</span> <span class="p">=</span> <span class="s">&#34;moving&#34;</span>
+	<span class="c1">// Trigger stops nothing; it notices the moving and pushable bodies that touch it.</span>
+	<span class="nx">Trigger</span> <span class="nx">BodyKind</span> <span class="p">=</span> <span class="s">&#34;trigger&#34;</span>
+	<span class="c1">// Pushable falls and moves as a moving body, which stands on it and pushes it walking into it.</span>
+	<span class="nx">Pushable</span> <span class="nx">BodyKind</span> <span class="p">=</span> <span class="s">&#34;pushable&#34;</span>
+	<span class="c1">// Platform moves at the velocity its behaviours give it, carrying what stands on it.</span>
+	<span class="nx">Platform</span> <span class="nx">BodyKind</span> <span class="p">=</span> <span class="s">&#34;platform&#34;</span>
+<span class="p">)</span>
+</code></pre>
+
+<h3 id="camera">Camera</h3>
+
+<p>Camera makes a node a camera; the scene is seen through the first one marked
+Main (or the first camera, if none is).</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">Camera</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">Projection</span>  <span class="nx">Projection</span> <span class="s">`json:&#34;projection&#34;`</span>
+	<span class="nx">FieldOfView</span> <span class="kt">float64</span>    <span class="s">`json:&#34;fieldOfView,omitempty&#34;`</span> <span class="c1">// degrees, top to bottom, in perspective; 0 is 45</span>
+	<span class="nx">Height</span>      <span class="kt">float64</span>    <span class="s">`json:&#34;height,omitempty&#34;`</span>      <span class="c1">// metres seen top to bottom, orthographic and isometric; 0 is 10</span>
+	<span class="c1">// Width is the metres a 2D camera sees across, at least: a screen narrower than Height and</span>
+	<span class="c1">// Width make (a phone held upright) sees more height instead of losing the sides. 0 is no least.</span>
+	<span class="nx">Width</span> <span class="kt">float64</span> <span class="s">`json:&#34;width,omitempty&#34;`</span>
+	<span class="nx">Main</span>  <span class="kt">bool</span>    <span class="s">`json:&#34;main,omitempty&#34;`</span>
+
+	<span class="c1">// Follow is the path of a node the camera follows, in a 2D scene (&#34;Keeper&#34;, &#34;Harbour/Keeper&#34;).</span>
+	<span class="nx">Follow</span> <span class="kt">string</span> <span class="s">`json:&#34;follow,omitempty&#34;`</span>
+	<span class="c1">// SmoothingSeconds is about how many seconds the camera takes to catch up with what it follows; 0</span>
+	<span class="c1">// keeps it right on it.</span>
+	<span class="nx">SmoothingSeconds</span> <span class="kt">float64</span> <span class="s">`json:&#34;smoothing,omitempty&#34;`</span>
+	<span class="c1">// Bounds keep a following camera&#39;s view inside a box of the world: its lowest x and y, then its</span>
+	<span class="c1">// highest. Without them, the scene&#39;s tile maps make the box, open above unless Ceiling.</span>
+	<span class="nx">Bounds</span> <span class="o">*</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="kt">float64</span> <span class="s">`json:&#34;bounds,omitempty&#34;`</span>
+	<span class="c1">// Ceiling makes the top of the tile maps a limit too, as a cave&#39;s; without it, the sky above</span>
+	<span class="c1">// them stays open and the camera rises with what it follows.</span>
+	<span class="nx">Ceiling</span> <span class="kt">bool</span> <span class="s">`json:&#34;ceiling,omitempty&#34;`</span>
+<span class="p">}</span>
+</code></pre>
+
+<h3 id="light">Light</h3>
+
+<p>Light makes a node a light: a point light, in 2D or 3D, or in 2D a sprite
+light.</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">Light</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">Kind</span>      <span class="nx">LightKind</span> <span class="s">`json:&#34;kind&#34;`</span>
+	<span class="nx">Colour</span>    <span class="kt">string</span>    <span class="s">`json:&#34;colour,omitempty&#34;`</span>    <span class="c1">// &#34;#rrggbb&#34;; empty is white</span>
+	<span class="nx">Intensity</span> <span class="o">*</span><span class="kt">float64</span>  <span class="s">`json:&#34;intensity,omitempty&#34;`</span> <span class="c1">// as the ambient&#39;s; nil is 1</span>
+	<span class="c1">// Inner and Outer are a point light&#39;s radii in metres: it is full within Inner and fades to</span>
+	<span class="c1">// nothing at Outer.</span>
+	<span class="nx">Inner</span> <span class="kt">float64</span> <span class="s">`json:&#34;inner,omitempty&#34;`</span>
+	<span class="nx">Outer</span> <span class="kt">float64</span> <span class="s">`json:&#34;outer,omitempty&#34;`</span>
+<span class="p">}</span>
+</code></pre>
+
+<table>
+<thead>
+<tr>
+<th>Function or method</th>
+<th></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>func (light *Light) Copy() *Light</code></td>
+<td>Copy is a light that shares nothing with this one; nil for none.</td>
+</tr>
+
+<tr>
+<td><code>func (light *Light) Radii() (inner, outer float64)</code></td>
+<td>Radii are a point light&rsquo;s inner and outer radii in metres, the outer one 3 when it has none.</td>
+</tr>
+
+<tr>
+<td><code>func (light *Light) Strength() float64</code></td>
+<td>Strength is the light&rsquo;s intensity, or 1.</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="lightkind">LightKind</h3>
+
+<p>LightKind is what a light shines from.</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">LightKind</span> <span class="kt">string</span>
+</code></pre>
+<pre><code class="language-go"><span class="kd">const</span> <span class="p">(</span>
+	<span class="c1">// PointLight shines from the node&#39;s position all around, as a lamp.</span>
+	<span class="nx">PointLight</span> <span class="nx">LightKind</span> <span class="p">=</span> <span class="s">&#34;point&#34;</span>
+	<span class="c1">// SpriteLight shines through the node&#39;s sprite: its colours light where it is, and it is not</span>
+	<span class="c1">// drawn itself. A glowing sign, a window.</span>
+	<span class="nx">SpriteLight</span> <span class="nx">LightKind</span> <span class="p">=</span> <span class="s">&#34;sprite&#34;</span>
+<span class="p">)</span>
+</code></pre>
+
+<h3 id="mode">Mode</h3>
+
+<p>Mode is whether a scene is 3D or 2D.</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">Mode</span> <span class="kt">string</span>
+</code></pre>
+<pre><code class="language-go"><span class="kd">const</span> <span class="p">(</span>
+	<span class="nx">Mode3D</span> <span class="nx">Mode</span> <span class="p">=</span> <span class="s">&#34;3d&#34;</span>
+	<span class="nx">Mode2D</span> <span class="nx">Mode</span> <span class="p">=</span> <span class="s">&#34;2d&#34;</span>
+<span class="p">)</span>
+</code></pre>
+
+<h3 id="node">Node</h3>
+
+<p>Node is a thing in a scene, and its children, which move with it.</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">Node</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">Name</span>     <span class="kt">string</span>     <span class="s">`json:&#34;name&#34;`</span>
+	<span class="nx">Position</span> <span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="kt">float64</span> <span class="s">`json:&#34;position&#34;`</span>
+	<span class="nx">Rotation</span> <span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="kt">float64</span> <span class="s">`json:&#34;rotation&#34;`</span> <span class="c1">// degrees: pitch (X), yaw (Y), roll (Z), as space.Angles</span>
+	<span class="nx">Scale</span>    <span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="kt">float64</span> <span class="s">`json:&#34;scale&#34;`</span>
+	<span class="nx">Hidden</span>   <span class="kt">bool</span>       <span class="s">`json:&#34;hidden,omitempty&#34;`</span>
+
+	<span class="nx">Shape</span>  <span class="kt">string</span>  <span class="s">`json:&#34;shape,omitempty&#34;`</span>  <span class="c1">// one of Shapes</span>
+	<span class="nx">Model</span>  <span class="kt">string</span>  <span class="s">`json:&#34;model,omitempty&#34;`</span>  <span class="c1">// a model in the project, as &#34;assets/models/tree.glb&#34;</span>
+	<span class="nx">Sprite</span> <span class="kt">string</span>  <span class="s">`json:&#34;sprite,omitempty&#34;`</span> <span class="c1">// in a 2D scene, a picture or a sprite&#39;s file, as &#34;assets/sprites/hero.sprite.json&#34;</span>
+	<span class="nx">Colour</span> <span class="kt">string</span>  <span class="s">`json:&#34;colour,omitempty&#34;`</span> <span class="c1">// of a shape, &#34;#rrggbb&#34;</span>
+	<span class="nx">Camera</span> <span class="o">*</span><span class="nx">Camera</span> <span class="s">`json:&#34;camera,omitempty&#34;`</span>
+
+	<span class="nx">Body</span>  <span class="o">*</span><span class="nx">Body</span>        <span class="s">`json:&#34;body,omitempty&#34;`</span>  <span class="c1">// in a 2D scene, a body in its physics</span>
+	<span class="nx">Sheet</span> <span class="o">*</span><span class="nx">SpriteSheet</span> <span class="s">`json:&#34;sheet,omitempty&#34;`</span> <span class="c1">// in a 2D scene, the sprite cut into animated frames</span>
+	<span class="c1">// Animation is the animation of its sprite the node starts with, in a 2D scene; empty is the</span>
+	<span class="c1">// sprite&#39;s own first one. Nodes that share a sprite can start differently.</span>
+	<span class="nx">Animation</span> <span class="kt">string</span>   <span class="s">`json:&#34;animation,omitempty&#34;`</span>
+	<span class="nx">Tiles</span>     <span class="o">*</span><span class="nx">TileMap</span> <span class="s">`json:&#34;tiles,omitempty&#34;`</span> <span class="c1">// in a 2D scene, a map of tiles</span>
+	<span class="nx">Light</span>     <span class="o">*</span><span class="nx">Light</span>   <span class="s">`json:&#34;light,omitempty&#34;`</span> <span class="c1">// a light: a point light in 2D or 3D, a sprite light in 2D</span>
+
+	<span class="nx">Behaviours</span> <span class="p">[]</span><span class="nx">Behaviour</span> <span class="s">`json:&#34;behaviours,omitempty&#34;`</span>
+	<span class="nx">Children</span>   <span class="p">[]</span><span class="nx">Node</span>      <span class="s">`json:&#34;children,omitempty&#34;`</span>
+<span class="p">}</span>
+</code></pre>
+
+<table>
+<thead>
+<tr>
+<th>Function or method</th>
+<th></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>func NewNode(name string) Node</code></td>
+<td>NewNode is a node at the origin, unturned, at its own size.</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="projection">Projection</h3>
+
+<p>Projection is how a camera flattens the world.</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">Projection</span> <span class="kt">string</span>
+</code></pre>
+<pre><code class="language-go"><span class="kd">const</span> <span class="p">(</span>
+	<span class="nx">Perspective</span>  <span class="nx">Projection</span> <span class="p">=</span> <span class="s">&#34;perspective&#34;</span>  <span class="c1">// far things look smaller: most 3D games</span>
+	<span class="nx">Orthographic</span> <span class="nx">Projection</span> <span class="p">=</span> <span class="s">&#34;orthographic&#34;</span> <span class="c1">// no perspective: plans, side views, 2D in 3D</span>
+	<span class="nx">Isometric</span>    <span class="nx">Projection</span> <span class="p">=</span> <span class="s">&#34;isometric&#34;</span>    <span class="c1">// orthographic, from the classic angle (looking down 35.264° from 45° round)</span>
+<span class="p">)</span>
+</code></pre>
+
+<h3 id="scene">Scene</h3>
+
+<p>Scene is a scene file.</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">Scene</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">Name</span> <span class="kt">string</span> <span class="s">`json:&#34;name&#34;`</span>
+	<span class="c1">// Mode is &#34;3d&#34; (the default: shapes and models in perspective, orthographic or isometric) or</span>
+	<span class="c1">// &#34;2d&#34; (sprites and flat shapes, seen from the front by an orthographic camera).</span>
+	<span class="nx">Mode</span> <span class="nx">Mode</span>   <span class="s">`json:&#34;mode,omitempty&#34;`</span>
+	<span class="nx">Sky</span>  <span class="kt">string</span> <span class="s">`json:&#34;sky,omitempty&#34;`</span> <span class="c1">// the background colour, &#34;#rrggbb&#34;; empty is a daylight sky</span>
+	<span class="c1">// PixelsPerMetre is, in a 2D scene, how many of a sprite&#39;s pixels make a metre: a sprite 32</span>
+	<span class="c1">// pixels high stands a metre high at 32. 0 is 32.</span>
+	<span class="nx">PixelsPerMetre</span> <span class="kt">float64</span> <span class="s">`json:&#34;pixelsPerMetre,omitempty&#34;`</span>
+	<span class="c1">// Ambient is the light that reaches everything: in a 2D scene its colour and intensity (nil is</span>
+	<span class="c1">// white at 1 when the scene has lights, and no lighting at all when it has none), in a 3D scene</span>
+	<span class="c1">// how strong its sky light is (nil is the sky&#39;s own).</span>
+	<span class="nx">Ambient</span> <span class="o">*</span><span class="nx">Ambient</span> <span class="s">`json:&#34;ambient,omitempty&#34;`</span>
+	<span class="nx">Nodes</span>   <span class="p">[]</span><span class="nx">Node</span>   <span class="s">`json:&#34;nodes&#34;`</span>
+<span class="p">}</span>
+</code></pre>
+
+<table>
+<thead>
+<tr>
+<th>Function or method</th>
+<th></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>func Read(data []byte) (*Scene, error)</code></td>
+<td>Read reads a scene file and checks it.</td>
+</tr>
+
+<tr>
+<td><code>func (scene *Scene) Check() error</code></td>
+<td>Check tells what is wrong with a scene: a node without a name, a slash in a name (names make paths, as &ldquo;car/wheel&rdquo;), two siblings with one name, or a shape that does not exist.</td>
+</tr>
+
+<tr>
+<td><code>func (scene *Scene) Is2D() bool</code></td>
+<td>Is2D tells whether the scene is 2D.</td>
+</tr>
+
+<tr>
+<td><code>func (scene *Scene) Marshal() ([]byte, error)</code></td>
+<td>Marshal writes the scene as indented JSON.</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="sprite">Sprite</h3>
+
+<p>Sprite is a picture cut into frames, with the animations made of them.</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">Sprite</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">Picture</span> <span class="kt">string</span> <span class="s">`json:&#34;picture&#34;`</span> <span class="c1">// a picture in the project, as &#34;assets/sprites/lamp.png&#34;</span>
+	<span class="nx">SpriteSheet</span>
+<span class="p">}</span>
+</code></pre>
+
+<table>
+<thead>
+<tr>
+<th>Function or method</th>
+<th></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>func ReadSprite(data []byte) (*Sprite, error)</code></td>
+<td>ReadSprite reads a sprite&rsquo;s file and checks it.</td>
+</tr>
+
+<tr>
+<td><code>func (sprite *Sprite) Check() error</code></td>
+<td>Check tells what is wrong with a sprite, if anything.</td>
+</tr>
+
+<tr>
+<td><code>func (sprite *Sprite) Marshal() ([]byte, error)</code></td>
+<td>Marshal writes the sprite as its file keeps it.</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="spritesheet">SpriteSheet</h3>
+
+<p>SpriteSheet cuts a node&rsquo;s sprite into frames of equal size, in rows read
+left to right and top to bottom (frame 0 is the top-left one), and names
+animations made of them.</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">SpriteSheet</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">Columns</span>    <span class="kt">int</span>         <span class="s">`json:&#34;columns&#34;`</span>
+	<span class="nx">Rows</span>       <span class="kt">int</span>         <span class="s">`json:&#34;rows&#34;`</span>
+	<span class="nx">Animations</span> <span class="p">[]</span><span class="nx">Animation</span> <span class="s">`json:&#34;animations,omitempty&#34;`</span>
+	<span class="nx">Start</span>      <span class="kt">string</span>      <span class="s">`json:&#34;start,omitempty&#34;`</span> <span class="c1">// the animation playing when the scene starts</span>
+<span class="p">}</span>
+</code></pre>
+
+<table>
+<thead>
+<tr>
+<th>Function or method</th>
+<th></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>func (sheet *SpriteSheet) Copy() *SpriteSheet</code></td>
+<td>Copy is an independent copy of the sheet and its animations.</td>
+</tr>
+
+<tr>
+<td><code>func (sheet *SpriteSheet) Find(name string) (Animation, bool)</code></td>
+<td>Find finds an animation by its name.</td>
+</tr>
+
+<tr>
+<td><code>func (sheet *SpriteSheet) FrameCount() int</code></td>
+<td>FrameCount is how many frames the sheet has.</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="tilemap">TileMap</h3>
+
+<p>TileMap is a grid of tiles cut from a tileset. Its node&rsquo;s position is the
+map&rsquo;s top-left corner; rows go down from there. A tile is TileSize pixels
+a side, which the scene&rsquo;s pixels per metre make metres. The tileset is a
+tileset&rsquo;s file, which brings its tile size and solid tiles, or a picture,
+with the map&rsquo;s own.</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">TileMap</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">Tileset</span>  <span class="kt">string</span> <span class="s">`json:&#34;tileset&#34;`</span>            <span class="c1">// a tileset&#39;s file, or a picture cut into tiles in rows</span>
+	<span class="nx">TileSize</span> <span class="kt">int</span>    <span class="s">`json:&#34;tileSize,omitempty&#34;`</span> <span class="c1">// pixels a side, for a picture</span>
+	<span class="nx">Columns</span>  <span class="kt">int</span>    <span class="s">`json:&#34;columns&#34;`</span>
+	<span class="nx">Rows</span>     <span class="kt">int</span>    <span class="s">`json:&#34;rows&#34;`</span>
+	<span class="nx">Tiles</span>    <span class="p">[]</span><span class="kt">int</span>  <span class="s">`json:&#34;tiles&#34;`</span>           <span class="c1">// a tile number per cell, row by row; EmptyTile for none</span>
+	<span class="nx">Solid</span>    <span class="p">[]</span><span class="kt">int</span>  <span class="s">`json:&#34;solid,omitempty&#34;`</span> <span class="c1">// the tile numbers that bodies stand on, for a picture</span>
+<span class="p">}</span>
+</code></pre>
+
+<table>
+<thead>
+<tr>
+<th>Function or method</th>
+<th></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>func (tiles *TileMap) Copy() *TileMap</code></td>
+<td>Copy is an independent copy of the tile map.</td>
+</tr>
+
+<tr>
+<td><code>func (tiles *TileMap) IsSolid(tile int) bool</code></td>
+<td>IsSolid tells whether a tile number is solid.</td>
+</tr>
+
+<tr>
+<td><code>func (tiles *TileMap) TileAt(column, row int) int</code></td>
+<td>TileAt is the tile in a cell, or EmptyTile outside the map.</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="tileset">Tileset</h3>
+
+<p>Tileset is a picture cut into square tiles, in rows, and which of them
+bodies stand on.</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">Tileset</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">Picture</span>  <span class="kt">string</span> <span class="s">`json:&#34;picture&#34;`</span>
+	<span class="nx">TileSize</span> <span class="kt">int</span>    <span class="s">`json:&#34;tileSize&#34;`</span>        <span class="c1">// pixels a side</span>
+	<span class="nx">Solid</span>    <span class="p">[]</span><span class="kt">int</span>  <span class="s">`json:&#34;solid,omitempty&#34;`</span> <span class="c1">// the tile numbers that bodies stand on</span>
+<span class="p">}</span>
+</code></pre>
+
+<table>
+<thead>
+<tr>
+<th>Function or method</th>
+<th></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>func ReadTileset(data []byte) (*Tileset, error)</code></td>
+<td>ReadTileset reads a tileset&rsquo;s file and checks it.</td>
+</tr>
+
+<tr>
+<td><code>func (tileset *Tileset) Check() error</code></td>
+<td>Check tells what is wrong with a tileset, if anything.</td>
+</tr>
+
+<tr>
+<td><code>func (tileset *Tileset) IsSolid(tile int) bool</code></td>
+<td>IsSolid tells whether bodies stand on a tile of the tileset.</td>
+</tr>
+
+<tr>
+<td><code>func (tileset *Tileset) Marshal() ([]byte, error)</code></td>
+<td>Marshal writes the tileset as its file keeps it.</td>
+</tr>
+</tbody>
+</table>
+
+<hr>
+
+<p><a href="./reference/packages">← Reference</a> · generated from the doc comments by <code>generate.py</code></p>

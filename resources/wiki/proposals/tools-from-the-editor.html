@@ -1,0 +1,92 @@
+<h1 id="5-the-tools-that-build-for-consoles-and-phones-set-from-the-editor">5. The tools that build for consoles and phones, set from the editor</h1>
+
+<blockquote>
+<p>Status: done · Author&rsquo;s approval: proposal ☑ plan ☑ (2026-10-18, &ldquo;tienes que hacer que
+se pueda configurar tinygo y android desde ui&rdquo;: approved together)</p>
+</blockquote>
+
+<h2 id="why">Why</h2>
+
+<p>Building for the 3DS and Android needs tools found outside the editor: TinyGo, devkitPro, a 3DS
+emulator, the Android SDK and NDK. Today they are found through environment variables or the
+usual folders, and when they are not, the only way out is a variable set before starting the
+editor. A person should see what the editor found and point it at what it did not, in the editor.</p>
+
+<h2 id="what">What</h2>
+
+<table>
+<thead>
+<tr>
+<th>Id</th>
+<th>Requirement</th>
+<th>Check</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>R1</td>
+<td>Where each tool is can be set in the editor, and is kept for every project on this computer (not in the project, which others share)</td>
+<td>test <code>the tools' places are kept between sessions</code></td>
+</tr>
+
+<tr>
+<td>R2</td>
+<td>A place set in the editor comes before the environment and the usual folders; a place set where nothing is says so by its code</td>
+<td>tests <code>a tool set in the editor is used first</code>, <code>a tool set where nothing is is said by its code</code></td>
+</tr>
+
+<tr>
+<td>R3</td>
+<td>The Build workspace shows, for each tool, where it was found or why not, and what it is for</td>
+<td>capture</td>
+</tr>
+</tbody>
+</table>
+
+<h2 id="out-of-scope">Out of scope</h2>
+
+<ul>
+<li>Installing the tools (the panel links to how).</li>
+<li>The go command itself: the editor runs with one.</li>
+</ul>
+
+<h2 id="design">Design</h2>
+
+<p><strong>Tools</strong> (<code>internal/build</code>): a <code>Tools</code> value holds the place of each tool the person chose,
+read from and saved to <code>go-engine/tools.json</code> in the user&rsquo;s configuration folder
+(<code>os.UserConfigDir</code>). Each finder is a method of it (<code>tools.FindTinyGo()</code>,
+<code>tools.FindAndroidSDK()</code>…): the place chosen first (a program or a folder, as the tool is), then
+the variables, then the usual folders. <code>project.Open</code> reads it into <code>Project.Tools</code>, so the builds
+use it, and keeps why it could not be read in <code>Project.ToolsUnread</code>.</p>
+
+<p><strong>Panel</strong>: under the Build cards, a &ldquo;Tools on this computer&rdquo; panel: a row per tool with its
+name, what needs it, a field for its place, and where it was found or the error with its meaning.
+Check looks where the places typed say; saving writes the file and looks again (not while the game
+builds or plays: the build reads them). Nothing is looked for every frame.</p>
+
+<h2 id="tasks">Tasks</h2>
+
+<ul>
+<li>[x] T1 — Tools, kept in the user&rsquo;s folder, and the finders as its methods · <code>internal/build</code>,
+<code>project/</code> · R1, R2</li>
+<li>[x] T2 — the Tools panel in Build · <code>editor/</code> · R3</li>
+</ul>
+
+<h2 id="result">Result</h2>
+
+<p><strong>Built.</strong> <code>build.Tools</code>, kept in <code>go-engine/tools.json</code> of the user&rsquo;s configuration folder, with
+a finder for each tool (TinyGo, devkitPro&rsquo;s 3dslink, a 3DS emulator, the Android SDK and its adb,
+the NDK); a place chosen comes first, and one where the wrong thing is (nothing, a folder for a
+program, a devkitPro with no 3dslink, an SDK with no adb) is said by <code>build.tool-place-wrong</code>.
+Build&rsquo;s <strong>Tools on this computer</strong> shows each tool, what needs it, the place typed, and where it
+was found or why not, with Check and Save; a file that could not be read is said there.</p>
+
+<p><strong>Checked.</strong> The tests of each requirement; captures of the panel with tools found and missing.</p>
+
+<p><strong>Then, asked by the author.</strong> A file picker, go-ui&rsquo;s own (<code>ui.FilePicker</code>, feature/3ds 3183ea9,
+committed with the author&rsquo;s say): <strong>Browse</strong> beside each tool chooses a program or a folder, as
+the tool needs, and types it in its field to check and save; Project&rsquo;s <strong>Import model</strong> chooses a
+<code>.glb</code> and copies it into <code>assets/models</code>, which nothing in the editor offered before.</p>
+
+<p><strong>For a person.</strong> Browse with a real mouse: double clicks, and going through deep folders.</p>

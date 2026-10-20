@@ -1,0 +1,132 @@
+<h1 id="6-install-the-tools-from-the-editor">6. Install the tools from the editor</h1>
+
+<blockquote>
+<p>Status: in progress · Author&rsquo;s approval: proposal ☑ plan ☑ (2026-10-18: &ldquo;Todas&rdquo;; tinygo-3ds commit, push and release allowed)</p>
+</blockquote>
+
+<h2 id="why">Why</h2>
+
+<p>Proposal 5 lets a person say where TinyGo, devkitPro, a 3DS emulator and Android&rsquo;s SDK and NDK
+are; they still have to find, download and install each by hand, and TinyGo for the 3DS is a
+fork with no binaries for anyone but its author. A person who has the editor should get a game
+onto their console or phone without leaving it.</p>
+
+<h2 id="what">What</h2>
+
+<table>
+<thead>
+<tr>
+<th>Id</th>
+<th>Requirement</th>
+<th>Check</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>R1</td>
+<td>tinygo-3ds publishes releases with a TinyGo that needs nothing installed (LLVM inside), for Linux, and macOS and Windows when their builds pass</td>
+<td>the release&rsquo;s files; one run on a machine with no LLVM</td>
+</tr>
+
+<tr>
+<td>R2</td>
+<td>tinygo-3ds finds devkitPro in <code>$DEVKITPRO</code> (as devkitPro&rsquo;s own tools do), <code>/opt/devkitpro</code> when unset</td>
+<td>test in tinygo-3ds; a 3DS build with devkitPro elsewhere</td>
+</tr>
+
+<tr>
+<td>R3</td>
+<td><strong>Install</strong> beside TinyGo downloads the release for this system into the user&rsquo;s data folder, checks it against its checksum, and sets TinyGo&rsquo;s place</td>
+<td>tests with a fake server: <code>a release is downloaded, checked and set</code>, <code>a release that does not match its checksum is refused</code></td>
+</tr>
+
+<tr>
+<td>R4</td>
+<td><strong>Install</strong> beside devkitPro runs devkitPro&rsquo;s own installer for the 3DS (<code>dkp-pacman -S 3ds-dev</code>) in a terminal, as it asks for the system&rsquo;s password; without dkp-pacman, it opens devkitPro&rsquo;s install guide</td>
+<td>test of the command asked for; by hand on Linux</td>
+</tr>
+
+<tr>
+<td>R5</td>
+<td><strong>Install</strong> beside the Android SDK downloads Google&rsquo;s command-line tools and, once the person has read and accepted Android&rsquo;s licences in the panel, installs platform-tools, build-tools, a platform and the NDK</td>
+<td>tests with a fake server and a fake sdkmanager</td>
+</tr>
+
+<tr>
+<td>R6</td>
+<td><strong>Install</strong> beside the 3DS emulator downloads Azahar&rsquo;s release for this system (the AppImage on Linux, the zip of its program on a Mac and Windows), checked by the SHA-256 GitHub gives</td>
+<td>test with a fake server</td>
+</tr>
+
+<tr>
+<td>R7</td>
+<td>The panel shows each install&rsquo;s progress and what it said; installs run one at a time, and the builds wait</td>
+<td>capture</td>
+</tr>
+</tbody>
+</table>
+
+<h2 id="out-of-scope">Out of scope</h2>
+
+<ul>
+<li>Installing Go or a JDK (the editor runs with Go; Android&rsquo;s tools need Java: the panel says so).</li>
+<li>Updating what is installed (Install again does it).</li>
+<li>devkitPro&rsquo;s packages downloaded one by one: their servers and packages (zstd) are devkitPro&rsquo;s
+installer&rsquo;s to handle.</li>
+</ul>
+
+<h2 id="design">Design</h2>
+
+<p><strong>tinygo-3ds</strong>: a workflow on <code>main</code> that runs TinyGo&rsquo;s own release build (<code>make release
+STATIC=1</code>) on Linux, macOS and Windows and attaches the archives and their SHA-256 to a release
+(<code>v0.42.0-3ds.N</code>). The target&rsquo;s devkitPro paths become <code>{devkitpro}</code>, which the builder fills
+from <code>$DEVKITPRO</code>.</p>
+
+<p><strong>go-engine</strong> <code>internal/install</code>: a download (HTTP, with progress), a checksum, and unpacking of
+<code>.tar.gz</code> and <code>.zip</code> (standard library only), into <code>go-engine/</code> of <code>os.UserCacheDir</code>&rsquo;s sibling
+data folder. One function per tool returns the place to set. The editor runs installs as it runs
+builds (<code>Editor.Run</code>), shows progress under the tool, and saves the place found.</p>
+
+<h2 id="tasks">Tasks</h2>
+
+<ul>
+<li>[x] T1 — tinygo-3ds: <code>{devkitpro}</code> from <code>$DEVKITPRO</code>; the release workflow · R1, R2</li>
+<li>[x] T2 — <code>internal/install</code>: download, checksum, unpack · R3</li>
+<li>[x] T3 — TinyGo&rsquo;s Install · R3, R7</li>
+<li>[x] T4 — devkitPro&rsquo;s Install · R4</li>
+<li>[x] T5 — Android&rsquo;s Install, with the licences · R5</li>
+<li>[x] T6 — Azahar&rsquo;s Install · R6</li>
+<li>[x] T7 — Find and check what is installed · R8, R9</li>
+</ul>
+
+<h3 id="t7-finding-and-checking-approved-2026-10-18-built-2026-10-19">T7: finding and checking (approved 2026-10-18, built 2026-10-19)</h3>
+
+<table>
+<thead>
+<tr>
+<th>Id</th>
+<th>Requirement</th>
+<th>Check</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>R8</td>
+<td>Tools are also found where they are usually installed: Install&rsquo;s own copies not saved, Azahar in Flatpak, <code>~/Applications</code>, a Mac&rsquo;s <code>/Applications</code> and Windows&rsquo; Program Files, and a JDK (Android&rsquo;s builds need <code>javac</code>) in <code>$JAVA_HOME</code>, on the path or in Android Studio</td>
+<td>tests with made-up folders</td>
+</tr>
+
+<tr>
+<td>R9</td>
+<td>A tool found is checked: TinyGo has the <code>nintendo3ds</code> target; devkitPro has devkitARM&rsquo;s gcc, libctru and citro3d; the SDK has platform-tools, build-tools and a platform; the NDK has its LLVM compilers for this system; the JDK has <code>javac</code>. Build shows what is missing</td>
+<td>tests: <code>each tool missing a part says which</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Design</strong>: <code>install</code> says where its own copies are (<code>installed.go</code>); <code>build</code> keeps the usual
+places of each system (<code>places.go</code>), the JDK&rsquo;s search (<code>java.go</code>, a new <code>Java</code> place in the tools)
+and one check per tool (<code>check.go</code>, each with its error code). The editor runs the check after a
+tool is found and shows the place found with what is wrong. The JDK found becomes Android&rsquo;s
+<code>JAVA_HOME</code>, for its builds and for Install.</p>

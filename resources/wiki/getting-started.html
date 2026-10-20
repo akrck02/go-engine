@@ -1,0 +1,203 @@
+<h1 id="get-started">🚀 Get started</h1>
+
+<p>In fifteen minutes you install Go Engine, make a project, play its first scene in the editor and
+change what its code does. Nothing here needs a game idea yet.</p>
+
+<h2 id="what-you-need">What you need</h2>
+
+<ul>
+<li><strong>Go 1.25</strong> or newer (<a href="https://go.dev/dl/" target="_blank">go.dev/dl</a>).</li>
+<li><strong>A C compiler</strong>: the editor&rsquo;s window speaks to the graphics card through C. On Linux,
+<code>sudo apt install gcc libgl1-mesa-dev xorg-dev libwayland-dev libxkbcommon-dev</code> (Debian, Ubuntu); on macOS, <code>xcode-select --install</code>;
+on Windows, the gcc of <a href="https://www.msys2.org" target="_blank">MSYS2</a> (Windows is still to be tried).</li>
+<li><strong>OpenGL 4.1</strong>, which any computer of the last ten years has.</li>
+</ul>
+
+<h2 id="1-install-the-editor">1. Install the editor</h2>
+<pre><code class="language-bash">go install github.com/akrck02/go-engine/cmd/go-engine@latest
+</code></pre>
+
+<p>This puts a program called <code>go-engine</code> in Go&rsquo;s <code>bin</code> folder (<code>go env GOPATH</code>, then <code>bin</code>). If the
+shell cannot find it, add that folder to your <code>PATH</code>.</p>
+
+<h2 id="2-make-a-project">2. Make a project</h2>
+<pre><code class="language-bash">go-engine new ~/games/harbour <span class="s2">&#34;Harbour lights&#34;</span>
+</code></pre>
+
+<p>The second word is the game&rsquo;s name, as players will see it. A project is a folder with a Go module
+inside; the command writes it, fetches the engine as <code>go</code> does any module, and opens the editor:</p>
+
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>What it is</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>engine.json</code></td>
+<td>The game&rsquo;s name and the scene it starts with</td>
+</tr>
+
+<tr>
+<td><code>scenes/main.scene.json</code></td>
+<td>The first scene: a ground, a cube and a camera</td>
+</tr>
+
+<tr>
+<td><code>main.go</code></td>
+<td>Carries the scenes and assets inside the game, and starts it</td>
+</tr>
+
+<tr>
+<td><code>spin.go</code></td>
+<td>A first behaviour: the code that turns the cube</td>
+</tr>
+
+<tr>
+<td><code>editor.go</code></td>
+<td>Puts the editor inside the game while you make it</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Checkpoint:</strong> the editor shows a coloured cube on a green ground.</p>
+
+<p align="center"><img alt="The editor's Level workspace on the new project: the cube chosen on the green ground, its inspector on the right with a Spin behaviour" src="./images/editor-level.png" width="720"></p>
+
+<p>Next time, open the project with <code>go-engine ~/games/harbour</code>.</p>
+
+<h2 id="3-look-around">3. Look around</h2>
+
+<p>The bar at the bottom changes between six <strong>workspaces</strong>, one job each. The keys 1 to 6 do it too.</p>
+
+<table>
+<thead>
+<tr>
+<th>Workspace</th>
+<th>What it is for</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><strong>Project</strong></td>
+<td>The project&rsquo;s files: pictures, models, scenes, and its settings</td>
+</tr>
+
+<tr>
+<td><strong>Art</strong></td>
+<td>Cutting a picture into frames for animations, or into tiles for levels</td>
+</tr>
+
+<tr>
+<td><strong>Level</strong></td>
+<td>Arranging a scene: the nodes on the left, the view, the inspector on the right</td>
+</tr>
+
+<tr>
+<td><strong>Code</strong></td>
+<td>The behaviours the project&rsquo;s Go code declares, and where they are used</td>
+</tr>
+
+<tr>
+<td><strong>Play</strong></td>
+<td>Playing the scene, with a pause, a step of one frame, and a log</td>
+</tr>
+
+<tr>
+<td><strong>Build</strong></td>
+<td>Making the game for a computer, the 3DS or an Android phone</td>
+</tr>
+</tbody>
+</table>
+<p>In <strong>Level</strong>, drag the view to turn round the scene, scroll to come closer, and click a thing in it
+to choose it. Each thing in a scene is a <strong>node</strong>: the ground, the cube and the camera are three,
+listed on the left. The chosen node&rsquo;s <strong>inspector</strong> on the right shows where it is, what it is,
+and its behaviours.</p>
+
+<h2 id="4-play">4. Play</h2>
+
+<p>Press <strong>Play</strong> in the bar at the bottom (or 5): the scene starts playing at once, through its
+camera, and the cube turns. Play always plays the scene as it is now, saved or not.</p>
+
+<p align="center"><img alt="The Play workspace: the cube turning on the ground, seen through the scene's camera; Pause, Step, Restart, In a window and Stop above it; the cube watched on the right, its Spin speed 45" src="./images/editor-play.png" width="720"></p>
+
+<p><strong>Checkpoint:</strong> the cube turns slowly. <strong>Stop</strong> (or Escape) goes back to the workspace you were
+in, with the scene as it was before playing.</p>
+
+<h2 id="5-change-a-number">5. Change a number</h2>
+
+<p>Back in <strong>Level</strong>, choose the cube. Its inspector shows the <strong>Spin</strong> behaviour with a field,
+<strong>speed</strong>, at 45. Make it 180 and play again: the cube spins four times as fast.</p>
+
+<p>That field comes from the code. Open <code>spin.go</code> in your code editor:</p>
+<pre><code class="language-go"><span class="c1">// Spin turns its node around the vertical axis.</span>
+<span class="kd">type</span> <span class="nx">Spin</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">Speed</span> <span class="kt">float64</span> <span class="s">`json:&#34;speed&#34;`</span> <span class="c1">// degrees a second</span>
+<span class="p">}</span>
+
+<span class="c1">// Update runs every frame, with the seconds since the last one in context.Delta.</span>
+<span class="kd">func</span> <span class="p">(</span><span class="nx">spin</span> <span class="o">*</span><span class="nx">Spin</span><span class="p">)</span> <span class="nf">Update</span><span class="p">(</span><span class="nx">context</span> <span class="o">*</span><span class="nx">engine</span><span class="p">.</span><span class="nx">Context</span><span class="p">)</span> <span class="p">{</span>
+	<span class="nx">context</span><span class="p">.</span><span class="nx">Node</span><span class="p">.</span><span class="nx">Transform</span><span class="p">.</span><span class="nf">Turn</span><span class="p">(</span><span class="nx">space</span><span class="p">.</span><span class="nx">Up</span><span class="p">,</span> <span class="nx">spin</span><span class="p">.</span><span class="nx">Speed</span><span class="o">*</span><span class="nx">context</span><span class="p">.</span><span class="nx">Delta</span><span class="p">)</span>
+<span class="p">}</span>
+</code></pre>
+
+<p>Every exported field of a behaviour is a field in the inspector, named by its JSON name. <code>Update</code>
+runs every frame; <code>context.Delta</code> is the seconds since the last frame. <code>main.go</code> registers the
+behaviour, so scenes can name it:</p>
+<pre><code class="language-go"><span class="nx">engine</span><span class="p">.</span><span class="nf">Register</span><span class="p">(</span><span class="nx">Spin</span><span class="p">{})</span>
+</code></pre>
+
+<h2 id="6-change-the-code">6. Change the code</h2>
+
+<p>Make the cube bob up and down as it turns. Add a field and two lines to <code>spin.go</code>:</p>
+<pre><code class="language-go"><span class="kn">import</span> <span class="p">(</span>
+	<span class="s">&#34;math&#34;</span>
+
+	<span class="s">&#34;github.com/akrck02/go-engine/engine&#34;</span>
+	<span class="s">&#34;github.com/akrck02/go-engine/space&#34;</span>
+<span class="p">)</span>
+
+<span class="kd">type</span> <span class="nx">Spin</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">Speed</span> <span class="kt">float64</span> <span class="s">`json:&#34;speed&#34;`</span> <span class="c1">// degrees a second</span>
+	<span class="nx">Bob</span>   <span class="kt">float64</span> <span class="s">`json:&#34;bob&#34;`</span>   <span class="c1">// metres up and down</span>
+<span class="p">}</span>
+
+<span class="kd">func</span> <span class="p">(</span><span class="nx">spin</span> <span class="o">*</span><span class="nx">Spin</span><span class="p">)</span> <span class="nf">Update</span><span class="p">(</span><span class="nx">context</span> <span class="o">*</span><span class="nx">engine</span><span class="p">.</span><span class="nx">Context</span><span class="p">)</span> <span class="p">{</span>
+	<span class="nx">context</span><span class="p">.</span><span class="nx">Node</span><span class="p">.</span><span class="nx">Transform</span><span class="p">.</span><span class="nf">Turn</span><span class="p">(</span><span class="nx">space</span><span class="p">.</span><span class="nx">Up</span><span class="p">,</span> <span class="nx">spin</span><span class="p">.</span><span class="nx">Speed</span><span class="o">*</span><span class="nx">context</span><span class="p">.</span><span class="nx">Delta</span><span class="p">)</span>
+	<span class="nx">context</span><span class="p">.</span><span class="nx">Node</span><span class="p">.</span><span class="nx">Transform</span><span class="p">.</span><span class="nx">Position</span><span class="p">.</span><span class="nx">Y</span> <span class="p">=</span> <span class="mf">0.5</span> <span class="o">+</span> <span class="nx">spin</span><span class="p">.</span><span class="nx">Bob</span><span class="o">*</span><span class="nx">math</span><span class="p">.</span><span class="nf">Sin</span><span class="p">(</span><span class="nx">context</span><span class="p">.</span><span class="nx">Time</span><span class="o">*</span><span class="mi">3</span><span class="p">)</span>
+<span class="p">}</span>
+</code></pre>
+
+<p><code>context.Time</code> is the seconds since the scene started. The editor runs inside your game, so it
+needs the game built again: open <strong>Code</strong> (or 4) and press <strong>Rebuild</strong>, which glows while the code
+is newer than the game. It saves the scene, builds, and reopens the editor where you were; if the
+code does not compile, the error shows under <strong>Output</strong>, and the editor stays as it was. <strong>Open in
+code editor</strong> opens the project in the editor <code>engine.json</code> names (<code>codeEditor</code>), or in <code>$VISUAL</code>.</p>
+
+<p align="center"><img alt="The Code workspace: the Spin behaviour with its file, its comment, the methods the engine calls and its speed field; Open in code editor and Rebuild at the top right" src="./images/editor-code.png" width="720"></p>
+
+<p><strong>Checkpoint:</strong> the cube&rsquo;s inspector now has a <strong>bob</strong> field. Make it 0.5 and play: the cube bobs.</p>
+
+<h2 id="7-play-it-on-its-own">7. Play it on its own</h2>
+
+<p>In <strong>Build</strong> (or 6), the card <strong>This computer</strong> has <strong>Build</strong>, which writes the game into the
+project&rsquo;s <code>build/</code> folder, and <strong>Play</strong>, which opens it in a window of its own. From a terminal,
+<code>go run .</code> in the project&rsquo;s folder plays it too: the editor only starts when <code>go-engine</code> asks.</p>
+
+<p>The other cards make the game for the Nintendo 3DS and for Android phones. The tools they need are
+set up in <strong>Tools</strong>, the tab beside <strong>Platforms</strong> at the top of Build; the
+<a href="./guides/building-for-the-3ds">guides</a> explain them.</p>
+
+<h2 id="where-next">Where next</h2>
+
+<ul>
+<li>🗺️ <a href="./the-quest/the-quest">The quest</a>: make a whole platformer, a level at a time.</li>
+<li>💡 <a href="./core-ideas">Core ideas</a>: what a scene, a node and a behaviour really are.</li>
+</ul>
+
+<hr>
+
+<p><a href="./overview">← Overview</a> · <a href="./core-ideas">Core ideas →</a></p>

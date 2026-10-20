@@ -1,0 +1,303 @@
+<h1 id="the-project-s-files">🗂️ The project&rsquo;s files</h1>
+
+<p>Every file the editor writes is JSON a person can read, and kind to version control. This page
+lists each key; the editor sets them all, so you only need it to read a file or fix one by hand.</p>
+
+<h2 id="engine-json"><code>engine.json</code></h2>
+
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>What it is</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td>text</td>
+<td>The game&rsquo;s name</td>
+</tr>
+
+<tr>
+<td><code>startScene</code></td>
+<td>text</td>
+<td>The scene the game opens, as <code>scenes/main.scene.json</code></td>
+</tr>
+
+<tr>
+<td><code>codeEditor</code></td>
+<td>text</td>
+<td>The command that opens the project, as <code>zed</code> or <code>code</code>; empty tries <code>$VISUAL</code> and <code>$EDITOR</code></td>
+</tr>
+
+<tr>
+<td><code>androidId</code></td>
+<td>text</td>
+<td>The Android application id, as <code>io.example.forest</code></td>
+</tr>
+
+<tr>
+<td><code>consoleAddress</code></td>
+<td>text</td>
+<td>The 3DS&rsquo;s address to send the game to; empty looks for it on the network</td>
+</tr>
+
+<tr>
+<td><code>sceneMenu</code></td>
+<td>yes/no</td>
+<td>Lists the scenes on the 3DS&rsquo;s bottom screen</td>
+</tr>
+</tbody>
+</table>
+
+<h2 id="a-scene-scenes-scene-json">A scene: <code>scenes/*.scene.json</code></h2>
+
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>What it is</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td>text</td>
+<td>The scene&rsquo;s name</td>
+</tr>
+
+<tr>
+<td><code>mode</code></td>
+<td><code>3d</code> or <code>2d</code></td>
+<td>3D by default</td>
+</tr>
+
+<tr>
+<td><code>sky</code></td>
+<td>colour</td>
+<td>The background, <code>#rrggbb</code>; empty is a daylight sky</td>
+</tr>
+
+<tr>
+<td><code>pixelsPerMetre</code></td>
+<td>number</td>
+<td>In 2D, a sprite&rsquo;s pixels in a metre; 0 is 32</td>
+</tr>
+
+<tr>
+<td><code>ambient</code></td>
+<td>ambient</td>
+<td>The light that reaches everything (below)</td>
+</tr>
+
+<tr>
+<td><code>nodes</code></td>
+<td>nodes</td>
+<td>The top of the tree of nodes</td>
+</tr>
+</tbody>
+</table>
+
+<h2 id="a-node">A node</h2>
+
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>What it is</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td>text</td>
+<td>Unique among its siblings, with no slash</td>
+</tr>
+
+<tr>
+<td><code>position</code>, <code>rotation</code>, <code>scale</code></td>
+<td>3 numbers</td>
+<td>Relative to its parent: metres, degrees (X tilts, Y turns, Z rolls), times its size</td>
+</tr>
+
+<tr>
+<td><code>hidden</code></td>
+<td>yes/no</td>
+<td>Hidden, and its children with it</td>
+</tr>
+
+<tr>
+<td><code>shape</code>, <code>colour</code></td>
+<td>text</td>
+<td><code>cube</code>, <code>sphere</code>, <code>plane</code> or <code>cylinder</code>, in a colour</td>
+</tr>
+
+<tr>
+<td><code>model</code></td>
+<td>text</td>
+<td>A model, as <code>assets/models/house.glb</code></td>
+</tr>
+
+<tr>
+<td><code>sprite</code></td>
+<td>text</td>
+<td>In 2D, a picture or a sprite file</td>
+</tr>
+
+<tr>
+<td><code>animation</code></td>
+<td>text</td>
+<td>The animation its sprite starts with</td>
+</tr>
+
+<tr>
+<td><code>sheet</code></td>
+<td>sheet</td>
+<td>A sheet cut on the node itself (a sprite file is better)</td>
+</tr>
+
+<tr>
+<td><code>tiles</code></td>
+<td>tile map</td>
+<td>In 2D, a map of tiles</td>
+</tr>
+
+<tr>
+<td><code>camera</code></td>
+<td>camera</td>
+<td>Makes it a camera</td>
+</tr>
+
+<tr>
+<td><code>body</code></td>
+<td>body</td>
+<td>In 2D, a body in the physics</td>
+</tr>
+
+<tr>
+<td><code>light</code></td>
+<td>light</td>
+<td>Makes it a light</td>
+</tr>
+
+<tr>
+<td><code>behaviours</code></td>
+<td>list</td>
+<td>Each <code>{&quot;name&quot;: &quot;Player&quot;, &quot;fields&quot;: {&quot;speed&quot;: 3.2}}</code></td>
+</tr>
+
+<tr>
+<td><code>children</code></td>
+<td>nodes</td>
+<td>Its children</td>
+</tr>
+</tbody>
+</table>
+
+<table>
+<thead>
+<tr>
+<th>Part</th>
+<th>Keys</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>camera</td>
+<td><code>projection</code> (<code>perspective</code>, <code>orthographic</code>, <code>isometric</code>), <code>fieldOfView</code> (degrees; 0 is 45), <code>height</code> and <code>width</code> (metres seen), <code>main</code>, <code>follow</code> (a node&rsquo;s path), <code>smoothing</code> (seconds), <code>bounds</code> (lowest X, lowest Y, highest X, highest Y), <code>ceiling</code></td>
+</tr>
+
+<tr>
+<td>body</td>
+<td><code>kind</code> (<code>solid</code>, <code>moving</code>, <code>trigger</code>, <code>pushable</code>, <code>platform</code>), <code>size</code> (width and height; 0 is the node&rsquo;s own), <code>gravityScale</code> (1 if absent), <code>pull</code> (a trigger&rsquo;s gravity, across and up), <code>ignoresZones</code></td>
+</tr>
+
+<tr>
+<td>light</td>
+<td><code>kind</code> (<code>point</code>, <code>sprite</code>), <code>colour</code>, <code>intensity</code> (1 if absent, at most 2), <code>inner</code> and <code>outer</code> (metres; outer is 3 if absent)</td>
+</tr>
+
+<tr>
+<td>ambient</td>
+<td><code>colour</code>, <code>intensity</code></td>
+</tr>
+
+<tr>
+<td>tiles</td>
+<td><code>tileset</code> (a tileset file, or a picture), <code>tileSize</code> (for a picture), <code>columns</code>, <code>rows</code>, <code>tiles</code> (a number per cell, row by row from the top; -1 is empty), <code>solid</code> (for a picture)</td>
+</tr>
+</tbody>
+</table>
+
+<h2 id="a-sprite-sprite-json">A sprite: <code>*.sprite.json</code></h2>
+
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>What it is</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>picture</code></td>
+<td>The sheet&rsquo;s picture</td>
+</tr>
+
+<tr>
+<td><code>columns</code>, <code>rows</code></td>
+<td>Frames across and down</td>
+</tr>
+
+<tr>
+<td><code>animations</code></td>
+<td>Each with a <code>name</code>, its <code>frames</code>, <code>framesPerSecond</code> and whether it should <code>loop</code></td>
+</tr>
+
+<tr>
+<td><code>start</code></td>
+<td>The animation playing first</td>
+</tr>
+</tbody>
+</table>
+
+<h2 id="a-tileset-tileset-json">A tileset: <code>*.tileset.json</code></h2>
+
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>What it is</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>picture</code></td>
+<td>The tiles&rsquo; picture</td>
+</tr>
+
+<tr>
+<td><code>tileSize</code></td>
+<td>Pixels a tile, a side</td>
+</tr>
+
+<tr>
+<td><code>solid</code></td>
+<td>The tile numbers bodies stand on, counted row by row from the top-left, from 0</td>
+</tr>
+</tbody>
+</table>
+
+<hr>
+
+<p><a href="./reference/packages">← The reference</a></p>

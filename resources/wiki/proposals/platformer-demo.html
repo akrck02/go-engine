@@ -1,0 +1,226 @@
+<h1 id="1-a-platformer-demo-that-drives-the-engine">1. A platformer demo that drives the engine</h1>
+
+<blockquote>
+<p>Status: done · Author&rsquo;s approval: proposal ☑ plan ☑</p>
+</blockquote>
+
+<h2 id="why">Why</h2>
+
+<p>Go Engine (v0.0.1) can place things in a scene and run code on them, but nothing yet makes a
+game feel like one: things don&rsquo;t fall, collide, animate or get followed by the camera. A small
+platformer needs all of that, so building one tells us what the engine is missing and proves each
+piece works, on the desktop and on the 3DS. The author&rsquo;s own <code>godot-generic-platformer</code> is the
+reference for how it should play.</p>
+
+<h2 id="what">What</h2>
+
+<p>The engine gains generic 2D pieces any game can use; the demo is a project made with the editor
+that uses them, with only its own behaviours as game code.</p>
+
+<table>
+<thead>
+<tr>
+<th>Id</th>
+<th>Requirement</th>
+<th>Check</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>R1</td>
+<td>A body falls with gravity and stands on solid ground; it never passes through a solid, at any frame rate</td>
+<td>test <code>a falling body lands on the ground and stays there</code>; test <code>a fast body does not pass through a thin wall</code></td>
+</tr>
+
+<tr>
+<td>R2</td>
+<td>A body slides along walls and floors instead of stopping dead, and knows whether it stands on the floor</td>
+<td>test <code>a body pushed into a wall slides up it</code>; test <code>a body on the ground is on the floor</code></td>
+</tr>
+
+<tr>
+<td>R3</td>
+<td>A level is painted in the editor from a tileset picture onto a grid, and its solid tiles collide</td>
+<td>in the editor, paint tiles and play: the player stands on them; test <code>solid tiles stop a body</code></td>
+</tr>
+
+<tr>
+<td>R4</td>
+<td>A sprite plays named animations from a sprite sheet (idle, walk, jump), at a set speed, and faces left or right</td>
+<td>test <code>an animation shows each frame for its time and loops</code>; the demo&rsquo;s player walks and turns</td>
+</tr>
+
+<tr>
+<td>R5</td>
+<td>The camera follows a node smoothly and stays inside the level&rsquo;s bounds</td>
+<td>test <code>the camera follows its target and stops at the level's edge</code></td>
+</tr>
+
+<tr>
+<td>R6</td>
+<td>Triggers: something happens when the player touches a node (a coin is collected, spikes restart the level, a flag goes to the next level)</td>
+<td>test <code>touching a trigger is reported once</code>; the demo&rsquo;s coins, spikes and flag</td>
+</tr>
+
+<tr>
+<td>R7</td>
+<td>The demo plays the same on the desktop and the 3DS: arrows or the cross move, Space, the up arrow, A or up on the cross jumps</td>
+<td>play it in the editor, in a window, and on the 3DS emulator; the author plays it on the console</td>
+</tr>
+
+<tr>
+<td>R8</td>
+<td>Everything the demo needs from the engine is generic: no part of the engine knows it is a platformer</td>
+<td>review: the engine&rsquo;s new code names no coin, spike or player</td>
+</tr>
+</tbody>
+</table>
+
+<h2 id="out-of-scope">Out of scope</h2>
+
+<ul>
+<li>Slopes, one-way platforms, moving platforms and ladders (later, if the demo grows).</li>
+<li>Enemies with their own behaviour, shooting, bounce pads.</li>
+<li>Sound and music (Go Sound comes in a later change), menus, a game interface, saving.</li>
+<li>3D physics.</li>
+<li>Documentation of the new pieces: v0.0.1 is not documented yet.</li>
+</ul>
+
+<h2 id="decisions">Decisions</h2>
+
+<ul>
+<li><strong>Art</strong>: the sprites and tilesets of <code>godot-generic-platformer</code>, as the author allowed; the
+demo says where they come from.</li>
+<li><strong>Where</strong>: <code>examples/platformer/</code>, a project with its own <code>go.mod</code>, beside the engine, so each
+change to the engine is played with it in the same commit.</li>
+<li><strong>Scope</strong>: one world, the forest, in three short levels. Lava and snow come later, from the same
+pieces.</li>
+</ul>
+
+<h2 id="design">Design</h2>
+
+<p>Four generic pieces join the engine; the demo only adds its behaviours, scenes and art.</p>
+<pre><code>space ← physics ← engine ← editor
+</code></pre>
+
+<p><strong>1. <code>physics</code>, a new package</strong>: boxes that move and collide in 2D, knowing nothing of nodes.</p>
+
+<ul>
+<li>A <code>Body</code> has a box (its size in metres), a velocity, a gravity scale and a kind: <em>solid</em>
+(never moves), <em>moving</em> (falls and is pushed back by solids) or <em>trigger</em> (only notices what
+touches it).</li>
+<li><code>World.Step(seconds)</code> adds gravity, then moves each moving body one axis at a time, in steps no
+longer than half its smallest side, so a fast body cannot jump through a thin wall (R1). A body
+that hits a solid stops on that axis only and keeps the other, which is sliding (R2); hitting a
+floor sets <code>OnFloor</code>.</li>
+<li>Overlaps of triggers are reported once, when they begin (R6).</li>
+<li>Alternatives not taken: a physics library (Box2D ports, Chipmunk). They bring rotation, joints
+and a dependency the demo doesn&rsquo;t need; boxes lined up with the axes are what platformers use,
+and small enough to learn from.</li>
+</ul>
+
+<p><strong>2. Tiles, in <code>engine</code> and <code>scenefile</code></strong>: a node may be a tile map: a tileset picture, the size
+of a tile in pixels, a grid of tile numbers, and which tiles are solid (R3).</p>
+
+<ul>
+<li>The tileset is cut into one picture per tile when it loads, so <code>draw2d</code> draws whole pictures
+and Go Renderer needs no change.</li>
+<li>Solid tiles become solid bodies, rows of them merged into one box, so a level of a thousand
+tiles is a few dozen boxes.</li>
+<li>The editor gains a tile tool in the 2D view: the tileset in the inspector to choose from, drag
+to paint, right-drag to erase.</li>
+</ul>
+
+<p><strong>3. Animated sprites, in <code>engine</code> and <code>scenefile</code></strong>: a sprite may be a sheet of equal frames, with
+named animations (frames, frames per second, looping), and may face left (R4).</p>
+
+<ul>
+<li>Frames are cut from the sheet when it loads; facing left uses a mirrored copy made once, since
+<code>draw2d</code> draws pictures upright.</li>
+<li>A behaviour calls <code>node.Play(&quot;walk&quot;)</code> and <code>node.FaceLeft(true)</code>.</li>
+</ul>
+
+<p><strong>4. Bodies, triggers, the camera and scenes, in <code>engine</code></strong>:</p>
+
+<ul>
+<li>A node may have a body (<code>&quot;body&quot;: {&quot;kind&quot;: &quot;moving&quot;, &quot;size&quot;: [0.8, 0.6]}</code> in the scene file);
+the engine keeps the physics world in step with the nodes every frame: behaviours update, the
+world steps, nodes take their bodies&rsquo; positions.</li>
+<li>A behaviour with <code>Touched(context, other *Node)</code> hears when its node&rsquo;s trigger begins touching
+another body (R6).</li>
+<li>A camera may follow a node, with a smoothing time, kept inside the level&rsquo;s bounds: the tile
+maps&rsquo; extent, or bounds of its own (R5). The tile maps bound the sides and the bottom; the sky
+above stays open, so the camera rises with a jump, unless the camera has a ceiling (a cave).</li>
+<li><code>context.RestartScene()</code> and <code>context.ChangeScene(file)</code> let a game restart a level or go to the
+next, in a window, on the 3DS and in the editor&rsquo;s view (R6, R7).</li>
+</ul>
+
+<p><strong>The demo</strong>, <code>examples/platformer/</code>: a project like any other (its <code>go.mod</code> points at the engine
+beside it). Behaviours <code>Player</code> (walk, jump with Space or A, animations, facing), <code>Coin</code>
+(collected when touched), <code>Hazard</code> (spikes and water: restart the level) and <code>Flag</code> (next level);
+three forest levels: the first two converted from the reference&rsquo;s <code>World.tscn</code> and <code>World2.tscn</code>
+(its third is a copy of the second), the third joining them into one wider than the screen. No behaviour of the demo reaches into the engine&rsquo;s insides
+(R8).</p>
+
+<h2 id="tasks">Tasks</h2>
+
+<ul>
+<li>[x] T1 — <code>physics</code>: bodies, gravity, moving one axis at a time in short steps, <code>OnFloor</code> ·
+<code>physics/</code> · R1, R2 · tests: <code>a falling body lands on the ground and stays there</code>,
+<code>a fast body does not pass through a thin wall</code>, <code>a body pushed into a wall slides up it</code>,
+<code>a body on the ground is on the floor</code></li>
+<li>[x] T2 — <code>physics</code>: triggers that report when an overlap begins, once · <code>physics/</code> · R6 ·
+test: <code>touching a trigger is reported once</code></li>
+<li>[x] T3 — scene files: bodies, tile maps and sprite sheets with animations, read and written ·
+<code>scenefile/</code> · R3, R4 · test: <code>a scene with bodies, tiles and animations comes back as written</code></li>
+<li>[x] T4 — engine: nodes with bodies stepped every frame, <code>Touched</code> for behaviours · <code>engine/</code> ·
+R1, R2, R6 · test: <code>a node with a body falls onto a solid node</code></li>
+<li>[x] T5 — engine: tile maps drawn in 2D, solid tiles as merged solid bodies · <code>engine/</code> · R3 ·
+test: <code>solid tiles stop a body</code>, <code>a row of solid tiles is one box</code></li>
+<li>[x] T6 — engine: animated sprites, <code>Play</code>, <code>FaceLeft</code> · <code>engine/</code> · R4 · test:
+<code>an animation shows each frame for its time and loops</code></li>
+<li>[x] T7 — engine: a camera that follows a node within bounds · <code>engine/</code> · R5 · test:
+<code>the camera follows its target and stops at the level's edge</code></li>
+<li>[x] T8 — engine: <code>RestartScene</code> and <code>ChangeScene</code>, in the window and in the editor&rsquo;s view ·
+<code>engine/</code>, <code>editor/</code> · R6, R7 · test: <code>changing scene starts the new one</code></li>
+<li>[x] T9 — editor: inspector sections for bodies, sprite sheets and cameras that follow · <code>editor/</code> ·
+R3–R5 · test: <code>a body set in the inspector is saved</code></li>
+<li>[x] T10 — editor: the tile tool (choose, paint, erase) in the 2D view · <code>editor/</code> · R3 · test:
+<code>painting a tile and erasing it</code> (and played by hand)</li>
+<li>[x] T11 — the demo: project, art, <code>Player</code>, <code>Coin</code>, <code>Hazard</code>, <code>Flag</code>, three levels ·
+<code>examples/platformer/</code> · R1–R8 · played in the editor, in a window and on the 3DS emulator</li>
+<li>[x] T12 — check on the 3DS: build the demo with TinyGo and play it in the emulator · R7</li>
+<li>[x] T13 — the author plays it on the console · R7 (2026-10-18: &ldquo;funciona en ds&rdquo;)</li>
+</ul>
+
+<h2 id="result">Result</h2>
+
+<p><strong>Built.</strong> The <code>physics</code> package (boxes that fall, collide, slide, and triggers that report a
+touch once); bodies, tile maps with merged solid rows, animated sprites that face either way, a
+camera that follows within bounds (the sky open above the tile maps unless the camera has a
+ceiling), and restarting or changing scenes, in <code>engine</code>; inspector sections for bodies, sheets and
+following cameras and a tile tool in the editor; and the demo in <code>examples/platformer/</code>: three
+forest levels (two converted from the reference&rsquo;s Godot levels, the third joining them), with
+<code>Player</code>, <code>Coin</code>, <code>Hazard</code> and <code>Flag</code> as its only code.</p>
+
+<p><strong>Checked.</strong> Every requirement&rsquo;s test passes (<code>go test ./...</code> here and in the demo). The demo was
+played by a script in the editor&rsquo;s view and drawn after some seconds; on the 3DS it was built
+with TinyGo and played in Azahar at 60 frames a second: walking, jumping over the spikes with A,
+the camera rising with the jump, a restart on the spikes. That found a real bug: go-ui hands the
+scene a fresh copy of its input each frame, so a button was never &ldquo;pressed&rdquo;; the engine now keeps
+the game&rsquo;s keys itself (<code>engine/console.go</code>).</p>
+
+<p><strong>Review.</strong> The reviewer&rsquo;s findings were fixed: a node moved or added while playing keeps or gets
+its body; a body with no size takes short steps; a scene made by hand cannot restart and says so
+(<code>engine.scene-not-restartable</code>); a missing picture is tried once and costs nothing after; a
+restart shares the pictures already read (<code>TakeReplacement</code>, renamed because it acts); typed
+frames are checked against the sheet before a run is counted out; removing an animation forgets
+the texts typed for the others; the first animation can be unticked; a missing tileset says why;
+remove buttons have tooltips; the engine&rsquo;s own code and tests name no coin, spike or player.
+Not changed, on purpose: <code>DefaultGravity</code> keeps its name (its unit, metres a second each second,
+is in its comment); two long editor functions (<code>followMouse</code>, <code>nodeInspector</code>) are rewritten by
+proposal 2&rsquo;s Level task instead of split twice.</p>
+
+<p><strong>For a person.</strong> Play the demo on the console (T13): the jump&rsquo;s height, the camera and the
+frame rate on the real machine.</p>

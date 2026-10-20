@@ -1,0 +1,124 @@
+<h1 id="level-4-coins-and-water">🪙 Level 4: coins and water</h1>
+
+<p>A level needs something to win and something to lose. You add coins that vanish when touched,
+water that sends the slime back to the start, and a sign that ends the level.</p>
+
+<h4 id="the-idea">The idea</h4>
+
+<p>A <strong>trigger</strong> is a body that stops nothing: an invisible tripwire. When a moving body walks into
+it, the engine calls the trigger&rsquo;s behaviours with <code>Touched</code>, and tells them what touched. A coin,
+a pool of water and a finishing sign are the same thing with different code.</p>
+
+<h2 id="the-code">The code</h2>
+
+<p>Three small behaviours, each in its own file beside <code>main.go</code>. <code>coin.go</code>:</p>
+<pre><code class="language-go"><span class="kn">package</span> <span class="nx">main</span>
+
+<span class="kn">import</span> <span class="s">&#34;github.com/akrck02/go-engine/engine&#34;</span>
+
+<span class="c1">// Coin is collected when the player touches it.</span>
+<span class="kd">type</span> <span class="nx">Coin</span> <span class="kd">struct</span><span class="p">{}</span>
+
+<span class="c1">// Touched runs when a moving body begins touching the coin.</span>
+<span class="kd">func</span> <span class="p">(</span><span class="nx">coin</span> <span class="o">*</span><span class="nx">Coin</span><span class="p">)</span> <span class="nf">Touched</span><span class="p">(</span><span class="nx">context</span> <span class="o">*</span><span class="nx">engine</span><span class="p">.</span><span class="nx">Context</span><span class="p">,</span> <span class="nx">other</span> <span class="o">*</span><span class="nx">engine</span><span class="p">.</span><span class="nx">Node</span><span class="p">)</span> <span class="p">{</span>
+	<span class="nx">player</span><span class="p">,</span> <span class="nx">found</span> <span class="o">:=</span> <span class="nx">engine</span><span class="p">.</span><span class="nx">Behaviour</span><span class="p">[</span><span class="nx">Player</span><span class="p">](</span><span class="nx">other</span><span class="p">)</span>
+	<span class="k">if</span> <span class="p">!</span><span class="nx">found</span> <span class="p">{</span>
+		<span class="k">return</span>
+	<span class="p">}</span>
+	<span class="nx">player</span><span class="p">.</span><span class="nx">Coins</span><span class="o">++</span>
+	<span class="nx">context</span><span class="p">.</span><span class="nx">Node</span><span class="p">.</span><span class="nf">Remove</span><span class="p">()</span>
+<span class="p">}</span>
+</code></pre>
+
+<p><code>engine.Behaviour[Player](other)</code> finds the <code>Player</code> behaviour on what touched, so only the slime
+collects coins. Give <code>Player</code> somewhere to count them, a field the scene does not set:</p>
+<pre><code class="language-go">	<span class="nx">Coins</span> <span class="kt">int</span> <span class="s">`json:&#34;-&#34;`</span> <span class="c1">// the coins collected: not a setting</span>
+</code></pre>
+
+<p><code>hazard.go</code> starts the level again, and <code>flag.go</code> goes to another scene:</p>
+<pre><code class="language-go"><span class="c1">// Hazard starts the level again when the player touches it: spikes, water.</span>
+<span class="kd">type</span> <span class="nx">Hazard</span> <span class="kd">struct</span><span class="p">{}</span>
+
+<span class="kd">func</span> <span class="p">(</span><span class="nx">hazard</span> <span class="o">*</span><span class="nx">Hazard</span><span class="p">)</span> <span class="nf">Touched</span><span class="p">(</span><span class="nx">context</span> <span class="o">*</span><span class="nx">engine</span><span class="p">.</span><span class="nx">Context</span><span class="p">,</span> <span class="nx">other</span> <span class="o">*</span><span class="nx">engine</span><span class="p">.</span><span class="nx">Node</span><span class="p">)</span> <span class="p">{</span>
+	<span class="k">if</span> <span class="nx">_</span><span class="p">,</span> <span class="nx">isPlayer</span> <span class="o">:=</span> <span class="nx">engine</span><span class="p">.</span><span class="nx">Behaviour</span><span class="p">[</span><span class="nx">Player</span><span class="p">](</span><span class="nx">other</span><span class="p">);</span> <span class="nx">isPlayer</span> <span class="p">{</span>
+		<span class="nx">context</span><span class="p">.</span><span class="nf">RestartScene</span><span class="p">()</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+</code></pre>
+<pre><code class="language-go"><span class="c1">// Flag ends the level when the player touches it, and goes on to the next one.</span>
+<span class="kd">type</span> <span class="nx">Flag</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">Next</span> <span class="kt">string</span> <span class="s">`json:&#34;next&#34;`</span> <span class="c1">// the next level&#39;s scene file, as &#34;scenes/forest-2.scene.json&#34;</span>
+<span class="p">}</span>
+
+<span class="kd">func</span> <span class="p">(</span><span class="nx">flag</span> <span class="o">*</span><span class="nx">Flag</span><span class="p">)</span> <span class="nf">Touched</span><span class="p">(</span><span class="nx">context</span> <span class="o">*</span><span class="nx">engine</span><span class="p">.</span><span class="nx">Context</span><span class="p">,</span> <span class="nx">other</span> <span class="o">*</span><span class="nx">engine</span><span class="p">.</span><span class="nx">Node</span><span class="p">)</span> <span class="p">{</span>
+	<span class="k">if</span> <span class="nx">_</span><span class="p">,</span> <span class="nx">isPlayer</span> <span class="o">:=</span> <span class="nx">engine</span><span class="p">.</span><span class="nx">Behaviour</span><span class="p">[</span><span class="nx">Player</span><span class="p">](</span><span class="nx">other</span><span class="p">);</span> <span class="nx">isPlayer</span> <span class="p">{</span>
+		<span class="nx">context</span><span class="p">.</span><span class="nf">ChangeScene</span><span class="p">(</span><span class="nx">flag</span><span class="p">.</span><span class="nx">Next</span><span class="p">)</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+</code></pre>
+
+<p>Each file starts with <code>package main</code> and imports <code>engine</code>, as <code>player.go</code> does. Register them in
+<code>main.go</code>, <code>engine.Register(Spin{}, Player{}, Coin{}, Hazard{}, Flag{})</code>, and press <strong>Rebuild</strong>.</p>
+
+<h2 id="coins">Coins</h2>
+
+<ol>
+<li>In <strong>Project</strong>, place <code>coin.sprite.json</code>. It spins: the sprite file starts its <strong>spin</strong>
+animation by itself.</li>
+<li>Give it a body, <strong>Trigger</strong>, 1 by 1 metres. Add the behaviour <strong>Coin</strong>.</li>
+<li>Drag it over a ledge. Press <strong>Duplicate</strong> (Ctrl+D) for more, and drag each where a jump reaches.</li>
+</ol>
+
+<h2 id="water">Water</h2>
+
+<p>Under the ledges, the slime falls forever. Catch it:</p>
+
+<ol>
+<li>Press <strong>+</strong>, <strong>Empty</strong>, and name it <em>Water</em>. Drag it under the level.</li>
+<li>Give it a body, <strong>Trigger</strong>, 30 metres wide and 4 high. Add the behaviour <strong>Hazard</strong>.</li>
+</ol>
+
+<p>It is invisible, and needs not be seen: falling off is the danger. <strong>Bodies</strong> over the view draws
+triggers in orange.</p>
+
+<h2 id="the-sign">The sign</h2>
+
+<ol>
+<li>Place <code>sign.png</code> at the level&rsquo;s far end. Give it a body, <strong>Trigger</strong>, 1 by 2 metres.</li>
+<li>Add the behaviour <strong>Flag</strong>, and set <strong>next</strong> to <code>scenes/scene-2.scene.json</code>: this same level, for
+now. The bonus makes a second one.</li>
+</ol>
+
+<h2 id="checkpoint">Checkpoint</h2>
+
+<p>Press <strong>Play</strong>. Collect the coins, fall into the water, start again, and reach the sign.</p>
+
+<p align="center"><img alt="Playing: two spinning coins over the ledges, a yellow sign at the left, and the slime on the long ledge at the right" src="./images/quest/4-play.png" width="680"></p>
+
+<p>In <strong>Play</strong>, choose <em>Player</em> in the list on the left: <strong>Watch</strong> shows where it is and how it moves,
+frame by frame. <strong>Pause</strong> and <strong>Step</strong> stop the game and move it one frame at a time.</p>
+
+<h2 id="bonus-a-second-level">Bonus: a second level</h2>
+
+<p>Make a second level, and send the sign there.</p>
+
+<details>
+<summary>🔓 Show the solution</summary>
+
+Copy the scene file in your file manager or terminal:
+
+```bash
+cp ~/games/forest/scenes/scene-2.scene.json ~/games/forest/scenes/forest-2.scene.json
+```
+
+The editor lists it in the scene menu at the top. Open it, rename it *Forest 2* in the scene's
+inspector, and repaint its ledges. In the first level, set the sign's **next** to
+`scenes/forest-2.scene.json`. In the second, set it back to the first, so the game loops.
+
+</details>
+
+<p><strong>🪙 Achievement unlocked: Collector.</strong> Your level can be won and lost.</p>
+
+<hr>
+
+<p><a href="./the-quest/ground-to-stand-on">← Level 3</a> · <a href="./the-quest/night-in-the-forest">Level 5 →</a></p>

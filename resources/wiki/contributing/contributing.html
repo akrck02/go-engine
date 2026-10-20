@@ -1,0 +1,133 @@
+<h1 id="contributing">🛠️ Contributing</h1>
+
+<p>How the engine&rsquo;s code is laid out, how to build and test it, and how a change is proposed. Read the
+<a href="./contributing/style-guide">style guide</a> next: it says how the code is written.</p>
+
+<h2 id="the-code">The code</h2>
+
+<p>The repository is one Go module. Its packages are divided by meaning, and depend one way: the
+game&rsquo;s library never imports the editor&rsquo;s.</p>
+
+<table>
+<thead>
+<tr>
+<th>Package</th>
+<th>What it holds</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>space</code></td>
+<td>Vectors, rotations, transforms and boxes: the maths, in metres</td>
+</tr>
+
+<tr>
+<td><code>animation</code></td>
+<td>Tweens</td>
+</tr>
+
+<tr>
+<td><code>physics</code></td>
+<td>The 2D physics: bodies, gravity, zones, platforms</td>
+</tr>
+
+<tr>
+<td><code>scenefile</code></td>
+<td>The files: scenes, sprites, tilesets, read, written and checked</td>
+</tr>
+
+<tr>
+<td><code>shapes</code></td>
+<td>The shapes&rsquo; meshes</td>
+</tr>
+
+<tr>
+<td><code>failure</code></td>
+<td>Error codes</td>
+</tr>
+
+<tr>
+<td><code>engine</code></td>
+<td>The running game: nodes, scenes, behaviours, input, drawing, <code>Run</code></td>
+</tr>
+
+<tr>
+<td><code>project</code></td>
+<td>A project&rsquo;s folder: create, import, build, its behaviours read from its code</td>
+</tr>
+
+<tr>
+<td><code>editor</code></td>
+<td>The editor, which a game installs in itself while it is made</td>
+</tr>
+
+<tr>
+<td><code>cmd/go-engine</code></td>
+<td>The <code>go-engine</code> command: <code>new</code>, open, <code>-update</code></td>
+</tr>
+
+<tr>
+<td><code>internal/build</code></td>
+<td>Building for each platform, and finding its tools</td>
+</tr>
+
+<tr>
+<td><code>internal/install</code></td>
+<td>Installing the tools from the editor</td>
+</tr>
+
+<tr>
+<td><code>internal/notices</code></td>
+<td>The licences a built game carries</td>
+</tr>
+
+<tr>
+<td><code>internal/style</code></td>
+<td>Tests of the style guide&rsquo;s rules a program can check</td>
+</tr>
+
+<tr>
+<td><code>examples/platformer</code></td>
+<td>The quest&rsquo;s game, a module of its own</td>
+</tr>
+</tbody>
+</table>
+<p>What a game imports (<code>engine</code>, <code>space</code>, <code>animation</code>, <code>physics</code>, <code>scenefile</code>, <code>shapes</code>) builds with
+TinyGo for the 3DS: no cgo, and no files read from a disk. Drawing, windows and input go through
+<a href="https://github.com/akrck02/go-renderer" target="_blank">Go Renderer</a> and <a href="https://github.com/akrck02/go-ui" target="_blank">Go UI</a>;
+what they lack is added there, not here.</p>
+
+<h2 id="build-and-test">Build and test</h2>
+<pre><code class="language-bash">go vet ./...
+go <span class="nb">test</span> ./...                                   <span class="c1"># no display needed</span>
+go run ./cmd/go-engine new /tmp/try <span class="s2">&#34;Try&#34;</span>        <span class="c1"># a project to try changes on</span>
+go run ./cmd/go-engine /tmp/try                  <span class="c1"># the editor: a display and OpenGL 4.1</span>
+go run ./cmd/go-engine -capture shot.png /tmp/try   <span class="c1"># one frame of the editor to a picture</span>
+</code></pre>
+
+<p><code>-capture</code> takes the editor&rsquo;s flags too: <code>-select Node</code>, <code>-play</code>, <code>-workspace build</code>, <code>-3ds</code>,
+<code>-dark</code>, <code>-width</code> and <code>-height</code>. The pictures in these pages were made with it.</p>
+
+<p>After changing a public name or an error code, write the reference again:</p>
+<pre><code class="language-bash">python3 docs/6-reference/generate.py
+</code></pre>
+
+<h2 id="proposing-a-change">Proposing a change</h2>
+
+<p>A small fix is a change, a test and a commit. Anything larger goes through a <strong>proposal</strong>, one file
+in <a href="./proposals">proposals</a>: why, what (each requirement with a check), what is out of scope,
+the design, the tasks, and at the end the result. The author approves the proposal, then the plan,
+before anything is built. The proposals there are the record of why the engine is the way it is.</p>
+
+<p>Every change in behaviour comes with its test, and its docs in the same commit. Work goes on a
+<code>feature/…</code> branch; <code>main</code> holds what the author has reviewed.</p>
+
+<h2 id="commits">Commits</h2>
+
+<p><code>area: what changed</code>, in the imperative: <code>physics: carry what stands on a platform</code>. Commits
+written with an AI assistant end with a <code>Co-Authored-By:</code> line naming it.</p>
+
+<hr>
+
+<p><a href="./troubleshooting">← Troubleshooting</a> · <a href="./contributing/style-guide">Style guide →</a></p>

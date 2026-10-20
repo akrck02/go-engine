@@ -1,0 +1,139 @@
+<h1 id="animation">animation</h1>
+<pre><code class="language-go"><span class="kn">import</span> <span class="s">&#34;github.com/akrck02/go-engine/animation&#34;</span>
+</code></pre>
+
+<p>Package anim moves values over time: a position gliding to a point, a door
+turning open, a colour fading. A Player runs tweens; each frame the game calls
+Update with the seconds passed, and every tween writes its value where it was
+told to.</p>
+
+<h3 id="easing">Easing</h3>
+
+<p>Easing shapes a tween&rsquo;s pace: it takes the share of the time gone (0 to 1)
+and gives the share of the way gone.</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">Easing</span> <span class="kd">func</span><span class="p">(</span><span class="nx">share</span> <span class="kt">float64</span><span class="p">)</span> <span class="kt">float64</span>
+</code></pre>
+<pre><code class="language-go"><span class="kd">var</span> <span class="p">(</span>
+	<span class="nx">Linear</span>    <span class="nx">Easing</span> <span class="p">=</span> <span class="kd">func</span><span class="p">(</span><span class="nx">share</span> <span class="kt">float64</span><span class="p">)</span> <span class="kt">float64</span> <span class="p">{</span> <span class="k">return</span> <span class="nx">share</span> <span class="p">}</span>
+	<span class="nx">EaseIn</span>    <span class="nx">Easing</span> <span class="p">=</span> <span class="kd">func</span><span class="p">(</span><span class="nx">share</span> <span class="kt">float64</span><span class="p">)</span> <span class="kt">float64</span> <span class="p">{</span> <span class="k">return</span> <span class="nx">share</span> <span class="o">*</span> <span class="nx">share</span> <span class="o">*</span> <span class="nx">share</span> <span class="p">}</span>
+	<span class="nx">EaseOut</span>   <span class="nx">Easing</span> <span class="p">=</span> <span class="kd">func</span><span class="p">(</span><span class="nx">share</span> <span class="kt">float64</span><span class="p">)</span> <span class="kt">float64</span> <span class="p">{</span> <span class="nx">rest</span> <span class="o">:=</span> <span class="mi">1</span> <span class="o">-</span> <span class="nx">share</span><span class="p">;</span> <span class="k">return</span> <span class="mi">1</span> <span class="o">-</span> <span class="nx">rest</span><span class="o">*</span><span class="nx">rest</span><span class="o">*</span><span class="nx">rest</span> <span class="p">}</span>
+	<span class="nx">EaseInOut</span> <span class="nx">Easing</span> <span class="p">=</span> <span class="kd">func</span><span class="p">(</span><span class="nx">share</span> <span class="kt">float64</span><span class="p">)</span> <span class="kt">float64</span> <span class="p">{</span> <span class="k">return</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="nx">math</span><span class="p">.</span><span class="nf">Cos</span><span class="p">(</span><span class="nx">share</span><span class="o">*</span><span class="nx">math</span><span class="p">.</span><span class="nx">Pi</span><span class="p">))</span> <span class="o">/</span> <span class="mi">2</span> <span class="p">}</span>
+	<span class="c1">// Back overshoots the end a little and settles, as something thrown into place.</span>
+	<span class="nx">Back</span> <span class="nx">Easing</span> <span class="p">=</span> <span class="kd">func</span><span class="p">(</span><span class="nx">share</span> <span class="kt">float64</span><span class="p">)</span> <span class="kt">float64</span> <span class="p">{</span>
+		<span class="kd">const</span> <span class="nx">overshoot</span> <span class="p">=</span> <span class="mf">1.70158</span>
+		<span class="nx">rest</span> <span class="o">:=</span> <span class="nx">share</span> <span class="o">-</span> <span class="mi">1</span>
+		<span class="k">return</span> <span class="mi">1</span> <span class="o">+</span> <span class="p">(</span><span class="nx">overshoot</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="nx">rest</span><span class="o">*</span><span class="nx">rest</span><span class="o">*</span><span class="nx">rest</span> <span class="o">+</span> <span class="nx">overshoot</span><span class="o">*</span><span class="nx">rest</span><span class="o">*</span><span class="nx">rest</span>
+	<span class="p">}</span>
+	<span class="c1">// Bounce lands like a ball.</span>
+	<span class="nx">Bounce</span> <span class="nx">Easing</span> <span class="p">=</span> <span class="nx">bounce</span>
+<span class="p">)</span>
+</code></pre>
+
+<p>Easings.</p>
+
+<h3 id="player">Player</h3>
+
+<p>Player runs tweens. The zero value is ready.</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">Player</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="c1">// Has unexported fields.</span>
+<span class="p">}</span>
+</code></pre>
+
+<table>
+<thead>
+<tr>
+<th>Function or method</th>
+<th></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>func (player *Player) Float(value *float64, target, seconds float64, easing Easing) *Tween</code></td>
+<td>Float moves a number to a target in some seconds.</td>
+</tr>
+
+<tr>
+<td><code>func (player *Player) Rotation(value *space.Rotation, target space.Rotation, seconds float64, easing Easing) *Tween</code></td>
+<td>Rotation turns a rotation to a target in some seconds, the shorter way round.</td>
+</tr>
+
+<tr>
+<td><code>func (player *Player) Running() int</code></td>
+<td>Running is how many tweens are playing or waiting.</td>
+</tr>
+
+<tr>
+<td><code>func (player *Player) StopAll()</code></td>
+<td>StopAll stops every tween.</td>
+</tr>
+
+<tr>
+<td><code>func (player *Player) Update(seconds float64)</code></td>
+<td>Update moves every tween on by some seconds, and forgets the ones that ended.</td>
+</tr>
+
+<tr>
+<td><code>func (player *Player) Vector(value *space.Vector, target space.Vector, seconds float64, easing Easing) *Tween</code></td>
+<td>Vector moves a point (a position, a scale) to a target in some seconds.</td>
+</tr>
+
+<tr>
+<td><code>func (player *Player) Wait(seconds float64) *Tween</code></td>
+<td>Wait does nothing for some seconds, then calls what Then gives it: a timer.</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="tween">Tween</h3>
+
+<p>Tween moves one value from where it is when the tween starts to a target.</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">Tween</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="c1">// Has unexported fields.</span>
+<span class="p">}</span>
+</code></pre>
+
+<table>
+<thead>
+<tr>
+<th>Function or method</th>
+<th></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>func (tween *Tween) Delay(seconds float64) *Tween</code></td>
+<td>Delay waits some seconds before the tween starts.</td>
+</tr>
+
+<tr>
+<td><code>func (tween *Tween) Done() bool</code></td>
+<td>Done tells whether the tween has ended.</td>
+</tr>
+
+<tr>
+<td><code>func (tween *Tween) Loop(times int) *Tween</code></td>
+<td>Loop plays the tween again some more times (-1 forever), from the same start.</td>
+</tr>
+
+<tr>
+<td><code>func (tween *Tween) PingPong() *Tween</code></td>
+<td>PingPong plays it there and back, forever: a light breathing, a platform going to and fro.</td>
+</tr>
+
+<tr>
+<td><code>func (tween *Tween) Stop()</code></td>
+<td>Stop ends the tween where it is, without calling what Then gave it.</td>
+</tr>
+
+<tr>
+<td><code>func (tween *Tween) Then(done func()) *Tween</code></td>
+<td>Then calls a function when the tween ends.</td>
+</tr>
+</tbody>
+</table>
+
+<hr>
+
+<p><a href="./reference/packages">← Reference</a> · generated from the doc comments by <code>generate.py</code></p>

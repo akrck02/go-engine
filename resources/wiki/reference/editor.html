@@ -1,0 +1,966 @@
+<h1 id="editor">editor</h1>
+<pre><code class="language-go"><span class="kn">import</span> <span class="s">&#34;github.com/akrck02/go-engine/editor&#34;</span>
+</code></pre>
+
+<p>Package editor is go-engine&rsquo;s editor: a window over a project&rsquo;s scene, in 3D,
+where its nodes are added, chosen with the mouse, moved, turned and scaled,
+given models from the project&rsquo;s assets and the behaviours its Go code defines,
+and the game is played and built. This file holds what the editor does; view.go
+draws its window with go-ui and viewport.go its 3D view.</p>
+
+<h3 id="functions">Functions</h3>
+
+<table>
+<thead>
+<tr>
+<th>Function</th>
+<th></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>func FieldText(value any) string</code></td>
+<td>FieldText writes a field&rsquo;s value for the inspector.</td>
+</tr>
+
+<tr>
+<td><code>func FieldValue(typed string) any</code></td>
+<td>FieldValue reads a field as typed in the inspector: a number, true or false, or else text.</td>
+</tr>
+
+<tr>
+<td><code>func Install()</code></td>
+<td>Install makes the game open the editor when go-engine starts it to edit it.</td>
+</tr>
+
+<tr>
+<td><code>func ReadFrames(written string, count int) ([]int, error)</code></td>
+<td>ReadFrames reads frames written as numbers and runs, separated by commas, of a sheet of a count of frames: &ldquo;0-3, 6&rdquo; is 0, 1, 2, 3 and 6.</td>
+</tr>
+
+<tr>
+<td><code>func RunHere() error</code></td>
+<td>RunHere opens the editor on the project in the folder the game runs in, with the window&rsquo;s flags from the command line.</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="constants-and-variables">Constants and variables</h3>
+<pre><code class="language-go"><span class="kd">var</span> <span class="p">(</span>
+	<span class="nx">RestartFailed</span>  <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;editor.restart-failed&#34;</span><span class="p">,</span> <span class="s">&#34;the editor could not start again with the project&#39;s new code&#34;</span><span class="p">)</span>
+	<span class="nx">ToolsInUse</span>     <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;editor.tools-in-use&#34;</span><span class="p">,</span> <span class="s">&#34;the tools cannot change while the game builds or plays: wait for it to end, or stop it&#34;</span><span class="p">)</span>
+	<span class="nx">FramesWrong</span>    <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;editor.frames-wrong&#34;</span><span class="p">,</span> <span class="s">&#34;an animation&#39;s frames are not numbers and runs of the sheet&#39;s frames, as 0-3, 6&#34;</span><span class="p">)</span>
+	<span class="nx">ArtNotFound</span>    <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;editor.art-not-found&#34;</span><span class="p">,</span> <span class="s">&#34;the sprite or tileset is not a file of the project&#39;s&#34;</span><span class="p">)</span>
+	<span class="nx">ArtNotSaved</span>    <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;editor.art-not-saved&#34;</span><span class="p">,</span> <span class="s">&#34;the sprite or tileset could not be written&#34;</span><span class="p">)</span>
+	<span class="nx">ArtWrongKind</span>   <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;editor.art-wrong-kind&#34;</span><span class="p">,</span> <span class="s">&#34;the file is not a sprite&#39;s or a tileset&#39;s&#34;</span><span class="p">)</span>
+	<span class="nx">ArtUnsaved</span>     <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;editor.art-unsaved&#34;</span><span class="p">,</span> <span class="s">&#34;the sprite or tileset open in Art has changes not saved: save it first&#34;</span><span class="p">)</span>
+	<span class="nx">NoOwnSheet</span>     <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;editor.no-own-sheet&#34;</span><span class="p">,</span> <span class="s">&#34;the node does not cut its picture into frames itself&#34;</span><span class="p">)</span>
+	<span class="nx">UnsavedChanges</span> <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;editor.unsaved-changes&#34;</span><span class="p">,</span> <span class="s">&#34;the scene has changes not saved: save it first (Ctrl+S)&#34;</span><span class="p">)</span>
+<span class="p">)</span>
+</code></pre>
+
+<p>Error codes of the editor package.</p>
+<pre><code class="language-go"><span class="kd">var</span> <span class="nx">BuildTargets</span> <span class="p">=</span> <span class="p">[]</span><span class="nx">BuildTarget</span><span class="p">{</span><span class="nx">ComputerTarget</span><span class="p">,</span> <span class="nx">ConsoleTarget</span><span class="p">,</span> <span class="nx">AndroidTarget</span><span class="p">}</span>
+</code></pre>
+
+<p>BuildTargets are the targets in the order of their cards.</p>
+<pre><code class="language-go"><span class="kd">var</span> <span class="nx">Kinds</span> <span class="p">=</span> <span class="p">[]</span><span class="kt">string</span><span class="p">{</span><span class="s">&#34;Empty&#34;</span><span class="p">,</span> <span class="s">&#34;Cube&#34;</span><span class="p">,</span> <span class="s">&#34;Sphere&#34;</span><span class="p">,</span> <span class="s">&#34;Plane&#34;</span><span class="p">,</span> <span class="s">&#34;Cylinder&#34;</span><span class="p">,</span> <span class="s">&#34;Camera&#34;</span><span class="p">,</span> <span class="s">&#34;Light&#34;</span><span class="p">}</span>
+</code></pre>
+
+<p>Kinds of node the editor adds.</p>
+<pre><code class="language-go"><span class="kd">var</span> <span class="nx">Kinds2D</span> <span class="p">=</span> <span class="p">[]</span><span class="kt">string</span><span class="p">{</span><span class="s">&#34;Empty&#34;</span><span class="p">,</span> <span class="s">&#34;Square&#34;</span><span class="p">,</span> <span class="s">&#34;Circle&#34;</span><span class="p">,</span> <span class="s">&#34;Tile map&#34;</span><span class="p">,</span> <span class="s">&#34;Camera&#34;</span><span class="p">,</span> <span class="s">&#34;Light&#34;</span><span class="p">}</span>
+</code></pre>
+
+<p>Kinds2D are the kinds of node the editor adds to a 2D scene.</p>
+<pre><code class="language-go"><span class="kd">var</span> <span class="nx">Tools</span> <span class="p">=</span> <span class="p">[]</span><span class="nx">Tool</span><span class="p">{</span><span class="nx">SelectTool</span><span class="p">,</span> <span class="nx">PaintTool</span><span class="p">,</span> <span class="nx">EraseTool</span><span class="p">,</span> <span class="nx">FillTool</span><span class="p">,</span> <span class="nx">HandTool</span><span class="p">}</span>
+</code></pre>
+
+<p>Tools are the tools in the order of the rail.</p>
+<pre><code class="language-go"><span class="kd">var</span> <span class="nx">Workspaces</span> <span class="p">=</span> <span class="p">[]</span><span class="nx">Workspace</span><span class="p">{</span><span class="nx">ProjectWorkspace</span><span class="p">,</span> <span class="nx">ArtWorkspace</span><span class="p">,</span> <span class="nx">LevelWorkspace</span><span class="p">,</span> <span class="nx">CodeWorkspace</span><span class="p">,</span> <span class="nx">PlayWorkspace</span><span class="p">,</span> <span class="nx">BuildWorkspace</span><span class="p">}</span>
+</code></pre>
+
+<p>Workspaces are the workspaces in the order of the bar.</p>
+
+<h3 id="buildresult">BuildResult</h3>
+
+<p>BuildResult is what the last build for a target made, or why it did not.</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">BuildResult</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">Program</span> <span class="kt">string</span>
+	<span class="nx">Bytes</span>   <span class="kt">int64</span>
+	<span class="nx">At</span>      <span class="nx">time</span><span class="p">.</span><span class="nx">Time</span>
+	<span class="nx">Err</span>     <span class="kt">error</span>
+	<span class="nx">Log</span>     <span class="p">[]</span><span class="kt">string</span>
+<span class="p">}</span>
+</code></pre>
+
+<h3 id="buildtarget">BuildTarget</h3>
+
+<p>BuildTarget is a place the game runs.</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">BuildTarget</span> <span class="kt">int</span>
+</code></pre>
+<pre><code class="language-go"><span class="kd">const</span> <span class="p">(</span>
+	<span class="c1">// ComputerTarget is this computer.</span>
+	<span class="nx">ComputerTarget</span> <span class="nx">BuildTarget</span> <span class="p">=</span> <span class="kc">iota</span>
+	<span class="c1">// ConsoleTarget is the Nintendo 3DS.</span>
+	<span class="nx">ConsoleTarget</span>
+	<span class="c1">// AndroidTarget is a phone or tablet with Android.</span>
+	<span class="nx">AndroidTarget</span>
+<span class="p">)</span>
+</code></pre>
+
+<table>
+<thead>
+<tr>
+<th>Function or method</th>
+<th></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>func (target BuildTarget) Icon() string</code></td>
+<td>Icon is the target&rsquo;s icon on its card.</td>
+</tr>
+
+<tr>
+<td><code>func (target BuildTarget) Makes() string</code></td>
+<td>Makes says what a build for the target makes.</td>
+</tr>
+
+<tr>
+<td><code>func (target BuildTarget) Name() string</code></td>
+<td>Name is the target&rsquo;s name on its card.</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="editor-1">Editor</h3>
+
+<p>Editor is a project open in the editor, and the scene shown.</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">Editor</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">Project</span>   <span class="o">*</span><span class="nx">project</span><span class="p">.</span><span class="nx">Project</span>
+	<span class="nx">SceneFile</span> <span class="kt">string</span>
+	<span class="nx">Scene</span>     <span class="o">*</span><span class="nx">engine</span><span class="p">.</span><span class="nx">Scene</span>
+	<span class="nx">Selected</span>  <span class="o">*</span><span class="nx">engine</span><span class="p">.</span><span class="nx">Node</span>   <span class="c1">// the node chosen, which the inspector shows</span>
+	<span class="nx">Chosen</span>    <span class="p">[]</span><span class="o">*</span><span class="nx">engine</span><span class="p">.</span><span class="nx">Node</span> <span class="c1">// other nodes chosen with it (Shift), which act with it</span>
+	<span class="nx">Saved</span>     <span class="kt">bool</span>
+
+	<span class="c1">// Tool is what the left button does in the 2D view (tools.go); Brush is the tile of the</span>
+	<span class="c1">// tileset that painting and filling put down.</span>
+	<span class="nx">Tool</span>  <span class="nx">Tool</span>
+	<span class="nx">Brush</span> <span class="kt">int</span>
+
+	<span class="c1">// Paused stops the game played in the view; StepFrame moves it on one frame. Target is the</span>
+	<span class="c1">// shape of the screen it is shown at.</span>
+	<span class="nx">Paused</span> <span class="kt">bool</span>
+
+	<span class="nx">Watched</span> <span class="kt">string</span> <span class="c1">// the path of the node of the scene playing that Play&#39;s watch shows</span>
+	<span class="nx">Target</span>  <span class="nx">PlayTarget</span>
+
+	<span class="c1">// Wake asks the window for a frame, when background work has something to show.</span>
+	<span class="nx">Wake</span> <span class="kd">func</span><span class="p">()</span>
+	<span class="c1">// Has unexported fields.</span>
+<span class="p">}</span>
+</code></pre>
+
+<table>
+<thead>
+<tr>
+<th>Function or method</th>
+<th></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>func Open(opened *project.Project) (*Editor, error)</code></td>
+<td>Open opens a project at its start scene.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) AcceptAndroidLicence()</code></td>
+<td>AcceptAndroidLicence installs Android&rsquo;s SDK, with the NDK and what a game&rsquo;s build needs, the licence the person read (AndroidLicence) accepted, and sets the SDK&rsquo;s place.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) Add(kind string) *engine.Node</code></td>
+<td>Add adds a node of a kind (&ldquo;Cube&rdquo;, &ldquo;Camera&rdquo;…) under the selected node&rsquo;s parent, after it (or at the end of the scene), and selects it.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) AddAnimation() int</code></td>
+<td>AddAnimation adds an animation of the first frame to the sheet being edited, with a name of its own, and tells where it is in the sheet&rsquo;s list (-1 without a sheet).</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) AddFrame(index, frame int)</code></td>
+<td>AddFrame puts a frame of the sheet at the end of an animation: clicking frames on the picture makes an animation of them, in the order clicked.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) AddModel(model string) *engine.Node</code></td>
+<td>AddModel adds a node showing one of the project&rsquo;s models, and selects it.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) AddSprite(picture string) *engine.Node</code></td>
+<td>AddSprite adds a node showing one of the project&rsquo;s pictures, in a 2D scene, and selects it.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) AdvancePlay(seconds float64, keys *input.State)</code></td>
+<td>AdvancePlay moves the scene played in the view on a frame, and goes on to the scene the game asked for (a level started again, the next one); one that cannot be read is reported and the view stays where it is.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) AllChosen() []*engine.Node</code></td>
+<td>AllChosen are the nodes chosen, the inspector&rsquo;s first.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) AndroidLicence() (string, bool)</code></td>
+<td>AndroidLicence is Android&rsquo;s licence while it waits for the person to accept it or not.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) ArtOpen() (file string, isSprite, isTileset bool)</code></td>
+<td>ArtOpen is the file open in Art, and whether it is a sprite or a tileset.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) ArtSaved() bool</code></td>
+<td>ArtSaved tells whether the file open in Art has no changes left to save.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) AttachBehaviour(name string)</code></td>
+<td>AttachBehaviour gives the selected node a behaviour of the project&rsquo;s, its fields empty.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) BehaviourUses(name string) []project.Use</code></td>
+<td>BehaviourUses are the nodes of the project&rsquo;s saved scenes that have a behaviour.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) Behaviours() []project.Behaviour</code></td>
+<td>Behaviours are the behaviours the project&rsquo;s code defines, as last read.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) BuildFor(target BuildTarget)</code></td>
+<td>BuildFor builds the game for a target in the background; its result is kept when it ends.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) CanRedo() bool</code></td>
+<td></td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) CanUndo() bool</code></td>
+<td>CanUndo and CanRedo tell whether there is a step to go back or forward to.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) Changed()</code></td>
+<td>Changed marks the scene as changed since it was saved, and keeps it for undo.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) ClearFrames(index int)</code></td>
+<td>ClearFrames empties an animation, to click its frames again.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) CloseArt() error</code></td>
+<td>CloseArt closes the file open in Art, which must have no changes left to save.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) CloseNotice(index int)</code></td>
+<td>CloseNotice lets go of a notice, by its place among Notices.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) CodeChanged() bool</code></td>
+<td>CodeChanged tells whether the project&rsquo;s code changed since the game the editor runs in was built: Reload brings the changes in.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) DeclineAndroidLicence()</code></td>
+<td>DeclineAndroidLicence leaves the SDK uninstalled.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) Delete()</code></td>
+<td>Delete removes the nodes chosen and what hangs from them; the node after the inspector&rsquo;s is chosen next.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) DetachBehaviour(index int)</code></td>
+<td>DetachBehaviour takes a behaviour off the selected node.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) Duplicate()</code></td>
+<td>Duplicate copies the nodes chosen, and what hangs from them, each beside its original; the copies are chosen.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) FillTileAt(point space.Vector, tile int) bool</code></td>
+<td>FillTileAt paints a tile (scenefile.EmptyTile erases) over the region of the chosen tile map that holds the same tile as the cell at a point, cell by cell to the sides and up and down; it tells whether the map changed.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) FindBehaviour(name string) (project.Behaviour, bool)</code></td>
+<td>Behaviour finds what the code says of a behaviour.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) Followable(camera *engine.Node) []string</code></td>
+<td>Followable are the paths of the nodes a camera may follow: all but itself.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) GiveBody(kind scenefile.BodyKind)</code></td>
+<td>GiveBody gives the chosen node a body of a kind, or changes the kind of the one it has.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) GiveLight(kind scenefile.LightKind)</code></td>
+<td>GiveLight makes the chosen node a light of a kind, or changes the kind of the one it has.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) Import(source string)</code></td>
+<td>Import copies a model into the project and places it in the scene.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) ImportModel(source string)</code></td>
+<td>ImportModel copies a model into the project&rsquo;s assets, without placing it: the Project grid shows it, to place in a scene.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) InstallEmulator()</code></td>
+<td>InstallEmulator installs Azahar&rsquo;s latest release for this system and sets the 3DS emulator&rsquo;s place.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) InstallTinyGo()</code></td>
+<td>InstallTinyGo installs tinygo-3ds&rsquo;s release for this system and sets TinyGo&rsquo;s place.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) Installing() (tool string, done, total int64, busy bool)</code></td>
+<td>Installing tells which tool is being installed, and how much of its download has arrived (total is 0 when unknown).</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) IsChosen(node *engine.Node) bool</code></td>
+<td>IsChosen tells whether a node is among those chosen.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) KindsHere() []string</code></td>
+<td>KindsHere are the kinds of node the scene shown takes.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) LastBuild(target BuildTarget) (BuildResult, bool)</code></td>
+<td>LastBuild is a target&rsquo;s last build in this session.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) LeavePlay()</code></td>
+<td>LeavePlay goes back from Play to the workspace it was entered from.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) LightChanged()</code></td>
+<td>LightChanged keeps a change to a light or the ambient, and shows it at once.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) LookForTools(tools build.Tools)</code></td>
+<td>LookForTools looks for every tool where some places say (the ones typed, before saving them).</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) MakeSprite(picture string, columns, rows int) (string, error)</code></td>
+<td>MakeSprite makes a picture of the project a sprite of columns and rows of frames, in a file beside it (&ldquo;lamp.png&rdquo; makes &ldquo;lamp.sprite.json&rdquo;), and opens it; a sprite already made is opened.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) MakeSpriteOfNode() (string, error)</code></td>
+<td>MakeSpriteOfNode moves the chosen node&rsquo;s own sheet into a sprite&rsquo;s file beside its picture, makes the node show that file, and opens it in Art: a scene written before sprites had files of their own is brought up to date one node at a time.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) MakeTileset(picture string, tileSize int) (string, error)</code></td>
+<td>MakeTileset makes a picture of the project a tileset of square tiles of a size, in pixels, in a file beside it, and opens it; a tileset already made is opened.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) MissingBehaviours() []MissingBehaviour</code></td>
+<td>MissingBehaviours are the behaviours the project&rsquo;s saved scenes use that its code does not define, by name: a typo in a scene, or code not written yet.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) MoveDown()</code></td>
+<td></td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) MoveTo(node *engine.Node, world space.Vector)</code></td>
+<td>MoveTo puts a node at a point of the world, wherever it hangs from.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) MoveUp()</code></td>
+<td>MoveUp and MoveDown move the selected node among its siblings.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) Nest()</code></td>
+<td>Nest hangs the selected node from the sibling before it, keeping where it is in the world.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) Notices() []Notice</code></td>
+<td>Notices are what the editor said that is still shown, the oldest first.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) OpenArt(file string) error</code></td>
+<td>OpenArt opens a sprite&rsquo;s or a tileset&rsquo;s file of the project in Art; the file open before must have no changes left to save.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) OpenScene(file string) error</code></td>
+<td>OpenScene shows another scene of the project.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) PaintTileAt(point space.Vector, tile int) bool</code></td>
+<td>PaintTileAt puts a tile (scenefile.EmptyTile erases) in the chosen tile map&rsquo;s cell at a point of the world; it tells whether the map changed.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) PaintingHere() bool</code></td>
+<td>PaintingHere tells whether the 2D view paints tiles now: a tile tool is taken and a tile map is chosen.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) PaletteColumns() int</code></td>
+<td>PaletteColumns is how many tiles across the chosen tile map&rsquo;s tileset is, as it was drawn: the palette keeps that shape, so corners and edges stay beside each other.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) Pick(origin, direction space.Vector) (*engine.Node, bool)</code></td>
+<td>Pick finds the node a ray from the camera meets first: the one whose box it enters nearest.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) PickFlat(point space.Vector, reach float64) (*engine.Node, bool)</code></td>
+<td>PickFlat finds the node drawn on top at a point of a 2D scene: a sprite or a shape there, or an empty node or a camera within a share of a metre of it.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) PlayHere()</code></td>
+<td>PlayHere plays the scene in the view, with the behaviours compiled into the game the editor runs in; the scene edited stays as it was.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) PlayInEmulator()</code></td>
+<td>PlayInEmulator builds the game for the 3DS and opens it in an emulator; Stop closes it.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) PlayInWindow()</code></td>
+<td>PlayInWindow saves the scene, builds the game and runs it in a window of its own, in the background: what happens arrives through Events.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) PlayLog() []string</code></td>
+<td>PlayLog is what the game and the engine said while the scene played in the view, oldest first.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) PlayOnDevice()</code></td>
+<td>PlayOnDevice builds the game for Android and plays it on the device adb sees, its log shown as a window&rsquo;s output is; stopping it stops the game on the device.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) PlayingHere() (*engine.Scene, bool)</code></td>
+<td>PlayingHere is the scene played in the view, while it is.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) PlayingOn() (BuildTarget, bool)</code></td>
+<td>PlayingOn tells where the game plays now, when it does.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) ReadAndroidLicence()</code></td>
+<td>ReadAndroidLicence reads Android&rsquo;s licence in the background, for the person to read and accept before the SDK is installed (AndroidLicence).</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) ReadBehaviours()</code></td>
+<td>ReadBehaviours reads the project&rsquo;s code again for its behaviours: after it was edited.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) Redo()</code></td>
+<td>Redo takes the scene forward one step, after an undo.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) Reload()</code></td>
+<td>Reload saves the scene, builds the game again with the project&rsquo;s code as it is now, and starts the editor again in it, on the same scene and node.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) RemoveAnimation(index int)</code></td>
+<td>RemoveAnimation takes an animation from the sheet being edited; if it was the one the scene starts with, the first one left starts it.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) RemoveFrameAt(index, place int)</code></td>
+<td>RemoveFrameAt takes the frame at a place out of an animation.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) Rename(name string) bool</code></td>
+<td>Rename gives the selected node a name, if no sibling has it; it tells whether it could.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) RenameAnimation(index int, name string) bool</code></td>
+<td>RenameAnimation names an animation of the sheet being edited; it refuses an empty name or one another animation has, and tells whether it took it.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) ResizeSheet(columns, rows int)</code></td>
+<td>ResizeSheet cuts the picture of the sheet being edited into columns and rows of frames, at least one of each: the sprite open in Art, or else the chosen node&rsquo;s own sheet, made if it has none.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) ResizeTileMap(columns, rows int)</code></td>
+<td>ResizeTileMap gives the chosen tile map columns and rows, at least one of each.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) RestartPlay()</code></td>
+<td>RestartPlay plays the scene again from how it is written in the editor.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) Run(starting string, task func() (string, error))</code></td>
+<td>Run runs a task in the background (a build), saying when it starts and how it ends.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) Running() bool</code></td>
+<td>Running tells whether the game is building or playing.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) Save() error</code></td>
+<td>Save writes the scene shown to its file.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) SaveArt() error</code></td>
+<td>SaveArt writes the file open in Art; the scene shows it changed at once.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) SaveTools(tools build.Tools) error</code></td>
+<td>SaveTools keeps the tools&rsquo; places on this computer, for the builds and every project, and looks for them again.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) Select(node *engine.Node)</code></td>
+<td>Select chooses a node (nil for none), and lets go of any other chosen with it.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) SendToConsole()</code></td>
+<td>SendToConsole builds the game for the 3DS and sends it to the console&rsquo;s Homebrew Launcher, in the background.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) SetAmbient(ambient *scenefile.Ambient)</code></td>
+<td>SetAmbient gives the scene an ambient light of its own, or takes it away (nil).</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) SetAnimationFrames(index int, written string) error</code></td>
+<td>SetAnimationFrames sets the frames an animation shows, written as numbers and runs (&ldquo;0-3, 6&rdquo;).</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) SetArtTileSize(pixels int)</code></td>
+<td>SetArtTileSize sets how many pixels a side the tiles of the tileset open in Art are.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) SetGravityScale(scale float64)</code></td>
+<td>SetGravityScale sets how much gravity pulls the chosen node&rsquo;s body: 1 fully, 0 not at all.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) SetMode(mode scenefile.Mode)</code></td>
+<td>SetMode makes the scene shown 3D or 2D.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) SetSprite(path string) error</code></td>
+<td>SetSprite makes the chosen node show a picture, or a sprite&rsquo;s file, of the project&rsquo;s.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) SetStartsWith(name string)</code></td>
+<td>SetStartsWith makes the chosen node start with an animation of its sprite; &ldquo;&rdquo; starts with the sprite&rsquo;s own first one.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) SetTileSize(pixels int)</code></td>
+<td>SetTileSize sets how many pixels a side the chosen tile map&rsquo;s tiles are, at least one.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) SetTileset(picture string)</code></td>
+<td>SetTileset sets the picture the chosen tile map&rsquo;s tiles are cut from.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) SetZonePull(pull *[2]float64)</code></td>
+<td>SetZonePull gives the chosen trigger a gravity of its own, across and up, or the world&rsquo;s (nil).</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) ShowWorkspace(workspace Workspace)</code></td>
+<td>ShowWorkspace changes to a workspace.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) ShownWorkspace() Workspace</code></td>
+<td>ShownWorkspace is the workspace the editor shows.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) StartWith(index int)</code></td>
+<td>StartWith makes an animation the one that plays when the scene starts.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) StepFrame()</code></td>
+<td>StepFrame moves a paused game on by one frame, on the next frame the view draws.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) Stop()</code></td>
+<td>Stop ends the game that is playing.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) StopHere()</code></td>
+<td>StopHere stops the play in the view.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) TakeBody()</code></td>
+<td>TakeBody takes the chosen node&rsquo;s body away.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) TakeEvents()</code></td>
+<td>TakeEvents applies what background work sent since the last frame.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) TakeLight()</code></td>
+<td>TakeLight makes the chosen node a light no more.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) TakeSheet()</code></td>
+<td>TakeSheet shows the chosen node&rsquo;s sprite whole again.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) ToggleChoice(node *engine.Node)</code></td>
+<td>ToggleChoice adds a node to those chosen, or takes it out if it was; taking out the inspector&rsquo;s node gives the inspector the next one.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) ToggleSolid(tile int)</code></td>
+<td>ToggleSolid makes a tile of the chosen map&rsquo;s tileset solid, for bodies to stand on, or not.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) ToggleSolidTile(tile int)</code></td>
+<td>ToggleSolidTile makes a tile of the tileset open in Art solid, or not.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) ToolsFound() []ToolFound</code></td>
+<td>ToolsFound are the tools and where they were found, in the order of buildToolParts: where the tools kept say, until LookForTools looks where others say.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) Undo()</code></td>
+<td>Undo takes the scene back one step.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) Unnest()</code></td>
+<td>Unnest hangs the selected node from its grandparent, after its parent, keeping where it is.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) Watch() []WatchLine</code></td>
+<td>Watch is what the chosen node of the scene played is doing: where it is, its body&rsquo;s velocity and whether it stands on the floor, the animation it plays, and its behaviours&rsquo; exported fields.</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="missingbehaviour">MissingBehaviour</h3>
+
+<p>MissingBehaviour is a behaviour the scenes use that the project&rsquo;s code does
+not define.</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">MissingBehaviour</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">Name</span> <span class="kt">string</span>
+	<span class="nx">Uses</span> <span class="p">[]</span><span class="nx">project</span><span class="p">.</span><span class="nx">Use</span>
+<span class="p">}</span>
+</code></pre>
+
+<h3 id="notice">Notice</h3>
+
+<p>Notice is something the editor said, and when.</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">Notice</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">Text</span>   <span class="kt">string</span>
+	<span class="nx">Failed</span> <span class="kt">bool</span>
+	<span class="nx">At</span>     <span class="nx">time</span><span class="p">.</span><span class="nx">Time</span>
+<span class="p">}</span>
+</code></pre>
+
+<h3 id="playtarget">PlayTarget</h3>
+
+<p>PlayTarget is the shape of the screen the game is shown at while it plays in
+the view.</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">PlayTarget</span> <span class="kt">int</span>
+</code></pre>
+<pre><code class="language-go"><span class="kd">const</span> <span class="p">(</span>
+	<span class="c1">// WideScreen is a computer&#39;s screen, sixteen wide for nine high.</span>
+	<span class="nx">WideScreen</span> <span class="nx">PlayTarget</span> <span class="p">=</span> <span class="kc">iota</span>
+	<span class="c1">// ConsoleScreen is the Nintendo 3DS&#39;s top screen, 400 × 240 pixels.</span>
+	<span class="nx">ConsoleScreen</span>
+<span class="p">)</span>
+</code></pre>
+
+<table>
+<thead>
+<tr>
+<th>Function or method</th>
+<th></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>func (target PlayTarget) Aspect() float64</code></td>
+<td>Aspect is the target&rsquo;s width over its height.</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="tool">Tool</h3>
+
+<p>Tool is what the left button does in the 2D view.</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">Tool</span> <span class="kt">int</span>
+</code></pre>
+<pre><code class="language-go"><span class="kd">const</span> <span class="p">(</span>
+	<span class="c1">// SelectTool chooses a node, and drags it.</span>
+	<span class="nx">SelectTool</span> <span class="nx">Tool</span> <span class="p">=</span> <span class="kc">iota</span>
+	<span class="c1">// PaintTool paints the chosen tile map with the brush.</span>
+	<span class="nx">PaintTool</span>
+	<span class="c1">// EraseTool takes tiles off the chosen tile map.</span>
+	<span class="nx">EraseTool</span>
+	<span class="c1">// FillTool paints a region of the same tile, as far as it goes.</span>
+	<span class="nx">FillTool</span>
+	<span class="c1">// HandTool moves the view.</span>
+	<span class="nx">HandTool</span>
+<span class="p">)</span>
+</code></pre>
+
+<table>
+<thead>
+<tr>
+<th>Function or method</th>
+<th></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>func ToolsFor(flat bool) []Tool</code></td>
+<td>ToolsFor are the tools of a scene: all of them in 2D, choosing and moving the view in 3D.</td>
+</tr>
+
+<tr>
+<td><code>func (tool Tool) Does() string</code></td>
+<td>Does says what the tool does, for its tooltip.</td>
+</tr>
+
+<tr>
+<td><code>func (tool Tool) Icon() string</code></td>
+<td>Icon is the tool&rsquo;s icon on the rail.</td>
+</tr>
+
+<tr>
+<td><code>func (tool Tool) Key() input.Key</code></td>
+<td>Key is the key that takes the tool.</td>
+</tr>
+
+<tr>
+<td><code>func (tool Tool) Letter() string</code></td>
+<td>Letter is the tool&rsquo;s key, as written on it.</td>
+</tr>
+
+<tr>
+<td><code>func (tool Tool) Name() string</code></td>
+<td>Name is the tool&rsquo;s word.</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="toolfound">ToolFound</h3>
+
+<p>ToolFound is a tool, what needs it, where it was found, and why it was not
+or why it will not do (found, but missing parts).</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">ToolFound</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">Name</span><span class="p">,</span> <span class="nx">Needs</span> <span class="kt">string</span>
+	<span class="nx">Found</span>       <span class="kt">string</span>
+	<span class="nx">Err</span>         <span class="kt">error</span>
+<span class="p">}</span>
+</code></pre>
+
+<h3 id="view">View</h3>
+
+<p>View is the editor&rsquo;s window and what it remembers between frames.</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">View</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">Editor</span> <span class="o">*</span><span class="nx">Editor</span>
+
+	<span class="c1">// DarkByDefault starts the editor dark when no mode was kept (the window&#39;s -dark).</span>
+	<span class="nx">DarkByDefault</span> <span class="kt">bool</span>
+
+	<span class="c1">// Has unexported fields.</span>
+<span class="p">}</span>
+</code></pre>
+
+<table>
+<thead>
+<tr>
+<th>Function or method</th>
+<th></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>func NewView(editor *Editor) *View</code></td>
+<td>NewView shows an editor.</td>
+</tr>
+
+<tr>
+<td><code>func (view *View) Build(context *ui.Context)</code></td>
+<td>Build describes the window for a frame.</td>
+</tr>
+
+<tr>
+<td><code>func (view *View) Options(options window.Options) window.Options</code></td>
+<td>Options are the window&rsquo;s, with the step that shows the scene and reads what the interface leaves of the mouse and the keys.</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="viewmode">ViewMode</h3>
+
+<p>ViewMode is how the editor&rsquo;s camera shows the scene.</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">ViewMode</span> <span class="kt">int</span>
+</code></pre>
+<pre><code class="language-go"><span class="kd">const</span> <span class="p">(</span>
+	<span class="nx">ViewPerspective</span> <span class="nx">ViewMode</span> <span class="p">=</span> <span class="kc">iota</span>
+	<span class="nx">ViewOrthographic</span>
+	<span class="nx">ViewIsometric</span>
+<span class="p">)</span>
+</code></pre>
+
+<h3 id="watchline">WatchLine</h3>
+
+<p>WatchLine is one thing the chosen node is doing while the game plays: what,
+and its value.</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">WatchLine</span> <span class="kd">struct</span><span class="p">{</span> <span class="nx">Name</span><span class="p">,</span> <span class="nx">Value</span> <span class="kt">string</span> <span class="p">}</span>
+</code></pre>
+
+<h3 id="workspace">Workspace</h3>
+
+<p>Workspace is one of the editor&rsquo;s screens.</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">Workspace</span> <span class="kt">int</span>
+</code></pre>
+<pre><code class="language-go"><span class="kd">const</span> <span class="p">(</span>
+	<span class="c1">// ProjectWorkspace gathers the project&#39;s assets, scenes and settings.</span>
+	<span class="nx">ProjectWorkspace</span> <span class="nx">Workspace</span> <span class="p">=</span> <span class="kc">iota</span>
+	<span class="c1">// ArtWorkspace makes pictures into sprites and tilesets.</span>
+	<span class="nx">ArtWorkspace</span>
+	<span class="c1">// LevelWorkspace places things in a scene and paints its tiles.</span>
+	<span class="nx">LevelWorkspace</span>
+	<span class="c1">// CodeWorkspace shows the behaviours the project&#39;s Go code defines.</span>
+	<span class="nx">CodeWorkspace</span>
+	<span class="c1">// PlayWorkspace plays the scene, to try it.</span>
+	<span class="nx">PlayWorkspace</span>
+	<span class="c1">// BuildWorkspace makes the game for each place it runs.</span>
+	<span class="nx">BuildWorkspace</span>
+<span class="p">)</span>
+</code></pre>
+
+<table>
+<thead>
+<tr>
+<th>Function or method</th>
+<th></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>func WorkspaceNamed(name string) (Workspace, bool)</code></td>
+<td>WorkspaceNamed finds a workspace by its word, in any case: &ldquo;art&rdquo; is Art.</td>
+</tr>
+
+<tr>
+<td><code>func (workspace Workspace) Icon() string</code></td>
+<td>Icon is the workspace&rsquo;s icon on the bar.</td>
+</tr>
+
+<tr>
+<td><code>func (workspace Workspace) Key() input.Key</code></td>
+<td>Key is the key that shows the workspace.</td>
+</tr>
+
+<tr>
+<td><code>func (workspace Workspace) Name() string</code></td>
+<td>Name is the workspace&rsquo;s word on the bar.</td>
+</tr>
+</tbody>
+</table>
+
+<hr>
+
+<p><a href="./reference/packages">← Reference</a> · generated from the doc comments by <code>generate.py</code></p>

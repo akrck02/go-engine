@@ -1,0 +1,81 @@
+<h1 id="level-1-a-forest-of-your-own">🧭 Level 1: a forest of your own</h1>
+
+<p>You make the game&rsquo;s project, a 2D scene, and the forest behind everything: hills, trees and a sky.
+At the end you can play it, even though nothing moves yet.</p>
+
+<h4 id="the-idea">The idea</h4>
+
+<p>A 2D scene is a stage seen from the front. Its pictures are flat cut-outs standing at different
+depths: the hills at the back, the trees in front of them, later the slime in front of all. The
+<strong>camera</strong> is the window the player looks through.</p>
+
+<h2 id="the-project">The project</h2>
+<pre><code class="language-bash">go-engine new ~/games/forest <span class="s2">&#34;Forest&#34;</span>
+</code></pre>
+
+<p>The editor opens on a 3D scene with a cube. This game is 2D, so it needs pictures. Take the
+forest&rsquo;s from the engine&rsquo;s own example:</p>
+<pre><code class="language-bash">git clone --depth <span class="m">1</span> https://github.com/akrck02/go-engine.git /tmp/go-engine
+cp -r /tmp/go-engine/examples/platformer/assets/sprites ~/games/forest/assets/
+</code></pre>
+
+<p>In <strong>Project</strong> (key 1) the folder <code>sprites</code> appears, with the pictures: the forest&rsquo;s tiles, its
+backdrops, a slime, a coin, spikes and a sign.</p>
+
+<h2 id="a-2d-scene">A 2D scene</h2>
+
+<ol>
+<li>Click the scene&rsquo;s name at the top (<strong>main</strong>) and choose <strong>New 2D scene</strong>. It opens with a green
+ground, a square and a camera.</li>
+<li>Choose the <strong>Square</strong> in the tree on the left and delete it with the bin above the tree.</li>
+<li>Click an empty part of the view to choose nothing: the inspector shows the <strong>Scene</strong>. Name it
+<em>Forest</em>, make the sky <code>#11adc1</code>, and set <strong>Pixels per metre</strong> to 16. The forest&rsquo;s tiles are 16
+pixels across, so each tile will be a metre.</li>
+</ol>
+
+<h2 id="the-backdrop">The backdrop</h2>
+
+<ol>
+<li>In <strong>Project</strong>, open <code>sprites</code> and choose <code>background-far.png</code>. Press <strong>Place in the scene</strong>.</li>
+<li>The editor goes back to <strong>Level</strong>, where the picture is a node named after it. Rename it
+<em>Hills</em>, and set its <strong>Draw order</strong> to 0.1.</li>
+<li>Do the same with <code>background-near.png</code>: name it <em>Trees</em>, draw order 0.2. A greater draw order
+is drawn in front.</li>
+<li>Drag both so they sit together behind the ground.</li>
+</ol>
+
+<h2 id="the-camera">The camera</h2>
+
+<p>Choose the <strong>Camera</strong>. Its inspector says how many metres it sees: set <strong>Metres seen, top to
+bottom</strong> to 9.4 and <strong>across</strong> to 15.5. Drag it over the hills; the white frame is what the player
+will see.</p>
+
+<p>Last, tell the game to start here. In <strong>Project</strong>, press <strong>Settings</strong> and choose this scene as
+<strong>The scene the game starts with</strong>. Save with Ctrl+S.</p>
+
+<h2 id="checkpoint">Checkpoint</h2>
+
+<p>Press <strong>Play</strong> (key 5).</p>
+
+<p align="center"><img alt="The Play workspace: snowy hills and dark trees on a cyan sky, a green ground across, in a 16:9 frame" src="./images/quest/1-play.png" width="680"></p>
+
+<p>You see the hills, the trees and the green ground through the camera. Press <strong>3DS</strong> above the view
+to see it at the console&rsquo;s shape.</p>
+
+<h2 id="bonus-a-dusk-sky">Bonus: a dusk sky</h2>
+
+<p>Make the sky the deep blue of a late evening.</p>
+
+<details>
+<summary>🔓 Show the solution</summary>
+
+Choose nothing, then in the scene's inspector set the sky to `#1d3557`. The pictures stay the same;
+only the sky behind them changes. In level 5 the whole forest goes dark, with lights.
+
+</details>
+
+<p><strong>🧭 Achievement unlocked: Explorer.</strong> You made a project, a 2D scene and a camera.</p>
+
+<hr>
+
+<p><a href="./the-quest/the-quest">← The quest</a> · <a href="./the-quest/a-slime-that-walks">Level 2 →</a></p>

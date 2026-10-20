@@ -1,0 +1,142 @@
+<p align="center"><img alt="" src="./images/logo.svg" width="120"></p>
+
+<h1 id="welcome-to-go-engine">Welcome to Go Engine 👋</h1>
+
+<blockquote>
+<p>🚧 <strong>Go Engine is in development.</strong> What these pages describe can change from one version to
+the next: names, scene files and the editor&rsquo;s layout included.</p>
+</blockquote>
+
+<p><strong>Go Engine makes games in Go.</strong> You arrange a game&rsquo;s scenes in its editor, and you write what moves
+in them in Go. One game runs on a computer, on an Android phone and on a Nintendo 3DS.</p>
+
+<p align="center"><img alt="The editor's Level workspace: a scene with a ground, a coloured cube and a camera; the cube chosen, with its transform, shape, light and Spin behaviour in the inspector on the right" src="./images/editor-level.png" width="760"></p>
+
+<p>A game is an ordinary Go module. Its scenes are files the editor writes, and its code is plain Go,
+written in any editor you like (Zed, Neovim, Visual Studio Code, GoLand…). The engine&rsquo;s small
+standard library gives that code the scene&rsquo;s nodes, the player&rsquo;s buttons and the time.</p>
+
+<h2 id="is-it-for-me">Is it for me?</h2>
+
+<ul>
+<li>✅ You write Go, or want to, and want to <strong>make a small game</strong>: 2D, 3D or isometric.</li>
+<li>✅ You want it to run on a <strong>handheld console</strong>: the 3DS, through homebrew.</li>
+<li>✅ You want to <strong>learn</strong> how a game engine works inside: every part is readable Go.</li>
+<li>❌ You need a finished engine to ship a commercial game: this one is young and changes often.</li>
+</ul>
+
+<h2 id="where-to-start">Where to start</h2>
+
+<table>
+<thead>
+<tr>
+<th>If you…</th>
+<th>Read</th>
+<th>Time</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>want to <strong>try</strong> it</td>
+<td><a href="./getting-started">Get started</a>: install it and play a first scene</td>
+<td>15 min</td>
+</tr>
+
+<tr>
+<td>want to <strong>understand</strong> how it thinks</td>
+<td><a href="./core-ideas">Core ideas</a>: games, scenes, nodes, behaviours</td>
+<td>15 min</td>
+</tr>
+
+<tr>
+<td>want to <strong>learn</strong> step by step</td>
+<td>🗺️ <a href="./the-quest/the-quest">The quest</a>: a forest platformer in six levels</td>
+<td>2 h</td>
+</tr>
+
+<tr>
+<td>want to do <strong>one thing</strong></td>
+<td><a href="./guides/a-2d-level-with-tiles">The guides</a>: tiles, sprites, physics, lights, the 3DS</td>
+<td>—</td>
+</tr>
+
+<tr>
+<td>are <strong>looking up</strong> a name</td>
+<td><a href="./reference/packages">The reference</a>: every package, and the scene files</td>
+<td>—</td>
+</tr>
+
+<tr>
+<td>are <strong>stuck</strong></td>
+<td><a href="./troubleshooting">Troubleshooting</a>: errors by their code</td>
+<td>—</td>
+</tr>
+
+<tr>
+<td>want to <strong>change</strong> the engine</td>
+<td><a href="./contributing/contributing">Contributing</a>: the code&rsquo;s layout, tests, style</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+
+<h2 id="what-it-can-do">What it can do</h2>
+
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>Scenes</td>
+<td>2D, 3D and isometric; shapes, <code>.glb</code> models, sprites with animations, tile maps</td>
+</tr>
+
+<tr>
+<td>Physics</td>
+<td>2D bodies: solid, moving, pushable, platforms, triggers and gravity zones</td>
+</tr>
+
+<tr>
+<td>Lights</td>
+<td>Point lights in 2D and 3D, sprite lights, an ambient light</td>
+</tr>
+
+<tr>
+<td>Code</td>
+<td>Behaviours: Go types with <code>Start</code> and <code>Update</code>, played inside the editor</td>
+</tr>
+
+<tr>
+<td>Platforms</td>
+<td>Computers (tried on Linux; macOS and Windows still to try), Android and the Nintendo 3DS, built from the editor</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Not yet:</strong> sound, a game&rsquo;s own interface (menus, scores on screen), bodies that turn or slopes,
+and textures from models. The list lives in <a href="./core-ideas">Core ideas</a>.</p>
+
+<h2 id="how-it-is-built">How it is built</h2>
+
+<p>Go Engine stands on the author&rsquo;s other libraries: <a href="https://github.com/akrck02/go-renderer" target="_blank">Go Renderer</a>
+draws, <a href="https://github.com/akrck02/go-ui" target="_blank">Go UI</a> is the editor&rsquo;s window, and
+<a href="https://github.com/akrck02/tinygo-3ds" target="_blank">TinyGo for the 3DS</a> builds for the console. Every design
+decision has a proposal in <a href="./proposals">proposals</a>.</p>
+
+<h2 id="ai-disclosure">🤖 AI disclosure</h2>
+
+<p>I write most of my code by hand, so I want to be clear about this project: <strong>it was written by an
+AI assistant (Claude, by Anthropic) under my direction.</strong> Every commit made this way carries a
+<code>Co-Authored-By: Claude</code> line.</p>
+
+<p><strong>Status: pending thorough review.</strong> The code compiles and its tests pass, but I have not yet
+reviewed it line by line. Treat it as a working draft, not as code I vouch for.</p>
+
+<hr>
+
+<p><a href="./getting-started">Get started →</a></p>

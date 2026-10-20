@@ -1,0 +1,160 @@
+<h1 id="physics">physics</h1>
+<pre><code class="language-go"><span class="kn">import</span> <span class="s">&#34;github.com/akrck02/go-engine/physics&#34;</span>
+</code></pre>
+
+<p>Package physics moves boxes in 2D: bodies that fall, collide with solid ground
+and walls, and slide along them, as a game seen from the side needs. It knows
+nothing of scenes or nodes; the engine keeps a World in step with them.</p>
+
+<p>Bodies are boxes lined up with the axes, in metres, with X to the right and Y
+up; their Z is not used. A moving body moves one axis at a time, in steps of at
+most half its smallest side. So even a fast body meets a thin wall instead of
+jumping over it.</p>
+
+<h3 id="body">Body</h3>
+
+<p>Body is a box in the world.</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">Body</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">Kind</span>         <span class="nx">Kind</span>
+	<span class="nx">Position</span>     <span class="nx">space</span><span class="p">.</span><span class="nx">Vector</span> <span class="c1">// the box&#39;s centre, in metres</span>
+	<span class="nx">Size</span>         <span class="nx">space</span><span class="p">.</span><span class="nx">Vector</span> <span class="c1">// the box&#39;s width (X) and height (Y), in metres</span>
+	<span class="nx">Velocity</span>     <span class="nx">space</span><span class="p">.</span><span class="nx">Vector</span> <span class="c1">// metres a second</span>
+	<span class="nx">GravityScale</span> <span class="kt">float64</span>      <span class="c1">// how much gravity pulls it: 1 fully, 0 not at all</span>
+	<span class="c1">// ZonePull, on a trigger, is the gravity of the area it covers: the falling bodies inside it are</span>
+	<span class="c1">// pulled this way instead of the world&#39;s (a magnetic field, a room upside down). Nil leaves</span>
+	<span class="c1">// the world&#39;s.</span>
+	<span class="nx">ZonePull</span> <span class="o">*</span><span class="nx">space</span><span class="p">.</span><span class="nx">Vector</span>
+	<span class="c1">// IgnoresZones keeps the world&#39;s gravity for the body, inside a zone too: a character that</span>
+	<span class="c1">// walks through a field meant for the things it moves.</span>
+	<span class="nx">IgnoresZones</span> <span class="kt">bool</span>
+
+	<span class="c1">// Has unexported fields.</span>
+<span class="p">}</span>
+</code></pre>
+
+<table>
+<thead>
+<tr>
+<th>Function or method</th>
+<th></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>func (body *Body) OnFloor() bool</code></td>
+<td>OnFloor tells whether the body stood on something solid in the last step.</td>
+</tr>
+
+<tr>
+<td><code>func (body *Body) Pull() space.Vector</code></td>
+<td>Pull is the gravity that pulled the body in the last step: the world&rsquo;s, or the zone&rsquo;s it was in.</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="kind">Kind</h3>
+
+<p>Kind is what a body does in the world.</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">Kind</span> <span class="kt">int</span>
+</code></pre>
+<pre><code class="language-go"><span class="kd">const</span> <span class="p">(</span>
+	<span class="c1">// Solid bodies never move: ground, walls, platforms. Moving bodies stop against them.</span>
+	<span class="nx">Solid</span> <span class="nx">Kind</span> <span class="p">=</span> <span class="kc">iota</span>
+	<span class="c1">// Moving bodies fall with gravity, move with their velocity and are stopped by solids.</span>
+	<span class="nx">Moving</span>
+	<span class="c1">// Trigger bodies don&#39;t move nor stop anything; they notice the moving and pushable bodies that</span>
+	<span class="c1">// touch them (World.Begun).</span>
+	<span class="nx">Trigger</span>
+	<span class="c1">// Pushable bodies fall and move as moving ones do, and are obstacles to them: a moving body</span>
+	<span class="c1">// stands on one, and walking into one pushes it, until a solid stops both (a box, a cart).</span>
+	<span class="nx">Pushable</span>
+	<span class="c1">// Platform bodies move at their velocity, with no gravity and through solids; they carry the</span>
+	<span class="c1">// bodies standing on them and push those in their way (a lift, a moving floor).</span>
+	<span class="nx">Platform</span>
+<span class="p">)</span>
+</code></pre>
+
+<table>
+<thead>
+<tr>
+<th>Function or method</th>
+<th></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>func (kind Kind) Moves() bool</code></td>
+<td>Moves tells whether bodies of the kind move by the physics: their place is the world&rsquo;s to set.</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="touch">Touch</h3>
+
+<p>Touch is a moving or pushable body touching a trigger: a door reached,
+a line crossed, a box on a button.</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">Touch</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">Trigger</span> <span class="o">*</span><span class="nx">Body</span>
+	<span class="nx">Other</span>   <span class="o">*</span><span class="nx">Body</span> <span class="c1">// the moving or pushable body that touches it</span>
+<span class="p">}</span>
+</code></pre>
+
+<h3 id="world">World</h3>
+
+<p>World holds the bodies and moves them.</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">World</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="c1">// Has unexported fields.</span>
+<span class="p">}</span>
+</code></pre>
+
+<table>
+<thead>
+<tr>
+<th>Function or method</th>
+<th></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>func NewWorld(gravity space.Vector) *World</code></td>
+<td>NewWorld makes a world with a gravity, in metres a second each second (Earth&rsquo;s is 9.81 down).</td>
+</tr>
+
+<tr>
+<td><code>func (world *World) Add(body *Body)</code></td>
+<td>Add puts a body in the world.</td>
+</tr>
+
+<tr>
+<td><code>func (world *World) Begun() []Touch</code></td>
+<td>Begun are the touches that began in the last step: each is reported once, when a body first overlaps a trigger, and again only after it has left and comes back.</td>
+</tr>
+
+<tr>
+<td><code>func (world *World) Gravity() space.Vector</code></td>
+<td>Gravity is the world&rsquo;s gravity, in metres a second each second.</td>
+</tr>
+
+<tr>
+<td><code>func (world *World) Remove(body *Body)</code></td>
+<td>Remove takes a body out of the world.</td>
+</tr>
+
+<tr>
+<td><code>func (world *World) SetGravity(gravity space.Vector)</code></td>
+<td>SetGravity changes the world&rsquo;s gravity: a floatier jump, a world upside down.</td>
+</tr>
+
+<tr>
+<td><code>func (world *World) Step(seconds float64)</code></td>
+<td>Step moves the world on by some seconds: gravity pulls the moving bodies, each moves by its velocity until a solid stops it, and the touches of triggers that began are found (Begun).</td>
+</tr>
+</tbody>
+</table>
+
+<hr>
+
+<p><a href="./reference/packages">← Reference</a> · generated from the doc comments by <code>generate.py</code></p>

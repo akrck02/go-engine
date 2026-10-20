@@ -1,0 +1,120 @@
+<h1 id="3-undo-several-nodes-sharp-pixels-an-editor-to-trust">3. Undo, several nodes, sharp pixels: an editor to trust</h1>
+
+<blockquote>
+<p>Status: done · Author&rsquo;s approval: proposal ☑ plan ☑ (2026-10-18, &ldquo;haz todas pero además haz
+que aparezca la versión en la ventana de editor y logs&rdquo;: approved together)</p>
+</blockquote>
+
+<h2 id="why">Why</h2>
+
+<p>Proposal 2 left four things out on purpose: undo, choosing several nodes, pixel art drawn sharp,
+and a 3D Level like the 2D one. Without undo one wrong click loses work; one node at a time makes
+ten coins ten jobs; pixel art drawn blurred misleads about how the game looks. And nobody can tell
+which Go Engine an editor or a game was built with.</p>
+
+<h2 id="what">What</h2>
+
+<table>
+<thead>
+<tr>
+<th>Id</th>
+<th>Requirement</th>
+<th>Check</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>R1</td>
+<td>The editor&rsquo;s window, its top bar and the logs of the editor, the game and the go-engine command say which Go Engine they run: its release and commit, and whether it is a local copy</td>
+<td>test <code>the version says which Go Engine it is</code>; test <code>a local Go Engine gives its commit to the build</code></td>
+</tr>
+
+<tr>
+<td>R2</td>
+<td>Every change to the scene can be undone and redone (Ctrl+Z, Ctrl+Shift+Z, and buttons); a drag or a stretch of typing is one step</td>
+<td>tests <code>a change is undone and redone</code>, <code>a drag is one step to undo</code></td>
+</tr>
+
+<tr>
+<td>R3</td>
+<td>Several nodes can be chosen (Shift in the tree and the view); dragging moves them together, Delete and Duplicate act on all</td>
+<td>tests <code>shift adds a node to the choice and takes it out</code>, <code>deleting and duplicating act on every node chosen</code>, <code>dragging moves every node chosen</code></td>
+</tr>
+
+<tr>
+<td>R4</td>
+<td>The mouse in the 2D view does what the tools say: drags, right-button erasing, the hand, fill</td>
+<td>tests that press, move and let go the buttons over the view</td>
+</tr>
+
+<tr>
+<td>R5</td>
+<td>Pixel art is drawn sharp: pictures of a 2D scene are scaled to the nearest pixel, on the desktop and the 3DS</td>
+<td>a test of go-renderer&rsquo;s sampling; captures</td>
+</tr>
+
+<tr>
+<td>R6</td>
+<td>Level&rsquo;s tool rail is the same in 3D: Select and Hand, the others greyed</td>
+<td>capture</td>
+</tr>
+</tbody>
+</table>
+
+<h2 id="out-of-scope">Out of scope</h2>
+
+<ul>
+<li>Undoing changes to sprite and tileset files (Art saves them itself).</li>
+<li>Choosing several nodes by dragging a box.</li>
+</ul>
+
+<h2 id="design">Design</h2>
+
+<p><strong>Version</strong> (done first): <code>engine.Version()</code> reads the program&rsquo;s build information; for a local
+copy (a <code>go.work</code> or a folder <code>replace</code>) go-engine passes the commit with <code>-ldflags -X</code>.</p>
+
+<p><strong>Undo</strong>: the editor keeps the scene&rsquo;s description after each change (a list and a place in it);
+undo builds the scene again from the one before, keeping the chosen nodes by path. Changes within
+half a second of each other are one step, so a drag or typing a number is undone at once.</p>
+
+<p><strong>Several nodes</strong>: <code>Editor.Chosen</code> holds the nodes besides <code>Selected</code>, the one the inspector shows.</p>
+
+<p><strong>Sharp pixels</strong>: go-renderer&rsquo;s 2D pictures get a filter setting; a 2D scene draws its sprites
+and tiles with the nearest pixel. That change belongs to go-renderer, on its <code>feature/3ds</code>
+branch, committed only with the author&rsquo;s say.</p>
+
+<h2 id="tasks">Tasks</h2>
+
+<ul>
+<li>[x] T1 — the version, in the editor&rsquo;s window, its top bar and the logs · <code>engine/</code>, <code>project/</code>,
+<code>editor/</code>, <code>cmd/</code> · R1 · tests: <code>the version says which Go Engine it is</code>, <code>a local Go Engine
+gives its commit to the build</code></li>
+<li>[x] T2 — undo and redo · <code>editor/</code> · R2 · tests: <code>a change is undone and redone</code>, <code>a drag is one
+step to undo</code></li>
+<li>[x] T3 — several nodes chosen · <code>editor/</code> · R3 · tests: <code>shift adds a node to the choice and
+takes it out</code>, <code>deleting and duplicating act on every node chosen</code>, <code>dragging moves every node
+chosen</code></li>
+<li>[x] T4 — the 2D view&rsquo;s mouse, tested · <code>editor/</code> · R4</li>
+<li>[x] T5 — Level&rsquo;s tool rail in 3D · <code>editor/</code> · R6</li>
+<li>[x] T6 — sharp pixel art · go-renderer <code>draw2d</code>, <code>opengl</code>, <code>ctr</code>; <code>engine/</code> · R5</li>
+</ul>
+
+<h2 id="result">Result</h2>
+
+<p><strong>Built.</strong> The version of Go Engine in the editor&rsquo;s title and top bar and in the logs of the
+editor, the game and the go-engine command, with the commit of a local copy and whether it has
+changes; undo and redo of every change to the scene, a drag or a number typed being one step;
+several nodes chosen with Shift, dragged, deleted and duplicated together; tests that press, move
+and let go the mouse over the 2D view; Level&rsquo;s tool rail in 3D (Select and Hand); pixel art drawn
+sharp, through go-renderer&rsquo;s <code>draw2d.Image.Sharp</code> (feature/3ds 3b08cd9, committed with the
+author&rsquo;s say), which the engine sets on every sprite, frame and tile.</p>
+
+<p><strong>Checked.</strong> Every task&rsquo;s tests; sharp pixels compared before and after in captures, on the desktop
+and in the 3DS emulator.</p>
+
+<p><strong>Not done.</strong> Metal draws sharp pictures blended, as before: it is hand-written and was not
+touched. Changes to sprite and tileset files are not undone (Art saves them itself). Choosing
+nodes with a box was out of scope.</p>
+
+<p><strong>For a person.</strong> Undo after real edits, Shift-clicks and drags with a real mouse.</p>

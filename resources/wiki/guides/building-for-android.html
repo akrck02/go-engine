@@ -1,0 +1,76 @@
+<h1 id="building-for-android">📱 Building for Android</h1>
+
+<p>Turn a game into an <code>.apk</code>, and play it on a phone or an emulator with its log in the editor.</p>
+
+<h2 id="the-tools">The tools</h2>
+
+<p>In <strong>Build → Tools</strong>, press <strong>Install</strong> beside:</p>
+
+<table>
+<thead>
+<tr>
+<th>Tool</th>
+<th>What it is for</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>Android SDK</td>
+<td>Building and installing: Google&rsquo;s command-line tools, platform-tools, build-tools and a platform. Its licence is shown first, to read and accept</td>
+</tr>
+
+<tr>
+<td>Android NDK</td>
+<td>The C compiler for phones; it comes with the SDK</td>
+</tr>
+
+<tr>
+<td>JDK</td>
+<td>Java 17 or newer, which Android&rsquo;s tools need</td>
+</tr>
+</tbody>
+</table>
+<p>Android Studio&rsquo;s SDK and JDK are found too, if it is installed.</p>
+
+<h2 id="build-and-play">Build and play</h2>
+
+<p>On the <strong>Android</strong> card:</p>
+
+<table>
+<thead>
+<tr>
+<th>Button</th>
+<th>What it does</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><strong>Build</strong></td>
+<td>Writes <code>build/&lt;name&gt;.apk</code>, signed for trying</td>
+</tr>
+
+<tr>
+<td><strong>Play on device</strong></td>
+<td>Builds, installs on the phone or emulator <code>adb</code> sees, starts the game, and shows its log until it ends</td>
+</tr>
+</tbody>
+</table>
+<p>A phone needs <strong>USB debugging</strong> on (in its developer options) and a cable, or an emulator started.</p>
+
+<h2 id="how-the-game-behaves-there">How the game behaves there</h2>
+
+<ul>
+<li><strong>Touch buttons.</strong> The game draws round buttons for the arrows and A; a keyboard plugged in still
+works.</li>
+<li><strong>Held upright or sideways.</strong> Sideways, the game fills the screen. Upright, it sits at the top at
+its camera&rsquo;s shape, with the buttons under it. A camera&rsquo;s <strong>metres seen across</strong> keeps the
+level&rsquo;s sides in view.</li>
+<li><strong>The application id.</strong> Android names apps by an id, as <code>io.example.forest</code>; set it in <strong>Project →
+Settings</strong>.</li>
+</ul>
+
+<hr>
+
+<p><a href="./guides/building-for-the-3ds">← Building for the 3DS</a> · <a href="./guides/the-3ds-bottom-screen">The 3DS&rsquo;s bottom screen →</a></p>

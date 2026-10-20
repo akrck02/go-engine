@@ -1,0 +1,239 @@
+<h1 id="core-ideas">💡 Core ideas</h1>
+
+<p>A handful of ideas explain how everything in Go Engine behaves. Read this page once, and the
+editor, the scene files and the code will rarely surprise you.</p>
+
+<h2 id="a-game-is-a-go-module">A game is a Go module</h2>
+
+<p>There is no special language and no project format to learn. A game is a folder with a <code>go.mod</code>,
+like any Go program. Its scenes and pictures are files in it, and <code>main.go</code> carries them inside the
+game (Go&rsquo;s <code>embed</code>), so the finished program needs nothing beside it.</p>
+
+<p>Why a plain module? Because then everything Go already has works: your code editor finds the
+engine&rsquo;s functions and their comments, <code>go test</code> tests the game, and <code>go build</code> builds it.</p>
+
+<h2 id="the-editor-lives-inside-your-game">The editor lives inside your game</h2>
+
+<p><code>go-engine</code> does not run your code itself. It <strong>builds your game with the editor in it</strong>
+(<code>editor.go</code>) and starts that. So the editor knows your behaviours because they are compiled into
+it, and <strong>Play</strong> plays your real code, frame by frame, inside its view.</p>
+
+<p>The price is small: after changing the code, <strong>Rebuild</strong> (in Code) builds the game again and reopens
+the editor where you were. The editor only starts when <code>go-engine</code> asks for it: <code>go run .</code> plays
+the game. Builds for players leave the editor&rsquo;s code out altogether (<code>-tags release</code>), and so does
+the 3DS.</p>
+
+<h2 id="scenes-are-trees-of-nodes">Scenes are trees of nodes</h2>
+
+<p>A <strong>scene</strong> is a file, <code>scenes/*.scene.json</code>, that the editor writes and you can read. It holds a
+tree of <strong>nodes</strong>, as a family tree holds people. A node is a thing in the scene, and what it is
+comes from its parts:</p>
+
+<table>
+<thead>
+<tr>
+<th>Part</th>
+<th>Makes the node…</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>a shape or a model</td>
+<td>something solid in 3D: a cube, a house from a <code>.glb</code></td>
+</tr>
+
+<tr>
+<td>a sprite</td>
+<td>a picture in 2D, perhaps animated</td>
+</tr>
+
+<tr>
+<td>a tile map</td>
+<td>a 2D level painted with tiles</td>
+</tr>
+
+<tr>
+<td>a camera</td>
+<td>the eye the scene is seen through</td>
+</tr>
+
+<tr>
+<td>a body</td>
+<td>something the 2D physics moves or stops</td>
+</tr>
+
+<tr>
+<td>a light</td>
+<td>a lamp, or a glowing sign</td>
+</tr>
+
+<tr>
+<td>behaviours</td>
+<td>something your code moves</td>
+</tr>
+</tbody>
+</table>
+<p>Each node has a <strong>transform</strong>: where it is, how it is turned and how large it is, <strong>relative to its
+parent</strong>. Move a ship and its sailors move with it. <code>node.World()</code> says where a node is in the world.</p>
+
+<h2 id="behaviours-are-your-code">Behaviours are your code</h2>
+
+<p>A <strong>behaviour</strong> is a Go type with methods the engine calls, each one optional, on a pointer:</p>
+
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>When</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>Start(context *engine.Context)</code></td>
+<td>Once, before the scene&rsquo;s first frame</td>
+</tr>
+
+<tr>
+<td><code>Update(context *engine.Context)</code></td>
+<td>Every frame; <code>context.Delta</code> is the seconds since the last one</td>
+</tr>
+
+<tr>
+<td><code>Touched(context *engine.Context, other *engine.Node)</code></td>
+<td>When a moving body, <code>other</code>, begins touching the node&rsquo;s trigger</td>
+</tr>
+</tbody>
+</table>
+<p>The <code>context</code> holds the node the behaviour is on, the scene, <code>Time</code> (the seconds since the scene
+started) and the player&rsquo;s input. <code>main.go</code> registers each behaviour once, with an empty value of
+it, <code>engine.Register(Spin{}, Player{})</code>, and the scene names it by its Go type&rsquo;s name, <em>Spin</em>. Its
+exported fields are its settings, filled from the scene by their JSON names, so one behaviour can
+drive many nodes, each set differently.</p>
+<pre><code class="language-go"><span class="c1">// Bob moves its node up and down.</span>
+<span class="kd">type</span> <span class="nx">Bob</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">Height</span> <span class="kt">float64</span> <span class="s">`json:&#34;height&#34;`</span> <span class="c1">// metres</span>
+<span class="p">}</span>
+
+<span class="kd">func</span> <span class="p">(</span><span class="nx">bob</span> <span class="o">*</span><span class="nx">Bob</span><span class="p">)</span> <span class="nf">Update</span><span class="p">(</span><span class="nx">context</span> <span class="o">*</span><span class="nx">engine</span><span class="p">.</span><span class="nx">Context</span><span class="p">)</span> <span class="p">{</span>
+	<span class="nx">context</span><span class="p">.</span><span class="nx">Node</span><span class="p">.</span><span class="nx">Transform</span><span class="p">.</span><span class="nx">Position</span><span class="p">.</span><span class="nx">Y</span> <span class="p">=</span> <span class="mf">0.5</span> <span class="o">+</span> <span class="nx">bob</span><span class="p">.</span><span class="nx">Height</span><span class="o">*</span><span class="nx">math</span><span class="p">.</span><span class="nf">Sin</span><span class="p">(</span><span class="nx">context</span><span class="p">.</span><span class="nx">Time</span><span class="o">*</span><span class="mi">3</span><span class="p">)</span>
+<span class="p">}</span>
+</code></pre>
+
+<p>A behaviour finds another with <code>engine.Behaviour[Player](node)</code>, which gives the behaviour and
+whether the node has one. <code>context.Find(&quot;Car/Wheel&quot;)</code> finds a node by its path from the scene&rsquo;s
+top; <code>node.Find(&quot;Wheel&quot;)</code> from a node, among its children. <code>context.ChangeScene(file)</code> goes to
+another scene, and <code>context.RestartScene()</code> starts this one again.</p>
+
+<h2 id="everything-is-in-metres">Everything is in metres</h2>
+
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>Unit</td>
+<td>One unit is a metre, in 2D and 3D alike</td>
+</tr>
+
+<tr>
+<td>Axes</td>
+<td>Y up, X to the right, Z towards whoever looks (right-handed, as <a href="https://www.khronos.org/gltf/" target="_blank">glTF</a>, the format of 3D models)</td>
+</tr>
+
+<tr>
+<td>Forward</td>
+<td>A node with no turn faces -Z, as a camera does</td>
+</tr>
+
+<tr>
+<td>Turns</td>
+<td>Degrees: X tilts, Y turns, Z rolls; a positive turn is counter-clockwise, seen from the axis&rsquo;s positive end</td>
+</tr>
+
+<tr>
+<td>Scale</td>
+<td>Times the node&rsquo;s own size; shapes are a metre across</td>
+</tr>
+</tbody>
+</table>
+<p>The editor&rsquo;s grid has one-metre cells, darker every five; X is red, Y green and Z blue.</p>
+
+<h2 id="2d-is-3d-seen-from-the-front">2D is 3D seen from the front</h2>
+
+<p>Whether a scene is 2D or 3D is the scene&rsquo;s choice: <strong>New 2D scene</strong>, or the <strong>3D | 2D</strong> switch over
+the view. A <strong>2D scene</strong> uses the same metres, seen from the front by a camera without perspective,
+and shows sprites, tile maps and flat shapes (a cube is drawn as a square). A sprite is as large as
+its pixels at the scene&rsquo;s <strong>pixels per metre</strong>, set in the scene&rsquo;s inspector: at 32, a sprite 32
+pixels high stands a metre high. Z only says what is drawn in front: the larger, the nearer.
+Isometric is 3D seen from a fixed angle, so the three axes look the same length.</p>
+
+<h2 id="physics-moves-bodies-in-2d">Physics moves bodies, in 2D</h2>
+
+<p>A 2D node with a <strong>body</strong> is moved by the scene&rsquo;s physics while the game plays. Its kind says how:</p>
+
+<table>
+<thead>
+<tr>
+<th>Kind</th>
+<th>What it does</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>Solid</td>
+<td>Never moves; others stand on it and stop against it (ground, walls)</td>
+</tr>
+
+<tr>
+<td>Moving</td>
+<td>Falls, moves at the velocity its behaviours give it, stops against solids (the player)</td>
+</tr>
+
+<tr>
+<td>Pushable</td>
+<td>Falls; a moving body stands on it, or pushes it by walking into it (a box)</td>
+</tr>
+
+<tr>
+<td>Platform</td>
+<td>Never falls, moves through solids at its velocity, carrying what stands on it (a lift)</td>
+</tr>
+
+<tr>
+<td>Trigger</td>
+<td>Stops nothing; its behaviours hear what touches it (a coin, a door)</td>
+</tr>
+</tbody>
+</table>
+<p>A falling body has a <strong>gravity scale</strong>: 1 is Earth&rsquo;s pull, 2 twice as strong, 0 none. A trigger
+can have a gravity of its own, a <strong>pull</strong>: what falls inside it is pulled that way.
+&ldquo;On the floor&rdquo; is wherever a body&rsquo;s gravity pulls it, so a body pulled up stands on a ceiling.</p>
+
+<h2 id="light-multiplies-colours">Light multiplies colours</h2>
+
+<p>A scene can be lit. Its <strong>ambient</strong> is the light that reaches everything: white at 1 leaves the
+colours as they are, a dark blue at 0.4 is a night. Lights on nodes add to it where they shine,
+like lamps in a dark room, and can brighten up to twice. A scene with neither is drawn unlit, at no
+cost. A 3D scene always has a sun and a sky, which light it by day or night; its lights are lamps
+that shine on the shapes around them besides.</p>
+
+<h2 id="not-yet">Not yet</h2>
+
+<ul>
+<li>Sound, and a game&rsquo;s own interface (menus, a score on screen).</li>
+<li>Bodies that turn, slopes, and shapes other than boxes.</li>
+<li>Textures from models: they are drawn with their colours.</li>
+<li>Moving and turning things with handles in the view (the inspector and dragging do it now).</li>
+</ul>
+
+<hr>
+
+<p><a href="./getting-started">← Get started</a> · <a href="./the-quest/the-quest">The quest →</a></p>

@@ -1,0 +1,281 @@
+<h1 id="8-lights-in-2d-and-3d">8. Lights, in 2D and 3D</h1>
+
+<blockquote>
+<p>Status: done, pending the author&rsquo;s review and a check of Metal on a Mac · Author&rsquo;s approval: proposal ☑ plan ☑ (2026-10-19, &ldquo;Con metal&rdquo;: with
+Metal) · go-renderer&rsquo;s part, on its own <code>feature/lights</code> branch, is pushed only with the
+author&rsquo;s say (its CLAUDE.md)</p>
+</blockquote>
+
+<h2 id="why">Why</h2>
+
+<p>io-world&rsquo;s start screen in Unity was lit: a global light at 72 % dimmed the whole scene, the lamp
+cast a warm circle (<code>#faffa0</code>, 3.5 metres), the logo, &ldquo;Press start&rdquo; and the snail glowed through
+their own pictures, and two thin lights lined &ldquo;Demo&rdquo;. Made again in Go Engine (proposal 7), it
+is flat: the engine draws 2D with no light at all. Light is what gives a factory its gloom and a
+lamp its warmth; any 2D game will want it, on the desktop, on phones and on the 3DS.</p>
+
+<p>Unity draws 2D lights in a pass of their own: it paints the lights into a light picture, cleared
+to the global light, and then multiplies the sprites by it. go-renderer&rsquo;s 2D drawing only paints
+one thing over another, with transparency: it has no way to add light nor to multiply by it.</p>
+
+<h2 id="what">What</h2>
+
+<table>
+<thead>
+<tr>
+<th>Id</th>
+<th>Requirement</th>
+<th>Check</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>R1</td>
+<td>go-renderer&rsquo;s 2D lists draw a light layer: lights added into a light picture cleared to an ambient colour, which then multiplies what the layer drew before it</td>
+<td>tests of <code>draw2d</code>&rsquo;s commands; a test that renders a known list on OpenGL into pixels and compares</td>
+</tr>
+
+<tr>
+<td>R2</td>
+<td>Three kinds of light: <strong>global</strong> (the ambient colour and intensity), <strong>point</strong> (a colour, intensity, inner and outer radius), <strong>sprite</strong> (a picture that glows as a light, tinted)</td>
+<td>tests per kind</td>
+</tr>
+
+<tr>
+<td>R3</td>
+<td>The light layer draws on OpenGL (desktop), OpenGL ES (Android, the web), Metal (macOS) and the 3DS (citro3d)</td>
+<td>captures on each; the 3DS in Azahar; Metal by the author on a Mac</td>
+</tr>
+
+<tr>
+<td>R4</td>
+<td>A 2D node can be a light (<code>light</code> in scene files: kind, colour, intensity, radii); a scene&rsquo;s ambient light is the scene&rsquo;s own setting; lights move with their nodes</td>
+<td>tests in <code>engine</code></td>
+</tr>
+
+<tr>
+<td>R5</td>
+<td>Level shows and edits lights: an inspector for them, their radii drawn in the view, and the view lit as the game will be</td>
+<td>captures</td>
+</tr>
+
+<tr>
+<td>R6</td>
+<td>Lights cost little: a 2D frame with lights allocates nothing, and on the 3DS a screen of eight lights keeps 60 frames a second</td>
+<td>the allocation test; a measure in Azahar and on the console</td>
+</tr>
+
+<tr>
+<td>R7</td>
+<td>Io World&rsquo;s start screen has the Unity menu&rsquo;s seven lights, converted from <code>MainMenu.unity</code> by its script</td>
+<td>capture; the author on the console</td>
+</tr>
+
+<tr>
+<td>R8</td>
+<td><em>(Added 2026-10-19, &ldquo;debe funcionar en 2D y 3D&rdquo;.)</em> A 3D node can be a point light too, with the same <code>light</code> (colour, intensity, radii) and the same fade as in 2D; a 3D scene&rsquo;s <code>ambient</code> scales its sky light</td>
+<td>tests in <code>sceneplan</code> and <code>engine</code>; captures on OpenGL, GL ES and the 3DS</td>
+</tr>
+
+<tr>
+<td>R9</td>
+<td>3D lights cost little: each draw takes at most four lights, the nearest that reach it, chosen once a frame on the processor for every backend; a frame allocates nothing for them</td>
+<td>tests of the choice; the allocation test</td>
+</tr>
+
+<tr>
+<td>R10</td>
+<td>A lighting inside a clip lights only the clip, so a lit view inside the editor leaves the panels around it as they are</td>
+<td>a pixel test</td>
+</tr>
+</tbody>
+</table>
+
+<h2 id="out-of-scope">Out of scope</h2>
+
+<ul>
+<li>Shadows cast by sprites or by 3D lights, normal maps, spot lights (a later kind of the same
+<code>light</code>), and dynamic lights on the 3DS&rsquo;s GPU (its fragment lighting: 3D lights are baked into
+vertex colours there, which suits lights that seldom move).</li>
+<li>Blend modes as a general tool for programs (only what the light layer needs).</li>
+</ul>
+
+<h2 id="design">Design</h2>
+
+<p><strong>go-renderer</strong> (<code>draw2d</code>, <code>opengl</code>, <code>gles</code>, <code>ctr</code>), on <code>feature/lights</code>:</p>
+
+<ul>
+<li><code>draw2d</code>: <code>list.PointLight(x, y, inner, outer, colour)</code> and <code>list.SpriteLight(picture, area,
+colour)</code> add lights (a colour&rsquo;s alpha is its intensity), and <code>list.Lighting(ambient)</code> lights
+everything drawn before it with the lights since the last one, inside the clip it is made in;
+what comes after (an interface) stays unlit. <em>(Built so instead of BeginLights/EndLights: one
+command marks where lighting happens, and nothing has to be closed.)</em></li>
+<li>OpenGL and GL ES: a light target the size of the screen, at half its resolution (lights are
+soft), made like the backdrop&rsquo;s targets and kept between frames: cleared to the ambient
+colour, lights drawn into it additively (a point light is one quad whose shader makes its
+falloff), then drawn over the frame with a multiplying blend. One more draw call per light layer.</li>
+<li>3DS (<code>ctr</code>): citro3d draws into a texture render target (<code>C3D_RenderTargetCreateFromTex</code>) at
+half the top screen&rsquo;s resolution, 256 by 128 (sides that are powers of two), and the PICA200
+adds and multiplies with its own blend modes (<code>GPU_BLEND_ADD</code>, <code>GPU_DST_COLOR</code>). With no
+fragment shader, a point light&rsquo;s fade is read from a texture of sixteen discs, and the ambient
+is painted in, since citro3d&rsquo;s clears run before a frame&rsquo;s draws.</li>
+<li>Metal: the same light target as a texture of its own, drawn with the same blends; written as
+the backdrop&rsquo;s Metal part was. It cannot be built nor run where this is written (Linux): the
+author checks it on a Mac.</li>
+</ul>
+
+<p><strong>go-engine</strong>:</p>
+
+<ul>
+<li><code>scenefile</code>: a node&rsquo;s <code>light</code>: <code>{kind: point|sprite, colour, intensity, inner, outer}</code>; a
+sprite light uses the node&rsquo;s own picture, which it is drawn as instead of being shown. A
+scene&rsquo;s <code>ambient</code> colour and intensity is its global light; a scene with lights and no ambient
+is lit by daylight. <em>(Changed while building: no &ldquo;global&rdquo; kind on nodes, since the scene&rsquo;s
+ambient is the global light, and no falloff setting: every backend fades with the same smooth
+curve.)</em></li>
+<li><code>engine</code>: a 2D scene draws its sprites, then its lights (in their nodes&rsquo; places and scales)
+into one light layer, then what goes above (the interface). Lights are found once a frame
+into a reused list, as the drawn nodes are.</li>
+<li><code>editor</code>: a Light section in Level&rsquo;s inspector (kind, colour, intensity, radii), radii drawn
+as circles over the view when &ldquo;Lights&rdquo; is on, and Play drawn lit.</li>
+</ul>
+
+<p><strong>Io World</strong>: <code>tools/make_start_screen.py</code> reads the Unity menu&rsquo;s <code>Light2D</code> components (type,
+colour, intensity, radii, the sprite a sprite light uses) into the start screen&rsquo;s nodes.</p>
+
+<p><strong>3D (added with R8–R9).</strong> go-renderer&rsquo;s <code>scene</code> gets a list of point lights (position, linear
+colour times intensity, inner and outer radius). <code>sceneplan</code> chooses, for each draw, the four
+nearest lights whose outer sphere meets its bounds (<em>built as &ldquo;nearest&rdquo;, not &ldquo;strongest&rdquo;: the
+simpler rule Godot&rsquo;s mobile renderer uses, and stable while nothing moves</em>), listed by index, so
+every backend gets the same short list.
+OpenGL and GL ES add them in their lit shading next to the sun, as Lambert light times the same
+smoothstep fade as 2D, from a fixed array of four uniforms (within OpenGL ES 2&rsquo;s uniform budget,
+and no light loop beyond four). The 3DS bakes them into its vertex colours with the sun, and bakes
+again when a light changes. Metal follows with T4b. The engine fills the list each frame from the
+3D nodes that are lights, and a 3D scene&rsquo;s <code>ambient</code> multiplies its sky light. Researched against
+Unity URP (Light2D, forward&rsquo;s per-object light list), Godot 4 (CanvasModulate, PointLight2D, 8+8
+lights per mesh on mobile), Bevy and the PICA200&rsquo;s fragment lighting.</p>
+
+<p><strong>Alternatives not taken</strong>: drawing lights as translucent halos with no light picture (option A,
+cheap, but light cannot darken what it does not cover nor multiply colours); a light per sprite
+computed on the processor (does not scale, and the 3DS has a GPU for it).</p>
+
+<h2 id="tasks">Tasks</h2>
+
+<ul>
+<li>[x] T1 — <code>draw2d</code>: the light layer&rsquo;s commands and their tests · go-renderer · R1, R2</li>
+<li>[x] T2 — OpenGL: the light target and its blend; pixels compared · go-renderer · R1, R3</li>
+<li>[x] T3 — GL ES: the same for Android and the web · go-renderer · R3</li>
+<li>[x] T4 — 3DS: the light target in citro3d; Azahar captures, and a measure · go-renderer · R3, R6</li>
+<li>[x] T4b — Metal: the light target and its blends, unbuilt here · go-renderer · R3</li>
+<li>[x] T5 — <code>scenefile</code> and <code>engine</code>: lights on nodes, the ambient, drawn each frame without
+allocating · go-engine · R4, R6</li>
+<li>[x] T6 — Level: the inspector (2D and 3D), the ambient, the radii and a mark for each light, Play lit · go-engine · R5</li>
+<li>[x] T7 — Io World&rsquo;s start screen lit from Unity&rsquo;s lights · go-engine-io-world · R7</li>
+<li>[x] T8 — A lighting lights only its clip, on every backend; the 3DS paints its ambient instead
+of clearing it · go-renderer · R10</li>
+<li>[x] T9 — 3D point lights: <code>scene</code>, the choice in <code>sceneplan</code>, OpenGL and GL ES shading · go-renderer · R8, R9</li>
+<li>[x] T10 — 3D lights baked on the 3DS · go-renderer · R8</li>
+<li>[x] T11 — The engine&rsquo;s 3D lights and ambient; the audit&rsquo;s 2D fixes (culling, node scale, one
+screen rectangle) · go-engine · R8, R9</li>
+</ul>
+
+<h2 id="result">Result</h2>
+
+<p>Built on go-renderer&rsquo;s <code>dev</code> (feature/lights merged with feature/3ds-moving-light), go-engine&rsquo;s
+<code>feature/lights</code> and Io World&rsquo;s <code>main</code>. Each requirement&rsquo;s check, as run:</p>
+
+<table>
+<thead>
+<tr>
+<th>Id</th>
+<th>Check</th>
+<th>Result</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>R1</td>
+<td>draw2d and painter tests; OpenGL pixel tests</td>
+<td>pass</td>
+</tr>
+
+<tr>
+<td>R2</td>
+<td>a test per kind; pixels for point and sprite lights</td>
+<td>pass</td>
+</tr>
+
+<tr>
+<td>R3</td>
+<td>OpenGL and WebGL (Chromium) pixels; Azahar captures; Metal</td>
+<td>pass, but Metal: written, unbuilt (the author on a Mac)</td>
+</tr>
+
+<tr>
+<td>R4</td>
+<td><code>engine</code> tests: light on nodes, ambient, scale, hidden, out of sight</td>
+<td>pass</td>
+</tr>
+
+<tr>
+<td>R5</td>
+<td>editor tests; captures of Level in 2D and 3D</td>
+<td>pass</td>
+</tr>
+
+<tr>
+<td>R6</td>
+<td>allocation tests (2D frame, sync, choosing); eight lights at 60 FPS in Azahar</td>
+<td>pass; the console is still to be measured</td>
+</tr>
+
+<tr>
+<td>R7</td>
+<td>Io World&rsquo;s test; captures in the editor and in Azahar</td>
+<td>pass; the author on the console</td>
+</tr>
+
+<tr>
+<td>R8</td>
+<td><code>sceneplan</code> and <code>engine</code> tests; OpenGL pixels; captures on WebGL and the 3DS</td>
+<td>pass</td>
+</tr>
+
+<tr>
+<td>R9</td>
+<td>the choice&rsquo;s tests, with instances; the allocation test</td>
+<td>pass</td>
+</tr>
+
+<tr>
+<td>R10</td>
+<td>a pixel test on OpenGL; a capture of both 3DS screens</td>
+<td>pass</td>
+</tr>
+</tbody>
+</table>
+<p>What the author still has to review or check:</p>
+
+<ul>
+<li><strong>Metal</strong> was written on Linux and never built: <code>go test ./metal</code> on a Mac compiles its shaders.</li>
+<li><strong>The console:</strong> frame times with eight 2D lights, and a lamp moving over baked meshes.</li>
+<li><strong>On the 3DS</strong>, a node marked Moving is not lit by lamps. A floor shows a lamp&rsquo;s pool only where
+it has vertices.</li>
+<li><strong>GL ES</strong> lights the screen only, like its backdrops (no offscreen capture).</li>
+<li><strong>Changes beyond the proposal:</strong>
+
+<ul>
+<li>a body&rsquo;s copy no longer shares its zone&rsquo;s pull (with a test);</li>
+<li>the unknown body kind&rsquo;s message;</li>
+<li>the broken GLB test deleted at the author&rsquo;s word;</li>
+<li>a one-frame flicker of backdrops fixed in OpenGL.</li>
+</ul></li>
+</ul>
+
+<p>Researched against Unity URP&rsquo;s Light2D, Godot 4 (CanvasModulate, PointLight2D, mobile&rsquo;s light
+limits), Bevy and the PICA200&rsquo;s fragment lighting; audited by a sister session, whose findings
+(clip, culling, node scale, banding, the order of lights) are in; reviewed after, and its
+findings fixed but the GL ES framebuffer (noted above).</p>

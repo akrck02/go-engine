@@ -1,0 +1,68 @@
+<h1 id="a-2d-level-with-tiles">🧱 A 2D level with tiles</h1>
+
+<p>Paint a level with a tileset, and let its solid tiles be the ground. For a first walk through it,
+see <a href="./the-quest/ground-to-stand-on">level 3 of the quest</a>.</p>
+
+<h2 id="the-shortest-way">The shortest way</h2>
+
+<ol>
+<li>In <strong>Project</strong>, choose a picture of tiles and press <strong>Make it a sprite or a tileset</strong>, then
+<strong>A tileset</strong>. Set <strong>Pixels a tile, a side</strong> (16, 32…) and save. The tileset is a file beside the
+picture, <code>name.tileset.json</code>, that every scene shares.</li>
+<li>Still in <strong>Art</strong>, click the tiles bodies should stand on: they turn blue, solid.</li>
+<li>In <strong>Level</strong>, press <strong>+</strong>, <strong>Tile map</strong>, and choose the tileset in its inspector. Set how many
+cells across and down it has.</li>
+<li>Choose a tile in the <strong>palette</strong> under the view, and paint: <strong>B</strong> paints, <strong>E</strong> erases, <strong>G</strong>
+fills, <strong>V</strong> goes back to choosing nodes.</li>
+</ol>
+
+<p>Set the scene&rsquo;s <strong>pixels per metre</strong> to the tile&rsquo;s size, so a tile is a metre.</p>
+
+<h2 id="how-it-behaves">How it behaves</h2>
+
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>Where</td>
+<td>The map&rsquo;s top-left corner is its node&rsquo;s position; a cell is a tile&rsquo;s pixels at the scene&rsquo;s pixels per metre</td>
+</tr>
+
+<tr>
+<td>Solid tiles</td>
+<td>Each run of solid tiles side by side becomes one solid box while the game plays: the ground, walls and ceilings</td>
+</tr>
+
+<tr>
+<td>Depth</td>
+<td>The map is drawn at its node&rsquo;s draw order, like any 2D node</td>
+</tr>
+
+<tr>
+<td>Several maps</td>
+<td>A scene can have many: a background one with no solid tiles, a foreground one to stand on</td>
+</tr>
+</tbody>
+</table>
+
+<h2 id="variations">Variations</h2>
+
+<ul>
+<li><strong>A bare picture as tiles.</strong> A tile map can name a picture instead of a tileset. Its inspector
+then asks for the tile size, and the palette has <strong>Bodies stand on tile …</strong> to choose solid ones.
+A tileset is better as soon as two scenes share the tiles.</li>
+<li><strong>Bigger or smaller maps.</strong> Changing the cells across and down keeps what is painted from the
+top-left corner, and empties the rest.</li>
+<li><strong>A camera inside the level.</strong> A camera that follows keeps its view inside the tile maps: see
+<a href="./guides/a-camera-that-follows">A camera that follows</a>.</li>
+</ul>
+
+<hr>
+
+<p><a href="./overview">← Guides</a> · <a href="./guides/sprites-and-animations">Sprites and animations →</a></p>

@@ -1,0 +1,74 @@
+<h1 id="the-3ds-s-bottom-screen">🕹️ The 3DS&rsquo;s bottom screen</h1>
+
+<p>Use the 3DS&rsquo;s second screen: a ready-made menu of the game&rsquo;s scenes, or a screen drawn by the game
+itself.</p>
+
+<h2 id="a-menu-of-the-scenes">A menu of the scenes</h2>
+
+<p>In <strong>Project → Settings</strong>, tick <strong>List the scenes on the 3DS&rsquo;s bottom screen, to play any</strong>. The
+bottom screen then lists every scene; a touch plays it. It is handy while making a game, to jump
+to any level.</p>
+
+<h2 id="a-screen-of-your-own">A screen of your own</h2>
+
+<p><code>engine.SetBottomScreen</code> draws the bottom screen with <a href="https://github.com/akrck02/go-ui" target="_blank">Go UI</a>, in
+the game&rsquo;s own look. Call it in <code>main.go</code>, before <code>engine.Run</code>:</p>
+<pre><code class="language-go"><span class="kd">func</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+	<span class="nx">engine</span><span class="p">.</span><span class="nf">Register</span><span class="p">(</span><span class="nx">Player</span><span class="p">{})</span>
+	<span class="nx">engine</span><span class="p">.</span><span class="nf">SetBottomScreen</span><span class="p">(</span><span class="nx">bottomScreen</span><span class="p">)</span>
+	<span class="k">if</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">engine</span><span class="p">.</span><span class="nf">Run</span><span class="p">(</span><span class="nx">files</span><span class="p">);</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+		<span class="nx">log</span><span class="p">.</span><span class="nf">Fatal</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+
+<span class="c1">// bottomScreen lists the levels, the one playing chosen; a touch plays another.</span>
+<span class="kd">func</span> <span class="nf">bottomScreen</span><span class="p">(</span><span class="nx">context</span> <span class="o">*</span><span class="nx">ui</span><span class="p">.</span><span class="nx">Context</span><span class="p">,</span> <span class="nx">menu</span> <span class="nx">engine</span><span class="p">.</span><span class="nx">Menu</span><span class="p">)</span> <span class="p">{</span>
+	<span class="k">for</span> <span class="nx">_</span><span class="p">,</span> <span class="nx">scene</span> <span class="o">:=</span> <span class="k">range</span> <span class="nx">menu</span><span class="p">.</span><span class="nf">Scenes</span><span class="p">()</span> <span class="p">{</span>
+		<span class="nx">playing</span> <span class="o">:=</span> <span class="nx">menu</span><span class="p">.</span><span class="nf">Playing</span><span class="p">()</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="o">&amp;&amp;</span> <span class="nx">menu</span><span class="p">.</span><span class="nf">Playing</span><span class="p">().</span><span class="nx">Name</span> <span class="o">==</span> <span class="nx">scene</span><span class="p">.</span><span class="nx">Name</span>
+		<span class="k">if</span> <span class="nx">context</span><span class="p">.</span><span class="nf">Selectable</span><span class="p">(</span><span class="s">&#34;map&#34;</span><span class="p">,</span> <span class="nx">scene</span><span class="p">.</span><span class="nx">Name</span><span class="p">,</span> <span class="nx">playing</span><span class="p">)</span> <span class="p">{</span>
+			<span class="nx">menu</span><span class="p">.</span><span class="nf">Play</span><span class="p">(</span><span class="nx">scene</span><span class="p">.</span><span class="nx">File</span><span class="p">)</span>
+		<span class="p">}</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+</code></pre>
+
+<table>
+<thead>
+<tr>
+<th>Call</th>
+<th>What it gives</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>menu.Scenes()</code></td>
+<td>The project&rsquo;s scenes, each with its file and name</td>
+</tr>
+
+<tr>
+<td><code>menu.Playing()</code></td>
+<td>The scene playing, or nil</td>
+</tr>
+
+<tr>
+<td><code>menu.Play(file)</code></td>
+<td>Plays another scene</td>
+</tr>
+</tbody>
+</table>
+<p>It needs <code>import ui &quot;github.com/akrck02/go-ui&quot;</code>, which the engine already brings. The function runs every frame the bottom screen is drawn, on the 3DS only: elsewhere there is no
+bottom screen and it is never called. The screen is 320 × 240 pixels, and touch is its pointer.</p>
+
+<h2 id="variations">Variations</h2>
+
+<ul>
+<li><strong>A map, a score, the controls.</strong> Anything Go UI draws can be there: text, pictures, buttons.</li>
+<li><strong>Its own pictures.</strong> Read a picture once (<code>draw2d.DecodeImage</code>) and paint it with
+<code>context.Paint</code>; the <a href="https://github.com/akrck02/io-world/tree/main/IoWorldGo" target="_blank">Io World</a> game draws
+its menu of levels from its own bricks this way.</li>
+</ul>
+
+<hr>
+
+<p><a href="./guides/building-for-android">← Building for Android</a> · <a href="./reference/packages">The reference →</a></p>

@@ -1,0 +1,105 @@
+<h1 id="level-5-night-in-the-forest">🏮 Level 5: night in the forest</h1>
+
+<p>Night falls on the forest. You darken it with an ambient light, hang a lamp over the sign, make the
+coins glow and let a cold moonlight in. No code, except for the bonus.</p>
+
+<h4 id="the-idea">The idea</h4>
+
+<p>Think of the level as a stage. The <strong>ambient</strong> is the house lights: how much of everything you can
+see when nothing else shines. Each <strong>light</strong> is a spotlight: it adds its colour where it reaches,
+strongest in its middle and fading at its edge. A <strong>sprite light</strong> is a light in the shape of a
+picture: a coin that glows exactly where its gold is.</p>
+
+<h2 id="dusk">Dusk</h2>
+
+<p>Choose nothing (click an empty part of the view). In the scene&rsquo;s inspector, tick <strong>An ambient light
+of its own</strong>. Make it a dark blue, <code>#30406e</code>, at an <strong>intensity</strong> of 0.55. The forest dims at once:
+the view shows the scene lit as the game will be. <strong>Lit</strong>, over the view, switches that on and off
+while you work.</p>
+
+<h2 id="a-lamp-over-the-sign">A lamp over the sign</h2>
+
+<ol>
+<li>Choose the <em>Sign</em>. Press <strong>+</strong> and choose <strong>Light</strong>: a warm lamp lands after it.</li>
+<li>Press <strong>Make it a child of the node above</strong> (↳), so the lamp moves with the sign. Name it <em>Lamp</em>
+and set its Y to 1.4, just above the board.</li>
+<li>In its <strong>Light</strong> section, keep <strong>Point</strong>. Set the intensity to 1.5, <strong>Inner</strong> to 0.5 metres and
+<strong>Outer</strong> to 4.</li>
+</ol>
+
+<p><strong>Lights</strong>, over the view, draws two circles round it: where its light is full, and where it ends.</p>
+
+<p align="center"><img alt="Level at night with the lamp chosen: its two circles round the sign, the warm pool on the ledge and the hill behind, two coins glowing, and the lamp's Light section in the inspector" src="./images/quest/5.png" width="680"></p>
+
+<h2 id="coins-that-glow">Coins that glow</h2>
+
+<ol>
+<li>Choose a coin, and from <strong>Project</strong> place <code>coin.sprite.json</code> again. Make it a child of the coin
+(↳) and name it <em>Glow</em>.</li>
+<li>Under <strong>Light</strong>, press <strong>Make it a light</strong> and choose <strong>Sprite</strong>. Make it <code>#ffe08a</code>, at 1.2.</li>
+</ol>
+
+<p>A sprite light is not drawn itself: it shines in its picture&rsquo;s shape, so the coin seems to glow from
+inside. Do the same for each coin, or glow one and duplicate the coin.</p>
+
+<h2 id="moonlight">Moonlight</h2>
+
+<p>Press <strong>+</strong>, <strong>Light</strong>, and drag it high over the far end of the level. Make it a pale blue,
+<code>#9ab8ff</code>, at 0.8, with an inner radius of 1 and an outer of 7.</p>
+
+<h2 id="checkpoint">Checkpoint</h2>
+
+<p>Press <strong>Play</strong> and run through the dark.</p>
+
+<p align="center"><img alt="Playing at night: a warm lamp over the sign at the left, two glowing coins, a cold blue moonlight at the top right, the slime in the dark on the long ledge" src="./images/quest/5-play.png" width="680"></p>
+
+<p>The lamp warms the sign and its ledge, the coins glow, and the far end is blue under the moon. The
+light the lamp throws on the sky beyond the hills is part of the scene too: everything drawn is lit.</p>
+
+<h2 id="bonus-a-lamp-that-flickers">Bonus: a lamp that flickers</h2>
+
+<p>Make the lamp waver, as a flame does.</p>
+
+<details>
+<summary>🔓 Show the solution</summary>
+
+A behaviour can change its node's light every frame. Add `flicker.go`:
+
+```go
+package main
+
+import (
+	"math"
+
+	"github.com/akrck02/go-engine/engine"
+)
+
+// Flicker makes its node's light waver, as a flame does.
+type Flicker struct {
+	Base float64 `json:"base"` // the intensity it wavers round
+
+	strength float64 // this frame's: the light reads it
+}
+
+// Update sets this frame's strength from two waves that never quite repeat.
+func (flicker *Flicker) Update(context *engine.Context) {
+	light, found := context.Node.Light()
+	if !found {
+		return
+	}
+	flicker.strength = flicker.Base + 0.2*math.Sin(context.Time*13) + 0.1*math.Sin(context.Time*29)
+	light.Intensity = &flicker.strength
+}
+```
+
+Register `Flicker{}`, press **Rebuild**, and give the lamp the behaviour with a **base** of 1.5.
+The light keeps pointing at the behaviour's own number, so a frame makes no new one: games that run
+sixty frames a second on a console care about that.
+
+</details>
+
+<p><strong>🏮 Achievement unlocked: Lamplighter.</strong> You lit a scene with an ambient, lamps and glows.</p>
+
+<hr>
+
+<p><a href="./the-quest/coins-and-water">← Level 4</a> · <a href="./the-quest/in-your-pocket">Level 6 →</a></p>

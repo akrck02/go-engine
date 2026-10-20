@@ -1,0 +1,874 @@
+<h1 id="engine">engine</h1>
+<pre><code class="language-go"><span class="kn">import</span> <span class="s">&#34;github.com/akrck02/go-engine/engine&#34;</span>
+</code></pre>
+
+<p>Package engine runs a game: a scene of nodes, read from the project&rsquo;s scene
+files, drawn by go-renderer, and moved by the game&rsquo;s own Go code through
+behaviours. A node is a thing in the world: a shape, a model, a sprite, a
+camera, or an empty point to hang others from. Its Transform places it relative
+to its parent, in metres and degrees (see package space).</p>
+
+<p>A game&rsquo;s main registers its behaviours and runs the project it embeds:</p>
+
+<h3 id="functions">Functions</h3>
+
+<table>
+<thead>
+<tr>
+<th>Function</th>
+<th></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>func Behaviour[Wanted any](node *Node) (*Wanted, bool)</code></td>
+<td>Behaviour finds a node&rsquo;s behaviour of a type, while the game runs.</td>
+</tr>
+
+<tr>
+<td><code>func CameraAt(world space.Transform, settings scenefile.Camera) models.Camera</code></td>
+<td>CameraAt is go-renderer&rsquo;s camera for a camera placed at a transform with some settings.</td>
+</tr>
+
+<tr>
+<td><code>func HeightSeen(settings *scenefile.Camera, aspect float64) float64</code></td>
+<td>HeightSeen is the metres a 2D camera sees top to bottom on a screen of a shape (its width over its height): the camera&rsquo;s height (10 when it has none), or more on a screen too narrow for the width it must see.</td>
+</tr>
+
+<tr>
+<td><code>func Register(behaviours ...any)</code></td>
+<td>Register makes behaviours known by their type&rsquo;s name: Register(Spin{}) is &ldquo;Spin&rdquo;.</td>
+</tr>
+
+<tr>
+<td><code>func RegisterAs(name string, behaviour any)</code></td>
+<td>RegisterAs makes a behaviour known by a name of its own.</td>
+</tr>
+
+<tr>
+<td><code>func Registered() []string</code></td>
+<td>Registered are the names of the behaviours registered, in order.</td>
+</tr>
+
+<tr>
+<td><code>func Run(files fs.FS) error</code></td>
+<td>Run plays a project, from its files (embedded in the game, or a folder), until its window is closed: on the desktop in a window, on the Nintendo 3DS on the top screen.</td>
+</tr>
+
+<tr>
+<td><code>func SetBottomScreen(paint func(context *ui.Context, menu Menu))</code></td>
+<td>SetBottomScreen makes a game draw the Nintendo 3DS&rsquo;s bottom screen itself, with go-ui, in its own look: a menu of its scenes (Menu), a map, its controls.</td>
+</tr>
+
+<tr>
+<td><code>func SetEditor(run func() error)</code></td>
+<td>SetEditor installs the editor (the editor package does, from a project&rsquo;s editor.go).</td>
+</tr>
+
+<tr>
+<td><code>func Version() string</code></td>
+<td>Version says which Go Engine this program was built with: its release and commit, as &ldquo;v0.0.1 (ba08523)&rdquo;, or &ldquo;v0.0.1 (77aa001, local)&rdquo; for a local copy, as the editor&rsquo;s window and the logs show it.</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="constants-and-variables">Constants and variables</h3>
+<pre><code class="language-go"><span class="kd">const</span> <span class="p">(</span>
+	<span class="nx">KeyA</span>         <span class="p">=</span> <span class="nx">input</span><span class="p">.</span><span class="nx">KeyA</span>
+	<span class="nx">KeyB</span>         <span class="p">=</span> <span class="nx">input</span><span class="p">.</span><span class="nx">KeyB</span>
+	<span class="nx">KeyC</span>         <span class="p">=</span> <span class="nx">input</span><span class="p">.</span><span class="nx">KeyC</span>
+	<span class="nx">KeyD</span>         <span class="p">=</span> <span class="nx">input</span><span class="p">.</span><span class="nx">KeyD</span>
+	<span class="nx">KeyE</span>         <span class="p">=</span> <span class="nx">input</span><span class="p">.</span><span class="nx">KeyE</span>
+	<span class="nx">KeyF</span>         <span class="p">=</span> <span class="nx">input</span><span class="p">.</span><span class="nx">KeyF</span>
+	<span class="nx">KeyG</span>         <span class="p">=</span> <span class="nx">input</span><span class="p">.</span><span class="nx">KeyG</span>
+	<span class="nx">KeyH</span>         <span class="p">=</span> <span class="nx">input</span><span class="p">.</span><span class="nx">KeyH</span>
+	<span class="nx">KeyI</span>         <span class="p">=</span> <span class="nx">input</span><span class="p">.</span><span class="nx">KeyI</span>
+	<span class="nx">KeyJ</span>         <span class="p">=</span> <span class="nx">input</span><span class="p">.</span><span class="nx">KeyJ</span>
+	<span class="nx">KeyK</span>         <span class="p">=</span> <span class="nx">input</span><span class="p">.</span><span class="nx">KeyK</span>
+	<span class="nx">KeyL</span>         <span class="p">=</span> <span class="nx">input</span><span class="p">.</span><span class="nx">KeyL</span>
+	<span class="nx">KeyM</span>         <span class="p">=</span> <span class="nx">input</span><span class="p">.</span><span class="nx">KeyM</span>
+	<span class="nx">KeyN</span>         <span class="p">=</span> <span class="nx">input</span><span class="p">.</span><span class="nx">KeyN</span>
+	<span class="nx">KeyO</span>         <span class="p">=</span> <span class="nx">input</span><span class="p">.</span><span class="nx">KeyO</span>
+	<span class="nx">KeyP</span>         <span class="p">=</span> <span class="nx">input</span><span class="p">.</span><span class="nx">KeyP</span>
+	<span class="nx">KeyQ</span>         <span class="p">=</span> <span class="nx">input</span><span class="p">.</span><span class="nx">KeyQ</span>
+	<span class="nx">KeyR</span>         <span class="p">=</span> <span class="nx">input</span><span class="p">.</span><span class="nx">KeyR</span>
+	<span class="nx">KeyS</span>         <span class="p">=</span> <span class="nx">input</span><span class="p">.</span><span class="nx">KeyS</span>
+	<span class="nx">KeyT</span>         <span class="p">=</span> <span class="nx">input</span><span class="p">.</span><span class="nx">KeyT</span>
+	<span class="nx">KeyU</span>         <span class="p">=</span> <span class="nx">input</span><span class="p">.</span><span class="nx">KeyU</span>
+	<span class="nx">KeyV</span>         <span class="p">=</span> <span class="nx">input</span><span class="p">.</span><span class="nx">KeyV</span>
+	<span class="nx">KeyW</span>         <span class="p">=</span> <span class="nx">input</span><span class="p">.</span><span class="nx">KeyW</span>
+	<span class="nx">KeyX</span>         <span class="p">=</span> <span class="nx">input</span><span class="p">.</span><span class="nx">KeyX</span>
+	<span class="nx">KeyY</span>         <span class="p">=</span> <span class="nx">input</span><span class="p">.</span><span class="nx">KeyY</span>
+	<span class="nx">KeyZ</span>         <span class="p">=</span> <span class="nx">input</span><span class="p">.</span><span class="nx">KeyZ</span>
+	<span class="nx">KeyUp</span>        <span class="p">=</span> <span class="nx">input</span><span class="p">.</span><span class="nx">KeyUp</span>
+	<span class="nx">KeyDown</span>      <span class="p">=</span> <span class="nx">input</span><span class="p">.</span><span class="nx">KeyDown</span>
+	<span class="nx">KeyLeft</span>      <span class="p">=</span> <span class="nx">input</span><span class="p">.</span><span class="nx">KeyLeft</span>
+	<span class="nx">KeyRight</span>     <span class="p">=</span> <span class="nx">input</span><span class="p">.</span><span class="nx">KeyRight</span>
+	<span class="nx">KeySpace</span>     <span class="p">=</span> <span class="nx">input</span><span class="p">.</span><span class="nx">KeySpace</span>
+	<span class="nx">KeyEnter</span>     <span class="p">=</span> <span class="nx">input</span><span class="p">.</span><span class="nx">KeyEnter</span>
+	<span class="nx">KeyEscape</span>    <span class="p">=</span> <span class="nx">input</span><span class="p">.</span><span class="nx">KeyEscape</span>
+	<span class="nx">KeyShift</span>     <span class="p">=</span> <span class="nx">input</span><span class="p">.</span><span class="nx">KeyShift</span>
+	<span class="nx">KeyControl</span>   <span class="p">=</span> <span class="nx">input</span><span class="p">.</span><span class="nx">KeyControl</span>
+	<span class="nx">KeyTab</span>       <span class="p">=</span> <span class="nx">input</span><span class="p">.</span><span class="nx">KeyTab</span>
+	<span class="nx">KeyBackspace</span> <span class="p">=</span> <span class="nx">input</span><span class="p">.</span><span class="nx">KeyBackspace</span>
+<span class="p">)</span>
+</code></pre>
+
+<p>Keys.</p>
+<pre><code class="language-go"><span class="kd">const</span> <span class="nx">DefaultGravity</span> <span class="p">=</span> <span class="mf">9.81</span>
+</code></pre>
+
+<p>DefaultGravity is how fast a 2D scene&rsquo;s gravity pulls down, in metres a second each second: Earth&rsquo;s.</p>
+<pre><code class="language-go"><span class="kd">const</span> <span class="nx">EditorVariable</span> <span class="p">=</span> <span class="s">&#34;GO_ENGINE_EDITOR&#34;</span>
+</code></pre>
+
+<p>EditorVariable is set, in the environment, when go-engine starts a game to edit it.</p>
+<pre><code class="language-go"><span class="kd">const</span> <span class="nx">Module</span> <span class="p">=</span> <span class="s">&#34;github.com/akrck02/go-engine&#34;</span>
+</code></pre>
+
+<p>Module is Go Engine&rsquo;s module path.</p>
+<pre><code class="language-go"><span class="kd">const</span> <span class="nx">Release</span> <span class="p">=</span> <span class="s">&#34;v0.0.2&#34;</span>
+</code></pre>
+
+<p>Release is the version of Go Engine being made.</p>
+<pre><code class="language-go"><span class="kd">const</span> <span class="nx">SettingsFile</span> <span class="p">=</span> <span class="s">&#34;engine.json&#34;</span>
+</code></pre>
+
+<p>SettingsFile is the settings&rsquo; file in a project.</p>
+<pre><code class="language-go"><span class="kd">var</span> <span class="p">(</span>
+	<span class="nx">SettingsNotFound</span>      <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;engine.settings-not-found&#34;</span><span class="p">,</span> <span class="s">&#34;the project has no engine.json&#34;</span><span class="p">)</span>
+	<span class="nx">SettingsUnreadable</span>    <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;engine.settings-unreadable&#34;</span><span class="p">,</span> <span class="s">&#34;engine.json is not the project&#39;s settings&#34;</span><span class="p">)</span>
+	<span class="nx">NoStartScene</span>          <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;engine.no-start-scene&#34;</span><span class="p">,</span> <span class="s">&#34;engine.json names no start scene&#34;</span><span class="p">)</span>
+	<span class="nx">SceneNotFound</span>         <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;engine.scene-not-found&#34;</span><span class="p">,</span> <span class="s">&#34;the scene file does not exist&#34;</span><span class="p">)</span>
+	<span class="nx">SceneUnreadable</span>       <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;engine.scene-unreadable&#34;</span><span class="p">,</span> <span class="s">&#34;the scene file is not a scene&#34;</span><span class="p">)</span>
+	<span class="nx">BehaviourUnregistered</span> <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;engine.behaviour-unregistered&#34;</span><span class="p">,</span> <span class="s">&#34;no behaviour is registered by that name (engine.Register in the game&#39;s main)&#34;</span><span class="p">)</span>
+	<span class="nx">BehaviourFields</span>       <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;engine.behaviour-fields&#34;</span><span class="p">,</span> <span class="s">&#34;the scene&#39;s fields do not fit the behaviour&#39;s&#34;</span><span class="p">)</span>
+	<span class="nx">NoFiles</span>               <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;engine.no-files&#34;</span><span class="p">,</span> <span class="s">&#34;the scene was made without the project&#39;s files&#34;</span><span class="p">)</span>
+	<span class="nx">ModelFormat</span>           <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;engine.model-format&#34;</span><span class="p">,</span> <span class="s">&#34;only .glb models are read for now&#34;</span><span class="p">)</span>
+	<span class="nx">ModelNotFound</span>         <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;engine.model-not-found&#34;</span><span class="p">,</span> <span class="s">&#34;the model&#39;s file does not exist&#34;</span><span class="p">)</span>
+	<span class="nx">ModelUnreadable</span>       <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;engine.model-unreadable&#34;</span><span class="p">,</span> <span class="s">&#34;the model&#39;s file is not a .glb go-renderer reads&#34;</span><span class="p">)</span>
+	<span class="nx">PictureNotFound</span>       <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;engine.picture-not-found&#34;</span><span class="p">,</span> <span class="s">&#34;the picture&#39;s file does not exist&#34;</span><span class="p">)</span>
+	<span class="nx">PictureUnreadable</span>     <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;engine.picture-unreadable&#34;</span><span class="p">,</span> <span class="s">&#34;the picture is not a PNG or a JPEG&#34;</span><span class="p">)</span>
+	<span class="nx">SpriteNotFound</span>        <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;engine.sprite-not-found&#34;</span><span class="p">,</span> <span class="s">&#34;the sprite&#39;s file does not exist&#34;</span><span class="p">)</span>
+	<span class="nx">TilesetNotFound</span>       <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;engine.tileset-not-found&#34;</span><span class="p">,</span> <span class="s">&#34;the tileset&#39;s file does not exist&#34;</span><span class="p">)</span>
+	<span class="nx">SceneNotRestartable</span>   <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;engine.scene-not-restartable&#34;</span><span class="p">,</span> <span class="s">&#34;the scene was not made from a description, so it cannot start again&#34;</span><span class="p">)</span>
+<span class="p">)</span>
+</code></pre>
+
+<p>Error codes of the engine package.</p>
+
+<h3 id="context">Context</h3>
+
+<p>Context is what a behaviour is given each time it runs.</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">Context</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">Node</span>  <span class="o">*</span><span class="nx">Node</span>   <span class="c1">// the node the behaviour is attached to</span>
+	<span class="nx">Scene</span> <span class="o">*</span><span class="nx">Scene</span>  <span class="c1">// the scene it is in</span>
+	<span class="nx">Delta</span> <span class="kt">float64</span> <span class="c1">// seconds since the last frame</span>
+	<span class="nx">Time</span>  <span class="kt">float64</span> <span class="c1">// seconds since the scene started</span>
+	<span class="nx">Input</span> <span class="o">*</span><span class="nx">Input</span>
+<span class="p">}</span>
+</code></pre>
+
+<table>
+<thead>
+<tr>
+<th>Function or method</th>
+<th></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>func (context *Context) ChangeScene(file string)</code></td>
+<td>ChangeScene asks for another scene of the project, by its file, at the end of the frame.</td>
+</tr>
+
+<tr>
+<td><code>func (context *Context) Find(path string) (*Node, bool)</code></td>
+<td>Find finds a node of the scene by its path, as &ldquo;Car/Wheel&rdquo;.</td>
+</tr>
+
+<tr>
+<td><code>func (context *Context) RestartScene()</code></td>
+<td>RestartScene asks for the scene to start again as it was written, at the end of the frame.</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="input">Input</h3>
+
+<p>Input is the keyboard, the mouse and the controls, as the game reads them.</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">Input</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="c1">// Has unexported fields.</span>
+<span class="p">}</span>
+</code></pre>
+
+<table>
+<thead>
+<tr>
+<th>Function or method</th>
+<th></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>func (keys *Input) Axis(negative, positive Key) float64</code></td>
+<td>Axis is -1 while the first key is held, 1 while the second is, 0 with neither or both.</td>
+</tr>
+
+<tr>
+<td><code>func (keys *Input) Down(key Key) bool</code></td>
+<td>Down tells whether a key is held; Pressed whether it went down this frame.</td>
+</tr>
+
+<tr>
+<td><code>func (keys *Input) Move() space.Vector</code></td>
+<td>Move is the direction the arrows (or WASD, or a 3DS&rsquo;s cross and circle pad) point, on the ground: right is +X, up is Forward (-Z).</td>
+</tr>
+
+<tr>
+<td><code>func (keys *Input) Pointer() (x, y float64, pressed bool)</code></td>
+<td>Pointer is where the mouse (or a finger) is, in window pixels, and whether it is pressed.</td>
+</tr>
+
+<tr>
+<td><code>func (keys *Input) Pressed(key Key) bool</code></td>
+<td></td>
+</tr>
+
+<tr>
+<td><code>func (keys *Input) State() *input.State</code></td>
+<td>State is go-renderer&rsquo;s input, for what Input does not cover.</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="key">Key</h3>
+
+<p>Key is a key of the keyboard (a 3DS&rsquo;s buttons stand for some: the cross is
+the arrows, A is Enter, B is Escape).</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">Key</span> <span class="p">=</span> <span class="nx">input</span><span class="p">.</span><span class="nx">Key</span>
+</code></pre>
+
+<h3 id="menu">Menu</h3>
+
+<p>Menu is what a game&rsquo;s own bottom screen is given: its scenes, the one
+playing, and how to play another.</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">Menu</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="c1">// Has unexported fields.</span>
+<span class="p">}</span>
+</code></pre>
+
+<table>
+<thead>
+<tr>
+<th>Function or method</th>
+<th></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>func (menu Menu) Play(file string)</code></td>
+<td>Play plays a scene next, by its file.</td>
+</tr>
+
+<tr>
+<td><code>func (menu Menu) Playing() *Scene</code></td>
+<td>Playing is the scene playing now: its name, and its pictures (Scene.Picture) to draw with.</td>
+</tr>
+
+<tr>
+<td><code>func (menu Menu) Scenes() []MenuScene</code></td>
+<td>Scenes are the game&rsquo;s scenes, in the order of their files.</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="menuscene">MenuScene</h3>
+
+<p>MenuScene is a scene the menu offers: its file, and the name it shows.</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">MenuScene</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">File</span><span class="p">,</span> <span class="nx">Name</span> <span class="kt">string</span>
+<span class="p">}</span>
+</code></pre>
+
+<h3 id="node">Node</h3>
+
+<p>Node is a thing in a scene.</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">Node</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">Name</span>      <span class="kt">string</span>
+	<span class="nx">Transform</span> <span class="nx">space</span><span class="p">.</span><span class="nx">Transform</span>
+	<span class="nx">Visible</span>   <span class="kt">bool</span>
+
+	<span class="c1">// Behaviours are the game&#39;s code attached to the node, as the scene file keeps them; while the</span>
+	<span class="c1">// game runs, behaviours holds them made.</span>
+	<span class="nx">Behaviours</span> <span class="p">[]</span><span class="nx">scenefile</span><span class="p">.</span><span class="nx">Behaviour</span>
+
+	<span class="c1">// Has unexported fields.</span>
+<span class="p">}</span>
+</code></pre>
+
+<table>
+<thead>
+<tr>
+<th>Function or method</th>
+<th></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>func (node *Node) Add(child *Node)</code></td>
+<td>Add hangs a node from this one, taking it from where it hung before.</td>
+</tr>
+
+<tr>
+<td><code>func (node *Node) Animation() string</code></td>
+<td>Animation is the name of the animation the node plays, or &ldquo;&rdquo;.</td>
+</tr>
+
+<tr>
+<td><code>func (node *Node) Animations() []string</code></td>
+<td>Animations are the names of the animations of the node&rsquo;s sprite, in order.</td>
+</tr>
+
+<tr>
+<td><code>func (node *Node) Attach(behaviour any)</code></td>
+<td>Attach gives a node a behaviour while the game runs, made by the game&rsquo;s code; it starts on the next frame.</td>
+</tr>
+
+<tr>
+<td><code>func (node *Node) Body() (*physics.Body, bool)</code></td>
+<td>Body is the node&rsquo;s body in the scene&rsquo;s physics, while the game plays: its velocity, whether it stands on the floor.</td>
+</tr>
+
+<tr>
+<td><code>func (node *Node) BodyBox() (space.Box, bool)</code></td>
+<td>BodyBox is the box of the world the node&rsquo;s body takes, from its settings, playing or not: what the editor outlines.</td>
+</tr>
+
+<tr>
+<td><code>func (node *Node) BodySettings() (*scenefile.Body, bool)</code></td>
+<td>BodySettings is the body the node is given in the scene file, to edit in place; a node without one has none.</td>
+</tr>
+
+<tr>
+<td><code>func (node *Node) Bounds() space.Box</code></td>
+<td>Bounds is the box, in the world, around what the node itself shows (not its children); empty for a node that shows nothing.</td>
+</tr>
+
+<tr>
+<td><code>func (node *Node) Camera() (*scenefile.Camera, bool)</code></td>
+<td>Camera is the node&rsquo;s camera settings, if it is a camera.</td>
+</tr>
+
+<tr>
+<td><code>func (node *Node) CellAt(point space.Vector) (column, row int, inside bool)</code></td>
+<td>CellAt finds the cell of the node&rsquo;s tile map at a point of the world; inside is false outside the map, or for a node that is not one.</td>
+</tr>
+
+<tr>
+<td><code>func (node *Node) CellBox(column, row int) space.Box</code></td>
+<td>CellBox is the box of the world one cell of the node&rsquo;s tile map fills.</td>
+</tr>
+
+<tr>
+<td><code>func (node *Node) Children() []*Node</code></td>
+<td>Children are the nodes that hang from this one.</td>
+</tr>
+
+<tr>
+<td><code>func (node *Node) Colour() string</code></td>
+<td>Colour is the colour of the node&rsquo;s shape, &ldquo;#rrggbb&rdquo;.</td>
+</tr>
+
+<tr>
+<td><code>func (node *Node) Describe() scenefile.Node</code></td>
+<td>Describe writes a node, and its children, as a scene file keeps them.</td>
+</tr>
+
+<tr>
+<td><code>func (node *Node) FaceLeft(left bool)</code></td>
+<td>FaceLeft turns the node&rsquo;s sprite to face left (true) or right (false, as it was drawn).</td>
+</tr>
+
+<tr>
+<td><code>func (node *Node) FacingLeft() bool</code></td>
+<td>FacingLeft tells whether the node&rsquo;s sprite faces left.</td>
+</tr>
+
+<tr>
+<td><code>func (node *Node) Find(path string) (*Node, bool)</code></td>
+<td>Find finds a node under this one by its path: &ldquo;Wheel&rdquo;, or &ldquo;Car/Wheel&rdquo; for a deeper one.</td>
+</tr>
+
+<tr>
+<td><code>func (node *Node) Frame() int</code></td>
+<td>Frame is the frame of the sheet the node shows now, from 0, the top-left one.</td>
+</tr>
+
+<tr>
+<td><code>func (node *Node) Index() int</code></td>
+<td>Index is where the node is among its parent&rsquo;s children.</td>
+</tr>
+
+<tr>
+<td><code>func (node *Node) Insert(child *Node, at int)</code></td>
+<td>Insert hangs a node from this one at a place among its children.</td>
+</tr>
+
+<tr>
+<td><code>func (node *Node) Light() (*scenefile.Light, bool)</code></td>
+<td>Light is the node&rsquo;s light, to edit in place; a node that is not one has none.</td>
+</tr>
+
+<tr>
+<td><code>func (node *Node) LightRadii() (inner, outer float64)</code></td>
+<td>LightRadii are a point light&rsquo;s radii in metres, times its node&rsquo;s largest scale (across and up in 2D, which has no depth to scale): a lamp scaled up reaches further.</td>
+</tr>
+
+<tr>
+<td><code>func (node *Node) MadeBehaviours() []any</code></td>
+<td>MadeBehaviours are the node&rsquo;s behaviours as the game runs them, made from its Behaviours: what the editor watches while a scene plays.</td>
+</tr>
+
+<tr>
+<td><code>func (node *Node) Model() string</code></td>
+<td>Model is the model the node shows, by its path in the project, or &ldquo;&rdquo;.</td>
+</tr>
+
+<tr>
+<td><code>func (node *Node) NamedStart() string</code></td>
+<td>NamedStart is the animation the node itself names to start with, or &ldquo;&rdquo; for its sprite&rsquo;s own.</td>
+</tr>
+
+<tr>
+<td><code>func (node *Node) Parent() *Node</code></td>
+<td>Parent is the node this one hangs from; nil for the scene&rsquo;s root.</td>
+</tr>
+
+<tr>
+<td><code>func (node *Node) Path() string</code></td>
+<td>Path is the node&rsquo;s names from the root, as &ldquo;Car/Wheel&rdquo;.</td>
+</tr>
+
+<tr>
+<td><code>func (node *Node) Play(name string) bool</code></td>
+<td>Play starts an animation of the node&rsquo;s sheet by its name.</td>
+</tr>
+
+<tr>
+<td><code>func (node *Node) Remove()</code></td>
+<td>Remove takes the node, and what hangs from it, out of its scene, and their bodies out of its physics.</td>
+</tr>
+
+<tr>
+<td><code>func (node *Node) Scene() *Scene</code></td>
+<td>Scene is the scene the node is in.</td>
+</tr>
+
+<tr>
+<td><code>func (node *Node) SetBodySettings(body *scenefile.Body)</code></td>
+<td>SetBodySettings gives the node a body in its scene&rsquo;s physics, or takes it away (nil).</td>
+</tr>
+
+<tr>
+<td><code>func (node *Node) SetCamera(camera *scenefile.Camera)</code></td>
+<td>SetCamera makes the node a camera, or no longer one with nil.</td>
+</tr>
+
+<tr>
+<td><code>func (node *Node) SetLight(light *scenefile.Light)</code></td>
+<td>SetLight makes the node a light, or not one (nil).</td>
+</tr>
+
+<tr>
+<td><code>func (node *Node) SetModel(path string) error</code></td>
+<td>SetModel makes the node show a model of the project&rsquo;s.</td>
+</tr>
+
+<tr>
+<td><code>func (node *Node) SetShape(shape, colour string)</code></td>
+<td>SetShape makes the node a shape of a colour (&ldquo;&rdquo; for no shape).</td>
+</tr>
+
+<tr>
+<td><code>func (node *Node) SetSheet(sheet *scenefile.SpriteSheet)</code></td>
+<td>SetSheet cuts the node&rsquo;s sprite into a sheet&rsquo;s frames, or shows it whole again (nil).</td>
+</tr>
+
+<tr>
+<td><code>func (node *Node) SetSprite(path string) error</code></td>
+<td>SetSprite makes the node show a picture of the project&rsquo;s, or a sprite&rsquo;s file, in a 2D scene.</td>
+</tr>
+
+<tr>
+<td><code>func (node *Node) SetStartsWith(name string)</code></td>
+<td>SetStartsWith makes the node start with an animation of its sprite; &ldquo;&rdquo; starts with the sprite&rsquo;s own first one.</td>
+</tr>
+
+<tr>
+<td><code>func (node *Node) SetTiles(tiles *scenefile.TileMap)</code></td>
+<td>SetTiles makes the node a tile map, or not one (nil).</td>
+</tr>
+
+<tr>
+<td><code>func (node *Node) Shape() string</code></td>
+<td>Shape is the shape the node is (&ldquo;cube&rdquo;, &ldquo;sphere&rdquo;, &ldquo;plane&rdquo;, &ldquo;cylinder&rdquo;), or &ldquo;&rdquo;.</td>
+</tr>
+
+<tr>
+<td><code>func (node *Node) Sheet() (*scenefile.SpriteSheet, bool)</code></td>
+<td>Sheet is the sprite sheet the node&rsquo;s sprite is cut into, to edit in place; a sprite shown whole has none.</td>
+</tr>
+
+<tr>
+<td><code>func (node *Node) SolidCell(column, row int) bool</code></td>
+<td>SolidCell tells whether bodies stand on a cell of the node&rsquo;s tile map.</td>
+</tr>
+
+<tr>
+<td><code>func (node *Node) SolidTile(tile int) bool</code></td>
+<td>SolidTile tells whether bodies stand on a tile of the node&rsquo;s tileset, by its number.</td>
+</tr>
+
+<tr>
+<td><code>func (node *Node) Sprite() string</code></td>
+<td>Sprite is the picture the node shows in a 2D scene, by its path in the project, or &ldquo;&rdquo;.</td>
+</tr>
+
+<tr>
+<td><code>func (node *Node) StartsWith() string</code></td>
+<td>StartsWith is the animation the node plays when the scene starts: the one it names, or else its sprite&rsquo;s own first one, or &ldquo;&rdquo;.</td>
+</tr>
+
+<tr>
+<td><code>func (node *Node) Tiles() (*scenefile.TileMap, bool)</code></td>
+<td>Tiles is the node&rsquo;s tile map, to edit in place; a node that is not one has none.</td>
+</tr>
+
+<tr>
+<td><code>func (node *Node) View() models.Camera</code></td>
+<td>View is what a camera node sees, as go-renderer&rsquo;s camera.</td>
+</tr>
+
+<tr>
+<td><code>func (node *Node) Walk(visit func(node *Node) bool)</code></td>
+<td>Walk calls a function for the node and everything under it, parents before their children; it stops going down a branch when the function returns false.</td>
+</tr>
+
+<tr>
+<td><code>func (node *Node) World() space.Transform</code></td>
+<td>World is where the node is in the world, all its parents&rsquo; transforms applied.</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="scene">Scene</h3>
+
+<p>Scene is a scene loaded from its file: a tree of nodes under a root,
+and what go-renderer draws of it.</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">Scene</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">Name</span> <span class="kt">string</span>
+	<span class="nx">Sky</span>  <span class="kt">string</span> <span class="c1">// the background colour, &#34;#rrggbb&#34;; empty for a daylight sky</span>
+	<span class="nx">Root</span> <span class="o">*</span><span class="nx">Node</span>
+	<span class="c1">// Mode is 3D or 2D; a 2D scene draws its sprites and shapes flat (see Draw2D).</span>
+	<span class="nx">Mode</span> <span class="nx">scenefile</span><span class="p">.</span><span class="nx">Mode</span>
+	<span class="c1">// PixelsPerMetre is how many of a sprite&#39;s pixels make a metre, in a 2D scene.</span>
+	<span class="nx">PixelsPerMetre</span> <span class="kt">float64</span>
+	<span class="c1">// Ambient is the light that reaches everything in a 2D scene; nil is daylight when the scene</span>
+	<span class="c1">// has lights (see lights.go).</span>
+	<span class="nx">Ambient</span> <span class="o">*</span><span class="nx">scenefile</span><span class="p">.</span><span class="nx">Ambient</span>
+
+	<span class="c1">// Editing shows what only the editor shows: a marker for cameras and empty nodes.</span>
+	<span class="nx">Editing</span> <span class="kt">bool</span>
+	<span class="c1">// Animate runs the scene&#39;s tweens; the engine moves it on every frame.</span>
+	<span class="nx">Animate</span> <span class="nx">animation</span><span class="p">.</span><span class="nx">Player</span>
+
+	<span class="c1">// Has unexported fields.</span>
+<span class="p">}</span>
+</code></pre>
+
+<table>
+<thead>
+<tr>
+<th>Function or method</th>
+<th></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>func Build(files fs.FS, description *scenefile.Scene) (*Scene, error)</code></td>
+<td>Build makes a scene from its description, finding its models in a project&rsquo;s files.</td>
+</tr>
+
+<tr>
+<td><code>func Load(files fs.FS, file string) (*Scene, error)</code></td>
+<td>Load reads a scene file from a project&rsquo;s files.</td>
+</tr>
+
+<tr>
+<td><code>func NewScene(files fs.FS) *Scene</code></td>
+<td>NewScene is an empty scene, whose models come from a project&rsquo;s files.</td>
+</tr>
+
+<tr>
+<td><code>func (owner *Scene) CameraBounds(camera *Node) (space.Box, bool)</code></td>
+<td>CameraBounds is the box a camera&rsquo;s view stays inside while it follows: its own, or the tile maps&rsquo; together, with no top (an infinite one) unless the camera has a ceiling.</td>
+</tr>
+
+<tr>
+<td><code>func (owner *Scene) Describe() *scenefile.Scene</code></td>
+<td>Describe writes the scene back as its file keeps it.</td>
+</tr>
+
+<tr>
+<td><code>func (owner *Scene) Draw2D(list *draw2d.List, area draw2d.Rect, view View2D)</code></td>
+<td>Draw2D draws a 2D scene into an area of the screen, as a view sees it: the sky&rsquo;s colour, then its sprites and shapes from the furthest to the nearest, lit by its lights (lights.go).</td>
+</tr>
+
+<tr>
+<td><code>func (owner *Scene) DrawContent2D(list *draw2d.List, area draw2d.Rect, view View2D)</code></td>
+<td>DrawContent2D draws a 2D scene&rsquo;s sprites and shapes without its sky, lit by its lights: over something of the program&rsquo;s own (the editor&rsquo;s grid).</td>
+</tr>
+
+<tr>
+<td><code>func (owner *Scene) DrawContent2DUnlit(list *draw2d.List, area draw2d.Rect, view View2D)</code></td>
+<td>DrawContent2DUnlit draws a 2D scene&rsquo;s sprites and shapes as DrawContent2D does, but without its lights, and a sprite light&rsquo;s sprite as a sprite: what the editor shows to see the colours.</td>
+</tr>
+
+<tr>
+<td><code>func (owner *Scene) Find(path string) (*Node, bool)</code></td>
+<td>Find finds a node by its path from the root, as &ldquo;Car/Wheel&rdquo;.</td>
+</tr>
+
+<tr>
+<td><code>func (owner *Scene) Forget(file string)</code></td>
+<td>Forget makes the scene read a model or a picture again the next time a node shows it: after the file changed.</td>
+</tr>
+
+<tr>
+<td><code>func (owner *Scene) Frames(picture string, sheet *scenefile.SpriteSheet) ([]*draw2d.Image, error)</code></td>
+<td>Frames are a picture cut into a sheet&rsquo;s frames, numbered from the top left, read and cut once.</td>
+</tr>
+
+<tr>
+<td><code>func (owner *Scene) Is2D() bool</code></td>
+<td>Is2D tells whether the scene is 2D.</td>
+</tr>
+
+<tr>
+<td><code>func (owner *Scene) MainCamera() (*Node, bool)</code></td>
+<td>MainCamera is the camera the scene is seen through: the first marked Main, or the first camera.</td>
+</tr>
+
+<tr>
+<td><code>func (owner *Scene) NewNode(description scenefile.Node) (*Node, error)</code></td>
+<td>NewNode makes a node of the scene from a description (and its children), not yet in the scene: Add it to a node.</td>
+</tr>
+
+<tr>
+<td><code>func (owner *Scene) Physics() *physics.World</code></td>
+<td>Physics is the scene&rsquo;s physics world while it plays; nil for a 3D scene, or one not started.</td>
+</tr>
+
+<tr>
+<td><code>func (owner *Scene) Picture(file string) (*draw2d.Image, error)</code></td>
+<td>Picture is a picture of the project&rsquo;s, read once: what the editor&rsquo;s Art workspace shows.</td>
+</tr>
+
+<tr>
+<td><code>func (owner *Scene) SetAmbient(ambient *scenefile.Ambient)</code></td>
+<td>SetAmbient sets the scene&rsquo;s ambient light (nil for none): in 2D the light that reaches everything; in 3D how strong its sky light is, from 0 (none) to 2 (twice the default).</td>
+</tr>
+
+<tr>
+<td><code>func (owner *Scene) SetMode(mode scenefile.Mode)</code></td>
+<td>SetMode makes the scene 3D or 2D: its nodes show their shapes and models in 3D, or their sprites and flat shapes in 2D.</td>
+</tr>
+
+<tr>
+<td><code>func (owner *Scene) SetSky(colour string)</code></td>
+<td>SetSky sets the background colour (&ldquo;&rdquo; for a daylight sky).</td>
+</tr>
+
+<tr>
+<td><code>func (owner *Scene) SpriteFile(file string) (*scenefile.Sprite, error)</code></td>
+<td>SpriteFile is a sprite&rsquo;s file of the project&rsquo;s, read once.</td>
+</tr>
+
+<tr>
+<td><code>func (owner *Scene) Start() []error</code></td>
+<td>Start makes the scene&rsquo;s behaviours and runs their Start, once: the engine does it before the first frame.</td>
+</tr>
+
+<tr>
+<td><code>func (owner *Scene) Sync()</code></td>
+<td>Sync brings what go-renderer draws up to date with the nodes&rsquo; transforms.</td>
+</tr>
+
+<tr>
+<td><code>func (owner *Scene) TakeReplacement() (next *Scene, replaced bool, err error)</code></td>
+<td>TakeReplacement builds and starts the scene a behaviour asked for in the last frame, and forgets the asking; replaced is false when nothing was asked.</td>
+</tr>
+
+<tr>
+<td><code>func (owner *Scene) Tileset(node *Node) ([]*draw2d.Image, error)</code></td>
+<td>Tileset is the pictures of a tile map&rsquo;s tileset, cut once, numbered as its tiles are.</td>
+</tr>
+
+<tr>
+<td><code>func (owner *Scene) TilesetColumns(node *Node) int</code></td>
+<td>TilesetColumns is how many tiles across a tile map&rsquo;s tileset picture is: the palette shows them in its rows, as they were drawn.</td>
+</tr>
+
+<tr>
+<td><code>func (owner *Scene) TilesetFile(file string) (*scenefile.Tileset, error)</code></td>
+<td>TilesetFile is a tileset&rsquo;s file of the project&rsquo;s, read once.</td>
+</tr>
+
+<tr>
+<td><code>func (owner *Scene) Time() float64</code></td>
+<td>Time is the seconds the scene has been playing.</td>
+</tr>
+
+<tr>
+<td><code>func (owner *Scene) Update(seconds float64, keys *input.State)</code></td>
+<td>Update moves the scene on by some seconds: behaviours that were just made start, every behaviour updates, the bodies of a 2D scene move, the tweens move, and what go-renderer draws follows.</td>
+</tr>
+
+<tr>
+<td><code>func (owner *Scene) View2D() View2D</code></td>
+<td>View2D is what the scene&rsquo;s main camera sees, or, without one, ten metres around the origin.</td>
+</tr>
+
+<tr>
+<td><code>func (owner *Scene) World() *scene.Scene</code></td>
+<td>World is what go-renderer draws, transforms brought up to date.</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="settings">Settings</h3>
+
+<p>Settings are a project&rsquo;s, kept in its engine.json.</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">Settings</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">Name</span>       <span class="kt">string</span> <span class="s">`json:&#34;name&#34;`</span>
+	<span class="nx">StartScene</span> <span class="kt">string</span> <span class="s">`json:&#34;startScene&#34;`</span> <span class="c1">// the scene the game opens, as &#34;scenes/main.scene.json&#34;</span>
+	<span class="c1">// CodeEditor is the command the editor opens the project&#39;s code with (&#34;code&#34;, &#34;zed&#34;, &#34;nvim&#34;…);</span>
+	<span class="c1">// empty tries $VISUAL, $EDITOR and the usual ones.</span>
+	<span class="nx">CodeEditor</span> <span class="kt">string</span> <span class="s">`json:&#34;codeEditor,omitempty&#34;`</span>
+	<span class="c1">// AndroidID is the game&#39;s application id on Android, as io.example.game; empty makes one from</span>
+	<span class="c1">// its name.</span>
+	<span class="nx">AndroidID</span> <span class="kt">string</span> <span class="s">`json:&#34;androidId,omitempty&#34;`</span>
+	<span class="c1">// ConsoleAddress is the 3DS&#39;s address on the network, to send the game to; empty looks for it.</span>
+	<span class="nx">ConsoleAddress</span> <span class="kt">string</span> <span class="s">`json:&#34;consoleAddress,omitempty&#34;`</span>
+	<span class="c1">// SceneMenu lists the game&#39;s scenes on the Nintendo 3DS&#39;s bottom screen, to play any of them</span>
+	<span class="c1">// with a touch: a level select.</span>
+	<span class="nx">SceneMenu</span> <span class="kt">bool</span> <span class="s">`json:&#34;sceneMenu,omitempty&#34;`</span>
+<span class="p">}</span>
+</code></pre>
+
+<table>
+<thead>
+<tr>
+<th>Function or method</th>
+<th></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>func ReadSettings(files fs.FS) (Settings, error)</code></td>
+<td>ReadSettings reads a project&rsquo;s settings.</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="starter">Starter</h3>
+
+<p>A behaviour is the game&rsquo;s own code attached to a node: a struct of the
+game&rsquo;s, registered by name, whose exported fields the scene file fills (by
+their JSON names). It does what it does through the methods it has:</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">Spin</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">Speed</span> <span class="kt">float64</span> <span class="s">`json:&#34;speed&#34;`</span> <span class="c1">// degrees a second</span>
+<span class="p">}</span>
+<span class="kd">func</span> <span class="p">(</span><span class="nx">spin</span> <span class="o">*</span><span class="nx">Spin</span><span class="p">)</span> <span class="nf">Update</span><span class="p">(</span><span class="nx">context</span> <span class="o">*</span><span class="nx">engine</span><span class="p">.</span><span class="nx">Context</span><span class="p">)</span> <span class="p">{</span>
+	<span class="nx">context</span><span class="p">.</span><span class="nx">Node</span><span class="p">.</span><span class="nx">Transform</span><span class="p">.</span><span class="nf">Turn</span><span class="p">(</span><span class="nx">space</span><span class="p">.</span><span class="nx">Up</span><span class="p">,</span> <span class="nx">spin</span><span class="p">.</span><span class="nx">Speed</span><span class="o">*</span><span class="nx">context</span><span class="p">.</span><span class="nx">Delta</span><span class="p">)</span>
+<span class="p">}</span>
+</code></pre>
+
+<p>Start, when the behaviour has it, runs once before the first Update.</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">Starter</span> <span class="kd">interface</span><span class="p">{</span> <span class="nf">Start</span><span class="p">(</span><span class="nx">context</span> <span class="o">*</span><span class="nx">Context</span><span class="p">)</span> <span class="p">}</span>
+</code></pre>
+
+<h3 id="toucher">Toucher</h3>
+
+<p>Toucher is a behaviour that hears when its node&rsquo;s body begins touching
+another&rsquo;s: a trigger and the moving body that enters it. Both nodes&rsquo;
+behaviours hear it, each with the other node.</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">Toucher</span> <span class="kd">interface</span> <span class="p">{</span>
+	<span class="nf">Touched</span><span class="p">(</span><span class="nx">context</span> <span class="o">*</span><span class="nx">Context</span><span class="p">,</span> <span class="nx">other</span> <span class="o">*</span><span class="nx">Node</span><span class="p">)</span>
+<span class="p">}</span>
+</code></pre>
+
+<h3 id="updater">Updater</h3>
+
+<p>A behaviour is the game&rsquo;s own code attached to a node: a struct of the
+game&rsquo;s, registered by name, whose exported fields the scene file fills (by
+their JSON names). It does what it does through the methods it has:</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">Spin</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">Speed</span> <span class="kt">float64</span> <span class="s">`json:&#34;speed&#34;`</span> <span class="c1">// degrees a second</span>
+<span class="p">}</span>
+<span class="kd">func</span> <span class="p">(</span><span class="nx">spin</span> <span class="o">*</span><span class="nx">Spin</span><span class="p">)</span> <span class="nf">Update</span><span class="p">(</span><span class="nx">context</span> <span class="o">*</span><span class="nx">engine</span><span class="p">.</span><span class="nx">Context</span><span class="p">)</span> <span class="p">{</span>
+	<span class="nx">context</span><span class="p">.</span><span class="nx">Node</span><span class="p">.</span><span class="nx">Transform</span><span class="p">.</span><span class="nf">Turn</span><span class="p">(</span><span class="nx">space</span><span class="p">.</span><span class="nx">Up</span><span class="p">,</span> <span class="nx">spin</span><span class="p">.</span><span class="nx">Speed</span><span class="o">*</span><span class="nx">context</span><span class="p">.</span><span class="nx">Delta</span><span class="p">)</span>
+<span class="p">}</span>
+</code></pre>
+
+<p>Start, when the behaviour has it, runs once before the first Update.</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">Updater</span> <span class="kd">interface</span><span class="p">{</span> <span class="nf">Update</span><span class="p">(</span><span class="nx">context</span> <span class="o">*</span><span class="nx">Context</span><span class="p">)</span> <span class="p">}</span>
+</code></pre>
+
+<h3 id="view2d">View2D</h3>
+
+<p>View2D is what a 2D camera sees: the point at the middle of the screen and
+how many metres fit between the screen&rsquo;s top and bottom.</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">View2D</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">Centre</span> <span class="nx">space</span><span class="p">.</span><span class="nx">Vector</span>
+	<span class="nx">Height</span> <span class="kt">float64</span>
+<span class="p">}</span>
+</code></pre>
+
+<table>
+<thead>
+<tr>
+<th>Function or method</th>
+<th></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>func (view View2D) FromScreen(area draw2d.Rect, x, y float32) space.Vector</code></td>
+<td>FromScreen is the point of the world under a point of the screen, at Z 0.</td>
+</tr>
+
+<tr>
+<td><code>func (view View2D) MetresAcross(area draw2d.Rect) float64</code></td>
+<td>MetresAcross is how many metres an area shows from side to side.</td>
+</tr>
+
+<tr>
+<td><code>func (view View2D) ToScreen(area draw2d.Rect, point space.Vector) (x, y float32)</code></td>
+<td>ToScreen is where a point of the world falls in an area of the screen.</td>
+</tr>
+</tbody>
+</table>
+
+<hr>
+
+<p><a href="./reference/packages">← Reference</a> · generated from the doc comments by <code>generate.py</code></p>

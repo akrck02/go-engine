@@ -1,0 +1,351 @@
+<h1 id="style-guide">📐 Style guide</h1>
+
+<p>go-engine&rsquo;s code must be easy to follow for a junior developer, or for anyone who can read code.
+These rules hold everywhere in the repository, and in the code the editor writes into new
+projects. A test (<code>internal/style</code>) checks the ones a program can check.</p>
+
+<h2 id="1-english-always">1. English, always</h2>
+
+<p>Code, comments, names, error codes, commit messages and documentation are in English.</p>
+
+<h2 id="2-names-say-what-things-are">2. Names say what things are</h2>
+
+<ul>
+<li><strong>Whole words.</strong> No acronyms and no abbreviations: <code>position</code>, not <code>pos</code>; <code>index</code>, not <code>i</code>;
+<code>context</code>, not <code>ctx</code>; <code>message</code>, not <code>msg</code>; <code>button</code>, not <code>btn</code>.</li>
+<li><strong>Exceptions</strong>, because they are what everyone calls them:</li>
+</ul>
+
+<p>| Name | Why |
+  |&mdash;|&mdash;|
+  | <code>err</code> | the error a call returned, as all Go code names it |
+  | <code>x</code>, <code>y</code>, <code>z</code> | the axes&rsquo; own names, for a coordinate |
+  | <code>ui</code> | the name of the go-ui package when it is imported |
+  | <code>init</code> | the function Go itself runs when a package loads; no other name works |</p>
+
+<ul>
+<li><strong>Short English words are words</strong>, not abbreviations: <code>at</code>, <code>by</code>, <code>to</code>, <code>up</code>, <code>is</code> are fine.</li>
+<li><strong>Tests</strong> call their <code>*testing.T</code> <code>test</code>, not <code>t</code>.</li>
+<li><strong>No mathematical shorthand</strong> a junior would have to look up: <code>Vector</code>, not <code>Vec3</code>; <code>Rotation</code>,
+not <code>Quat</code>; <code>Toward</code>, not <code>Lerp</code>.</li>
+<li><strong>Say the unit when there is one:</strong> <code>seconds</code>, <code>pixelsPerMetre</code>, <code>degrees</code>.</li>
+<li><strong>Booleans read as a question:</strong> <code>visible</code>, <code>isCamera</code>, <code>found</code>, <code>playing</code>.</li>
+<li><strong>Functions are verbs, or what they give back:</strong> <code>LoadScene</code>, <code>Bounds</code>, <code>MainCamera</code>.</li>
+<li><strong>Don&rsquo;t repeat the package:</strong> <code>space.Transform</code>, not <code>space.SpaceTransform</code>.</li>
+</ul>
+<pre><code class="language-go"><span class="c1">// No</span>
+<span class="kd">func</span> <span class="nf">upd</span><span class="p">(</span><span class="nx">n</span> <span class="o">*</span><span class="nx">Node</span><span class="p">,</span> <span class="nx">dt</span> <span class="kt">float64</span><span class="p">)</span> <span class="p">{</span> <span class="nx">n</span><span class="p">.</span><span class="nx">T</span><span class="p">.</span><span class="nx">Pos</span><span class="p">.</span><span class="nx">X</span> <span class="o">+=</span> <span class="nx">n</span><span class="p">.</span><span class="nx">V</span> <span class="o">*</span> <span class="nx">dt</span> <span class="p">}</span>
+
+<span class="c1">// Yes</span>
+<span class="kd">func</span> <span class="nf">moveForward</span><span class="p">(</span><span class="nx">node</span> <span class="o">*</span><span class="nx">Node</span><span class="p">,</span> <span class="nx">seconds</span> <span class="kt">float64</span><span class="p">)</span> <span class="p">{</span>
+	<span class="nx">node</span><span class="p">.</span><span class="nx">Transform</span><span class="p">.</span><span class="nx">Position</span><span class="p">.</span><span class="nx">X</span> <span class="o">+=</span> <span class="nx">node</span><span class="p">.</span><span class="nx">Speed</span> <span class="o">*</span> <span class="nx">seconds</span>
+<span class="p">}</span>
+</code></pre>
+
+<h2 id="3-one-function-one-job">3. One function, one job</h2>
+
+<ul>
+<li>A function does <strong>one thing</strong>, and its name says which.</li>
+<li>If a function needs a comment to split it into parts, split it into functions instead.</li>
+<li>As a guide, a function fits on a screen: <strong>about 40 lines at most</strong>. A longer one is usually
+doing two jobs.</li>
+<li>A function that <strong>finds</strong> something does not also <strong>change</strong> it.</li>
+</ul>
+<pre><code class="language-go"><span class="c1">// No: reads, checks and builds in one place</span>
+<span class="kd">func</span> <span class="nf">Load</span><span class="p">(</span><span class="nx">files</span> <span class="nx">fs</span><span class="p">.</span><span class="nx">FS</span><span class="p">,</span> <span class="nx">file</span> <span class="kt">string</span><span class="p">)</span> <span class="p">(</span><span class="o">*</span><span class="nx">Scene</span><span class="p">,</span> <span class="kt">error</span><span class="p">)</span> <span class="p">{</span> <span class="cm">/* 80 lines */</span> <span class="p">}</span>
+
+<span class="c1">// Yes: each step has a name</span>
+<span class="kd">func</span> <span class="nf">Load</span><span class="p">(</span><span class="nx">files</span> <span class="nx">fs</span><span class="p">.</span><span class="nx">FS</span><span class="p">,</span> <span class="nx">file</span> <span class="kt">string</span><span class="p">)</span> <span class="p">(</span><span class="o">*</span><span class="nx">Scene</span><span class="p">,</span> <span class="kt">error</span><span class="p">)</span> <span class="p">{</span>
+	<span class="nx">data</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">fs</span><span class="p">.</span><span class="nf">ReadFile</span><span class="p">(</span><span class="nx">files</span><span class="p">,</span> <span class="nx">file</span><span class="p">)</span>
+	<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+		<span class="k">return</span> <span class="kc">nil</span><span class="p">,</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Wrap</span><span class="p">(</span><span class="nx">SceneNotFound</span><span class="p">,</span> <span class="nx">file</span><span class="p">,</span> <span class="nx">err</span><span class="p">)</span>
+	<span class="p">}</span>
+	<span class="nx">description</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">scenefile</span><span class="p">.</span><span class="nf">Read</span><span class="p">(</span><span class="nx">data</span><span class="p">)</span>
+	<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+		<span class="k">return</span> <span class="kc">nil</span><span class="p">,</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Wrap</span><span class="p">(</span><span class="nx">SceneUnreadable</span><span class="p">,</span> <span class="nx">file</span><span class="p">,</span> <span class="nx">err</span><span class="p">)</span>
+	<span class="p">}</span>
+	<span class="k">return</span> <span class="nf">Build</span><span class="p">(</span><span class="nx">files</span><span class="p">,</span> <span class="nx">description</span><span class="p">)</span>
+<span class="p">}</span>
+</code></pre>
+
+<h2 id="4-early-returns">4. Early returns</h2>
+
+<p>Handle the errors and the special cases first, and <strong>return</strong>. The normal path then runs down the
+left margin, without <code>else</code> and without nesting.</p>
+<pre><code class="language-go"><span class="c1">// No</span>
+<span class="kd">func</span> <span class="p">(</span><span class="nx">node</span> <span class="o">*</span><span class="nx">Node</span><span class="p">)</span> <span class="nf">Shape</span><span class="p">()</span> <span class="kt">string</span> <span class="p">{</span>
+	<span class="k">if</span> <span class="nx">node</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+		<span class="k">if</span> <span class="nx">node</span><span class="p">.</span><span class="nx">shape</span> <span class="o">!=</span> <span class="s">&#34;&#34;</span> <span class="p">{</span>
+			<span class="k">return</span> <span class="nx">node</span><span class="p">.</span><span class="nx">shape</span>
+		<span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+			<span class="k">return</span> <span class="s">&#34;none&#34;</span>
+		<span class="p">}</span>
+	<span class="p">}</span>
+	<span class="k">return</span> <span class="s">&#34;&#34;</span>
+<span class="p">}</span>
+
+<span class="c1">// Yes</span>
+<span class="kd">func</span> <span class="p">(</span><span class="nx">node</span> <span class="o">*</span><span class="nx">Node</span><span class="p">)</span> <span class="nf">Shape</span><span class="p">()</span> <span class="kt">string</span> <span class="p">{</span>
+	<span class="k">if</span> <span class="nx">node</span> <span class="o">==</span> <span class="kc">nil</span> <span class="p">{</span>
+		<span class="k">return</span> <span class="s">&#34;&#34;</span>
+	<span class="p">}</span>
+	<span class="k">if</span> <span class="nx">node</span><span class="p">.</span><span class="nx">shape</span> <span class="o">==</span> <span class="s">&#34;&#34;</span> <span class="p">{</span>
+		<span class="k">return</span> <span class="s">&#34;none&#34;</span>
+	<span class="p">}</span>
+	<span class="k">return</span> <span class="nx">node</span><span class="p">.</span><span class="nx">shape</span>
+<span class="p">}</span>
+</code></pre>
+
+<h2 id="5-errors-have-codes">5. Errors have codes</h2>
+
+<p>Every error go-engine returns carries a <strong>code</strong> from the <code>failure</code> package. A program checks the
+code, never the error&rsquo;s text.</p>
+
+<ul>
+<li><strong>Each package declares its codes</strong> as variables, near the top of an <code>errors.go</code> file:</li>
+</ul>
+<pre><code class="language-go">  <span class="c1">// Error codes of the engine package.</span>
+  <span class="kd">var</span> <span class="p">(</span>
+  	<span class="nx">SceneNotFound</span>   <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;engine.scene-not-found&#34;</span><span class="p">,</span> <span class="s">&#34;the scene file does not exist&#34;</span><span class="p">)</span>
+  	<span class="nx">SceneUnreadable</span> <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;engine.scene-unreadable&#34;</span><span class="p">,</span> <span class="s">&#34;the scene file is not a scene&#34;</span><span class="p">)</span>
+  <span class="p">)</span>
+</code></pre>
+
+<ul>
+<li><strong>Names of codes:</strong> the package, a dot, and the error in a few words joined by dashes.</li>
+<li><strong>Return the bare code</strong> when there is nothing to add: it costs nothing.</li>
+<li><strong>Wrap</strong> when there is detail worth knowing (which file, which name, the error underneath):
+<code>failure.Wrap(SceneNotFound, file, err)</code>.</li>
+<li><strong>Check</strong> with <code>failure.Is(err, engine.SceneNotFound)</code> (or <code>errors.Is</code>, which does the same).</li>
+<li><strong>Performance:</strong> a bare code is a pointer to a value made once, so returning it allocates
+nothing and comparing it compares two pointers. <code>Wrap</code> allocates once, so it belongs in
+loading, saving and building, <strong>never in a frame&rsquo;s update</strong>. Code that runs every frame does not
+make errors.</li>
+</ul>
+
+<h2 id="6-packages-and-modules">6. Packages and modules</h2>
+
+<p>A <strong>package</strong> and a <strong>module</strong> divide different things:</p>
+
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Package</th>
+<th>Module</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>What it is</td>
+<td>A folder of Go code with a name (<code>space</code>, <code>engine</code>)</td>
+<td>A set of packages with a <code>go.mod</code>, versioned and published together</td>
+</tr>
+
+<tr>
+<td>What dividing is for</td>
+<td><strong>Meaning</strong>: each concept in its place</td>
+<td><strong>Publishing</strong>: things that change at different paces</td>
+</tr>
+
+<tr>
+<td>A unit of</td>
+<td>Compiling and importing</td>
+<td>Versions, releases and dependencies</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="dividing-packages-by-meaning">Dividing packages, by meaning</h3>
+
+<ol>
+<li><strong>A package is a concept you can name.</strong> Its name is a good prefix for what is in it:
+<code>space.Vector</code>, <code>animation.Tween</code>, <code>scenefile.Node</code>. If no such name fits, the boundary is
+wrong.</li>
+<li><strong>The two-package test.</strong> If using one almost always means importing the other, they are one
+package.</li>
+<li><strong>Distinct ideas apart, even small ones.</strong> A package of two files is fine if it is an idea of
+its own (<code>failure</code>).</li>
+<li><strong>No <code>util</code>, <code>common</code>, <code>helpers</code>, <code>misc</code>, <code>api</code>, <code>types</code>.</strong> They mean nothing, and gather
+dependencies.</li>
+<li><strong>Dependencies point one way.</strong> The basic concepts know nothing of the ones built on them:</li>
+</ol>
+<pre><code>   failure, space             the base: they import nothing of ours
+     ↑
+   animation, scenefile, shapes, physics
+     ↑
+   engine                     what a game carries; builds for the 3DS
+     ↑
+   project                    desktop tools
+     ↑
+   editor  →  cmd/go-engine
+</code></pre>
+
+<p>When something below needs something above (<code>engine</code> importing <code>editor</code>), the concept is in
+   the wrong package. The editor&rsquo;s hook is the other way round for this reason: the editor
+   registers itself with the engine, which never imports it.</p>
+
+<ol>
+<li><strong>What a game carries stays portable.</strong> The packages a game imports build with TinyGo for the
+3DS: no editor, no <code>go/parser</code>, no <code>os/exec</code> in them. What a package imports decides what goes
+into a <code>.3dsx</code>.</li>
+<li><strong>What only go-engine uses goes in <code>internal/</code>.</strong> It can change without breaking anyone&rsquo;s game.</li>
+<li><strong>Inside a package, divide into files, not into more packages:</strong> <code>node.go</code>, <code>scene.go</code>,
+<code>errors.go</code>, each a part of the concept.</li>
+</ol>
+
+<p><strong>Package names</strong> follow Go&rsquo;s: lower case, one word (two words written together when needed, as
+<code>filepath</code> or <code>scenefile</code>), short and clear, with no abbreviation (our rule goes further than
+Go&rsquo;s, which allows familiar ones as <code>fmt</code>), not the name of a common variable, and not repeated
+in what the package holds (<code>http.Server</code>, not <code>http.HTTPServer</code>).</p>
+
+<h3 id="dividing-modules-by-publishing">Dividing modules, by publishing</h3>
+
+<p>Go&rsquo;s advice is <strong>one repository, one module</strong>, unless there is a strong reason: <em>&ldquo;For all but
+power users, you probably want to adopt the usual convention that one repo = one module&rdquo;</em> (Russ
+Cox, in Go&rsquo;s modules FAQ). More modules cost work: <code>go test ./...</code> no longer tests everything,
+<code>replace</code> directives must be kept between them, and adding, removing or versioning one takes care.</p>
+
+<p>A part becomes a module of its own when:</p>
+
+<ul>
+<li>it is <strong>published and versioned apart</strong>, used by other projects at their own pace;</li>
+<li>it has <strong>very different or heavy dependencies</strong> that those who use only the other part should
+not have to take;</li>
+<li><strong>different people</strong> look after it.</li>
+</ul>
+
+<p>Not for size alone: Go downloads through its module proxy, and a program only links the packages
+it imports, whatever module they are in.</p>
+
+<p><strong>Applied to the author&rsquo;s libraries:</strong> go-renderer, go-ui, go-sound, tinygo-3ds and go-engine are
+separate modules because each is published and reused on its own (go-ui serves without go-engine,
+go-sound without go-renderer). <strong>go-engine stays one module</strong>: a game for the 3DS links <code>engine</code>
+and what it imports, never <code>editor</code>, so splitting would add <code>replace</code> directives and versions to
+keep in step for nothing. That would change if another project wanted only <code>space</code> and <code>animation</code>
+without go-ui and GLFW, or if the editor came to be released at a pace of its own.</p>
+
+<h3 id="the-packages-today">The packages today</h3>
+
+<table>
+<thead>
+<tr>
+<th>Package</th>
+<th>Concept</th>
+<th>Who uses it</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>failure</code></td>
+<td>Error codes</td>
+<td>Every package</td>
+</tr>
+
+<tr>
+<td><code>space</code></td>
+<td>Positions, rotations, transforms, boxes</td>
+<td>Games and the engine</td>
+</tr>
+
+<tr>
+<td><code>animation</code></td>
+<td>Values that move over time</td>
+<td>Games</td>
+</tr>
+
+<tr>
+<td><code>scenefile</code></td>
+<td>The scene file format</td>
+<td>The engine and the editor</td>
+</tr>
+
+<tr>
+<td><code>shapes</code></td>
+<td>Meshes of simple shapes</td>
+<td>The engine</td>
+</tr>
+
+<tr>
+<td><code>physics</code></td>
+<td>2D boxes that fall, collide and slide</td>
+<td>The engine</td>
+</tr>
+
+<tr>
+<td><code>engine</code></td>
+<td>The running game: nodes, behaviours, input, cameras</td>
+<td>Games</td>
+</tr>
+
+<tr>
+<td><code>project</code></td>
+<td>A game&rsquo;s folder: creating, building, reading its code</td>
+<td>The editor (desktop only)</td>
+</tr>
+
+<tr>
+<td><code>editor</code></td>
+<td>The editor&rsquo;s window</td>
+<td>The game while it is being made (desktop only)</td>
+</tr>
+
+<tr>
+<td><code>internal/build</code></td>
+<td>Running Go and TinyGo</td>
+<td><code>project</code></td>
+</tr>
+
+<tr>
+<td><code>internal/notices</code></td>
+<td>Third-party notices</td>
+<td><code>project</code></td>
+</tr>
+
+<tr>
+<td><code>internal/style</code></td>
+<td>The tests of this guide</td>
+<td>The repository</td>
+</tr>
+</tbody>
+</table>
+<p>Sources: <a href="https://go.dev/blog/package-names" target="_blank">Package names</a> (the Go blog),
+<a href="https://go.dev/doc/modules/layout" target="_blank">Organizing a Go module</a> (go.dev),
+<a href="https://go.dev/wiki/Modules" target="_blank">Go modules FAQ: should I have multiple modules in a single repository?</a>,
+and <a href="https://google.github.io/styleguide/go/best-practices" target="_blank">Google&rsquo;s Go style guide, best practices</a>
+(package size, errors).</p>
+
+<h2 id="7-comments">7. Comments</h2>
+
+<ul>
+<li>A comment says <strong>why</strong>, or what a reader cannot see in the code. It does not repeat the code.</li>
+<li>Every exported name has a comment that starts with the name: <code>// Bounds is the box…</code>.</li>
+<li>A package starts with a comment saying what it is for, with an example when it helps.</li>
+</ul>
+
+<h2 id="8-files">8. Files</h2>
+
+<ul>
+<li>A file holds one part of its package: <code>node.go</code>, <code>scene.go</code>, <code>errors.go</code>.</li>
+<li>No file of thousands of lines, and no swarm of tiny files either.</li>
+</ul>
+
+<h2 id="9-tests">9. Tests</h2>
+
+<ul>
+<li>Every change comes with tests, and <code>go vet ./...</code> and <code>go test ./...</code> pass before a commit.</li>
+<li>A test&rsquo;s name is a sentence about what must be true: <code>TestAChildIsPlacedInsideItsParent</code>.</li>
+</ul>
+
+<h2 id="10-performance-in-a-frame">10. Performance in a frame</h2>
+
+<p>What runs every frame (a behaviour&rsquo;s <code>Update</code>, drawing, input) must not allocate when it can
+avoid it: reuse slices and lists, keep texts that do not change, and make no errors. See
+<a href="https://github.com/akrck02/go-ui/blob/feature/3ds/docs/3ds.md" target="_blank">3ds.md in go-ui</a> for why it
+matters most on the console.</p>
+
+<hr>
+
+<p><a href="./contributing/contributing">← Contributing</a></p>

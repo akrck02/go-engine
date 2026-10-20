@@ -1,0 +1,49 @@
+<h1 id="shapes">shapes</h1>
+<pre><code class="language-go"><span class="kn">import</span> <span class="s">&#34;github.com/akrck02/go-engine/shapes&#34;</span>
+</code></pre>
+
+<p>Package shapes makes the meshes of simple shapes for go-renderer to draw.
+Each is a metre across and centred on the origin: the cube, the sphere,
+the plane (flat, facing up) and the cylinder (standing up).</p>
+
+<h3 id="functions">Functions</h3>
+
+<table>
+<thead>
+<tr>
+<th>Function</th>
+<th></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>func Cube() *scene.Mesh</code></td>
+<td>Cube is a cube a metre a side.</td>
+</tr>
+
+<tr>
+<td><code>func Cylinder(sides int) *scene.Mesh</code></td>
+<td>Cylinder is a cylinder a metre across and a metre high, standing up, of some sides.</td>
+</tr>
+
+<tr>
+<td><code>func Mesh(name string, material *scene.Material) *scene.Mesh</code></td>
+<td>Mesh makes a shape&rsquo;s mesh by name, with a material of a colour; nil for an unknown name.</td>
+</tr>
+
+<tr>
+<td><code>func Plane() *scene.Mesh</code></td>
+<td>Plane is a square a metre a side, lying flat and facing up.</td>
+</tr>
+
+<tr>
+<td><code>func Sphere(slices, rings int) *scene.Mesh</code></td>
+<td>Sphere is a ball a metre across, of some slices around and rings from top to bottom.</td>
+</tr>
+</tbody>
+</table>
+
+<hr>
+
+<p><a href="./reference/packages">← Reference</a> · generated from the doc comments by <code>generate.py</code></p>

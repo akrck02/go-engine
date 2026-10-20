@@ -1,0 +1,79 @@
+<h1 id="lights">💡 Lights</h1>
+
+<p>Light a scene, in 2D or 3D: an ambient for everything, lamps where they shine, and in 2D, pictures
+that glow. To see it done step by step, follow <a href="./the-quest/night-in-the-forest">level 5 of the quest</a>.</p>
+
+<p align="center"><img alt="The editor's Level workspace on a 2D street at night: a street lamp chosen, its inner and outer circles drawn over the view, a window glowing on a house, and the inspector's Light section" src="./images/editor-lights.png" width="680"></p>
+
+<h2 id="a-lamp">A lamp</h2>
+
+<p>Press <strong>+</strong> and choose <strong>Light</strong>, or choose any node and press <strong>Make it a light</strong> in its
+inspector. A <strong>point</strong> light shines all around its node: full within its <strong>inner</strong> radius, fading to
+nothing at its <strong>outer</strong> one, in metres. Its <strong>intensity</strong> is how strong it is: 1 a plain lamp, up
+to 2. It moves with its node, and grows with its scale.</p>
+
+<h2 id="the-ambient">The ambient</h2>
+
+<p>Choose nothing, and in the scene&rsquo;s inspector tick <strong>An ambient light of its own</strong>:</p>
+
+<table>
+<thead>
+<tr>
+<th></th>
+<th>2D</th>
+<th>3D</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>What it is</td>
+<td>The light that reaches everything, in a colour and an intensity</td>
+<td>How strong the sky&rsquo;s light is</td>
+</tr>
+
+<tr>
+<td>None</td>
+<td>Daylight when the scene has lights, no lighting at all when it has none</td>
+<td>The sky lights as it is</td>
+</tr>
+</tbody>
+</table>
+<p>White at 1 leaves the colours as they are; a dark blue at 0.4 is a night.</p>
+
+<h2 id="a-picture-that-glows-2d">A picture that glows (2D)</h2>
+
+<p>A <strong>sprite light</strong> shines through its node&rsquo;s picture, in its place, and the picture itself is not
+drawn: a window, a sign, a coin&rsquo;s gleam. Put it on a child of the node it lights, with the same
+sprite, so the node keeps its picture and gains the glow.</p>
+
+<h2 id="in-the-editor">In the editor</h2>
+
+<ul>
+<li><strong>Lights</strong>, over the 2D view, draws each light&rsquo;s two circles; in 3D, a chosen lamp shows two rings.</li>
+<li><strong>Lit</strong>, over the 2D view, shows the scene lit as the game will be, or its colours unlit.</li>
+</ul>
+
+<h2 id="from-code">From code</h2>
+
+<p>A behaviour can change a light while the game plays:</p>
+<pre><code class="language-go"><span class="kd">func</span> <span class="p">(</span><span class="nx">alarm</span> <span class="o">*</span><span class="nx">Alarm</span><span class="p">)</span> <span class="nf">Update</span><span class="p">(</span><span class="nx">context</span> <span class="o">*</span><span class="nx">engine</span><span class="p">.</span><span class="nx">Context</span><span class="p">)</span> <span class="p">{</span>
+	<span class="nx">light</span><span class="p">,</span> <span class="nx">found</span> <span class="o">:=</span> <span class="nx">context</span><span class="p">.</span><span class="nx">Node</span><span class="p">.</span><span class="nf">Light</span><span class="p">()</span>
+	<span class="k">if</span> <span class="p">!</span><span class="nx">found</span> <span class="p">{</span>
+		<span class="k">return</span>
+	<span class="p">}</span>
+	<span class="nx">alarm</span><span class="p">.</span><span class="nx">strength</span> <span class="p">=</span> <span class="mi">1</span> <span class="o">+</span> <span class="nx">math</span><span class="p">.</span><span class="nf">Sin</span><span class="p">(</span><span class="nx">context</span><span class="p">.</span><span class="nx">Time</span><span class="o">*</span><span class="mi">6</span><span class="p">)</span> <span class="c1">// a field of Alarm: the light keeps pointing at it</span>
+	<span class="nx">light</span><span class="p">.</span><span class="nx">Intensity</span> <span class="p">=</span> <span class="o">&amp;</span><span class="nx">alarm</span><span class="p">.</span><span class="nx">strength</span>
+<span class="p">}</span>
+</code></pre>
+
+<h2 id="how-much-it-costs">How much it costs</h2>
+
+<p>Lights cost nothing in a scene that has none. In 2D, all of a frame&rsquo;s lights are drawn into one
+picture at half the screen&rsquo;s resolution, then laid over the scene, so many lights cost little. In
+3D, each thing drawn takes the four nearest lamps that reach it. On the 3DS, 3D lamps light at the
+vertices: a floor shows a lamp&rsquo;s pool only where it has vertices.</p>
+
+<hr>
+
+<p><a href="./guides/bodies-and-physics">← Bodies and physics</a> · <a href="./guides/a-camera-that-follows">A camera that follows →</a></p>

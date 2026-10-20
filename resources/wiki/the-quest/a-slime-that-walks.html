@@ -1,0 +1,149 @@
+<h1 id="level-2-a-slime-that-walks">🎭 Level 2: a slime that walks</h1>
+
+<p>You bring in the hero, a slime, give it a body that falls and stands, and write your first
+behaviour: the code that walks and jumps when the player presses the arrows and Space.</p>
+
+<h4 id="the-idea">The idea</h4>
+
+<p>The slime is two nodes, as a puppet is a body and a costume. <strong>Player</strong> is the body: the physics
+moves it, and your code tells it where to go. Its child <strong>Sprite</strong> is the costume: the picture
+that follows the body and plays its animations. Keeping them apart lets the costume sit a little
+higher than the body, or change, without the physics noticing.</p>
+
+<h2 id="the-slime-s-animations">The slime&rsquo;s animations</h2>
+
+<p>Open the forest project of level 1. In <strong>Project</strong>, choose <code>slime.sprite.json</code> (it came with the
+pictures you copied) and press <strong>Open in Art</strong>. A <strong>sprite file</strong> cuts a picture into frames, here
+5 across and 2 down, and names runs of them: <strong>idle</strong> is frame 0, <strong>walk</strong> frames 0 to 3 at 3 a
+second, looping. The other frames are spare. Choose an animation to watch it under <strong>Preview</strong>;
+<strong>Play it when the scene starts</strong> would make it the one the slime starts with.</p>
+
+<p>To make one of your own, choose any picture in Project and press <strong>Make it a sprite or a tileset</strong>.</p>
+
+<h2 id="something-to-stand-on">Something to stand on</h2>
+
+<p>Back in <strong>Level</strong>, choose the <strong>Ground</strong>, the green box the new scene came with (a flat shape: a cube
+is drawn as a square in 2D). In its inspector, under <strong>Body</strong>, press <strong>Give it a body</strong>. Leave it
+<strong>Solid</strong>: it never moves, and what falls lands on it.</p>
+
+<h2 id="the-body">The body</h2>
+
+<ol>
+<li>Press <strong>+</strong> above the tree and choose <strong>Empty</strong>. Name the new node <em>Player</em>.</li>
+<li>Give it a body, and choose <strong>Moving</strong>. Under the kinds, set its size: width 0.94, height 0.63
+metres, the slime&rsquo;s own shape.</li>
+<li>Set its <strong>gravity scale</strong> to 5.75: it falls with 5.75 times Earth&rsquo;s pull. Games make their
+heroes fall much faster than real things do; it feels better under the thumbs.</li>
+<li>An empty node shows only as a small dot: set its position in the inspector, X 8 and Y 0, above
+the ground.</li>
+</ol>
+
+<h2 id="the-costume">The costume</h2>
+
+<ol>
+<li>With <em>Player</em> chosen, go to <strong>Project</strong>, choose <code>slime.sprite.json</code> and press <strong>Place in the
+scene</strong>. A new node lands after <em>Player</em>, and is chosen.</li>
+<li>Over the tree, press <strong>Make it a child of the node above</strong> (the third arrow; its tooltip says
+so). Name it <em>Sprite</em>. A child&rsquo;s position is from its parent, and both are centred on their
+position. The slime&rsquo;s picture is a little taller than its body, so set the sprite&rsquo;s Y to 0.19:
+its feet then sit on the body&rsquo;s bottom.</li>
+</ol>
+
+<h2 id="the-code">The code</h2>
+
+<p>Add a file <code>player.go</code> beside <code>main.go</code>:</p>
+<pre><code class="language-go"><span class="kn">package</span> <span class="nx">main</span>
+
+<span class="kn">import</span> <span class="s">&#34;github.com/akrck02/go-engine/engine&#34;</span>
+
+<span class="c1">// Player walks with the arrows (or the 3DS&#39;s cross), jumps with Space (or A) while it stands on</span>
+<span class="c1">// the ground, and plays its sprite&#39;s animations.</span>
+<span class="kd">type</span> <span class="nx">Player</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">Speed</span> <span class="kt">float64</span> <span class="s">`json:&#34;speed&#34;`</span> <span class="c1">// metres a second, walking</span>
+	<span class="nx">Jump</span>  <span class="kt">float64</span> <span class="s">`json:&#34;jump&#34;`</span>  <span class="c1">// metres a second, upwards, when it jumps</span>
+<span class="p">}</span>
+
+<span class="c1">// Update runs every frame.</span>
+<span class="kd">func</span> <span class="p">(</span><span class="nx">player</span> <span class="o">*</span><span class="nx">Player</span><span class="p">)</span> <span class="nf">Update</span><span class="p">(</span><span class="nx">context</span> <span class="o">*</span><span class="nx">engine</span><span class="p">.</span><span class="nx">Context</span><span class="p">)</span> <span class="p">{</span>
+	<span class="nx">body</span><span class="p">,</span> <span class="nx">found</span> <span class="o">:=</span> <span class="nx">context</span><span class="p">.</span><span class="nx">Node</span><span class="p">.</span><span class="nf">Body</span><span class="p">()</span>
+	<span class="k">if</span> <span class="p">!</span><span class="nx">found</span> <span class="p">{</span>
+		<span class="k">return</span>
+	<span class="p">}</span>
+	<span class="nx">direction</span> <span class="o">:=</span> <span class="nx">context</span><span class="p">.</span><span class="nx">Input</span><span class="p">.</span><span class="nf">Move</span><span class="p">().</span><span class="nx">X</span>
+	<span class="nx">body</span><span class="p">.</span><span class="nx">Velocity</span><span class="p">.</span><span class="nx">X</span> <span class="p">=</span> <span class="nx">direction</span> <span class="o">*</span> <span class="nx">player</span><span class="p">.</span><span class="nx">Speed</span>
+	<span class="k">if</span> <span class="nx">context</span><span class="p">.</span><span class="nx">Input</span><span class="p">.</span><span class="nf">Pressed</span><span class="p">(</span><span class="nx">engine</span><span class="p">.</span><span class="nx">KeySpace</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="nx">body</span><span class="p">.</span><span class="nf">OnFloor</span><span class="p">()</span> <span class="p">{</span>
+		<span class="nx">body</span><span class="p">.</span><span class="nx">Velocity</span><span class="p">.</span><span class="nx">Y</span> <span class="p">=</span> <span class="nx">player</span><span class="p">.</span><span class="nx">Jump</span>
+	<span class="p">}</span>
+	<span class="nx">player</span><span class="p">.</span><span class="nf">animate</span><span class="p">(</span><span class="nx">context</span><span class="p">.</span><span class="nx">Node</span><span class="p">,</span> <span class="nx">direction</span><span class="p">)</span>
+<span class="p">}</span>
+
+<span class="c1">// animate plays &#34;walk&#34; while the player walks and &#34;idle&#34; while it stands, facing the way it goes.</span>
+<span class="kd">func</span> <span class="p">(</span><span class="nx">player</span> <span class="o">*</span><span class="nx">Player</span><span class="p">)</span> <span class="nf">animate</span><span class="p">(</span><span class="nx">node</span> <span class="o">*</span><span class="nx">engine</span><span class="p">.</span><span class="nx">Node</span><span class="p">,</span> <span class="nx">direction</span> <span class="kt">float64</span><span class="p">)</span> <span class="p">{</span>
+	<span class="nx">sprite</span><span class="p">,</span> <span class="nx">found</span> <span class="o">:=</span> <span class="nx">node</span><span class="p">.</span><span class="nf">Find</span><span class="p">(</span><span class="s">&#34;Sprite&#34;</span><span class="p">)</span>
+	<span class="k">if</span> <span class="p">!</span><span class="nx">found</span> <span class="p">{</span>
+		<span class="k">return</span>
+	<span class="p">}</span>
+	<span class="k">if</span> <span class="nx">direction</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">{</span>
+		<span class="nx">sprite</span><span class="p">.</span><span class="nf">Play</span><span class="p">(</span><span class="s">&#34;idle&#34;</span><span class="p">)</span>
+		<span class="k">return</span>
+	<span class="p">}</span>
+	<span class="nx">sprite</span><span class="p">.</span><span class="nf">Play</span><span class="p">(</span><span class="s">&#34;walk&#34;</span><span class="p">)</span>
+	<span class="nx">sprite</span><span class="p">.</span><span class="nf">FaceLeft</span><span class="p">(</span><span class="nx">direction</span> <span class="p">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="c1">// the slime is drawn facing left</span>
+<span class="p">}</span>
+</code></pre>
+
+<p>The code never moves the slime itself. It sets the body&rsquo;s <strong>velocity</strong>, how fast it goes, and the
+physics moves it, stopping it at the ground. <code>Move()</code> is -1, 0 or 1 across, from the arrows, the
+3DS&rsquo;s cross or a phone&rsquo;s buttons. Space is also the 3DS&rsquo;s A. <code>OnFloor()</code> keeps the slime from
+jumping in the air. <code>node.Find(&quot;Sprite&quot;)</code> finds the child named <em>Sprite</em>, and <code>found</code> says whether
+it is there. The slime&rsquo;s picture faces left: <code>FaceLeft(true)</code> mirrors it, so walking right
+(<code>direction &gt; 0</code>) shows it facing right.</p>
+
+<p>Then register it in <code>main.go</code>, whose line <code>engine.Register(Spin{})</code> becomes:</p>
+<pre><code class="language-go"><span class="nx">engine</span><span class="p">.</span><span class="nf">Register</span><span class="p">(</span><span class="nx">Spin</span><span class="p">{},</span> <span class="nx">Player</span><span class="p">{})</span>
+</code></pre>
+
+<p>In <strong>Code</strong> (key 4), press <strong>Rebuild</strong>. It saves the scene, builds the game again, and reopens the
+editor where you were.</p>
+
+<h2 id="the-behaviour">The behaviour</h2>
+
+<p>Choose <em>Player</em>. Under <strong>Behaviours</strong>, press <strong>Add</strong> and choose <strong>Player</strong>. Its fields appear: set
+<strong>speed</strong> to 3.2 and <strong>jump</strong> to 18.75.</p>
+
+<h2 id="checkpoint">Checkpoint</h2>
+
+<p>Press <strong>Play</strong>. The slime falls onto the ground; the arrows walk it, Space jumps.</p>
+
+<p align="center"><img alt="Playing: the slime in the air over the green ground, in front of the snowy hills and the dark forest" src="./images/quest/2-play.png" width="680"></p>
+
+<p>The slime should turn the way it walks, and wobble while it walks. If it does not move, check in
+<strong>Code</strong> that <em>Player</em> is listed: the scene names the behaviour by its Go type&rsquo;s name. If it falls
+through the ground, check that the ground&rsquo;s body is <strong>Solid</strong>; <strong>Bodies</strong>, over the view, outlines
+every body.</p>
+
+<h2 id="bonus-run">Bonus: run</h2>
+
+<p>Make the slime run twice as fast while Shift, or X (the keyboard&rsquo;s, or the 3DS&rsquo;s button), is held.</p>
+
+<details>
+<summary>🔓 Show the solution</summary>
+
+`Down` tells whether a key is held now, where `Pressed` tells whether it was just pressed. These
+lines take the place of `body.Velocity.X = direction * player.Speed`:
+
+```go
+speed := player.Speed
+if context.Input.Down(engine.KeyShift) || context.Input.Down(engine.KeyX) {
+	speed *= 2
+}
+body.Velocity.X = direction * speed
+```
+
+</details>
+
+<p><strong>🎭 Achievement unlocked: Puppeteer.</strong> You gave a node a body and moved it with your own code.</p>
+
+<hr>
+
+<p><a href="./the-quest/a-forest-of-your-own">← Level 1</a> · <a href="./the-quest/ground-to-stand-on">Level 3 →</a></p>

@@ -1,0 +1,66 @@
+<h1 id="sprites-and-animations">🎞️ Sprites and animations</h1>
+
+<p>Show a picture in a 2D scene, cut a sheet into frames, and play its animations from code.</p>
+
+<h2 id="a-picture">A picture</h2>
+
+<p>In <strong>Project</strong>, choose a picture (PNG or JPEG) and press <strong>Place in the scene</strong>. It is as large as
+its pixels at the scene&rsquo;s <strong>pixels per metre</strong>, times the node&rsquo;s scale.</p>
+
+<h2 id="an-animated-sprite">An animated sprite</h2>
+
+<ol>
+<li>Choose the sheet&rsquo;s picture and press <strong>Make it a sprite or a tileset</strong>, then <strong>A sprite</strong>.</li>
+<li>In <strong>Art</strong>, set the <strong>frames across and down</strong>: a sheet of 4 frames in a row is 4 by 1.</li>
+<li>Under <strong>Animations</strong>, press <strong>Add</strong>, name it (<em>walk</em>), and click its frames on the picture, in
+order. Set its frames a second, and whether it <strong>Loops</strong>.</li>
+<li><strong>Play it when the scene starts</strong> makes it the one a node starts with. Save.</li>
+</ol>
+
+<p>The sprite is a file, <code>name.sprite.json</code>, that every scene shares. Place it like a picture.</p>
+
+<h2 id="from-code">From code</h2>
+<pre><code class="language-go"><span class="kd">func</span> <span class="p">(</span><span class="nx">hero</span> <span class="o">*</span><span class="nx">Hero</span><span class="p">)</span> <span class="nf">Update</span><span class="p">(</span><span class="nx">context</span> <span class="o">*</span><span class="nx">engine</span><span class="p">.</span><span class="nx">Context</span><span class="p">)</span> <span class="p">{</span>
+	<span class="k">if</span> <span class="nx">context</span><span class="p">.</span><span class="nx">Input</span><span class="p">.</span><span class="nf">Move</span><span class="p">().</span><span class="nx">X</span> <span class="o">!=</span> <span class="mi">0</span> <span class="p">{</span>
+		<span class="nx">context</span><span class="p">.</span><span class="nx">Node</span><span class="p">.</span><span class="nf">Play</span><span class="p">(</span><span class="s">&#34;walk&#34;</span><span class="p">)</span> <span class="c1">// keeps playing if it already is</span>
+	<span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+		<span class="nx">context</span><span class="p">.</span><span class="nx">Node</span><span class="p">.</span><span class="nf">Play</span><span class="p">(</span><span class="s">&#34;idle&#34;</span><span class="p">)</span>
+	<span class="p">}</span>
+	<span class="nx">context</span><span class="p">.</span><span class="nx">Node</span><span class="p">.</span><span class="nf">FaceLeft</span><span class="p">(</span><span class="nx">context</span><span class="p">.</span><span class="nx">Input</span><span class="p">.</span><span class="nf">Move</span><span class="p">().</span><span class="nx">X</span> <span class="p">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="c1">// mirrors the picture</span>
+<span class="p">}</span>
+</code></pre>
+
+<table>
+<thead>
+<tr>
+<th>Call</th>
+<th>What it does</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>node.Play(name)</code></td>
+<td>Plays an animation of the node&rsquo;s sprite, from its start unless it is already playing; false if there is none of that name</td>
+</tr>
+
+<tr>
+<td><code>node.FaceLeft(left)</code></td>
+<td>Draws the picture mirrored, or not</td>
+</tr>
+</tbody>
+</table>
+
+<h2 id="variations">Variations</h2>
+
+<ul>
+<li><strong>A costume on a body.</strong> Put the sprite on a child of the node with the body, so it can sit a
+little higher or lower than the body&rsquo;s box (see <a href="./the-quest/a-slime-that-walks">level 2 of the quest</a>).</li>
+<li><strong>Nodes that start differently.</strong> A node&rsquo;s inspector chooses the animation it starts with; nodes
+sharing one sprite file can each start on another.</li>
+<li><strong>Pixel art stays sharp.</strong> Sprites are drawn at the nearest pixel, never blurred.</li>
+</ul>
+
+<hr>
+
+<p><a href="./guides/a-2d-level-with-tiles">← A 2D level with tiles</a> · <a href="./guides/bodies-and-physics">Bodies and physics →</a></p>

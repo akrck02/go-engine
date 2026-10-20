@@ -1,0 +1,93 @@
+<h1 id="bodies-and-physics">🪨 Bodies and physics</h1>
+
+<p>Make 2D nodes fall, stand, push and carry each other, and move them from code.</p>
+
+<h2 id="give-a-node-a-body">Give a node a body</h2>
+
+<p>Choose the node, and under <strong>Body</strong> press <strong>Give it a body</strong>. Choose its kind:</p>
+
+<table>
+<thead>
+<tr>
+<th>Kind</th>
+<th>Use it for</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>Solid</td>
+<td>Ground and walls: it never moves</td>
+</tr>
+
+<tr>
+<td>Moving</td>
+<td>The player and enemies: falls, moves at its velocity, stops against solids</td>
+</tr>
+
+<tr>
+<td>Pushable</td>
+<td>Boxes: falls, can be stood on, and is pushed when walked into</td>
+</tr>
+
+<tr>
+<td>Platform</td>
+<td>Lifts: moves as its behaviours say, carrying what stands on it</td>
+</tr>
+
+<tr>
+<td>Trigger</td>
+<td>Coins, doors, water: stops nothing, hears what touches it</td>
+</tr>
+</tbody>
+</table>
+<p>Its <strong>size</strong> is in metres; 0 is the node&rsquo;s own picture or shape. Moving and pushable bodies have a
+<strong>gravity</strong> scale: 1 is Earth&rsquo;s, more falls faster, 0 floats.</p>
+
+<h2 id="move-it-from-code">Move it from code</h2>
+<pre><code class="language-go"><span class="kd">func</span> <span class="p">(</span><span class="nx">hero</span> <span class="o">*</span><span class="nx">Hero</span><span class="p">)</span> <span class="nf">Update</span><span class="p">(</span><span class="nx">context</span> <span class="o">*</span><span class="nx">engine</span><span class="p">.</span><span class="nx">Context</span><span class="p">)</span> <span class="p">{</span>
+	<span class="nx">body</span><span class="p">,</span> <span class="nx">found</span> <span class="o">:=</span> <span class="nx">context</span><span class="p">.</span><span class="nx">Node</span><span class="p">.</span><span class="nf">Body</span><span class="p">()</span>
+	<span class="k">if</span> <span class="p">!</span><span class="nx">found</span> <span class="p">{</span>
+		<span class="k">return</span>
+	<span class="p">}</span>
+	<span class="nx">body</span><span class="p">.</span><span class="nx">Velocity</span><span class="p">.</span><span class="nx">X</span> <span class="p">=</span> <span class="nx">context</span><span class="p">.</span><span class="nx">Input</span><span class="p">.</span><span class="nf">Move</span><span class="p">().</span><span class="nx">X</span> <span class="o">*</span> <span class="mi">4</span> <span class="c1">// metres a second</span>
+	<span class="k">if</span> <span class="nx">context</span><span class="p">.</span><span class="nx">Input</span><span class="p">.</span><span class="nf">Pressed</span><span class="p">(</span><span class="nx">engine</span><span class="p">.</span><span class="nx">KeySpace</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="nx">body</span><span class="p">.</span><span class="nf">OnFloor</span><span class="p">()</span> <span class="p">{</span>
+		<span class="nx">body</span><span class="p">.</span><span class="nx">Velocity</span><span class="p">.</span><span class="nx">Y</span> <span class="p">=</span> <span class="mi">12</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+</code></pre>
+
+<p>Set the <strong>velocity</strong>; never move a body&rsquo;s node by hand while it plays, or the physics loses it.
+<code>OnFloor()</code> tells whether the body stands on something.</p>
+
+<h2 id="hear-what-touches-a-trigger">Hear what touches a trigger</h2>
+<pre><code class="language-go"><span class="kd">func</span> <span class="p">(</span><span class="nx">door</span> <span class="o">*</span><span class="nx">Door</span><span class="p">)</span> <span class="nf">Touched</span><span class="p">(</span><span class="nx">context</span> <span class="o">*</span><span class="nx">engine</span><span class="p">.</span><span class="nx">Context</span><span class="p">,</span> <span class="nx">other</span> <span class="o">*</span><span class="nx">engine</span><span class="p">.</span><span class="nx">Node</span><span class="p">)</span> <span class="p">{</span>
+	<span class="k">if</span> <span class="nx">_</span><span class="p">,</span> <span class="nx">isPlayer</span> <span class="o">:=</span> <span class="nx">engine</span><span class="p">.</span><span class="nx">Behaviour</span><span class="p">[</span><span class="nx">Player</span><span class="p">](</span><span class="nx">other</span><span class="p">);</span> <span class="nx">isPlayer</span> <span class="p">{</span>
+		<span class="nx">context</span><span class="p">.</span><span class="nf">ChangeScene</span><span class="p">(</span><span class="s">&#34;scenes/house.scene.json&#34;</span><span class="p">)</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+</code></pre>
+
+<p>Moving and pushable bodies touch triggers; <code>Touched</code> runs once, when the touch begins.</p>
+
+<h2 id="gravity-zones">Gravity zones</h2>
+
+<p>A trigger can pull with a gravity of its own: tick <strong>A gravity of its own, for what falls inside</strong>
+and set the pull across and up, in metres a second each second (the world&rsquo;s is 0, -9.81). A field
+that lifts things is a pull upwards. A body that should keep the world&rsquo;s gravity anyway (the
+player walking through a field meant for boxes) ticks <strong>Keeps the world&rsquo;s gravity inside zones</strong>.
+&ldquo;On the floor&rdquo; follows the pull: a body pulled up stands on a ceiling.</p>
+
+<h2 id="variations">Variations</h2>
+
+<ul>
+<li><strong>The world&rsquo;s gravity.</strong> <code>context.Scene.Physics().SetGravity(…)</code> changes it for the whole scene.</li>
+<li><strong>Tiles as ground.</strong> Solid tiles of a tile map are solid bodies already: see
+<a href="./guides/a-2d-level-with-tiles">A 2D level with tiles</a>.</li>
+<li><strong>A lift.</strong> A platform with a behaviour that turns its velocity round at the top and bottom: the
+<a href="./the-quest/in-your-pocket">final challenge of the quest</a>.</li>
+</ul>
+
+<hr>
+
+<p><a href="./guides/sprites-and-animations">← Sprites and animations</a> · <a href="./guides/lights">Lights →</a></p>
