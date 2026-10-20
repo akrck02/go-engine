@@ -1,10 +1,10 @@
 // Package physics moves boxes in 2D: bodies that fall, collide with solid ground and walls, and
-// slide along them, as a game seen from the side needs. It knows nothing of scenes or nodes; the engine keeps
-// a World in step with them.
+// slide along them, as a game seen from the side needs. It knows nothing of scenes or nodes; the
+// engine keeps a World in step with them.
 //
-// Bodies are boxes lined up with the axes, sized and placed in metres, with X to the right and Y
-// up; their Z is not used. A moving body is moved one axis at a time, in steps no longer than half
-// its smallest side, so even a fast body meets a thin wall instead of jumping over it.
+// Bodies are boxes lined up with the axes, in metres, with X to the right and Y up; their Z is not
+// used. A moving body moves one axis at a time, in steps of at most half its smallest side. So even
+// a fast body meets a thin wall instead of jumping over it.
 //
 //	world := physics.NewWorld(space.NewVector(0, -9.81, 0))
 //	world.Add(&physics.Body{Kind: physics.Solid, Position: groundCentre, Size: groundSize})

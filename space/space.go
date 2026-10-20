@@ -1,11 +1,11 @@
-// Package space is where things are: positions, directions, rotations and sizes in a game's world,
-// and the transform that places a thing (where it is, how it is turned, how large it is).
+// Package space is where things are: positions, directions, rotations and sizes in a game's world.
+// Its Transform places a thing: where it is, how it is turned, and how large it is.
 //
-// The world follows glTF and go-renderer: one unit is one metre, Y points up, and the axes are
-// right-handed, so with X to the right and Y up, Z points towards whoever looks. A camera with no
-// rotation looks along -Z (Forward). Angles are in degrees wherever a person reads or types them,
-// and turning by a positive angle is counter-clockwise when looking down the axis towards the
-// origin: a positive turn around Up takes Right (+X) towards Forward (-Z).
+// The world follows glTF and go-renderer. One unit is one metre and Y points up. The axes are
+// right-handed: with X to the right and Y up, Z points towards whoever looks. A camera with no
+// rotation looks along -Z (Forward). Angles are in degrees wherever a person reads or types them.
+// A positive turn is counter-clockwise, looking down the axis towards the origin: a positive turn
+// around Up takes Right (+X) towards Forward (-Z).
 package space
 
 import "math"

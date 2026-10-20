@@ -78,7 +78,7 @@ func makeBehaviour(name string, fields map[string]any) (any, error) {
 	return made, nil
 }
 
-// Behaviour finds a node's behaviour of a type, while the game runs:
+// Behaviour finds a node's behaviour of a type, while the game runs. For example:
 //
 //	if spin, found := engine.Behaviour[Spin](node); found { spin.Speed *= 2 }
 func Behaviour[Wanted any](node *Node) (*Wanted, bool) {
