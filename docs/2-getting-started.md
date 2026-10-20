@@ -7,7 +7,8 @@ change what its code does. Nothing here needs a game idea yet.
 
 - **Go 1.25** or newer ([go.dev/dl](https://go.dev/dl/)).
 - **A C compiler**: the editor's window speaks to the graphics card through C. On Linux,
-  `sudo apt install gcc libgl1-mesa-dev xorg-dev` (Debian, Ubuntu); on macOS, `xcode-select --install`.
+  `sudo apt install gcc libgl1-mesa-dev xorg-dev` (Debian, Ubuntu); on macOS, `xcode-select --install`;
+  on Windows, the gcc of [MSYS2](https://www.msys2.org) (Windows is still to be tried).
 - **OpenGL 4.1**, which any computer of the last ten years has.
 
 ## 1. Install the editor
@@ -25,7 +26,8 @@ shell cannot find it, add that folder to your `PATH`.
 go-engine new ~/games/harbour "Harbour lights"
 ```
 
-A project is a folder with a Go module inside. The command writes it and opens the editor on it:
+The second word is the game's name, as players will see it. A project is a folder with a Go module
+inside; the command writes it, fetches the engine as `go` does any module, and opens the editor:
 
 | File | What it is |
 |---|---|
@@ -54,16 +56,20 @@ The bar at the bottom changes between six **workspaces**, one job each. The keys
 | **Play** | Playing the scene, with a pause, a step of one frame, and a log |
 | **Build** | Making the game for a computer, the 3DS or an Android phone |
 
-In **Level**, drag the view to turn round the scene, scroll to come closer, and click a node to
-choose it. Its **inspector** on the right shows where it is, what it is, and its behaviours.
+In **Level**, drag the view to turn round the scene, scroll to come closer, and click a thing in it
+to choose it. Each thing in a scene is a **node**: the ground, the cube and the camera are three,
+listed on the left. The chosen node's **inspector** on the right shows where it is, what it is,
+and its behaviours.
 
 ## 4. Play
 
-Press **Play** at the bottom (or 5). The scene plays through its camera, and the cube turns.
+Press **Play** in the bar at the bottom (or 5): the scene starts playing at once, through its
+camera, and the cube turns. Play always plays the scene as it is now, saved or not.
 
 <p align="center"><img alt="The Play workspace: the cube turning on the ground, seen through the scene's camera; Pause, Step, Restart, In a window and Stop above it; the cube watched on the right, its Spin speed 45" src="images/editor-play.png" width="720"></p>
 
-**Checkpoint:** the cube turns slowly. **Stop** (or Escape) goes back to the scene as it was.
+**Checkpoint:** the cube turns slowly. **Stop** (or Escape) goes back to the workspace you were
+in, with the scene as it was before playing.
 
 ## 5. Change a number
 
@@ -84,13 +90,26 @@ func (spin *Spin) Update(context *engine.Context) {
 }
 ```
 
-Every exported field of a behaviour is a field in the inspector, named by its JSON name.
+Every exported field of a behaviour is a field in the inspector, named by its JSON name. `Update`
+runs every frame; `context.Delta` is the seconds since the last frame. `main.go` registers the
+behaviour, so scenes can name it:
+
+```go
+engine.Register(Spin{})
+```
 
 ## 6. Change the code
 
 Make the cube bob up and down as it turns. Add a field and two lines to `spin.go`:
 
 ```go
+import (
+	"math"
+
+	"github.com/akrck02/go-engine/engine"
+	"github.com/akrck02/go-engine/space"
+)
+
 type Spin struct {
 	Speed float64 `json:"speed"` // degrees a second
 	Bob   float64 `json:"bob"`   // metres up and down
@@ -102,8 +121,11 @@ func (spin *Spin) Update(context *engine.Context) {
 }
 ```
 
-Add `"math"` to its imports. The editor runs inside your game, so it needs the game built again:
-open **Code** (or 4) and press **Rebuild**, which glows while the code is newer than the game.
+`context.Time` is the seconds since the scene started. The editor runs inside your game, so it
+needs the game built again: open **Code** (or 4) and press **Rebuild**, which glows while the code
+is newer than the game. It saves the scene, builds, and reopens the editor where you were; if the
+code does not compile, the error shows under **Output**, and the editor stays as it was. **Open in
+code editor** opens the project in the editor `engine.json` names (`codeEditor`), or in `$VISUAL`.
 
 <p align="center"><img alt="The Code workspace: the Spin behaviour with its file, its comment, the methods the engine calls and its speed field; Open in code editor and Rebuild at the top right" src="images/editor-code.png" width="720"></p>
 
@@ -111,12 +133,13 @@ open **Code** (or 4) and press **Rebuild**, which glows while the code is newer 
 
 ## 7. Play it on its own
 
-In **Build**, the card **This computer** has **Build**, which writes the game into the project's
-`build/` folder, and **Play**, which opens it in a window of its own. From a terminal,
-`go run .` in the project's folder does the same.
+In **Build** (or 6), the card **This computer** has **Build**, which writes the game into the
+project's `build/` folder, and **Play**, which opens it in a window of its own. From a terminal,
+`go run .` in the project's folder plays it too: the editor only starts when `go-engine` asks.
 
-The other cards make the game for the Nintendo 3DS and for Android phones. Their tools are set up
-in the **Tools** tab; the [guides](5-guides/6-building-for-the-3ds.md) explain them.
+The other cards make the game for the Nintendo 3DS and for Android phones. The tools they need are
+set up in **Tools**, the tab beside **Platforms** at the top of Build; the
+[guides](5-guides/6-building-for-the-3ds.md) explain them.
 
 ## Where next
 
