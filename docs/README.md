@@ -1,4 +1,4 @@
-# 🎮 go-engine
+# 🎮 Go Engine
 
 > 🚧 **Go Engine is in development.** What these pages describe can change from one version to
 > the next: names, scene files and the editor's layout included.
@@ -239,3 +239,13 @@ go-renderer draws the lights on every platform (its *2D lights* guide and its th
   one's own in 3D scenes, sound (go-sound), a game's own interface (go-ui).
 - Moving, turning and scaling with handles in the view (the inspector and dragging do it now),
   dragging nodes in the tree.
+
+## 🤖 AI disclosure
+
+I write most of my code by hand, so I want to be clear about this project: **it was written by an
+AI assistant (Claude, by Anthropic) under my direction.** Every commit made this way carries a
+`Co-Authored-By: Claude` line.
+
+**Status: pending thorough review.** The code compiles and its tests pass, but I have not yet
+reviewed it line by line. Treat it as a working draft, not as code I vouch for.
+
