@@ -13,8 +13,8 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
-      - name: OpenGL's and X11's headers, which the editor's window builds against
-        run: sudo apt-get update && sudo apt-get install -y libgl1-mesa-dev xorg-dev
+      - name: OpenGL's, X11's and Wayland's headers, which the editor's window builds against
+        run: sudo apt-get update && sudo apt-get install -y libgl1-mesa-dev xorg-dev libwayland-dev libxkbcommon-dev
       - name: Formatted
         run: test -z "$(gofmt -l .)" || (gofmt -l . && exit 1)
       - name: Vet

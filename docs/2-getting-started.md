@@ -7,7 +7,7 @@ change what its code does. Nothing here needs a game idea yet.
 
 - **Go 1.25** or newer ([go.dev/dl](https://go.dev/dl/)).
 - **A C compiler**: the editor's window speaks to the graphics card through C. On Linux,
-  `sudo apt install gcc libgl1-mesa-dev xorg-dev` (Debian, Ubuntu); on macOS, `xcode-select --install`;
+  `sudo apt install gcc libgl1-mesa-dev xorg-dev libwayland-dev libxkbcommon-dev` (Debian, Ubuntu); on macOS, `xcode-select --install`;
   on Windows, the gcc of [MSYS2](https://www.msys2.org) (Windows is still to be tried).
 - **OpenGL 4.1**, which any computer of the last ten years has.
 

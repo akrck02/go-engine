@@ -6,7 +6,7 @@ The problems people meet, and their fixes. Every error Go Engine reports has a *
 ## Common problems
 
 **`go install` fails with "cgo" or "gcc".** The editor's window needs a C compiler and OpenGL's
-headers. On Debian or Ubuntu: `sudo apt install gcc libgl1-mesa-dev xorg-dev`. On macOS:
+headers. On Debian or Ubuntu: `sudo apt install gcc libgl1-mesa-dev xorg-dev libwayland-dev libxkbcommon-dev`. On macOS:
 `xcode-select --install`.
 
 **The editor opens, but a behaviour is "Not in the project's code (yet?)".** The editor runs inside
