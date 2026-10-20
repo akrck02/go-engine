@@ -1,5 +1,8 @@
 # 🎮 go-engine
 
+> 🚧 **Go Engine is in development.** What these pages describe can change from one version to
+> the next: names, scene files and the editor's layout included.
+
 go-engine is a game engine in Go for 2D, 3D and isometric games, with an editor. A game is an
 ordinary Go module: the editor arranges its scenes and imports its assets, and the game's own
 code, written in any editor that speaks Go (Zed, Neovim, Visual Studio Code, GoLand…), moves what
