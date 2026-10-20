@@ -113,12 +113,13 @@ func (view *viewport) makeGizmos() *scene.Node {
 	return gizmos
 }
 
-// showSelection draws the edges of the chosen node's box.
+// showSelection draws the edges of the chosen node's box, and a lamp's reach.
 func (view *viewport) showSelection(chosen *engine.Node) {
 	view.selection.Children = view.selection.Children[:0]
 	if chosen == nil {
 		return
 	}
+	view.showLampReach(chosen)
 	box := chosen.World().Position
 	bounds := chosen.Bounds()
 	if bounds.IsEmpty() {

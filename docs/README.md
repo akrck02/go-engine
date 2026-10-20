@@ -220,7 +220,8 @@ On the 3DS, 3D lamps light at the vertices: a floor shows a lamp's pool where it
 **In the editor** a light is a kind of node (**+ → Light**, in 2D and 3D), and any node can be made
 one in the inspector's **Light** section: its kind, colour, intensity and radii. The scene's
 inspector sets its ambient. Over the 2D view, **Lights** draws how far each light reaches, and
-**Lit** shows the scene lit as the game will be, or its colours unlit.
+**Lit** shows the scene lit as the game will be, or its colours unlit. In the 3D view a chosen lamp
+shows two rings, where its light is full and where it ends.
 
 <p align="center">
   <img alt="The editor's Level workspace on a 2D street at night: a street lamp chosen, its inner and outer circles drawn over the view, the lamp's warm pool on the ground, a window glowing on a house, and the Light section of the inspector with Point chosen, a colour, the intensity and the radii" src="images/editor-lights.png" width="640">

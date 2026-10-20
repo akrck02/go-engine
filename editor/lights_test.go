@@ -77,3 +77,16 @@ func hasLighting(list *draw2d.List) bool {
 	}
 	return false
 }
+
+func TestAChosen3DLampShowsItsTwoRings(test *testing.T) {
+	editor := open(test)
+	lamp := editor.Add("Light")
+	view := newViewport()
+	view.showSelection(lamp)
+	withRings := len(view.selection.Children)
+	cube := editor.Add("Cube")
+	view.showSelection(cube)
+	if rings := withRings - len(view.selection.Children); rings != 2*ringSegments {
+		test.Fatalf("the lamp shows %d more pieces than a cube; wanted two rings of %d", rings, ringSegments)
+	}
+}
