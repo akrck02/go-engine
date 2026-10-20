@@ -81,6 +81,8 @@ func hasLighting(list *draw2d.List) bool {
 func TestAChosen3DLampShowsItsTwoRings(test *testing.T) {
 	editor := open(test)
 	lamp := editor.Add("Light")
+	light, _ := lamp.Light()
+	light.Inner = 1 // a new lamp is full at its centre only: no inner ring
 	view := newViewport()
 	view.showSelection(lamp)
 	withRings := len(view.selection.Children)
