@@ -59,3 +59,20 @@ func TestAGameShownElsewhereDrawsItsOverlayAndInterface(test *testing.T) {
 		test.Fatalf("the overlay drew %v", list.Commands)
 	}
 }
+
+func TestTheSecondScreensSceneIsPlacedInACornerOfTheWindow(test *testing.T) {
+	game := &runner{played: load(test)}
+	SetSecondScreen(load(test))
+	defer SetSecondScreen(nil)
+	corner := draw2d.Rect{X: 980, Y: 520, Width: 280, Height: 180}
+	PlaceSecondScreen(&corner)
+	defer PlaceSecondScreen(nil)
+	view := game.step(input.NewState(), 1.0/60)
+	if view.Below == nil || view.Below.Area == nil || *view.Below.Area != corner {
+		test.Fatalf("the second screen's scene is placed at %+v", view.Below)
+	}
+	PlaceSecondScreen(nil)
+	if view = game.step(input.NewState(), 1.0/60); view.Below.Area != nil {
+		test.Fatal("a second screen placed nowhere still has an area")
+	}
+}

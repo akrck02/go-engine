@@ -3,6 +3,7 @@ package engine
 import (
 	"log/slog"
 
+	"github.com/akrck02/go-renderer/draw2d"
 	"github.com/akrck02/go-renderer/input"
 	"github.com/akrck02/go-ui/window"
 )
@@ -14,6 +15,25 @@ import (
 
 // secondScene is the scene the second screen shows, when the game sets one.
 var secondScene *Scene
+
+// secondPlace is where a device with no second screen shows its scene, in window pixels, and
+// whether the game placed it anywhere (PlaceSecondScreen).
+var secondPlace struct {
+	area   draw2d.Rect
+	placed bool
+}
+
+// PlaceSecondScreen shows the second screen's scene in an area of the window, in window pixels, on
+// a device that has no second screen: a radar in a corner of a computer's window, the same scene
+// a 3DS shows below. nil shows it nowhere, as by default. A device with a second screen ignores
+// it. Call it again when the window's size changes (each frame is fine: it allocates nothing).
+func PlaceSecondScreen(area *draw2d.Rect) {
+	if area == nil {
+		secondPlace.placed = false
+		return
+	}
+	secondPlace.area, secondPlace.placed = *area, true
+}
 
 // SetSecondScreen shows a scene on the second screen, under the game's interface (SetInterface),
 // seen from its main camera; nil leaves the screen to the interface. Make it with Load or
@@ -38,5 +58,9 @@ func (game *runner) playSecondScreen(seconds float64, keys *input.State) *window
 	}
 	secondScene.Update(seconds, keys)
 	game.below = window.BelowView{World: secondScene.World(), Camera: secondScene.Camera()}
+	if secondPlace.placed {
+		game.belowArea = secondPlace.area
+		game.below.Area = &game.belowArea
+	}
 	return &game.below
 }
