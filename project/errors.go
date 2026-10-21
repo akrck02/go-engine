@@ -13,6 +13,7 @@ var (
 	TerminalNotFound            = failure.Define("project.terminal-not-found", "the code editor runs in a terminal, and no terminal was found")
 	SettingsNotSaved            = failure.Define("project.settings-not-saved", "engine.json could not be written")
 	ApplicationIDWrong          = failure.Define("project.application-id-wrong", "an Android application id is two words or more joined by dots, each starting with a letter, as io.example.game")
+	TargetCannot                = failure.Define("project.target-cannot", "the target cannot do that")
 	EngineNotRead               = failure.Define("project.engine-not-read", "the version of go-engine the project requires could not be read from its go.mod")
 	ReleaseNeedsPublishedEngine = failure.Define("project.release-needs-published-engine", "the game's go.mod uses go-engine from a folder of this computer, which GitHub's machines do not have: update it first (go-engine -update)")
 	EngineNotUpdated            = failure.Define("project.engine-not-updated", "go-engine could not be updated: check the network, and that the version exists")

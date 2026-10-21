@@ -17,15 +17,15 @@ func TestABuildsResultIsKeptPerTarget(test *testing.T) {
 	editor := open(test)
 	program := filepath.Join(test.TempDir(), "lights.3dsx")
 	os.WriteFile(program, make([]byte, 2048), 0o644)
-	editor.builders[ConsoleTarget] = func() (project.Built, error) { return project.Built{Program: program}, nil }
-	editor.builders[ComputerTarget] = func() (project.Built, error) { return project.Built{}, errors.New("no compiler here") }
-	editor.recordBuild(ConsoleTarget, editor.buildNow(ConsoleTarget))
-	editor.recordBuild(ComputerTarget, editor.buildNow(ComputerTarget))
-	console, found := editor.LastBuild(ConsoleTarget)
+	editor.builders[project.Nintendo3DS] = func() (project.Built, error) { return project.Built{Program: program}, nil }
+	editor.builders[project.Desktop] = func() (project.Built, error) { return project.Built{}, errors.New("no compiler here") }
+	editor.recordBuild(project.Nintendo3DS, editor.buildNow(project.Nintendo3DS))
+	editor.recordBuild(project.Desktop, editor.buildNow(project.Desktop))
+	console, found := editor.LastBuild(project.Nintendo3DS)
 	if !found || console.Program != program || console.Bytes != 2048 || console.Err != nil || console.At.IsZero() {
 		test.Fatalf("the console's build is %+v", console)
 	}
-	computer, _ := editor.LastBuild(ComputerTarget)
+	computer, _ := editor.LastBuild(project.Desktop)
 	if computer.Err == nil || len(computer.Log) == 0 {
 		test.Fatalf("the computer's failed build is %+v", computer)
 	}

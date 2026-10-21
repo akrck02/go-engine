@@ -9,10 +9,10 @@ import (
 // A game built for the Nintendo 3DS is tried on the console itself, sent over the network to the
 // Homebrew Launcher's netloader (Y opens it) with devkitPro's 3dslink, or in an emulator.
 
-// SendTo3DS builds the game for the 3DS and sends it to the console's Homebrew Launcher, which
+// sendTo3DS builds the game for the 3DS and sends it to the console's Homebrew Launcher, which
 // starts it. The settings' ConsoleAddress is the console's; empty, 3dslink looks for it.
-func (project *Project) SendTo3DS() error {
-	built, err := project.Build3DS()
+func (project *Project) sendTo3DS() error {
+	built, err := project.build3DS()
 	if err != nil {
 		return err
 	}
@@ -32,10 +32,10 @@ func (project *Project) sendWith(link, program string) error {
 	return build.Run(project.Folder, nil, link, append(arguments, program)...)
 }
 
-// EmulatorCommand builds the game for the 3DS and returns the command that opens it in an
+// emulatorCommand builds the game for the 3DS and returns the command that opens it in an
 // emulator (Azahar, or Citra), not started: the editor shows what it prints and can stop it.
-func (project *Project) EmulatorCommand() (*exec.Cmd, error) {
-	built, err := project.Build3DS()
+func (project *Project) emulatorCommand() (*exec.Cmd, error) {
+	built, err := project.build3DS()
 	if err != nil {
 		return nil, err
 	}

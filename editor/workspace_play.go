@@ -1,6 +1,7 @@
 package editor
 
 import (
+	"github.com/akrck02/go-engine/project"
 	"github.com/akrck02/go-renderer/draw2d"
 	ui "github.com/akrck02/go-ui"
 
@@ -124,7 +125,7 @@ func (view *View) targetTabs(context *ui.Context) {
 // windowButton plays the game in a window of its own, or closes it.
 func (view *View) windowButton(context *ui.Context) {
 	editor := view.Editor
-	if target, playing := editor.PlayingOn(); playing && target == ComputerTarget {
+	if target, playing := editor.PlayingOn(); playing && target == project.Desktop {
 		if context.IconButton(iconClose, "Close window") {
 			editor.Stop()
 		}
@@ -132,7 +133,7 @@ func (view *View) windowButton(context *ui.Context) {
 		return
 	}
 	if context.IconButton(iconInWindow, "In a window") {
-		editor.PlayInWindow()
+		editor.PlayOn(project.Desktop)
 	}
 	context.Tooltip("Build the game and play it in a window of its own")
 }
@@ -153,7 +154,7 @@ func (view *View) stage(context *ui.Context) {
 	target := view.Editor.Target
 	ink := context.Theme.InkSoft
 	context.Paint(ui.Layout{Width: ui.Grow(), Height: ui.Grow()}, func(area draw2d.Rect, list *draw2d.List) {
-		if target == ConsoleScreen {
+		if target == Nintendo3DSScreens {
 			paintConsole(played, area, ink, list)
 			return
 		}

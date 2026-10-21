@@ -101,6 +101,7 @@ hides the console, set its address in **Project → Settings**.
 | `project.release-needs-published-engine` | the game's go.mod uses go-engine from a folder of this computer, which GitHub's machines do not have: update it first (go-engine -update) |
 | `project.scene-exists` | a scene of that name exists already |
 | `project.settings-not-saved` | engine.json could not be written |
+| `project.target-cannot` | the target cannot do that |
 | `project.terminal-not-found` | the code editor runs in a terminal, and no terminal was found |
 | `scenefile.frame-outside-sheet` | an animation shows a frame the sheet does not have |
 | `scenefile.light-radii-wrong` | a light's radii are below zero, or the inner one is beyond the outer |

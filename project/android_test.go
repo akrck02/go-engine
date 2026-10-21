@@ -115,7 +115,7 @@ func TestPlayingOnADeviceInstallsStartsAndReadsTheLog(test *testing.T) {
 	if err != nil {
 		test.Fatal(err)
 	}
-	logcat, err := project.playOnAndroid(adb, serial, "/games/harbour.apk")
+	logcat, err := project.startOnAndroid(adb, serial, "/games/harbour.apk")
 	if err != nil {
 		test.Fatal(err)
 	}

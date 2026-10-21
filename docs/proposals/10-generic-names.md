@@ -52,16 +52,20 @@ before.
 - **Sticks** (R1): `Input.RightStick` reads `RightStickX` and `RightStickY`, whatever filled them;
   the engine's own reading of the C-stick goes.
 - **Targets** (R2, R5): the `project` package gets a `Target` type (`Desktop`, `Nintendo3DS`,
-  `Android`) with `Build`, `SendTo`, `PlayOn` and `StopOn`, each choosing the target's way inside:
-  today's `Build3DS`, `SendTo3DS`, `BuildAndroid`, `PlayOnAndroid` and `StopOnAndroid` become their
-  private parts. Not every target does everything: sending to the desktop is refused with a code.
-  The editor's `BuildTarget` becomes `project.Target`, and `ConsoleTarget` becomes `Nintendo3DS`.
+  `Android`) with `Build`, `PlayOn`, `PlayInEmulator` and `StopOn`, each choosing the target's way
+  inside: today's `Build3DS`, `SendTo3DS`, `BuildAndroid`, `PlayOnAndroid`, `StopOnAndroid`,
+  `EmulatorCommand` and `PlayCommand` become their private parts. Sending to the 3DS is playing
+  there, as its Homebrew Launcher starts what it is sent (built: the plan's separate `SendTo` was
+  one verb too many). A target without something (an emulator of its own) is refused with a code.
+  The editor's `BuildTarget` becomes `project.Target`, and `ConsoleTarget` becomes `Nintendo3DS`;
+  the editor's `PlayOn(target)` and `PlayInEmulator(target)` replace `PlayInWindow`, `PlayOnDevice`,
+  `SendToConsole` and the old `PlayInEmulator`.
 - **Settings** (R3, R5): `Settings.ApplicationID` (`applicationId`) and `Settings.DeviceAddress`
   (`deviceAddress`). Reading engine.json takes `androidId` and `consoleAddress` when the new names
   are missing, and saving writes only the new ones.
 - **Tools** (R5): `build.Tools.ConsoleEmulator` becomes `Nintendo3DSEmulator` (`nintendo3dsEmulator`
-  in tools.json, the old name still read); the editor's `SendToConsole` becomes `SendToDevice`, and
-  `ConsoleScreen` (the Play workspace's shape) becomes `Nintendo3DSScreens`.
+  in tools.json, the old name still read); and the Play workspace's `ConsoleScreen` shape becomes
+  `Nintendo3DSScreens`.
 - **Licences** (R4): the editor's licence sheet takes a tool's name; Android's SDK is today's only
   tool with one.
 - **Leftovers** (R6): `SetBottomScreen` goes; `SceneMenu`'s comment is made general.
@@ -80,8 +84,8 @@ with it; Go Sound defines `ErrOutputUnavailable` in `sound.go`, and the 3DS's ou
 
 - [x] T1 — Go Renderer: `RightStickX`/`RightStickY`, the desktop's game pad into both sticks, the C-stick into the right one · R1 · tests of the dead zone and the mapping with a made-up pad state
 - [x] T2 — `Input.RightStick` from the right stick · engine/controls.go · R1 · test with a made-up state
-- [ ] T3 — `project.Target` with `Build`, `SendTo`, `PlayOn`, `StopOn`; the old functions made private · project · R2 · tests per target; `a target that cannot be sent to says so by its code`
-- [ ] T4 — the editor on `project.Target`: `Nintendo3DS`, `SendToDevice`, `Nintendo3DSScreens` · editor · R2, R5 · the editor's tests
+- [x] T3 — `project.Target` with `Build`, `PlayOn`, `PlayInEmulator`, `StopOn`; the old functions made private · project · R2 · tests per target; `a target that cannot be sent to says so by its code`
+- [x] T4 — the editor on `project.Target`: `PlayOn(target)`, `PlayInEmulator(target)`, `Nintendo3DSScreens` · editor · R2, R5 · the editor's tests
 - [ ] T5 — `applicationId`, `deviceAddress`, `nintendo3dsEmulator`, the old names still read · engine/run.go, internal/build/tools.go · R3, R5 · tests `an old androidId is read as the application id`, and the same for the others
 - [ ] T6 — generic licences · editor/install.go · R4 · test of the licence flow
 - [ ] T7 — `SetBottomScreen` removed, `SceneMenu`'s comment · engine · R6 · `go vet`

@@ -196,7 +196,7 @@ type Input struct {
 | `func (keys *Input) Move() space.Vector` | Move is the direction the arrows (or WASD, or a 3DS's cross and circle pad) point, on the ground: right is +X, up is Forward (-Z). |
 | `func (keys *Input) Pointer() (x, y float64, pressed bool)` | Pointer is where the mouse (or a finger) is, in window pixels, and whether it is pressed. |
 | `func (keys *Input) Pressed(key Key) bool` |  |
-| `func (keys *Input) RightStick() (x, y float64)` | RightStick is the second stick (a New 3DS's C-stick) from -1 to 1 on each axis, up positive; 0 without one. |
+| `func (keys *Input) RightStick() (x, y float64)` | RightStick is the second stick (a New 3DS's C-stick, a game pad's right stick) from -1 to 1 on each axis, up positive; 0 without one. |
 | `func (keys *Input) SecondScreenTouch() (x, y int, touching bool)` | SecondScreenTouch is where a finger or a stylus is on the second screen (a 3DS's bottom one, 320 × 240 pixels), and whether one is on it at all; never without a second screen. |
 | `func (keys *Input) State() *input.State` | State is go-renderer's input, for what Input does not cover. |
 | `func (keys *Input) Stick() (x, y float64)` | Stick is the main stick (a 3DS's circle pad, a game pad's left stick) from -1 to 1 on each axis, up positive. |

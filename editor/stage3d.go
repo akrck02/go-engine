@@ -21,7 +21,7 @@ type stagedScreens struct{ top, bottom draw2d.Rect }
 
 // stage3D shows a 3D game at its target's shape, with the game's 2D and interface over it.
 func (view *View) stage3D(context *ui.Context, played *engine.Scene) {
-	console := view.Editor.Target == ConsoleScreen
+	console := view.Editor.Target == Nintendo3DSScreens
 	_, hasBelow := engine.SecondScreen()
 	ink := context.Theme.InkSoft
 	context.Paint(ui.Layout{Width: ui.Grow(), Height: ui.Grow()}, func(area draw2d.Rect, list *draw2d.List) {

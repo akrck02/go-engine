@@ -58,6 +58,7 @@ var (
 	TerminalNotFound            = failure.Define("project.terminal-not-found", "the code editor runs in a terminal, and no terminal was found")
 	SettingsNotSaved            = failure.Define("project.settings-not-saved", "engine.json could not be written")
 	ApplicationIDWrong          = failure.Define("project.application-id-wrong", "an Android application id is two words or more joined by dots, each starting with a letter, as io.example.game")
+	TargetCannot                = failure.Define("project.target-cannot", "the target cannot do that")
 	EngineNotRead               = failure.Define("project.engine-not-read", "the version of go-engine the project requires could not be read from its go.mod")
 	ReleaseNeedsPublishedEngine = failure.Define("project.release-needs-published-engine", "the game's go.mod uses go-engine from a folder of this computer, which GitHub's machines do not have: update it first (go-engine -update)")
 	EngineNotUpdated            = failure.Define("project.engine-not-updated", "go-engine could not be updated: check the network, and that the version exists")
@@ -66,6 +67,12 @@ var (
 ```
 
 Error codes of the project package.
+
+```go
+var Targets = []Target{Desktop, Nintendo3DS, Android}
+```
+
+Targets are every target, in the order the editor shows them.
 
 ### AssetEntry
 
@@ -163,13 +170,10 @@ type Project struct {
 | `func (project *Project) AssetTree() AssetEntry` | AssetTree reads the project's assets folder as a tree: folders first, then files, by name; hidden files (as .gitkeep) left out. |
 | `func (project *Project) Behaviours() []Behaviour` | Behaviours reads the project's Go files (not compiling them) and finds its behaviours, so the editor can offer them while the code is being written in another editor. |
 | `func (project *Project) BehavioursUsed() map[string][]Use` | BehavioursUsed are the behaviours the project's scenes give their nodes, by name, with the nodes that have each. |
-| `func (project *Project) Build3DS() (Built, error)` | Build3DS builds the game for the Nintendo 3DS into build/, with TinyGo. |
-| `func (project *Project) BuildAndroid() (Built, error)` | BuildAndroid builds the game for Android into build/, a package signed for trying (not for a store), without the editor. |
-| `func (project *Project) BuildDesktop() (Built, error)` | BuildDesktop builds the game for this computer into build/. |
+| `func (project *Project) Build(target Target) (Built, error)` | Build builds the game for a target into build/: a program, a .3dsx, an .apk. |
 | `func (project *Project) BuildEditor() error` | BuildEditor builds the game with the editor in it, for go-engine to start. |
 | `func (project *Project) CodeChangedSince(built time.Time) bool` | CodeChangedSince tells whether a Go file of the project changed after a time: the game the editor runs in is older than its code. |
 | `func (project *Project) EditorProgram() string` | EditorProgram is where the game built with the editor in it goes. |
-| `func (project *Project) EmulatorCommand() (*exec.Cmd, error)` | EmulatorCommand builds the game for the 3DS and returns the command that opens it in an emulator (Azahar, or Citra), not started: the editor shows what it prints and can stop it. |
 | `func (project *Project) EngineFlags() []string` | EngineFlags tell a build which commit a local copy of Go Engine is at (one the project's go.mod replaces with a folder, or a go.work uses), so the program can say it (engine.Version): a local copy's build information does not. |
 | `func (project *Project) EngineVersion() (version, localCopy string, err error)` | EngineVersion is the version of go-engine the project's go.mod requires, and the folder that stands in for it when go.mod replaces it with a local copy (empty when none does). |
 | `func (project *Project) EnsureEditor() (bool, error)` | EnsureEditor adds editor.go to a project made before it existed; it tells whether it did. |
@@ -179,18 +183,40 @@ type Project struct {
 | `func (project *Project) NewScene(name string, mode scenefile.Mode) (string, error)` | NewScene adds a scene, 3D or 2D, with a ground and a camera, and returns its file. |
 | `func (project *Project) OpenCode() (string, error)` | OpenCode opens the project's folder in the code editor: the settings' CodeEditor, $VISUAL, $EDITOR, or the first of Zed, Visual Studio Code and GoLand found. |
 | `func (project *Project) Path(file string) string` | Path is where a file of the project is on disk, from its path in the project. |
-| `func (project *Project) PlayCommand() (*exec.Cmd, error)` | PlayCommand builds the game for this computer, as BuildDesktop does, and returns the command that runs it from the project's folder, not started: the editor shows its output and can stop it (a program started through go run would outlive its stopping). |
-| `func (project *Project) PlayOnAndroid() (*exec.Cmd, error)` | PlayOnAndroid builds the game for Android, installs it on the first device adb sees (a phone plugged in, or the emulator) and starts it. |
+| `func (project *Project) PlayInEmulator(target Target) (*exec.Cmd, error)` | PlayInEmulator builds the game for a target and returns the command that opens it in an emulator of the target, not started. |
+| `func (project *Project) PlayOn(target Target) (*exec.Cmd, error)` | PlayOn builds the game for a target and plays it there: in a window on this computer, sent to a 3DS's Homebrew Launcher, installed and started on the Android device adb sees. |
 | `func (project *Project) ReadScene(file string) (*scenefile.Scene, error)` | ReadScene reads a scene file of the project. |
 | `func (project *Project) SaveSettings() error` | SaveSettings writes the project's settings, when its Android application id has the form one has. |
 | `func (project *Project) Scenes() []string` | Scenes are the project's scene files, as "scenes/main.scene.json". |
-| `func (project *Project) SendTo3DS() error` | SendTo3DS builds the game for the 3DS and sends it to the console's Homebrew Launcher, which starts it. |
-| `func (project *Project) StopOnAndroid() error` | StopOnAndroid stops the game on the first device adb sees. |
+| `func (project *Project) StopOn(target Target) error` | StopOn stops the game where PlayOn played it, when stopping its command is not enough: on an Android device, where the game goes on after its log is closed. |
 | `func (project *Project) Tidy() error` | Tidy brings the project's go.mod up to date with its code and with the go-engine it builds against, as `go mod tidy` does: an engine of a newer version may need other versions of its libraries. |
 | `func (project *Project) UpdateEngine(version string) (string, error)` | UpdateEngine requires go-engine at a version (a branch as LatestEngine, a tag or a commit) with its replaces, and tidies go.mod; it returns the version required now. |
 | `func (project *Project) UsesOf(asset string) []Use` | UsesOf finds where an asset is used: the nodes of every scene that show it (as a sprite, a model or a tile map's tileset), and the sprites and tilesets cut from it. |
 | `func (project *Project) WriteReleaseWorkflow() (string, error)` | WriteReleaseWorkflow writes the workflow that builds the game for Windows, macOS and Linux on each version tag (v1.0.0), and the notices it attaches. |
 | `func (project *Project) WriteScene(file string, scene *scenefile.Scene) error` | WriteScene writes a scene file of the project. |
+
+### Target
+
+Target is a place a game runs.
+
+```go
+type Target int
+```
+
+```go
+const (
+	// Desktop is this computer.
+	Desktop Target = iota
+	// Nintendo3DS is the Nintendo 3DS, through the Homebrew Launcher.
+	Nintendo3DS
+	// Android is a phone or a tablet with Android.
+	Android
+)
+```
+
+| Function or method | |
+|---|---|
+| `func (target Target) String() string` | String is the target's name. |
 
 ### Use
 

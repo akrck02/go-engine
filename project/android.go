@@ -62,9 +62,9 @@ func (project *Project) AndroidPackage() string {
 	return project.Path(path.Join("build", build.FileName(project.Settings.Name)+".apk"))
 }
 
-// BuildAndroid builds the game for Android into build/, a package signed for trying (not for a
+// buildAndroid builds the game for Android into build/, a package signed for trying (not for a
 // store), without the editor.
-func (project *Project) BuildAndroid() (Built, error) {
+func (project *Project) buildAndroid() (Built, error) {
 	sdk, err := project.Tools.FindAndroidSDK()
 	if err != nil {
 		return Built{}, err
@@ -178,10 +178,10 @@ func (module moduleFile) replacesStaleUI() bool {
 	return false
 }
 
-// PlayOnAndroid builds the game for Android, installs it on the first device adb sees (a phone
+// playOnAndroid builds the game for Android, installs it on the first device adb sees (a phone
 // plugged in, or the emulator) and starts it. It returns the command that shows its log, not
-// started, which ends when the game does: the editor shows what it says. StopOnAndroid stops it.
-func (project *Project) PlayOnAndroid() (*exec.Cmd, error) {
+// started, which ends when the game does: the editor shows what it says. stopOnAndroid stops it.
+func (project *Project) playOnAndroid() (*exec.Cmd, error) {
 	adb, err := project.Tools.FindADB()
 	if err != nil {
 		return nil, err
@@ -190,15 +190,15 @@ func (project *Project) PlayOnAndroid() (*exec.Cmd, error) {
 	if err != nil {
 		return nil, err // before building: a build takes long, and finding no device does not
 	}
-	built, err := project.BuildAndroid()
+	built, err := project.buildAndroid()
 	if err != nil {
 		return nil, err
 	}
-	return project.playOnAndroid(adb, serial, built.Program)
+	return project.startOnAndroid(adb, serial, built.Program)
 }
 
-// playOnAndroid installs a package on a device and starts it.
-func (project *Project) playOnAndroid(adb, serial, androidPackage string) (*exec.Cmd, error) {
+// startOnAndroid installs a package on a device and starts it.
+func (project *Project) startOnAndroid(adb, serial, androidPackage string) (*exec.Cmd, error) {
 	identifier := project.ApplicationID()
 	steps := [][]string{
 		{"install", "-r", androidPackage},
@@ -223,8 +223,8 @@ func androidLogScript(identifier string) string {
 		"while [ -d /proc/$process ]; do sleep 1; done; kill $log"
 }
 
-// StopOnAndroid stops the game on the first device adb sees.
-func (project *Project) StopOnAndroid() error {
+// stopOnAndroid stops the game on the first device adb sees.
+func (project *Project) stopOnAndroid() error {
 	adb, err := project.Tools.FindADB()
 	if err != nil {
 		return err
