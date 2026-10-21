@@ -1,6 +1,6 @@
 # 10. Names for any device
 
-> Status: proposed · Author's approval: proposal ☐ plan ☐
+> Status: planned · Author's approval: proposal ☑ (2026-10-21, "Si") plan ☐
 
 ## Why
 
@@ -23,7 +23,7 @@ so this is the cheapest moment to rename.
 | R4 | Accepting a tool's licence is one set of functions that take the tool (`ReadLicence`, `Licence`, `AcceptLicence`, `DeclineLicence`), not Android's own | test of the licence flow through the generic functions |
 | R5 | "Console" no longer stands for the 3DS: names that mean the 3DS say so (`Nintendo3DSTarget`, the 3DS's emulator), and names that are general become general (`DeviceAddress`, `SendToDevice`); engine.json's `consoleAddress` is still read | tests of the renamed settings; an old engine.json still opens |
 | R6 | `SetBottomScreen` is removed, and `Settings.SceneMenu`'s comment describes a general scene menu | `go vet`; the reference shows no 3DS words in general names |
-| R7 | Go Sound: a sound output that cannot start returns a general error with a code (`sound.output-unavailable`) on every system; what the 3DS's DSP lacks goes in its details | test in Go Sound that the code is defined everywhere; built for the 3DS |
+| R7 | Go Sound: a sound output that cannot start returns one general error, `ErrOutputUnavailable`, defined on every system; on the 3DS it is returned when the DSP cannot start | test in Go Sound that a program checking it builds everywhere; built for the 3DS |
 | R8 | Go for 3DS: the `bottom` package becomes `secondscreen`, matching the engine | Go for 3DS's tests; the 3DS sample builds |
 | R9 | The engine's code and docs are checked again with the audit's search, and nothing general is named after one device | the audit run again finds nothing in the engine |
 
@@ -32,18 +32,62 @@ so this is the cheapest moment to rename.
 - Packages that exist for one platform only (Go Renderer's `ctr`, Go for 3DS's own) keep their
   platform's names inside.
 - New targets: this only makes room for them.
+- Error codes across Go Sound: it uses plain sentinel errors throughout, which is its own change.
 - Keeping the old names as aliases. Nothing is released with them except go-engine v0.0.x, which
   is still experimental. The two settings in engine.json are read under both names, because they
   live in people's files.
 
 ## Design
 
-To fill once the author approves the proposal. Go Sound and Go for 3DS change on `feature/`
-branches of their own, with the author's permission.
+### Go Renderer: a game pad on a computer (R1)
+
+`input.State` gains `RightStickX` and `RightStickY`, as `StickX` and `StickY` are for the main
+stick. The desktop's window loop reads the first game pad GLFW knows (`GetGamepadState`, which maps
+every pad to one layout) into both sticks, each with a dead zone. The 3DS's `ctr.Controls` puts the
+C-stick into the right stick once the motion controls are on. Go Renderer's `feature/` branch, as
+before.
+
+### go-engine
+
+- **Sticks** (R1): `Input.RightStick` reads `RightStickX` and `RightStickY`, whatever filled them;
+  the engine's own reading of the C-stick goes.
+- **Targets** (R2, R5): the `project` package gets a `Target` type (`Desktop`, `Nintendo3DS`,
+  `Android`) with `Build`, `SendTo`, `PlayOn` and `StopOn`, each choosing the target's way inside:
+  today's `Build3DS`, `SendTo3DS`, `BuildAndroid`, `PlayOnAndroid` and `StopOnAndroid` become their
+  private parts. Not every target does everything: sending to the desktop is refused with a code.
+  The editor's `BuildTarget` becomes `project.Target`, and `ConsoleTarget` becomes `Nintendo3DS`.
+- **Settings** (R3, R5): `Settings.ApplicationID` (`applicationId`) and `Settings.DeviceAddress`
+  (`deviceAddress`). Reading engine.json takes `androidId` and `consoleAddress` when the new names
+  are missing, and saving writes only the new ones.
+- **Tools** (R5): `build.Tools.ConsoleEmulator` becomes `Nintendo3DSEmulator` (`nintendo3dsEmulator`
+  in tools.json, the old name still read); the editor's `SendToConsole` becomes `SendToDevice`, and
+  `ConsoleScreen` (the Play workspace's shape) becomes `Nintendo3DSScreens`.
+- **Licences** (R4): the editor's licence sheet takes a tool's name; Android's SDK is today's only
+  tool with one.
+- **Leftovers** (R6): `SetBottomScreen` goes; `SceneMenu`'s comment is made general.
+
+### Go for 3DS and Go Sound (R7, R8)
+
+Each on a `feature/` branch: Go for 3DS's `bottom` package is renamed `secondscreen`, its sample
+with it; Go Sound defines `ErrOutputUnavailable` in `sound.go`, and the 3DS's output returns it.
+
+### Alternatives not taken
+
+- Aliases for the old function names: they would keep the old names alive in new code.
+- One `Do(target, action)`: four verbs read better, and each has its own errors.
 
 ## Tasks
 
-To fill with the design.
+- [ ] T1 — Go Renderer: `RightStickX`/`RightStickY`, the desktop's game pad into both sticks, the C-stick into the right one · R1 · tests of the dead zone and the mapping with a made-up pad state
+- [ ] T2 — `Input.RightStick` from the right stick · engine/controls.go · R1 · test with a made-up state
+- [ ] T3 — `project.Target` with `Build`, `SendTo`, `PlayOn`, `StopOn`; the old functions made private · project · R2 · tests per target; `a target that cannot be sent to says so by its code`
+- [ ] T4 — the editor on `project.Target`: `Nintendo3DS`, `SendToDevice`, `Nintendo3DSScreens` · editor · R2, R5 · the editor's tests
+- [ ] T5 — `applicationId`, `deviceAddress`, `nintendo3dsEmulator`, the old names still read · engine/run.go, internal/build/tools.go · R3, R5 · tests `an old androidId is read as the application id`, and the same for the others
+- [ ] T6 — generic licences · editor/install.go · R4 · test of the licence flow
+- [ ] T7 — `SetBottomScreen` removed, `SceneMenu`'s comment · engine · R6 · `go vet`
+- [ ] T8 — Go Sound `ErrOutputUnavailable` · R7 · test; built for the 3DS
+- [ ] T9 — Go for 3DS `bottom` → `secondscreen` · R8 · its tests; its sample built
+- [ ] T10 — the audit again, and the reference and docs regenerated · R9 · the audit's search finds nothing in the engine
 
 ## Result
 
