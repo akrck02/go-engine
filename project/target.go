@@ -28,8 +28,13 @@ var Targets = []Target{Desktop, Nintendo3DS, Android}
 // targetNames are each target's name, for errors and logs, in the order of Targets.
 var targetNames = []string{"this computer", "the Nintendo 3DS", "Android"}
 
-// String is the target's name.
-func (target Target) String() string { return targetNames[target] }
+// String is the target's name, or "an unknown target" for a number that is none.
+func (target Target) String() string {
+	if target < 0 || int(target) >= len(targetNames) {
+		return "an unknown target"
+	}
+	return targetNames[target]
+}
 
 // Build builds the game for a target into build/: a program, a .3dsx, an .apk.
 func (project *Project) Build(target Target) (Built, error) {

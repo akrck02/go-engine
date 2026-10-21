@@ -172,7 +172,7 @@ type Editor struct {
 | `func (editor *Editor) PlayHere()` | PlayHere plays the scene in the view, with the behaviours compiled into the game the editor runs in; the scene edited stays as it was. |
 | `func (editor *Editor) PlayInEmulator(target project.Target)` | PlayInEmulator builds the game for a target and opens it in the target's emulator; Stop closes it. |
 | `func (editor *Editor) PlayLog() []string` | PlayLog is what the game and the engine said while the scene played in the view, oldest first. |
-| `func (editor *Editor) PlayOn(target project.Target)` | PlayInWindow saves the scene, builds the game and runs it in a window of its own, in the PlayOn builds the game for a target and plays it there (project.Project.PlayOn): in a window, on the device, or sent to the 3DS. |
+| `func (editor *Editor) PlayOn(target project.Target)` | PlayOn builds the game for a target and plays it there (project.Project.PlayOn): in a window, on the device, or sent to the 3DS. |
 | `func (editor *Editor) PlayingHere() (*engine.Scene, bool)` | PlayingHere is the scene played in the view, while it is. |
 | `func (editor *Editor) PlayingOn() (project.Target, bool)` | PlayingOn tells where the game plays now, when it does. |
 | `func (editor *Editor) ReadBehaviours()` | ReadBehaviours reads the project's code again for its behaviours: after it was edited. |

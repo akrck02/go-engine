@@ -610,7 +610,6 @@ func (editor *Editor) PlayingHere() (*engine.Scene, bool) {
 	return editor.playingHere, editor.playingHere != nil
 }
 
-// PlayInWindow saves the scene, builds the game and runs it in a window of its own, in the
 // PlayOn builds the game for a target and plays it there (project.Project.PlayOn): in a window, on
 // the device, or sent to the 3DS. What it prints is shown; stopping it stops the game where it
 // plays.

@@ -26,7 +26,7 @@ func TestChoosingASceneOfTheMenuPlaysItNext(test *testing.T) {
 	}
 }
 
-func TestAGamesOwnBottomScreenIsGivenItsScenes(test *testing.T) {
+func TestAGamesOwnInterfaceIsGivenItsScenes(test *testing.T) {
 	game := &runner{played: platform(test), menu: []MenuScene{{"scenes/a.scene.json", "A"}}}
 	menu := Menu{game}
 	if len(menu.Scenes()) != 1 || menu.Playing() != game.played {

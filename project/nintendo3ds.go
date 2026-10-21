@@ -10,7 +10,7 @@ import (
 // Homebrew Launcher's netloader (Y opens it) with devkitPro's 3dslink, or in an emulator.
 
 // sendTo3DS builds the game for the 3DS and sends it to the console's Homebrew Launcher, which
-// starts it. The settings' ConsoleAddress is the console's; empty, 3dslink looks for it.
+// starts it. The settings' DeviceAddress is the console's; empty, 3dslink looks for it.
 func (project *Project) sendTo3DS() error {
 	built, err := project.build3DS()
 	if err != nil {

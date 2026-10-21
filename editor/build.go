@@ -21,13 +21,22 @@ var targetParts = []struct{ name, icon, makes string }{
 }
 
 // targetName is a target's name on its card.
-func targetName(target project.Target) string { return targetParts[target].name }
+func targetName(target project.Target) string { return partsOf(target).name }
 
 // targetIcon is a target's icon on its card.
-func targetIcon(target project.Target) string { return targetParts[target].icon }
+func targetIcon(target project.Target) string { return partsOf(target).icon }
 
 // targetMakes says what a build for a target makes.
-func targetMakes(target project.Target) string { return targetParts[target].makes }
+func targetMakes(target project.Target) string { return partsOf(target).makes }
+
+// partsOf is a target's card, or the target's own name with nothing more for a target the editor
+// has no card for yet.
+func partsOf(target project.Target) struct{ name, icon, makes string } {
+	if target < 0 || int(target) >= len(targetParts) {
+		return struct{ name, icon, makes string }{name: target.String()}
+	}
+	return targetParts[target]
+}
 
 // BuildResult is what the last build for a target made, or why it did not.
 type BuildResult struct {

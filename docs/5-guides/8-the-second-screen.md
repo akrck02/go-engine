@@ -1,12 +1,12 @@
-# 🕹️ The 3DS's bottom screen
+# 🕹️ The second screen
 
-Use the 3DS's second screen: a ready-made menu of the game's scenes, or a screen drawn by the game
-itself.
+Use a device's second screen (the 3DS's bottom one): a ready-made menu of the game's scenes, a
+screen drawn by the game itself, or a 3D scene of its own under it.
 
 ## A menu of the scenes
 
-In **Project → Settings**, tick **List the scenes on the 3DS's bottom screen, to play any**. The
-bottom screen then lists every scene; a touch plays it. It is handy while making a game, to jump
+In **Project → Settings**, tick **List the scenes in the game's interface, to play any**. The
+second screen then lists every scene; a touch plays it. It is handy while making a game, to jump
 to any level.
 
 ## A screen of your own
@@ -14,20 +14,20 @@ to any level.
 <p align="center"><img alt="Azahar: Io World's lit start screen on top; on the bottom screen, the game's own menu titled IO WORLD, with four levels drawn on brick bands" src="../images/3ds-bottom-screen.png" width="560"></p>
 
 
-`engine.SetBottomScreen` draws the bottom screen with [Go UI](https://github.com/akrck02/go-ui), in
-the game's own look. Call it in `main.go`, before `engine.Run`:
+`engine.SetInterface` draws the game's interface with [Go UI](https://github.com/akrck02/go-ui), in
+the game's own look: on the second screen of a device that has one, over the window elsewhere. Call it in `main.go`, before `engine.Run`:
 
 ```go
 func main() {
 	engine.Register(Player{})
-	engine.SetBottomScreen(bottomScreen)
+	engine.SetInterface(levels)
 	if err := engine.Run(files); err != nil {
 		log.Fatal(err)
 	}
 }
 
-// bottomScreen lists the levels, the one playing chosen; a touch plays another.
-func bottomScreen(context *ui.Context, menu engine.Menu) {
+// levels lists the levels, the one playing chosen; a touch plays another.
+func levels(context *ui.Context, menu engine.Menu) {
 	for _, scene := range menu.Scenes() {
 		playing := menu.Playing() != nil && menu.Playing().Name == scene.Name
 		if context.Selectable("map", scene.Name, playing) {
@@ -43,12 +43,14 @@ func bottomScreen(context *ui.Context, menu engine.Menu) {
 | `menu.Playing()` | The scene playing, or nil |
 | `menu.Play(file)` | Plays another scene |
 
-It needs `import ui "github.com/akrck02/go-ui"`, which the engine already brings. The function runs every frame the bottom screen is drawn, on the 3DS only: elsewhere there is no
-bottom screen and it is never called. The screen is 320 × 240 pixels, and touch is its pointer.
+It needs `import ui "github.com/akrck02/go-ui"`, which the engine already brings. The function runs every frame the interface is drawn. On the 3DS it fills the second screen, 320 ×
+240 pixels, where touch is its pointer; on a computer it is laid over the game's window.
 
 ## Variations
 
 - **A map, a score, the controls.** Anything Go UI draws can be there: text, pictures, buttons.
+- **A 3D scene under it.** `engine.SetSecondScreen(scene)` plays a scene of its own on the second
+  screen, seen from its main camera, with the interface over it: a map that turns, a model in a shop.
 - **Its own pictures.** Read a picture once (`draw2d.DecodeImage`) and paint it with
   `context.Paint`; the [Io World](https://github.com/akrck02/io-world/tree/main/IoWorldGo) game draws
   its menu of levels from its own bricks this way.

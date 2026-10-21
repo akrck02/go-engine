@@ -35,7 +35,7 @@ The console's address is found on the network; if it is not, set it in **Project
 
 | | |
 |---|---|
-| Screens | The game is drawn on the top screen, 400 × 240; the bottom screen is free (see [the bottom screen](8-the-3ds-bottom-screen.md)) |
+| Screens | The game is drawn on the top screen, 400 × 240; the bottom screen is free (see [the second screen](8-the-second-screen.md)) |
 | Buttons | The cross and the circle pad are the arrows (`Input.Move()`), A is Space, B is Escape, X and Y their keys |
 | Speed | 60 frames a second is the aim: lights, tiles and dozens of sprites keep it in the emulator |
 | Files | The scenes and assets are inside the `.3dsx`; the SD card is not read |

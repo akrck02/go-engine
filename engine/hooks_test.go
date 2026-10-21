@@ -44,7 +44,7 @@ func TestACallBetweenFramesRunsOnceInOrder(test *testing.T) {
 	}
 }
 
-func TestTheFramesHookRunsOnceWithABottomScene(test *testing.T) {
+func TestTheFramesHookRunsOnceWithASecondScreenScene(test *testing.T) {
 	game := &runner{played: load(test)}
 	SetSecondScreen(load(test))
 	defer SetSecondScreen(nil)

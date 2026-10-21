@@ -112,7 +112,7 @@ var licensedTools = map[string]licensedTool{
 		install: func(editor *Editor, accepted string) {
 			java, found := editor.javaForAndroid()
 			if !found {
-				return
+				return // javaForAndroid has said why
 			}
 			android := func(installer install.Installer) (string, error) { return installer.AndroidSDK(accepted, java) }
 			editor.installTool("Android SDK", android, func(tools *build.Tools, place string) { tools.AndroidSDK = place })

@@ -215,7 +215,7 @@ const (
 
 | Function or method | |
 |---|---|
-| `func (target Target) String() string` | String is the target's name. |
+| `func (target Target) String() string` | String is the target's name, or "an unknown target" for a number that is none. |
 
 ### Use
 

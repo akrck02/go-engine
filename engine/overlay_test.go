@@ -27,7 +27,7 @@ func TestTheGamesOverlayIsDrawnOverA3DSceneAtTheScreensSize(test *testing.T) {
 	}
 }
 
-func TestTheBottomScenePlaysAndIsSeenFromItsCamera(test *testing.T) {
+func TestTheSecondScreensScenePlaysAndIsSeenFromItsCamera(test *testing.T) {
 	game := &runner{played: load(test)}
 	below := load(test)
 	SetSecondScreen(below)

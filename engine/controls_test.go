@@ -7,7 +7,7 @@ import (
 	"github.com/akrck02/go-renderer/input"
 )
 
-func TestTheConsolesShouldersAndStartAreReadAsTheirKeys(test *testing.T) {
+func TestThe3DSsShouldersAndStartAreReadAsTheirKeys(test *testing.T) {
 	var console consoleInput
 	window := input.NewState()
 	cases := map[ctr.Buttons]Key{ctr.ButtonL: ButtonLeftShoulder, ctr.ButtonR: ButtonRightShoulder, ctr.ButtonZL: ButtonLeftTrigger, ctr.ButtonZR: ButtonRightTrigger, ctr.ButtonStart: ButtonStart}
@@ -20,7 +20,7 @@ func TestTheConsolesShouldersAndStartAreReadAsTheirKeys(test *testing.T) {
 	}
 }
 
-func TestTheConsolesSticksGyroscopeAndTouchAreReadWhole(test *testing.T) {
+func TestThe3DSsSticksGyroscopeAndTouchAreReadWhole(test *testing.T) {
 	reading := ctr.Reading{CStickX: 146, CStickY: 0, Gyroscope: ctr.Gyroscope{Yaw: 30},
 		Held: ctr.ButtonTouch, TouchX: 160, TouchY: 120}
 	keys := Input{state: input.NewState(), console: reading}
@@ -55,7 +55,7 @@ func TestTheMouseMovesAndThePointerIsCapturedWhenAsked(test *testing.T) {
 	}
 }
 
-func TestTheConsolesKeysCarryBothSticks(test *testing.T) {
+func TestThe3DSsKeysCarryBothSticks(test *testing.T) {
 	var console consoleInput
 	window := input.NewState()
 	window.StickX, window.RightStickY = 0.5, 1

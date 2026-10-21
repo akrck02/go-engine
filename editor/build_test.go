@@ -3,8 +3,10 @@ package editor
 import (
 	"errors"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 	"time"
 
@@ -201,5 +203,15 @@ func TestAToolWithoutALicenceIsRefused(test *testing.T) {
 	editor.ReadLicence("TinyGo")
 	if editor.Running() {
 		test.Fatal("a licence is read for a tool that has none")
+	}
+}
+
+func TestAGameSentWithNothingToWatchEndsTheTaskAndSaysSo(test *testing.T) {
+	editor := open(test)
+	editor.playWith(project.Nintendo3DS, func() (*exec.Cmd, error) { return nil, nil }, nil)
+	waitForTheTask(test, editor)
+	notices := editor.Notices()
+	if editor.playing != nil || len(notices) == 0 || !strings.Contains(notices[len(notices)-1].Text, "Sent the game") {
+		test.Fatalf("after sending, the editor plays %v and says %+v", editor.playing, notices)
 	}
 }

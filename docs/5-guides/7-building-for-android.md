@@ -40,4 +40,4 @@ A phone needs **USB debugging** on (in its developer options) and a cable, or an
 
 ---
 
-[← Building for the 3DS](6-building-for-the-3ds.md) · [The 3DS's bottom screen →](8-the-3ds-bottom-screen.md)
+[← Building for the 3DS](6-building-for-the-3ds.md) · [The second screen →](8-the-second-screen.md)

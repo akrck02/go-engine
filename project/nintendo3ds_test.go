@@ -10,7 +10,7 @@ import (
 	"github.com/akrck02/go-engine/engine"
 )
 
-func TestSendingToTheConsoleRunsThreeDSLinkWithTheProgram(test *testing.T) {
+func TestSendingToThe3DSRunsThreeDSLinkWithTheProgram(test *testing.T) {
 	if runtime.GOOS == "windows" {
 		test.Skip("the fake 3dslink is a shell script")
 	}

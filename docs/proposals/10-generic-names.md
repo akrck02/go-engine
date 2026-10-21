@@ -1,6 +1,6 @@
 # 10. Names for any device
 
-> Status: building · Author's approval: proposal ☑ (2026-10-21, "Si") plan ☑ (2026-10-21, "Si")
+> Status: done, pending the author's review · Author's approval: proposal ☑ (2026-10-21, "Si") plan ☑ (2026-10-21, "Si")
 
 ## Why
 
@@ -95,4 +95,28 @@ with it; Go Sound defines `ErrOutputUnavailable` in `sound.go`, and the 3DS's ou
 
 ## Result
 
-Not built yet.
+Built, on `feature/` branches until the author merges them:
+
+- go-engine `feature/engine`: R1–R6 and R9. The second screen's guide is now
+  `docs/5-guides/8-the-second-screen.md`.
+- Go Renderer `feature/game-pad` (on `feature/scene-area`): a computer's game pad into both
+  sticks, and the 3DS's C-stick into the right one (R1).
+- Go Sound `feature/output-unavailable`: `ErrOutputUnavailable` (R7).
+- Go for 3DS `feature/second-screen`: the `secondscreen` package (R8).
+
+The review found 14 things, all fixed or answered here:
+
+- the guide and test names that still said "bottom screen" or "console";
+- a stale comment;
+- a test for a game sent with nothing to watch;
+- the game pad made private, and letting its sticks go only when it is unplugged;
+- targets outside the list given a name instead of a panic;
+- Go Sound's failure made through one tested function.
+
+Two things stay as they are, for a person to judge:
+
+- GLFW's game pad reading allocates while a pad is plugged in, because its Go binding returns a
+  new state each time; avoiding it would need cgo of the engine's own.
+- go-engine pins Go Renderer's unmerged `feature/game-pad` by pseudo-version: merge Go Renderer,
+  Go UI, Go Sound and Go for 3DS first, then pin go-engine to their versions before it is
+  released.
