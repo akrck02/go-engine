@@ -378,6 +378,7 @@ func (view *View) cameraInspector(context *ui.Context, node *engine.Node, settin
 	view.projectionTabs(context, node, settings)
 	if settings.Projection == scenefile.Perspective {
 		view.fieldOfViewField(context, settings)
+		view.distancesField(context, settings)
 	} else {
 		view.heightSeenField(context, settings)
 	}
@@ -419,6 +420,29 @@ func (view *View) fieldOfViewField(context *ui.Context, settings *scenefile.Came
 		view.Editor.Changed()
 	}
 }
+
+// distancesField sets how near and how far a perspective camera sees: a far plane further away
+// shows more of a large world, at the cost of depth precision close by.
+func (view *View) distancesField(context *ui.Context, settings *scenefile.Camera) {
+	if settings.Near == 0 {
+		settings.Near = cameraNear
+	}
+	if settings.Far == 0 {
+		settings.Far = cameraFar
+	}
+	context.Caption("Sees from, to (metres)")
+	changed := numberField(context, "Near", &settings.Near, numberLimits{0.01, 100, 0.01}, "%.2f m")
+	changed = numberField(context, "Far", &settings.Far, numberLimits{1, 100000, 100}, "%.0f m") || changed
+	if changed {
+		view.Editor.Changed()
+	}
+}
+
+// A new camera's distances, in metres: the engine's when a file leaves them out.
+const (
+	cameraNear = 0.05
+	cameraFar  = 2000
+)
 
 // heightSeenField sets how many metres an orthographic camera sees, top to bottom.
 func (view *View) heightSeenField(context *ui.Context, settings *scenefile.Camera) {

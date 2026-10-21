@@ -70,3 +70,15 @@ func allMoving(render *scene.Node) bool {
 	}
 	return true
 }
+
+func TestACamerasFarPlaneIsTheOneSet(test *testing.T) {
+	eye, _ := load(test).Find("Eye")
+	if view := eye.View(); view.Far != defaultFar || view.Near != defaultNear {
+		test.Fatalf("a camera without distances sees from %v to %v", view.Near, view.Far)
+	}
+	settings, _ := eye.Camera()
+	settings.Near, settings.Far = 1, 7000
+	if view := eye.View(); view.Far != 7000 || view.Near != 1 {
+		test.Fatalf("a camera set to see from 1 to 7000 sees from %v to %v", view.Near, view.Far)
+	}
+}
