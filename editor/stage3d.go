@@ -42,18 +42,21 @@ func (view *View) stage3D(context *ui.Context, played *engine.Scene) {
 	}
 }
 
-// gameInterface shows the game's interface where the game shows it: over its window's corner, or
-// filling the 3DS's bottom screen. It is placed where the stage was last frame, as the layout
-// places the stage after this.
+// gameInterface shows the game's interface where the game shows it: over its window, or on the
+// 3DS's second screen. The interface and the layers it opens are laid out in that screen, as in
+// the game's own window, placed where the stage was last frame (the layout places it after this).
 func (view *View) gameInterface(context *ui.Context, played *engine.Scene, console bool) {
-	area := view.staged.top
-	options := ui.LayerOptions{Padding: ui.Padding{Left: area.X, Top: area.Y}, Width: ui.Fixed(area.Width)}
+	// over the game's view the layer is as large as what it holds, so the rest of the view keeps
+	// the mouse for the game; a second screen is the interface's whole
+	screen, options := view.staged.top, ui.LayerOptions{}
 	if console {
-		area = view.staged.bottom
-		options = ui.LayerOptions{Padding: ui.Padding{Left: area.X, Top: area.Y}, Width: ui.Fixed(area.Width), Height: ui.Fixed(area.Height)}
+		screen = view.staged.bottom
+		options = ui.LayerOptions{Width: ui.Fixed(screen.Width), Height: ui.Fixed(screen.Height)}
 	}
-	context.Overlay("Game interface", options, func() {
-		engine.ShowInterface(context, played, view.scenesOffered())
+	context.Within(screen, func() {
+		context.Overlay("Game interface", options, func() {
+			engine.ShowInterface(context, played, view.scenesOffered())
+		})
 	})
 }
 
