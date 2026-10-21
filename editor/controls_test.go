@@ -9,23 +9,33 @@ import (
 	"github.com/akrck02/go-engine/engine"
 )
 
-func TestInputsAreAddedOnceTurnedAndRemoved(test *testing.T) {
+func TestAButtonTogglesAnActionAndOneWayOfAnAxis(test *testing.T) {
 	var controls controlsView
-	controls.load(map[string]map[string][]string{"turn": {"desktop": {"Stick X"}}})
-	controls.chosen = "turn"
-	controls.addInput("A")
-	controls.addInput("A")
-	if words := controls.actions["turn"]["desktop"]; !slices.Equal(words, []string{"Stick X", "A"}) {
-		test.Fatalf("after adding A twice, turn has %v", words)
+	controls.load(map[string]map[string][]string{"turn": {"desktop": {"Stick X"}}, "fire": {}})
+	if !controls.axes["turn"] || controls.axes["fire"] {
+		test.Fatal("the actions' kinds are not read from their inputs")
 	}
-	controls.turnInput("turn", 1)
-	controls.turnInput("turn", 1)
-	if words := controls.actions["turn"]["desktop"]; words[1] != "A+" || actionIcon(controls.actions["turn"]) != iconAxis {
-		test.Fatalf("A turned twice is %q", words[1])
+	controls.toggleBinding("turn", "A-")
+	controls.toggleBinding("turn", "A+") // the other way replaces the first
+	controls.toggleBinding("fire", "Space")
+	if words := controls.actions["turn"]["desktop"]; !slices.Equal(words, []string{"Stick X", "A+"}) {
+		test.Fatalf("turn is bound to %v", words)
 	}
-	controls.removeInput("turn", 0)
-	if words := controls.actions["turn"]["desktop"]; !slices.Equal(words, []string{"A+"}) || !controls.changed {
-		test.Fatalf("after removing the stick, turn has %v", words)
+	if bound := controls.bindingsOf("A"); !slices.Equal(bound, []string{"turn +"}) {
+		test.Fatalf("A says it does %v", bound)
+	}
+	controls.toggleBinding("fire", "Space")
+	if len(controls.actions["fire"]["desktop"]) != 0 || !controls.changed {
+		test.Fatal("clicking a bound action again does not unbind it")
+	}
+}
+
+func TestAButtonOffersEachActionAsItCanDoIt(test *testing.T) {
+	if choices := choicesFor("A", "turn", true); len(choices) != 2 || choices[0].word != "A-" {
+		test.Fatalf("a button offers an axis as %v", choices)
+	}
+	if choices := choicesFor("Stick X", "fire", false); len(choices) != 0 {
+		test.Fatalf("a stick offers a press as %v", choices)
 	}
 }
 
@@ -44,13 +54,5 @@ func TestAnInputPressedIsCaughtForTheActionChosen(test *testing.T) {
 	}
 	if editor.ShownWorkspace() != ControlsWorkspace {
 		test.Fatal("the key caught also changed the workspace")
-	}
-}
-
-func TestChipsSayTheirInputPlainly(test *testing.T) {
-	for word, label := range map[string]string{"Pad A": "A", "Mouse Left": "Left", "Left-": "Left −", "D+": "D +", "Stick X": "Stick X"} {
-		if got := inputLabel(word); got != label {
-			test.Errorf("%q is shown as %q", word, got)
-		}
 	}
 }

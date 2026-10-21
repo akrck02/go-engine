@@ -65,12 +65,14 @@ person can read and type:
 - **Rebinding** (R3): `Input.Rebind(action, inputs)` changes the current target's inputs, and
   `engine.SaveBindings` keeps them in the user's configuration folder (on a 3DS, on the SD card).
   The game's own engine.json stays as its author wrote it.
-- **The editor** (R2): a workspace of its own, Controls, between Code and Play (at the author's
-  word, after a first table of typed words in the settings: "its own screen, with icons, visual,
-  easy to set up"). Tabs for the targets; a row per action, its inputs as chips with their group's
-  icon (a chip clicked turns a button into an axis's − or +, its × removes it); "Press to add"
-  catches the next key or pad button on a computer; on the right, the target's inputs to click,
-  a 3DS's and a game pad's drawn where their buttons sit.
+- **The editor** (R2): a workspace of its own, Controls, between Code and Play. At the author's
+  word ("draw the controls: on a 3DS the 3DS, on a phone a phone, and put the actions there"), the
+  device of the target chosen is drawn with its buttons where they sit: a 3DS (both screens, the
+  circle pad, the cross, the face buttons, the C-stick, the shoulders, Select and Start), a phone
+  (the engine's touch buttons and the system's back), a computer's keyboard, mouse and game pad.
+  Each button says the actions it does; clicking it lists the actions to tick, an axis's twice
+  (− and +). The actions are listed on the left, each a press or an axis, and a key or a pad's
+  button can be caught by pressing it.
 
 ### Surfaces (R4, R5)
 
@@ -113,7 +115,7 @@ a target to preview beside the shapes it has (R5): each target's places for its 
 - [x] T2 — the target at run time · engine · R1, R4 · test per build
 - [x] T3 — actions: engine.json's `actions`, the inputs' words, the table, `Input.Action(name)` · engine/actions.go · R1 · tests of each kind of input, and `reading an action allocates nothing`
 - [x] T4 — rebinding and keeping it, among Go UI's window preferences (a 3DS cannot keep them yet: a change there lasts the run) · R3 · test `a binding changed while playing is kept and read back`
-- [x] T5 — the editor's Controls workspace · editor · R2 · tests of adding, turning, removing and catching an input; captures
+- [x] T5 — the editor's Controls workspace, each target's device drawn · editor · R2 · tests of toggling a button's actions and catching an input; captures of the 3DS, the phone and the computer
 - [ ] T6 — surfaces: `SetSurface`, engine.json's `surfaces`, the five places on the desktop and the 3DS · engine · R4 · captures in the editor and Azahar
 - [ ] T7 — `sheet` on Android, and `SetInterface` as the `interface` surface · R4, R7 · test; the samples unchanged
 - [ ] T8 — the editor previews each target's surfaces · editor · R5 · captures
