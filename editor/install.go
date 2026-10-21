@@ -158,5 +158,5 @@ func (editor *Editor) javaForAndroid() (string, bool) {
 // InstallEmulator installs Azahar's latest release for this system and sets the 3DS emulator's
 // place.
 func (editor *Editor) InstallEmulator() {
-	editor.installTool("3DS emulator", install.Installer.Azahar, func(tools *build.Tools, place string) { tools.ConsoleEmulator = place })
+	editor.installTool("3DS emulator", install.Installer.Azahar, func(tools *build.Tools, place string) { tools.Nintendo3DSEmulator = place })
 }

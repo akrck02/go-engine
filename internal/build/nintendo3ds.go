@@ -40,20 +40,20 @@ func (tools Tools) DevkitProFolder() string {
 	return devkitProFolder
 }
 
-// consoleEmulators are the 3DS emulators looked for on the path, the most kept up first.
-var consoleEmulators = []string{"azahar", "lime3ds", "citra-qt", "citra"}
+// nintendo3DSEmulators are the 3DS emulators looked for on the path, the most kept up first.
+var nintendo3DSEmulators = []string{"azahar", "lime3ds", "citra-qt", "citra"}
 
-// FindConsoleEmulator finds a 3DS emulator: the one chosen, $EMULATOR_3DS, the first of
-// consoleEmulators on the path, one where emulators are usually installed, or the one Install
+// FindNintendo3DSEmulator finds a 3DS emulator: the one chosen, $EMULATOR_3DS, the first of
+// nintendo3DSEmulators on the path, one where emulators are usually installed, or the one Install
 // left.
-func (tools Tools) FindConsoleEmulator() (string, error) {
-	if place, isChosen, err := chosenProgram(tools.ConsoleEmulator); isChosen {
+func (tools Tools) FindNintendo3DSEmulator() (string, error) {
+	if place, isChosen, err := chosenProgram(tools.Nintendo3DSEmulator); isChosen {
 		return place, err
 	}
 	if tool := os.Getenv("EMULATOR_3DS"); tool != "" {
 		return tool, nil
 	}
-	for _, name := range consoleEmulators {
+	for _, name := range nintendo3DSEmulators {
 		if tool, err := exec.LookPath(name); err == nil {
 			return tool, nil
 		}
@@ -61,7 +61,7 @@ func (tools Tools) FindConsoleEmulator() (string, error) {
 	if tool := firstExisting(append(emulatorPlaces(), installed().Azahar)); tool != "" {
 		return tool, nil
 	}
-	return "", ConsoleEmulatorNotFound
+	return "", Nintendo3DSEmulatorNotFound
 }
 
 // linkIn is the 3dslink of a devkitPro chosen, or why there is none.

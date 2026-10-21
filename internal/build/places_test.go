@@ -24,7 +24,7 @@ func TestToolsInstallLeftButWereNotSavedAreFound(test *testing.T) {
 		wanted string
 	}{
 		{"TinyGo", Tools{}.FindTinyGo, filepath.Join(tinyGo, "tinygo", "bin", "tinygo")},
-		{"Azahar", Tools{}.FindConsoleEmulator, filepath.Join(azahar, "azahar.AppImage")},
+		{"Azahar", Tools{}.FindNintendo3DSEmulator, filepath.Join(azahar, "azahar.AppImage")},
 		{"the Android SDK", Tools{}.FindAndroidSDK, sdk},
 	}
 	for _, each := range cases {
@@ -40,7 +40,7 @@ func TestAnEmulatorInTheHomesApplicationsIsFound(test *testing.T) {
 		test.Skip("AppImages are Linux's")
 	}
 	image := filepath.Join(makeParts(test, filepath.Join(home, "Applications"), "Azahar-2100.1.AppImage"), "Azahar-2100.1.AppImage")
-	if found, err := (Tools{}).FindConsoleEmulator(); err != nil || found != image {
+	if found, err := (Tools{}).FindNintendo3DSEmulator(); err != nil || found != image {
 		test.Fatalf("the AppImage in ~/Applications is found as %q, %v", found, err)
 	}
 }

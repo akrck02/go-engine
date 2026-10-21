@@ -77,14 +77,14 @@ func fakeTinyGo(test *testing.T, targets ...string) string {
 	return program
 }
 
-func TestOnlyATinyGoWithTheConsoleTargetPassesItsCheck(test *testing.T) {
+func TestOnlyATinyGoWithTheNintendo3DSTargetPassesItsCheck(test *testing.T) {
 	if err := CheckTinyGo(fakeTinyGo(test, "arduino", "nintendo3ds", "wasm")); err != nil {
 		test.Errorf("a TinyGo with the 3DS gives %v", err)
 	}
-	if err := CheckTinyGo(fakeTinyGo(test, "arduino", "wasm")); !errors.Is(err, TinyGoWithoutConsole) {
+	if err := CheckTinyGo(fakeTinyGo(test, "arduino", "wasm")); !errors.Is(err, TinyGoWithout3DS) {
 		test.Errorf("a TinyGo without the 3DS gives %v", err)
 	}
-	if err := CheckTinyGo(filepath.Join(test.TempDir(), "nothing")); !errors.Is(err, TinyGoWithoutConsole) {
+	if err := CheckTinyGo(filepath.Join(test.TempDir(), "nothing")); !errors.Is(err, TinyGoWithout3DS) {
 		test.Errorf("a TinyGo that does not run gives %v", err)
 	}
 }

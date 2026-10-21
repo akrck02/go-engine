@@ -24,7 +24,7 @@ func TestSendingToTheConsoleRunsThreeDSLinkWithTheProgram(test *testing.T) {
 	if err := project.sendWith(link, "/games/harbour.3dsx"); err != nil {
 		test.Fatal(err)
 	}
-	project.Settings.ConsoleAddress = "192.168.1.20"
+	project.Settings.DeviceAddress = "192.168.1.20"
 	if err := project.sendWith(link, "/games/harbour.3dsx"); err != nil {
 		test.Fatal(err)
 	}

@@ -23,11 +23,12 @@ type Settings struct {
 	// CodeEditor is the command the editor opens the project's code with ("code", "zed", "nvim"…);
 	// empty tries $VISUAL, $EDITOR and the usual ones.
 	CodeEditor string `json:"codeEditor,omitempty"`
-	// AndroidID is the game's application id on Android, as io.example.game; empty makes one from
-	// its name.
-	AndroidID string `json:"androidId,omitempty"`
-	// ConsoleAddress is the 3DS's address on the network, to send the game to; empty looks for it.
-	ConsoleAddress string `json:"consoleAddress,omitempty"`
+	// ApplicationID is the game's application id, as io.example.game, which each target turns into
+	// what it needs (Android's package); empty makes one from its name.
+	ApplicationID string `json:"applicationId,omitempty"`
+	// DeviceAddress is the address on the network of the device the game is sent to (a 3DS's);
+	// empty looks for it.
+	DeviceAddress string `json:"deviceAddress,omitempty"`
 	// SceneMenu lists the game's scenes on the Nintendo 3DS's bottom screen, to play any of them
 	// with a touch: a level select.
 	SceneMenu bool `json:"sceneMenu,omitempty"`
@@ -38,6 +39,27 @@ type Settings struct {
 
 // SettingsFile is the settings' file in a project.
 const SettingsFile = "engine.json"
+
+// UnmarshalJSON reads settings, taking the old names of two of them when the new ones are missing.
+func (settings *Settings) UnmarshalJSON(data []byte) error {
+	type plain Settings // without this method, so that decoding it does not call it again
+	var file struct {
+		plain
+		OldApplicationID string `json:"androidId"`
+		OldDeviceAddress string `json:"consoleAddress"`
+	}
+	if err := json.Unmarshal(data, &file); err != nil {
+		return err
+	}
+	*settings = Settings(file.plain)
+	if settings.ApplicationID == "" {
+		settings.ApplicationID = file.OldApplicationID
+	}
+	if settings.DeviceAddress == "" {
+		settings.DeviceAddress = file.OldDeviceAddress
+	}
+	return nil
+}
 
 // ReadSettings reads a project's settings.
 func ReadSettings(files fs.FS) (Settings, error) {

@@ -26,8 +26,8 @@ func (project *Project) sendTo3DS() error {
 // sendWith sends a program to the console with a 3dslink.
 func (project *Project) sendWith(link, program string) error {
 	var arguments []string
-	if project.Settings.ConsoleAddress != "" {
-		arguments = append(arguments, "-a", project.Settings.ConsoleAddress)
+	if project.Settings.DeviceAddress != "" {
+		arguments = append(arguments, "-a", project.Settings.DeviceAddress)
 	}
 	return build.Run(project.Folder, nil, link, append(arguments, program)...)
 }
@@ -39,7 +39,7 @@ func (project *Project) emulatorCommand() (*exec.Cmd, error) {
 	if err != nil {
 		return nil, err
 	}
-	emulator, err := project.Tools.FindConsoleEmulator()
+	emulator, err := project.Tools.FindNintendo3DSEmulator()
 	if err != nil {
 		return nil, err
 	}

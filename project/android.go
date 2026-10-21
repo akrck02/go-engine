@@ -38,11 +38,11 @@ const applicationIDPrefix = "io.goengine."
 // with a letter.
 var applicationIDForm = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z][A-Za-z0-9_]*)+$`)
 
-// ApplicationID is the game's name on Android, as io.example.game: the settings' AndroidID, or one
-// made from the game's name.
+// ApplicationID is the game's application id, as io.example.game, which each target turns into
+// what it needs (Android's package name): the settings' ApplicationID, or one made from its name.
 func (project *Project) ApplicationID() string {
-	if project.Settings.AndroidID != "" {
-		return project.Settings.AndroidID
+	if project.Settings.ApplicationID != "" {
+		return project.Settings.ApplicationID
 	}
 	var word strings.Builder
 	for _, letter := range strings.ToLower(project.Settings.Name) {
@@ -57,8 +57,8 @@ func (project *Project) ApplicationID() string {
 	return applicationIDPrefix + name
 }
 
-// AndroidPackage is where the Android package goes.
-func (project *Project) AndroidPackage() string {
+// androidPackage is where the Android package goes.
+func (project *Project) androidPackage() string {
 	return project.Path(path.Join("build", build.FileName(project.Settings.Name)+".apk"))
 }
 
@@ -90,13 +90,13 @@ func (project *Project) buildAndroid() (Built, error) {
 		return Built{}, err
 	}
 	noticesFile, err := writeNotices(project.Path("build"), notices.Android)
-	return Built{Program: project.AndroidPackage(), Notices: noticesFile}, err
+	return Built{Program: project.androidPackage(), Notices: noticesFile}, err
 }
 
 // androidArguments are the go command's to build the package.
 func (project *Project) androidArguments() []string {
 	return []string{"tool", "go-ui-apk", "-name", project.Settings.Name, "-id", project.ApplicationID(),
-		"-abi", androidProcessors, "-o", project.AndroidPackage(), "."}
+		"-abi", androidProcessors, "-o", project.androidPackage(), "."}
 }
 
 // androidEnvironment is what go-ui-apk reads: where the SDK, the NDK and the JDK are, go on the

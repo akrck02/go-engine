@@ -165,8 +165,7 @@ type Project struct {
 |---|---|
 | `func Create(folder, name string) (*Project, error)` | Create makes a new project in a folder (which must be empty or not exist): its settings, a scene with a ground, a cube and a camera, a main and a first behaviour, and the code editors' settings. |
 | `func Open(folder string) (*Project, error)` | Open opens a project's folder. |
-| `func (project *Project) AndroidPackage() string` | AndroidPackage is where the Android package goes. |
-| `func (project *Project) ApplicationID() string` | ApplicationID is the game's name on Android, as io.example.game: the settings' AndroidID, or one made from the game's name. |
+| `func (project *Project) ApplicationID() string` | ApplicationID is the game's application id, as io.example.game, which each target turns into what it needs (Android's package name): the settings' ApplicationID, or one made from its name. |
 | `func (project *Project) AssetTree() AssetEntry` | AssetTree reads the project's assets folder as a tree: folders first, then files, by name; hidden files (as .gitkeep) left out. |
 | `func (project *Project) Behaviours() []Behaviour` | Behaviours reads the project's Go files (not compiling them) and finds its behaviours, so the editor can offer them while the code is being written in another editor. |
 | `func (project *Project) BehavioursUsed() map[string][]Use` | BehavioursUsed are the behaviours the project's scenes give their nodes, by name, with the nodes that have each. |

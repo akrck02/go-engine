@@ -44,13 +44,13 @@ hides the console, set its address in **Project → Settings**.
 | `build.android-ndk-not-found` | building for Android needs the Android NDK, in the SDK's ndk folder (Android Studio's SDK Manager): install it or set its place in Build's tools, or $ANDROID_NDK_HOME |
 | `build.android-sdk-incomplete` | the Android SDK lacks parts a build needs: install them with its SDK Manager, or Install |
 | `build.android-sdk-not-found` | building for Android needs the Android SDK (Android Studio installs it): install it or set its place in Build's tools, or $ANDROID_HOME |
-| `build.console-emulator-not-found` | no 3DS emulator found (azahar, lime3ds, citra-qt or citra): install it or set its place in Build's tools, or put one on the path |
 | `build.devkitpro-incomplete` | devkitPro lacks parts of the 3DS's: install its 3ds-dev packages (Install runs devkitPro's installer) |
 | `build.java-not-found` | Android's builds need a JDK (17 or newer, as Adoptium's Temurin, or Android Studio's): install one or set its folder in Build's tools, or $JAVA_HOME |
 | `build.java-without-compiler` | the Java found is only a runtime, with no javac: Android's builds need a JDK |
+| `build.nintendo3ds-emulator-not-found` | no 3DS emulator found (azahar, lime3ds, citra-qt or citra): install it or set its place in Build's tools, or put one on the path |
 | `build.source-not-found` | go-engine's source, which programs build against, is not where the editor was built |
 | `build.tinygo-not-found` | building for the 3DS needs TinyGo with the nintendo3ds target (github.com/akrck02/tinygo-3ds): install it or set its place in Build's tools, or $TINYGO |
-| `build.tinygo-without-console` | the TinyGo found has no nintendo3ds target: it is not tinygo-3ds's (Install gets it) |
+| `build.tinygo-without-nintendo3ds` | the TinyGo found has no nintendo3ds target: it is not tinygo-3ds's (Install gets it) |
 | `build.tool-failed` | a Go tool failed |
 | `build.tool-place-wrong` | nothing is where the tool was set: change it in Build's tools, or empty it to look for the tool |
 | `build.tools-not-read` | the tools' places kept on this computer could not be read |

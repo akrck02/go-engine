@@ -161,7 +161,7 @@ func (project *Project) Import(source string) (string, error) {
 // SaveSettings writes the project's settings, when its Android application id has the form one
 // has.
 func (project *Project) SaveSettings() error {
-	if asked := project.Settings.AndroidID; asked != "" && !applicationIDForm.MatchString(asked) {
+	if asked := project.Settings.ApplicationID; asked != "" && !applicationIDForm.MatchString(asked) {
 		return failure.Wrap(ApplicationIDWrong, asked, nil)
 	}
 	data, err := json.MarshalIndent(project.Settings, "", "\t")

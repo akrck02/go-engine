@@ -2,6 +2,7 @@ package engine
 
 import (
 	"bytes"
+	"encoding/json"
 	"image"
 	"image/png"
 	"math"
@@ -266,5 +267,18 @@ func TestA2DScenesBodiesSheetsAndTilesSurviveBeingRewritten(test *testing.T) {
 	again := built.Describe().Nodes[0]
 	if again.Body == nil || again.Body.Gravity() != 0.5 || again.Sheet == nil || again.Sheet.Animations[0].Name != "walk" || again.Tiles == nil {
 		test.Fatalf("the 2D parts were lost: %+v", again)
+	}
+}
+
+func TestOldSettingsNamesAreStillRead(test *testing.T) {
+	files := fstest.MapFS{"engine.json": {Data: []byte(`{"name": "Old", "startScene": "scenes/main.scene.json",
+		"androidId": "org.example.old", "consoleAddress": "192.168.1.20"}`)}}
+	settings, err := ReadSettings(files)
+	if err != nil || settings.ApplicationID != "org.example.old" || settings.DeviceAddress != "192.168.1.20" {
+		test.Fatalf("an old engine.json reads as %+v, %v", settings, err)
+	}
+	saved, _ := json.Marshal(settings)
+	if strings.Contains(string(saved), "androidId") || !strings.Contains(string(saved), "applicationId") {
+		test.Fatalf("settings are saved as %s", saved)
 	}
 }

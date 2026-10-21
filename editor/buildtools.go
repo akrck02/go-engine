@@ -28,7 +28,7 @@ var buildToolParts = []struct {
 	{"devkitPro", "Building for the 3DS and sending to it with 3dslink: devkitPro's folder", true,
 		func(tools *build.Tools) *string { return &tools.DevkitPro }, build.Tools.FindThreeDSLink, checkDevkitPro},
 	{"3DS emulator", "Trying the game without a console: Azahar's or Citra's program", false,
-		func(tools *build.Tools) *string { return &tools.ConsoleEmulator }, build.Tools.FindConsoleEmulator, nothingToCheck},
+		func(tools *build.Tools) *string { return &tools.Nintendo3DSEmulator }, build.Tools.FindNintendo3DSEmulator, nothingToCheck},
 	{"Android SDK", "Building for Android and playing through adb: the SDK's folder (Android Studio installs it)", true,
 		func(tools *build.Tools) *string { return &tools.AndroidSDK }, build.Tools.FindAndroidSDK, checkFound(build.CheckAndroidSDK)},
 	{"Android NDK", "Building for Android: one version's folder, from the SDK Manager", true,
