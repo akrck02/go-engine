@@ -155,13 +155,15 @@ type runner struct {
 	flat    draw2d.List      // a 2D scene's drawing on the console, made again every frame
 	overlay draw2d.List      // the game's drawing over a 3D scene (SetOverlay), made again every frame
 	below   window.BelowView // how the bottom screen's scene is seen this frame (SetSecondScreen)
-	console consoleInput     // the console's buttons, as keys
-	view    window.SceneView // what the window shows this frame
-	screen  draw2d.Rect      // the main screen's size, from the window's last frame
-	context *ui.Context      // the window's interface
-	top     mainScreen       // the surfaces on a main screen with no interface of its own (screen_nintendo3ds.go)
-	name    string           // the game's
-	menu    []MenuScene      // the scenes the bottom screen offers, when it offers them
+	// belowArea is where a device with no second screen shows it this frame (PlaceSecondScreen)
+	belowArea draw2d.Rect
+	console   consoleInput     // the console's buttons, as keys
+	view      window.SceneView // what the window shows this frame
+	screen    draw2d.Rect      // the main screen's size, from the window's last frame
+	context   *ui.Context      // the window's interface
+	top       mainScreen       // the surfaces on a main screen with no interface of its own (screen_nintendo3ds.go)
+	name      string           // the game's
+	menu      []MenuScene      // the scenes the bottom screen offers, when it offers them
 	// keepStart gives the 3DS's START to the game instead of ending it (Settings.KeepStart)
 	keepStart bool
 }

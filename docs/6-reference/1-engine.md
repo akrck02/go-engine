@@ -26,6 +26,7 @@ A game's main registers its behaviours and runs the project it embeds:
 | `func Fullscreen() bool` | Fullscreen tells whether the game is asked to be on the whole screen. |
 | `func HasInterface() bool` | HasInterface tells whether the game shows a go-ui interface of its own (SetInterface). |
 | `func HeightSeen(settings *scenefile.Camera, aspect float64) float64` | HeightSeen is the metres a 2D camera sees top to bottom on a screen of a shape (its width over its height): the camera's height (10 when it has none), or more on a screen too narrow for the width it must see. |
+| `func PlaceSecondScreen(area *draw2d.Rect)` | PlaceSecondScreen shows the second screen's scene in an area of the window, in window pixels, on a device that has no second screen: a radar in a corner of a computer's window, the same scene a 3DS shows below. |
 | `func PressedInput(state *input.State, target string) (string, bool)` | PressedInput is the word of an input pressed this frame on a target, if one was: a key, a mouse button or a pad's button (a 3DS's buttons and Android's back cannot be pressed from a computer). |
 | `func Quit()` | Quit ends the game once the frame being played ends. |
 | `func Register(behaviours ...any)` | Register makes behaviours known by their type's name: Register(Spin{}) is "Spin". |
