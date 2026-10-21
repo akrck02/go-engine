@@ -35,6 +35,7 @@ type controlsView struct {
 
 	design   touchDesign // the phone's layout, being designed
 	drawings [4]drawing  // each tab's device, made the first time it is shown
+	tags     []edgeTag   // the names at the drawing's edges, kept from frame to frame
 	area     draw2d.Rect // where the drawing was painted last frame
 	undo     []controlsSnapshot
 	redo     []controlsSnapshot
