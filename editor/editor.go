@@ -554,6 +554,7 @@ func (editor *Editor) PlayHere() {
 	for _, problem := range engine.BindActions(editor.Project.Settings.Actions, engine.DesktopTarget) {
 		editor.say(problem.Error(), true)
 	}
+	editor.placeSurfaces()
 	if editor.unlisten == nil {
 		editor.unlisten = editor.listenToLog()
 	}

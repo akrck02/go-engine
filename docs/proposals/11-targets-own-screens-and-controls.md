@@ -1,6 +1,6 @@
 # 11. Each target's own screens and controls
 
-> Status: building · Author's approval: proposal ☑ (2026-10-21, "dale") plan ☑ (2026-10-21, "si") · Controls redesign and R8 ☑ (2026-10-21, "implementalo", "si añade trazos")
+> Status: done · Author's approval: proposal ☑ (2026-10-21, "dale") plan ☑ (2026-10-21, "si") · Controls redesign and R8 ☑ (2026-10-21, "implementalo", "si añade trazos")
 
 ## Why
 
@@ -97,7 +97,11 @@ person can read and type:
 | `sheet` | a sheet from the bottom (Android), opened and closed by an action |
 | `none` | not shown on that target |
 
-The engine lays each surface out with what Go UI has (`Within`, `Overlay`, `PanelWith`, `Sheet`).
+The engine lays each surface out with what Go UI has (`Within`, `Overlay`, `PanelWith`, `Modal`
+for the sheet). A 3DS's top screen has no interface of its own: the engine paints the surfaces
+placed there with a Go UI context of their own, given no pointer, over the scene. A place a
+target lacks is the nearest it has: a second screen elsewhere is `over`, a sheet on a 3DS a
+`window`.
 `SetInterface` becomes the surface `interface`, placed on the second screen on the 3DS and over the
 view elsewhere, as today (R7). `SetSecondScreen`'s 3D scene stays as it is. The editor's Play gains
 a target to preview beside the shapes it has (R5): each target's places for its surfaces.
@@ -129,13 +133,31 @@ a target to preview beside the shapes it has (R5): each target's places for its 
 - [x] T5b — strokes in Go Renderer's draw2d · go-renderer feature/strokes · R2 · tests of covering a line, keeping the mask, allocating nothing
 - [x] T5c — touch controls: engine.json's `touchControls`, drawn and read on Android, bound as words · engine · R8 · tests of placing, pressing, dragging a stick, allocating nothing
 - [x] T5d — the Controls workspace redesigned: tabs per device, line drawings, action cards, the panel beside a control, autosave and its own undo, the phone's layout designer · editor · R2, R8 · tests of assigning, renaming, undoing, saving, the layout; captures of the four tabs
-- [ ] T6 — surfaces: `SetSurface`, engine.json's `surfaces`, the five places on the desktop and the 3DS · engine · R4 · captures in the editor and Azahar
-- [ ] T7 — `sheet` on Android, and `SetInterface` as the `interface` surface · R4, R7 · test; the samples unchanged
-- [ ] T8 — the editor previews each target's surfaces · editor · R5 · captures
-- [ ] T9 — fullscreen in Go Renderer (desktop and web) and Go UI · R6 · test of the request; by hand
-- [ ] T10 — `SetFullscreen`, `window` per target, the `fullscreen` action · engine · R6 · tests
-- [ ] T11 — a sample game with actions and surfaces and no per-target file; docs: a guide to actions and surfaces · examples, docs · R1, R4 · captures on the desktop and in Azahar
+- [x] T6 — surfaces: `SetSurface`, engine.json's `surfaces`, the five places on the desktop and the 3DS · engine · R4 · captures in the editor and Azahar
+- [x] T7 — `sheet` on Android, and `SetInterface` as the `interface` surface · R4, R7 · test; the samples unchanged
+- [x] T8 — the editor previews each target's surfaces · editor · R5 · captures
+- [x] T9 — fullscreen in Go Renderer (desktop and web) and Go UI · R6 · test of the request; by hand
+- [x] T10 — `SetFullscreen`, `window` per target, the `fullscreen` action · engine · R6 · tests
+- [x] T11 — a sample game with actions and surfaces and no per-target file; docs: a guide to actions and surfaces · examples, docs · R1, R4 · captures on the desktop and in Azahar
 
 ## Result
 
-Not built yet.
+Built, T1–T11. What was checked, and what a person must still check:
+
+- **R1, R3, R8**: tests of each kind of binding, rebinding, touch controls; actions now also read a
+  key held with a modifier (`Alt+Enter`) and a key tapped between two frames.
+- **R4**: `SetSurface` and engine.json's `surfaces`, the five places and their fallbacks, tested
+  with Go UI's `uitest`. Seen working: on the desktop (an `over` corner, a `window` toggled by Tab),
+  in Azahar (an `over` corner and a `window` on the top screen, painted by a context of their own;
+  surfaces on the second screen) and on an Android emulator (a `sheet` opened by a touch button,
+  kept off the system's bars). Not checked: a 3DS console, a real phone.
+- **R5**: Play's tabs 16:9, 3DS and Phone preview each target's places; test and captures.
+- **R6**: Go Renderer asks GLFW for the whole screen and back, and a page on its next key or click;
+  Go UI passes a scene's request on; go-engine's `window` per target, `SetFullscreen`, F11 and
+  Alt+Enter. Seen working by hand under Xvfb (F11, Alt+Enter, starting fullscreen). Not checked:
+  a browser (no page was built: building for the web is out of scope), Metal on a Mac (it uses the
+  same window loop, untouched, but was not run), a desktop with several screens.
+- **R7**: the platformer's and lighthouse's code and tests unchanged; `SetInterface` is the surface
+  `interface`, and `ShowInterface` (the editor's only) became `ShowSurfaces`.
+- **Sample**: `examples/watch`, with no per-target file; captures on the desktop, in the editor for
+  each target, in Azahar and on an Android emulator.

@@ -143,3 +143,27 @@ func TestAKeyPressedIsCaughtAsItsWord(test *testing.T) {
 		test.Fatalf("F11 is caught as %q", word)
 	}
 }
+
+func TestAKeyWithAModifierPressesOnlyWithBothHeld(test *testing.T) {
+	BindActions(map[string]map[string][]string{"save": {DesktopTarget: {"Control+S"}}}, DesktopTarget)
+	state := input.NewState()
+	state.SetKey(input.KeyS, true)
+	if frameWith(state, ctr.Reading{}).Action("save").Down {
+		test.Fatal("S alone saves")
+	}
+	state.SetKey(input.KeyControl, true)
+	if !frameWith(state, ctr.Reading{}).Action("save").Pressed {
+		test.Fatal("Control and S do not save")
+	}
+}
+
+func TestAKeyTappedBetweenTwoFramesStillPressesItsAction(test *testing.T) {
+	BindActions(gameActions, DesktopTarget)
+	frameWith(input.NewState(), ctr.Reading{})
+	state := input.NewState()
+	state.SetKey(input.KeySpace, true)
+	state.SetKey(input.KeySpace, false) // let go before the frame: a quick tap
+	if fire := frameWith(state, ctr.Reading{}).Action("fire"); !fire.Pressed {
+		test.Fatalf("a tap is %+v", fire)
+	}
+}

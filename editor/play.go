@@ -31,7 +31,8 @@ func (editor *Editor) RestartPlay() {
 	editor.PlayHere()
 }
 
-// PlayTarget is the shape of the screen the game is shown at while it plays in the view.
+// PlayTarget is the target whose screens the game is shown at while it plays in the view, with
+// its surfaces where that target places them.
 type PlayTarget int
 
 const (
@@ -40,14 +41,48 @@ const (
 	// Nintendo3DSScreens are the Nintendo 3DS's two screens: the top one, 400 × 240 pixels, and
 	// the second under it.
 	Nintendo3DSScreens
+	// PhoneScreen is a phone held sideways, twenty wide for nine high.
+	PhoneScreen
 )
 
 // Aspect is the target's width over its height.
 func (target PlayTarget) Aspect() float64 {
-	if target == Nintendo3DSScreens {
+	switch target {
+	case Nintendo3DSScreens:
 		return 400.0 / 240
+	case PhoneScreen:
+		return 20.0 / 9
 	}
 	return 16.0 / 9
+}
+
+// Name is the target's name in engine.json.
+func (target PlayTarget) Name() string {
+	switch target {
+	case Nintendo3DSScreens:
+		return engine.Nintendo3DSTarget
+	case PhoneScreen:
+		return engine.AndroidTarget
+	}
+	return engine.DesktopTarget
+}
+
+// String is the target's name, for messages.
+func (target PlayTarget) String() string { return target.Name() }
+
+// SetTarget shows the game played at a target's screens, its surfaces placed as engine.json
+// places them there.
+func (editor *Editor) SetTarget(target PlayTarget) {
+	editor.Target = target
+	editor.placeSurfaces()
+}
+
+// placeSurfaces places the game's surfaces as the target shown places them, reporting a place
+// engine.json gives that the engine does not know.
+func (editor *Editor) placeSurfaces() {
+	for _, problem := range engine.UseSurfaces(editor.Project.Settings.Surfaces, editor.Target.Name()) {
+		editor.say(problem.Error(), true)
+	}
 }
 
 // WatchLine is one thing the chosen node is doing while the game plays: what, and its value.

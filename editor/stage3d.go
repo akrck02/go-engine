@@ -10,10 +10,10 @@ import (
 )
 
 // A 3D game played in the view is drawn behind the interface, in the stage at its target's shape:
-// a computer's screen, or the 3DS's top screen with its bottom one under it, where the game's
-// second screen's scene (engine.SetSecondScreen) plays. Over it, the game's own 2D (engine.SetOverlay) and
-// its interface (engine.SetInterface) are shown as the game shows them: over its window, or on the
-// 3DS's bottom screen.
+// a computer's or a phone's screen, or the 3DS's top screen with its bottom one under it, where the
+// game's second screen's scene (engine.SetSecondScreen) plays. Over it, the game's own 2D
+// (engine.SetOverlay) and its surfaces (engine.SetSurface, engine.SetInterface) are shown where
+// that target shows them.
 
 // stagedScreens are where the stage showed a 3D game last frame, in window pixels: the game's
 // screen, and the 3DS's bottom one (empty for a computer's shape).
@@ -37,27 +37,18 @@ func (view *View) stage3D(context *ui.Context, played *engine.Scene) {
 			list.Rectangle(view.staged.bottom, 0, bottomScreenColor, ink, 1)
 		}
 	})
-	if engine.HasInterface() {
-		view.gameInterface(context, played, console)
-	}
+	view.gameSurfaces(context, played)
 }
 
-// gameInterface shows the game's interface where the game shows it: over its window, or on the
-// 3DS's second screen. The interface and the layers it opens are laid out in that screen, as in
-// the game's own window, placed where the stage was last frame (the layout places it after this).
-func (view *View) gameInterface(context *ui.Context, played *engine.Scene, console bool) {
-	// over the game's view the layer is as large as what it holds, so the rest of the view keeps
-	// the mouse for the game; a second screen is the interface's whole
-	screen, options := view.staged.top, ui.LayerOptions{}
-	if console {
-		screen = view.staged.bottom
-		options = ui.LayerOptions{Width: ui.Fixed(screen.Width), Height: ui.Fixed(screen.Height)}
+// gameSurfaces shows the game's surfaces (its interface among them) where the target shown places
+// them: over its screen, in windows and sheets there, or on the 3DS's second screen. They are laid
+// out in those screens as in the game's own window, placed where the stage was last frame (the
+// layout places it after this).
+func (view *View) gameSurfaces(context *ui.Context, played *engine.Scene) {
+	if view.staged.top.Width == 0 {
+		return // the stage is not laid out yet
 	}
-	context.Within(screen, func() {
-		context.Overlay("Game interface", options, func() {
-			engine.ShowInterface(context, played, view.scenesOffered())
-		})
-	})
+	engine.ShowSurfaces(context, played, view.scenesOffered(), view.staged.top, view.staged.bottom)
 }
 
 // playedView is how the window draws a 3D game played in the view: its scene in the stage's screen

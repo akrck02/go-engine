@@ -69,10 +69,12 @@ func bindingsPreference() string {
 	return "go-engine.bindings." + rebound.game + "." + rebound.target
 }
 
-// bindGame binds a game's actions on a target, then the changes its player kept here.
+// bindGame binds a game's actions on a target (with the fullscreen action, if the game does not
+// bind it), then the changes its player kept here.
 func bindGame(settings Settings, target string) []error {
 	rebound.game, rebound.target, rebound.actions = settings.Name, target, nil
 	problems := BindActions(settings.Actions, target)
+	bindFullscreen(settings.Actions, target)
 	kept, found := window.Preference(bindingsPreference())
 	if !found {
 		return problems

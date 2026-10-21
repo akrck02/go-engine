@@ -68,8 +68,8 @@ func (view *View) liveNode(context *ui.Context, node *engine.Node, depth int) {
 	}
 }
 
-// transport is the strip over the game: play or pause, a step, starting again, the screen's
-// shape, playing in a window, and stopping.
+// transport is the strip over the game: play or pause, a step, starting again, the target whose
+// screens it is shown at, playing in a window, and stopping.
 func (view *View) transport(context *ui.Context) {
 	editor := view.Editor
 	layout := ui.Layout{Width: ui.Grow(), Height: ui.Fixed(transportTall), Padding: ui.PadXY(10, 0), Gap: 6, AlignX: ui.Center, AlignY: ui.Center}
@@ -84,9 +84,7 @@ func (view *View) transport(context *ui.Context) {
 			editor.RestartPlay()
 		}
 		context.Tooltip("Start the scene again as it is written")
-		if played, playing := editor.PlayingHere(); playing && played.Is2D() {
-			view.targetTabs(context) // a 3D game fills the view: its shape is the window's
-		}
+		view.targetTabs(context)
 		view.windowButton(context)
 		if context.IconButton(iconStop, "Stop") {
 			editor.LeavePlay()
@@ -111,15 +109,15 @@ func (view *View) pauseButton(context *ui.Context) {
 	context.Tooltip("Stop the game where it is, to look at it")
 }
 
-// targetTabs choose the shape of the screen the game is shown at.
+// targetTabs choose the target whose screens the game is shown at.
 func (view *View) targetTabs(context *ui.Context) {
 	target := int(view.Editor.Target)
-	context.Box(ui.Layout{Width: ui.Fixed(190)}, func() {
-		if context.Tabs("Screen", &target, "16:9", "3DS") {
-			view.Editor.Target = PlayTarget(target)
+	context.Box(ui.Layout{Width: ui.Fixed(250)}, func() {
+		if context.Tabs("Screen", &target, "16:9", "3DS", "Phone") {
+			view.Editor.SetTarget(PlayTarget(target))
 		}
 	})
-	context.Tooltip("The shape of the screen: a computer's, or the 3DS's two screens")
+	context.Tooltip("The target's screens, with the game's surfaces where it places them: a computer's, the 3DS's two, a phone's")
 }
 
 // windowButton plays the game in a window of its own, or closes it.
@@ -154,12 +152,15 @@ func (view *View) stage(context *ui.Context) {
 	target := view.Editor.Target
 	ink := context.Theme.InkSoft
 	context.Paint(ui.Layout{Width: ui.Grow(), Height: ui.Grow()}, func(area draw2d.Rect, list *draw2d.List) {
+		view.staged = stagedScreens{top: fitted(area, target.Aspect())}
 		if target == Nintendo3DSScreens {
+			view.staged.top, view.staged.bottom = consoleScreens(area)
 			paintConsole(played, area, ink, list)
 			return
 		}
 		paintLetterboxed(played, area, target.Aspect(), list)
 	})
+	view.gameSurfaces(context, played)
 }
 
 // The 3DS's screens and the gap of its hinge between them, in the console's pixels.

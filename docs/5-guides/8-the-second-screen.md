@@ -44,7 +44,11 @@ func levels(context *ui.Context, menu engine.Menu) {
 | `menu.Play(file)` | Plays another scene |
 
 It needs `import ui "github.com/akrck02/go-ui"`, which the engine already brings. The function runs every frame the interface is drawn. On the 3DS it fills the second screen, 320 ×
-240 pixels, where touch is its pointer; on a computer it is laid over the game's window.
+240 pixels, where touch is its pointer; on a computer and a phone it is laid over the game's view.
+
+The interface is the game's surface named `interface`: engine.json's `surfaces` can put it
+elsewhere on a target, and a game can show more surfaces beside it with `engine.SetSurface`
+([Surfaces on each screen](10-surfaces-on-each-screen.md)).
 
 ## Variations
 

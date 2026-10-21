@@ -1,0 +1,17 @@
+{
+	"name": "Watch",
+	"sky": "#0b1626",
+	"nodes": [
+		{"name": "Sea", "shape": "plane", "colour": "#16324a", "position": [0, 0, 0], "rotation": [0, 0, 0], "scale": [400, 1, 400]},
+		{"name": "Rock", "shape": "cylinder", "colour": "#4a4a52", "position": [0, 1, 0], "rotation": [0, 0, 0], "scale": [8, 2, 8]},
+		{"name": "Tower", "shape": "cylinder", "colour": "#e8e2d6", "position": [0, 8, 0], "rotation": [0, 0, 0], "scale": [2, 12, 2]},
+		{"name": "Lamp", "position": [0, 14.5, 0], "rotation": [0, 0, 0], "scale": [1, 1, 1],
+			"behaviours": [{"name": "Lamp", "fields": {"degreesPerSecond": 60}}],
+			"children": [
+				{"name": "Beam", "shape": "cube", "colour": "#f5e7a0", "position": [0, 0, -15], "rotation": [0, 0, 0], "scale": [0.6, 0.6, 30]}
+			]},
+		{"name": "Ship", "shape": "cube", "colour": "#c0563a", "position": [-20, 1, -30], "rotation": [0, 30, 0], "scale": [2, 2, 6]},
+		{"name": "Eye", "position": [0, 30, 70], "rotation": [-18, 0, 0], "scale": [1, 1, 1],
+			"camera": {"projection": "perspective", "main": true, "fieldOfView": 50, "far": 5000}}
+	]
+}

@@ -35,6 +35,7 @@ func main() {
 	flags.String("select", "", "choose a node by its path when the editor opens (for captures)")
 	flags.Bool("play", false, "play the scene in the view when the editor opens (for captures)")
 	flags.Bool("3ds", false, "show the game played at the 3DS's screens (for captures)")
+	flags.Bool("phone", false, "show the game played at a phone's screen (for captures)")
 	flags.String("workspace", "", "the workspace to open in: project, art, level, code, play or build (for captures)")
 	update := flags.Bool("update", false, "update the project to go-engine's latest version, and do not open the editor")
 	version := flags.String("engine", project.LatestEngine, "with -update: the go-engine version to update to (a branch, a tag or a commit)")

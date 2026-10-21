@@ -48,4 +48,4 @@ sizes are shares of the screen, so the layout fits every phone.
 
 ---
 
-[← The second screen](8-the-second-screen.md) · [The reference →](../6-reference/0-packages.md)
+[← The second screen](8-the-second-screen.md) · [Surfaces on each screen →](10-surfaces-on-each-screen.md)

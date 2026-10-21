@@ -11,7 +11,8 @@ import (
 
 // The words engine.json binds actions with, read for one target: "Space", "Mouse Left",
 // "Pad Start", "Stick X", "Back"; on a 3DS, its own buttons ("A", "Start", "ZL"). A button word with
-// "-" or "+" after it ("Left-", "D+") moves an axis instead of pressing.
+// "-" or "+" after it ("Left-", "D+") moves an axis instead of pressing. A key after a modifier and
+// a "+" ("Alt+Enter", "Control+S") presses only while both are held.
 
 // inputKind is what an input reads.
 type inputKind int
@@ -43,7 +44,13 @@ type boundInput struct {
 	code    int // the key, mouse button, pad button, 3DS button bit or stick axis
 	towards float64
 	name    string // a touch control's
+	// alongside is a modifier key held with a key, when chorded ("Alt+Enter")
+	alongside input.Key
+	chorded   bool
 }
+
+// modifierWords are the keys a chord starts with.
+var modifierWords = map[string]input.Key{"Alt": input.KeyAlt, "Control": input.KeyControl, "Shift": input.KeyShift}
 
 // The words for a stick's axes, the same on every target: a 3DS's circle pad is its main stick and
 // its C-stick its right one.
@@ -87,6 +94,9 @@ func keyNames() map[string]input.Key {
 
 // readWord is the input a word names on a target, or why it names none there.
 func readWord(word, target string) (boundInput, error) {
+	if modifier, key, found := strings.Cut(word, "+"); found && key != "" {
+		return readChord(word, modifier, key, target)
+	}
 	if axis, found := stickWords[word]; found {
 		return boundInput{kind: stickInput, code: int(axis)}, nil
 	}
@@ -102,6 +112,17 @@ func readWord(word, target string) (boundInput, error) {
 		return boundInput{}, failure.Wrap(InputUnknown, word+" on "+target, nil)
 	}
 	bound.towards = towards
+	return bound, nil
+}
+
+// readChord is a key pressed with a modifier held ("Alt+Enter"), on a target with a keyboard.
+func readChord(word, modifier, key, target string) (boundInput, error) {
+	held, isModifier := modifierWords[modifier]
+	bound, found := readButton(key, target)
+	if !isModifier || !found || bound.kind != keyInput {
+		return boundInput{}, failure.Wrap(InputUnknown, word+" on "+target, nil)
+	}
+	bound.alongside, bound.chorded = held, true
 	return bound, nil
 }
 
