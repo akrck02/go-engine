@@ -43,14 +43,16 @@ func (owner *Scene) Start() []error {
 	return problems
 }
 
-// Update moves the scene on by some seconds: behaviours that were just made start, every
-// behaviour updates, the bodies of a 2D scene move, the tweens move, and what go-renderer draws
+// Update moves the scene on by some seconds: the calls asked for between frames and the game's
+// frame hook run (hooks.go), behaviours that were just made start, every behaviour updates, the bodies of a 2D scene move, the tweens move, and what go-renderer draws
 // follows. A frame allocates nothing it can avoid.
 func (owner *Scene) Update(seconds float64, keys *input.State) {
 	owner.Start()
 	owner.clock += seconds
 	owner.input.state = keys
 	owner.context = Context{Scene: owner, Delta: seconds, Time: owner.clock, Input: &owner.input}
+	runBetweenFrames()
+	owner.runFrameHook()
 	owner.startPending()
 	owner.updateBehaviours()
 	owner.stepPhysics(seconds)

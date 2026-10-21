@@ -16,7 +16,9 @@ A game's main registers its behaviours and runs the project it embeds:
 
 | Function | |
 |---|---|
+| `func BeforeBehaviours(hook func(context *Context))` | BeforeBehaviours sets code that runs once a frame, before every behaviour, with the frame's context (its Node is nil); nil removes it. |
 | `func Behaviour[Wanted any](node *Node) (*Wanted, bool)` | Behaviour finds a node's behaviour of a type, while the game runs. |
+| `func BetweenFrames(call func())` | BetweenFrames asks for a call to run once, at the start of the next frame, before anything is drawn: on the 3DS, the system keyboard can take both screens there. |
 | `func CameraAt(world space.Transform, settings scenefile.Camera) models.Camera` | CameraAt is go-renderer's camera for a camera placed at a transform with some settings. |
 | `func HeightSeen(settings *scenefile.Camera, aspect float64) float64` | HeightSeen is the metres a 2D camera sees top to bottom on a screen of a shape (its width over its height): the camera's height (10 when it has none), or more on a screen too narrow for the width it must see. |
 | `func Register(behaviours ...any)` | Register makes behaviours known by their type's name: Register(Spin{}) is "Spin". |
@@ -331,7 +333,7 @@ type Scene struct {
 | `func (owner *Scene) TilesetColumns(node *Node) int` | TilesetColumns is how many tiles across a tile map's tileset picture is: the palette shows them in its rows, as they were drawn. |
 | `func (owner *Scene) TilesetFile(file string) (*scenefile.Tileset, error)` | TilesetFile is a tileset's file of the project's, read once. |
 | `func (owner *Scene) Time() float64` | Time is the seconds the scene has been playing. |
-| `func (owner *Scene) Update(seconds float64, keys *input.State)` | Update moves the scene on by some seconds: behaviours that were just made start, every behaviour updates, the bodies of a 2D scene move, the tweens move, and what go-renderer draws follows. |
+| `func (owner *Scene) Update(seconds float64, keys *input.State)` | Update moves the scene on by some seconds: the calls asked for between frames and the game's frame hook run (hooks.go), behaviours that were just made start, every behaviour updates, the bodies of a 2D scene move, the tweens move, and what go-renderer draws follows. |
 | `func (owner *Scene) View2D() View2D` | View2D is what the scene's main camera sees, or, without one, ten metres around the origin. |
 | `func (owner *Scene) World() *scene.Scene` | World is what go-renderer draws, transforms brought up to date. |
 
