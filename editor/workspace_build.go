@@ -311,8 +311,8 @@ var toolInstalls = map[string]func(view *View){
 	"TinyGo":       func(view *View) { view.Editor.InstallTinyGo() },
 	"devkitPro":    (*View).installDevkitPro,
 	"3DS emulator": func(view *View) { view.Editor.InstallEmulator() },
-	"Android SDK":  func(view *View) { view.Editor.ReadAndroidLicence() },
-	"Android NDK":  func(view *View) { view.Editor.ReadAndroidLicence() }, // installed with the SDK
+	"Android SDK":  func(view *View) { view.Editor.ReadLicence("Android SDK") },
+	"Android NDK":  func(view *View) { view.Editor.ReadLicence("Android SDK") }, // installed with the SDK
 	"JDK":          (*View).installJava,
 }
 
@@ -322,33 +322,33 @@ const (
 	licenceHeight = 420
 )
 
-// licenceSheet shows Android's licence while it waits: accepting it installs the SDK.
+// licenceSheet shows a tool's licence while it waits: accepting it installs the tool.
 func (view *View) licenceSheet(context *ui.Context) {
 	editor := view.Editor
-	licence, waiting := editor.AndroidLicence()
+	licence, waiting := editor.Licence()
 	if !waiting {
 		return
 	}
 	accepted := false
-	if context.Sheet("Android SDK licence", ui.SheetOptions{Width: ui.Fixed(licenceWidth)}, func() {
-		note(context, "Installing the Android SDK, its NDK and the packages a game's build needs means accepting Google's licence:")
+	if context.Sheet(licence.Tool+" licence", ui.SheetOptions{Width: ui.Fixed(licenceWidth)}, func() {
+		note(context, "Installing "+licence.Tool+" means accepting its licence:")
 		inside := ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Height: ui.Fixed(licenceHeight), Gap: 8}
 		context.ScrollArea("Licence", inside, func() {
-			for _, paragraph := range strings.Split(licence, "\n\n") {
+			for _, paragraph := range strings.Split(licence.Text, "\n\n") {
 				wrapped(context, paragraph, ui.TextStyle{Color: context.Theme.InkSoft, Size: context.Theme.SmallTextSize})
 			}
 		})
 		context.Row(func() {
 			if context.Button("Decline") {
-				editor.DeclineAndroidLicence()
+				editor.DeclineLicence()
 			}
 			accepted = context.PrimaryButton("Accept and install")
 		})
 	}) {
-		editor.DeclineAndroidLicence()
+		editor.DeclineLicence()
 	}
 	if accepted {
-		editor.AcceptAndroidLicence()
+		editor.AcceptLicence()
 	}
 }
 

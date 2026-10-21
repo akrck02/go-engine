@@ -161,14 +161,14 @@ func TestAToolInstalledIsSetAndKept(test *testing.T) {
 	}
 }
 
-func TestAndroidsLicenceWaitsToBeAcceptedOrDeclined(test *testing.T) {
+func TestALicenceWaitsToBeAcceptedOrDeclined(test *testing.T) {
 	editor := open(test)
-	editor.androidLicence = "Use the lighthouse kindly."
-	if licence, waiting := editor.AndroidLicence(); !waiting || licence != "Use the lighthouse kindly." {
+	editor.licence = PendingLicence{Tool: "Android SDK", Text: "Use the lighthouse kindly."}
+	if licence, waiting := editor.Licence(); !waiting || licence.Text != "Use the lighthouse kindly." || licence.Tool != "Android SDK" {
 		test.Fatal("the licence read does not wait to be accepted")
 	}
-	editor.DeclineAndroidLicence()
-	if _, waiting := editor.AndroidLicence(); waiting {
+	editor.DeclineLicence()
+	if _, waiting := editor.Licence(); waiting {
 		test.Fatal("a licence declined still waits")
 	}
 }
@@ -188,10 +188,18 @@ func TestEveryToolThatCanBeInstalledIsOne(test *testing.T) {
 	}
 }
 
-func TestNothingIsInstalledForAndroidWithoutTheLicenceRead(test *testing.T) {
+func TestNothingIsInstalledWithoutTheLicenceRead(test *testing.T) {
 	editor := open(test)
-	editor.AcceptAndroidLicence()
+	editor.AcceptLicence()
 	if _, _, _, busy := editor.Installing(); busy || editor.Running() {
 		test.Fatal("Android is installed with no licence read")
+	}
+}
+
+func TestAToolWithoutALicenceIsRefused(test *testing.T) {
+	editor := open(test)
+	editor.ReadLicence("TinyGo")
+	if editor.Running() {
+		test.Fatal("a licence is read for a tool that has none")
 	}
 }
