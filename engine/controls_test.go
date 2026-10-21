@@ -1,0 +1,55 @@
+package engine
+
+import (
+	"testing"
+
+	"github.com/akrck02/go-renderer/ctr"
+	"github.com/akrck02/go-renderer/input"
+)
+
+func TestTheConsolesShouldersAndStartAreReadAsTheirKeys(test *testing.T) {
+	var console consoleInput
+	window := input.NewState()
+	cases := map[ctr.Buttons]Key{ctr.ButtonL: ButtonL, ctr.ButtonR: ButtonR, ctr.ButtonZL: ButtonZL, ctr.ButtonZR: ButtonZR, ctr.ButtonStart: ButtonStart}
+	for button, key := range cases {
+		keys := console.keysFrom(window, button)
+		if !keys.Pressed(key) || !keys.Down(key) {
+			test.Errorf("button %b is not read as key %v, pressed and held", button, key)
+		}
+		console.keysFrom(window, 0)
+	}
+}
+
+func TestTheConsolesSticksGyroscopeAndTouchAreReadWhole(test *testing.T) {
+	reading := ctr.Reading{CStickX: 146, CStickY: 0, Gyroscope: ctr.Gyroscope{Yaw: 30},
+		Held: ctr.ButtonTouch, TouchX: 160, TouchY: 120}
+	keys := Input{state: input.NewState(), console: reading}
+	if x, y := keys.CStick(); x != 1 || y != 0 {
+		test.Errorf("the C-stick at its right edge reads %v, %v", x, y)
+	}
+	if keys.Gyroscope().Yaw != 30 {
+		test.Errorf("the gyroscope reads %+v", keys.Gyroscope())
+	}
+	if x, y, touching := keys.Touch(); !touching || x != 160 || y != 120 {
+		test.Errorf("a touch in the middle reads %v, %v, %v", x, y, touching)
+	}
+	keys.state.StickX, keys.state.StickY = 0.5, -1
+	if x, y := keys.Stick(); x != 0.5 || y != 1 {
+		test.Errorf("the circle pad up and right reads %v, %v", x, y)
+	}
+}
+
+func TestTheMouseMovesAndThePointerIsCapturedWhenAsked(test *testing.T) {
+	game := &runner{played: load(test)}
+	state := input.NewState()
+	state.CursorDeltaX, state.CursorDeltaY = 4, -2
+	SetPointerCaptured(true)
+	defer SetPointerCaptured(false)
+	game.step(state, 1.0/60)
+	if !state.CursorLocked() {
+		test.Fatal("the pointer is not captured")
+	}
+	if x, y := game.played.input.MouseMovement(); x != 4 || y != -2 {
+		test.Fatalf("the mouse moved %v, %v", x, y)
+	}
+}

@@ -25,13 +25,27 @@ A game's main registers its behaviours and runs the project it embeds:
 | `func RegisterAs(name string, behaviour any)` | RegisterAs makes a behaviour known by a name of its own. |
 | `func Registered() []string` | Registered are the names of the behaviours registered, in order. |
 | `func Run(files fs.FS) error` | Run plays a project, from its files (embedded in the game, or a folder), until its window is closed: on the desktop in a window, on the Nintendo 3DS on the top screen. |
+| `func SetBottomScene(below *Scene)` | SetBottomScene shows a scene on the 3DS's bottom screen, under the game's interface (SetInterface), seen from its main camera; nil leaves the screen to the interface. |
 | `func SetBottomScreen(paint func(context *ui.Context, menu Menu))` | SetBottomScreen is SetInterface, by the name it had when only the 3DS showed it. |
 | `func SetEditor(run func() error)` | SetEditor installs the editor (the editor package does, from a project's editor.go). |
 | `func SetInterface(paint func(context *ui.Context, menu Menu))` | SetInterface makes a game show an interface of its own, with go-ui, in its own look: a menu of its scenes (Menu), a map, its controls, a login form. |
 | `func SetOverlay(paint func(list *draw2d.List, width, height float32))` | SetOverlay sets what the game draws over a 3D scene each frame, in the pixels of the screen it is on (the window's, or the 3DS's top screen, 400 × 240): the list is empty when it is called. |
+| `func SetPointerCaptured(captured bool)` | SetPointerCaptured holds and hides the pointer, for a game that turns with the mouse, or lets it go (a pause menu): MouseMovement still reads the mouse. |
 | `func Version() string` | Version says which Go Engine this program was built with: its release and commit, as "v0.0.1 (ba08523)", or "v0.0.1 (77aa001, local)" for a local copy, as the editor's window and the logs show it. |
 
 ### Constants and variables
+
+```go
+const (
+	ButtonL     = input.KeyQ
+	ButtonR     = input.KeyE
+	ButtonZL    = input.KeyZ
+	ButtonZR    = input.KeyC
+	ButtonStart = input.KeyEnter
+)
+```
+
+The keys the 3DS's shoulder buttons and START are read as, and press on a keyboard.
 
 ```go
 const (
@@ -163,11 +177,16 @@ type Input struct {
 | Function or method | |
 |---|---|
 | `func (keys *Input) Axis(negative, positive Key) float64` | Axis is -1 while the first key is held, 1 while the second is, 0 with neither or both. |
+| `func (keys *Input) CStick() (x, y float64)` | CStick is a New 3DS's C-stick from -1 to 1 on each axis, up positive; 0 elsewhere. |
 | `func (keys *Input) Down(key Key) bool` | Down tells whether a key is held; Pressed whether it went down this frame. |
+| `func (keys *Input) Gyroscope() ctr.Gyroscope` | Gyroscope is how fast the 3DS turns, in degrees a second; zero elsewhere, or in an emulator. |
+| `func (keys *Input) MouseMovement() (x, y float64)` | MouseMovement is how far the mouse moved since the last frame, in window pixels: it keeps counting while the pointer is captured (SetPointerCaptured). |
 | `func (keys *Input) Move() space.Vector` | Move is the direction the arrows (or WASD, or a 3DS's cross and circle pad) point, on the ground: right is +X, up is Forward (-Z). |
 | `func (keys *Input) Pointer() (x, y float64, pressed bool)` | Pointer is where the mouse (or a finger) is, in window pixels, and whether it is pressed. |
 | `func (keys *Input) Pressed(key Key) bool` |  |
 | `func (keys *Input) State() *input.State` | State is go-renderer's input, for what Input does not cover. |
+| `func (keys *Input) Stick() (x, y float64)` | Stick is the circle pad (or a game pad's left stick) from -1 to 1 on each axis, up positive. |
+| `func (keys *Input) Touch() (x, y int, touching bool)` | Touch is where a finger or the stylus is on the 3DS's bottom screen (320 × 240 pixels), and whether one is on it at all; on other systems, never. |
 
 ### Key
 
@@ -358,6 +377,9 @@ type Settings struct {
 	// SceneMenu lists the game's scenes on the Nintendo 3DS's bottom screen, to play any of them
 	// with a touch: a level select.
 	SceneMenu bool `json:"sceneMenu,omitempty"`
+	// KeepStart gives the 3DS's START button to the game (a pause, read as ButtonStart) instead of
+	// ending it; the HOME menu still ends it.
+	KeepStart bool `json:"keepStart,omitempty"`
 }
 ```
 

@@ -86,7 +86,7 @@ unlit, translucent and double-sided (most of R3). The engine only has to reach t
   Metal and ctr. The C-stick and the gyroscope in `ctr.Reading`, as Go for 3DS reads them.
 - **Go UI**: `SceneView.Below` (a scene and camera for the bottom screen, the interface painted
   over it), `Options.KeepStart` (START reaches the game instead of quitting), and
-  `Options.PointerCaptured` on the desktop (Go Renderer's window loop has it).
+  a scene's `LockCursor` passed on to the window (Go Renderer's window loop applies it).
 
 ### Versions
 
@@ -108,10 +108,10 @@ Each version leaves the engine working and can be used by a game at once.
 - [ ] T5 — Go Renderer: `Material.Additive` in OpenGL, Metal and ctr · R3 · test of the blend chosen; captures
 - [ ] T6 — materials from code: a sample with each kind and opacity changing per frame · examples · R3 · captures on the desktop and in Azahar
 - [x] T7 — `SetOverlay` and `SetInterface` on the desktop and the 3DS (Go UI `feature/scene-drawing`: `SceneView.Drawing`) · engine/overlay.go, engine/screen*.go · R4 · tests `the game's overlay is drawn over a 3D scene at the screen's size` and Go UI's `the program's drawing is painted over the scene and under the interface`; on Android the game's interface is not shown yet (the touch buttons fill the window)
-- [ ] T8 — Go UI: `SceneView.Below`, `KeepStart`, `PointerCaptured` · R7, R8 · Go UI's tests
-- [ ] T9 — Go Renderer: the C-stick and the gyroscope in `ctr.Reading` · R8 · by hand in Azahar
-- [ ] T10 — `SetBottomScene` · engine/screen_nintendo3ds.go · R7 · capture in Azahar
-- [ ] T11 — `Input`'s sticks, gyroscope, touches, shoulder keys, START and mouse movement; `SetPointerCaptured` · engine/play.go, engine/console.go · R8 · tests of each mapping
+- [x] T8 — Go UI (`feature/scene-drawing`): `SceneView.Below`, `Options.KeepStart`, and a scene's `LockCursor` reaching the window (Go Renderer's input already captures the pointer, so no option was needed) · R7, R8 · Go UI's tests; built for the 3DS through the engine's example
+- [x] T9 — Go Renderer (`feature/motion-controls`): `StartMotionControls`, `Reading.CStick()` and `Reading.Gyroscope` · R8 · test of the C-stick's dead zone; built with TinyGo; on a console by hand
+- [x] T10 — `SetBottomScene`: it plays, and is seen from its main camera · engine/below.go · R7 · test `the bottom scene plays and is seen from its camera`; a look in Azahar is pending
+- [x] T11 — `Input.Stick`, `CStick`, `Gyroscope`, `Touch`, `MouseMovement`; L, R, ZL, ZR and START as `ButtonL`… keys; `SetPointerCaptured`; `keepStart` in engine.json · engine/controls.go, engine/console.go · R8 · tests of each mapping
 - [ ] T12 — the release workflow from Build · project, editor/workspace_build.go · R11 · test of the file written; one run on GitHub
 
 ## Result

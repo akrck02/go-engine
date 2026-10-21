@@ -59,5 +59,12 @@ const (
 // consoleKeys is the game's keys on the console: the cross as the arrow keys and A as Space, read
 // from the console itself, whatever the bottom screen's interface did with them (consoleInput).
 func consoleKeys(console *consoleInput, window *input.State) *input.State {
-	return console.keysFrom(window, ctr.ReadControls().Held)
+	return console.keysFrom(window, console.reading.Held)
 }
+
+// readConsole reads the console's controls for this frame.
+func readConsole() ctr.Reading { return ctr.ReadControls() }
+
+// startConsole starts the C-stick and the gyroscope, for the game to read; the console stops them
+// when the game ends.
+func startConsole() { ctr.StartMotionControls() }

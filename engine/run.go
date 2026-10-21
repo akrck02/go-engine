@@ -30,6 +30,9 @@ type Settings struct {
 	// SceneMenu lists the game's scenes on the Nintendo 3DS's bottom screen, to play any of them
 	// with a touch: a level select.
 	SceneMenu bool `json:"sceneMenu,omitempty"`
+	// KeepStart gives the 3DS's START button to the game (a pause, read as ButtonStart) instead of
+	// ending it; the HOME menu still ends it.
+	KeepStart bool `json:"keepStart,omitempty"`
 }
 
 // SettingsFile is the settings' file in a project.
@@ -72,7 +75,7 @@ func Run(files fs.FS) error {
 	for _, problem := range played.Start() {
 		slog.Warn("a behaviour could not be made", "error", problem)
 	}
-	game := &runner{played: played, name: settings.Name}
+	game := &runner{played: played, name: settings.Name, keepStart: settings.KeepStart}
 	if settings.SceneMenu || gameInterface != nil {
 		game.menu = scenesOf(files)
 	}
@@ -98,30 +101,39 @@ type runner struct {
 	last    time.Time
 	flat    draw2d.List      // a 2D scene's drawing on the console, made again every frame
 	overlay draw2d.List      // the game's drawing over a 3D scene (SetOverlay), made again every frame
+	below   window.BelowView // how the bottom screen's scene is seen this frame (SetBottomScene)
 	console consoleInput     // the console's buttons, as keys
 	view    window.SceneView // what the window shows this frame
 	name    string           // the game's
 	menu    []MenuScene      // the scenes the bottom screen offers, when it offers them
+	// keepStart gives the 3DS's START to the game instead of ending it (Settings.KeepStart)
+	keepStart bool
 }
 
 // run opens the window and plays until it is closed.
 func (game *runner) run(title string) error {
-	options := window.Options{Title: title, Width: windowWidth, Height: windowHeight, Continuous: true}
+	options := window.Options{Title: title, Width: windowWidth, Height: windowHeight, Continuous: true, KeepStart: game.keepStart}
 	options.Scene = game.step
+	startConsole()
 	return window.Run(options, interfaceFor(game))
 }
 
 // step moves the game on a frame and gives the window what to show.
 func (game *runner) step(state *input.State, step float64) *window.SceneView {
 	seconds := game.secondsSince(state, step)
+	game.console.reading = readConsole()
 	keys := consoleKeys(&game.console, state)
+	state.LockCursor(pointerCaptured)
+	game.played.input.console = game.console.reading
 	game.played.Update(seconds, keys)
+	below := game.playBelow(seconds, keys)
 	game.replaceIfAsked()
 	if game.played.Is2D() && !flatNeedsScene {
 		return nil // the interface paints a 2D scene (interfaceFor): no 3D scene behind it
 	}
 	drawOver(game.played, state, &game.flat)
 	game.view = window.SceneView{World: game.played.World(), Camera: CameraAt(fallbackCamera, defaultCamera)}
+	game.view.Below = below
 	if overlayPainter != nil && !game.played.Is2D() {
 		game.view.Drawing = game.paintOverlay(state)
 	}

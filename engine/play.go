@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"github.com/akrck02/go-renderer/ctr"
 	"github.com/akrck02/go-renderer/input"
 
 	"github.com/akrck02/go-engine/space"
@@ -99,7 +100,10 @@ func (owner *Scene) collectBehaving(nodes []*Node, node *Node) []*Node {
 }
 
 // Input is the keyboard, the mouse and the controls, as the game reads them.
-type Input struct{ state *input.State }
+type Input struct {
+	state   *input.State
+	console ctr.Reading // the 3DS's controls this frame; empty elsewhere (controls.go)
+}
 
 // Down tells whether a key is held; Pressed whether it went down this frame.
 func (keys *Input) Down(key Key) bool    { return keys.state != nil && keys.state.Down(key) }

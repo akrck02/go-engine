@@ -26,3 +26,22 @@ func TestTheGamesOverlayIsDrawnOverA3DSceneAtTheScreensSize(test *testing.T) {
 		test.Fatalf("the overlay keeps %d commands after a second frame: it is not made again", len(view.Drawing.Commands))
 	}
 }
+
+func TestTheBottomScenePlaysAndIsSeenFromItsCamera(test *testing.T) {
+	game := &runner{played: load(test)}
+	below := load(test)
+	SetBottomScene(below)
+	defer SetBottomScene(nil)
+	spinner, _ := below.Find("Spinner")
+	before := spinner.Transform.Rotation
+	state := input.NewState()
+	view := game.step(state, 1.0/60)
+	eye, _ := below.Find("Eye")
+	if view.Below == nil || view.Below.World != below.World() || view.Below.Camera != eye.View() {
+		test.Fatalf("the bottom screen shows %+v", view.Below)
+	}
+	game.step(state, 1.0/60)
+	if spinner.Transform.Rotation == before {
+		test.Fatal("the bottom scene's behaviours do not run")
+	}
+}

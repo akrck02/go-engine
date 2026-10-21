@@ -3,6 +3,7 @@
 package engine
 
 import (
+	"github.com/akrck02/go-renderer/ctr"
 	"github.com/akrck02/go-renderer/draw2d"
 	"github.com/akrck02/go-renderer/input"
 	ui "github.com/akrck02/go-ui"
@@ -36,3 +37,9 @@ func interfaceFor(game *runner) func(context *ui.Context) {
 
 // consoleKeys is the window's own keys on the desktop, where the keyboard is the game's.
 func consoleKeys(_ *consoleInput, window *input.State) *input.State { return window }
+
+// readConsole is an empty reading: there is no 3DS here.
+func readConsole() ctr.Reading { return ctr.Reading{} }
+
+// startConsole does nothing: there is no 3DS here.
+func startConsole() {}
