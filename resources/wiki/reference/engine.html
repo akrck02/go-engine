@@ -22,8 +22,23 @@ to its parent, in metres and degrees (see package space).</p>
 
 <tbody>
 <tr>
+<td><code>func BeforeBehaviours(hook func(context *Context))</code></td>
+<td>BeforeBehaviours sets code that runs once a frame, before every behaviour, with the frame&rsquo;s context (its Node is nil); nil removes it.</td>
+</tr>
+
+<tr>
 <td><code>func Behaviour[Wanted any](node *Node) (*Wanted, bool)</code></td>
 <td>Behaviour finds a node&rsquo;s behaviour of a type, while the game runs.</td>
+</tr>
+
+<tr>
+<td><code>func BetweenFrames(call func())</code></td>
+<td>BetweenFrames asks for a call to run once, at the start of the next frame, before anything is drawn: on the 3DS, the system keyboard can take both screens there.</td>
+</tr>
+
+<tr>
+<td><code>func BindActions(bindings map[string]map[string][]string, target string) []error</code></td>
+<td>BindActions reads the actions&rsquo; bindings (engine.json&rsquo;s actions) for a target, replacing those read before.</td>
 </tr>
 
 <tr>
@@ -32,8 +47,33 @@ to its parent, in metres and degrees (see package space).</p>
 </tr>
 
 <tr>
+<td><code>func CheckInputs(words []string, target string) []error</code></td>
+<td>CheckInputs tells which of some words a target does not know, each by its code (InputUnknown).</td>
+</tr>
+
+<tr>
+<td><code>func DrawOverlay(list *draw2d.List, width, height float32) bool</code></td>
+<td>DrawOverlay draws the game&rsquo;s 2D over a 3D scene (SetOverlay) into a list, in an area of a width and a height starting at 0, 0; it tells whether the game has any.</td>
+</tr>
+
+<tr>
+<td><code>func HasInterface() bool</code></td>
+<td>HasInterface tells whether the game shows a go-ui interface of its own (SetInterface).</td>
+</tr>
+
+<tr>
 <td><code>func HeightSeen(settings *scenefile.Camera, aspect float64) float64</code></td>
 <td>HeightSeen is the metres a 2D camera sees top to bottom on a screen of a shape (its width over its height): the camera&rsquo;s height (10 when it has none), or more on a screen too narrow for the width it must see.</td>
+</tr>
+
+<tr>
+<td><code>func PressedInput(state *input.State, target string) (string, bool)</code></td>
+<td>PressedInput is the word of an input pressed this frame on a target, if one was: a key, a mouse button or a pad&rsquo;s button (a 3DS&rsquo;s buttons and Android&rsquo;s back cannot be pressed from a computer).</td>
+</tr>
+
+<tr>
+<td><code>func Quit()</code></td>
+<td>Quit ends the game once the frame being played ends.</td>
 </tr>
 
 <tr>
@@ -57,13 +97,58 @@ to its parent, in metres and degrees (see package space).</p>
 </tr>
 
 <tr>
-<td><code>func SetBottomScreen(paint func(context *ui.Context, menu Menu))</code></td>
-<td>SetBottomScreen makes a game draw the Nintendo 3DS&rsquo;s bottom screen itself, with go-ui, in its own look: a menu of its scenes (Menu), a map, its controls.</td>
+<td><code>func RunningOn() string</code></td>
+<td>RunningOn is the name of the target the game runs on now.</td>
+</tr>
+
+<tr>
+<td><code>func SaveBindings() error</code></td>
+<td>SaveBindings keeps the actions the player changed, for the next time the game plays here.</td>
+</tr>
+
+<tr>
+<td><code>func SecondScreen() (*Scene, bool)</code></td>
+<td>SecondScreen is the scene the second screen shows (SetSecondScreen), if any: one who plays the game elsewhere than Run moves it on each frame (Scene.Update) and shows it from Scene.Camera.</td>
 </tr>
 
 <tr>
 <td><code>func SetEditor(run func() error)</code></td>
 <td>SetEditor installs the editor (the editor package does, from a project&rsquo;s editor.go).</td>
+</tr>
+
+<tr>
+<td><code>func SetInterface(paint func(context *ui.Context, menu Menu))</code></td>
+<td>SetInterface makes a game show an interface of its own, with go-ui, in its own look: a menu of its scenes (Menu), a map, its controls, a login form.</td>
+</tr>
+
+<tr>
+<td><code>func SetOverlay(paint func(list *draw2d.List, width, height float32))</code></td>
+<td>SetOverlay sets what the game draws over a 3D scene each frame, in the pixels of the screen it is on (the window&rsquo;s, or the 3DS&rsquo;s top screen, 400 × 240): the list is empty when it is called.</td>
+</tr>
+
+<tr>
+<td><code>func SetPointerCaptured(captured bool)</code></td>
+<td>SetPointerCaptured holds and hides the pointer, for a game that turns with the mouse, or lets it go (a pause menu): MouseMovement still reads the mouse.</td>
+</tr>
+
+<tr>
+<td><code>func SetSecondScreen(shown *Scene)</code></td>
+<td>SetSecondScreen shows a scene on the second screen, under the game&rsquo;s interface (SetInterface), seen from its main camera; nil leaves the screen to the interface.</td>
+</tr>
+
+<tr>
+<td><code>func ShowInterface(context *ui.Context, played *Scene, scenes []MenuScene)</code></td>
+<td>ShowInterface builds the game&rsquo;s own interface (SetInterface) for a scene played, offering some scenes (ScenesOf); playing another asks the scene to be replaced (Scene.TakeReplacement).</td>
+</tr>
+
+<tr>
+<td><code>func TakeQuit() bool</code></td>
+<td>TakeQuit tells whether the game asked to quit since the last time, and forgets it: one who plays the game elsewhere than Run (the editor&rsquo;s Play) stops it then.</td>
+</tr>
+
+<tr>
+<td><code>func TouchWords(control TouchControl) []string</code></td>
+<td>TouchWords are the words a touch control is bound with: a button&rsquo;s name, a stick&rsquo;s two axes.</td>
 </tr>
 
 <tr>
@@ -74,6 +159,27 @@ to its parent, in metres and degrees (see package space).</p>
 </table>
 
 <h3 id="constants-and-variables">Constants and variables</h3>
+<pre><code class="language-go"><span class="kd">const</span> <span class="p">(</span>
+	<span class="nx">ButtonLeftShoulder</span>  <span class="p">=</span> <span class="nx">input</span><span class="p">.</span><span class="nx">KeyQ</span>
+	<span class="nx">ButtonRightShoulder</span> <span class="p">=</span> <span class="nx">input</span><span class="p">.</span><span class="nx">KeyE</span>
+	<span class="nx">ButtonLeftTrigger</span>   <span class="p">=</span> <span class="nx">input</span><span class="p">.</span><span class="nx">KeyZ</span>
+	<span class="nx">ButtonRightTrigger</span>  <span class="p">=</span> <span class="nx">input</span><span class="p">.</span><span class="nx">KeyC</span>
+	<span class="nx">ButtonStart</span>         <span class="p">=</span> <span class="nx">input</span><span class="p">.</span><span class="nx">KeyEnter</span>
+<span class="p">)</span>
+</code></pre>
+
+<p>The keys shoulder buttons, triggers and START are read as (a 3DS&rsquo;s L, R, ZL, ZR and START), and that press them on a keyboard.</p>
+<pre><code class="language-go"><span class="kd">const</span> <span class="p">(</span>
+	<span class="nx">KeyboardInputs</span> <span class="p">=</span> <span class="s">&#34;Keyboard&#34;</span>
+	<span class="nx">MouseInputs</span>    <span class="p">=</span> <span class="s">&#34;Mouse&#34;</span>
+	<span class="nx">PadInputs</span>      <span class="p">=</span> <span class="s">&#34;Pad&#34;</span>
+	<span class="nx">StickInputs</span>    <span class="p">=</span> <span class="s">&#34;Sticks&#34;</span>
+	<span class="nx">ButtonInputs</span>   <span class="p">=</span> <span class="s">&#34;Buttons&#34;</span> <span class="c1">// a device&#39;s own buttons (a 3DS&#39;s)</span>
+	<span class="nx">SystemInputs</span>   <span class="p">=</span> <span class="s">&#34;System&#34;</span>  <span class="c1">// the system&#39;s back (Android&#39;s)</span>
+<span class="p">)</span>
+</code></pre>
+
+<p>The groups of inputs, as an editor shows them.</p>
 <pre><code class="language-go"><span class="kd">const</span> <span class="p">(</span>
 	<span class="nx">KeyA</span>         <span class="p">=</span> <span class="nx">input</span><span class="p">.</span><span class="nx">KeyA</span>
 	<span class="nx">KeyB</span>         <span class="p">=</span> <span class="nx">input</span><span class="p">.</span><span class="nx">KeyB</span>
@@ -116,6 +222,23 @@ to its parent, in metres and degrees (see package space).</p>
 </code></pre>
 
 <p>Keys.</p>
+<pre><code class="language-go"><span class="kd">const</span> <span class="p">(</span>
+	<span class="nx">DefaultNear</span>  <span class="p">=</span> <span class="mf">0.05</span>
+	<span class="nx">DefaultFar</span>   <span class="p">=</span> <span class="mi">2000</span>
+	<span class="nx">DefaultFocus</span> <span class="p">=</span> <span class="mi">10</span> <span class="c1">// a room&#39;s depth: most scenes look at things about this far</span>
+<span class="p">)</span>
+</code></pre>
+
+<p>A camera&rsquo;s distances when its settings leave them at 0, in metres.</p>
+<pre><code class="language-go"><span class="kd">const</span> <span class="p">(</span>
+	<span class="nx">DesktopTarget</span>     <span class="p">=</span> <span class="s">&#34;desktop&#34;</span>
+	<span class="nx">Nintendo3DSTarget</span> <span class="p">=</span> <span class="s">&#34;nintendo3ds&#34;</span>
+	<span class="nx">AndroidTarget</span>     <span class="p">=</span> <span class="s">&#34;android&#34;</span>
+	<span class="nx">WebTarget</span>         <span class="p">=</span> <span class="s">&#34;web&#34;</span>
+<span class="p">)</span>
+</code></pre>
+
+<p>The targets&rsquo; names in engine.json.</p>
 <pre><code class="language-go"><span class="kd">const</span> <span class="nx">DefaultGravity</span> <span class="p">=</span> <span class="mf">9.81</span>
 </code></pre>
 
@@ -153,10 +276,26 @@ to its parent, in metres and degrees (see package space).</p>
 	<span class="nx">SpriteNotFound</span>        <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;engine.sprite-not-found&#34;</span><span class="p">,</span> <span class="s">&#34;the sprite&#39;s file does not exist&#34;</span><span class="p">)</span>
 	<span class="nx">TilesetNotFound</span>       <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;engine.tileset-not-found&#34;</span><span class="p">,</span> <span class="s">&#34;the tileset&#39;s file does not exist&#34;</span><span class="p">)</span>
 	<span class="nx">SceneNotRestartable</span>   <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;engine.scene-not-restartable&#34;</span><span class="p">,</span> <span class="s">&#34;the scene was not made from a description, so it cannot start again&#34;</span><span class="p">)</span>
+	<span class="nx">InputUnknown</span>          <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;engine.input-unknown&#34;</span><span class="p">,</span> <span class="s">&#34;an action is bound to an input the target does not have: see the words an action can be bound to&#34;</span><span class="p">)</span>
+	<span class="nx">BindingsNotSaved</span>      <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;engine.bindings-not-saved&#34;</span><span class="p">,</span> <span class="s">&#34;the actions the player changed could not be kept on this device&#34;</span><span class="p">)</span>
 <span class="p">)</span>
 </code></pre>
 
 <p>Error codes of the engine package.</p>
+<pre><code class="language-go"><span class="kd">var</span> <span class="nx">InputTargets</span> <span class="p">=</span> <span class="p">[]</span><span class="kt">string</span><span class="p">{</span><span class="nx">DesktopTarget</span><span class="p">,</span> <span class="nx">Nintendo3DSTarget</span><span class="p">,</span> <span class="nx">AndroidTarget</span><span class="p">,</span> <span class="nx">WebTarget</span><span class="p">}</span>
+</code></pre>
+
+<p>InputTargets are the targets an action can be bound on, in the order the editor shows them.</p>
+
+<h3 id="actionstate">ActionState</h3>
+
+<p>ActionState is an action this frame: held, pressed or let go, and its value
+from -1 to 1 (an axis&rsquo;s, or 1 while a button holds it).</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">ActionState</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">Down</span><span class="p">,</span> <span class="nx">Pressed</span><span class="p">,</span> <span class="nx">Released</span> <span class="kt">bool</span>
+	<span class="nx">Value</span>                   <span class="kt">float64</span>
+<span class="p">}</span>
+</code></pre>
 
 <h3 id="context">Context</h3>
 
@@ -214,6 +353,11 @@ to its parent, in metres and degrees (see package space).</p>
 
 <tbody>
 <tr>
+<td><code>func (keys *Input) Action(name string) ActionState</code></td>
+<td>Action is an action&rsquo;s state this frame; an action not bound is never held.</td>
+</tr>
+
+<tr>
 <td><code>func (keys *Input) Axis(negative, positive Key) float64</code></td>
 <td>Axis is -1 while the first key is held, 1 while the second is, 0 with neither or both.</td>
 </tr>
@@ -221,6 +365,16 @@ to its parent, in metres and degrees (see package space).</p>
 <tr>
 <td><code>func (keys *Input) Down(key Key) bool</code></td>
 <td>Down tells whether a key is held; Pressed whether it went down this frame.</td>
+</tr>
+
+<tr>
+<td><code>func (keys *Input) Gyroscope() Turn</code></td>
+<td>Gyroscope is how fast the device turns (a 3DS&rsquo;s gyroscope); still without one, or in an emulator.</td>
+</tr>
+
+<tr>
+<td><code>func (keys *Input) MouseMovement() (x, y float64)</code></td>
+<td>MouseMovement is how far the mouse moved since the last frame, in window pixels: it keeps counting while the pointer is captured (SetPointerCaptured).</td>
 </tr>
 
 <tr>
@@ -239,8 +393,51 @@ to its parent, in metres and degrees (see package space).</p>
 </tr>
 
 <tr>
+<td><code>func (keys *Input) Rebind(name string, words []string) []error</code></td>
+<td>Rebind changes an action&rsquo;s inputs on the target played to some words (as engine.json&rsquo;s), and remembers the change for SaveBindings.</td>
+</tr>
+
+<tr>
+<td><code>func (keys *Input) RightStick() (x, y float64)</code></td>
+<td>RightStick is the second stick (a New 3DS&rsquo;s C-stick, a game pad&rsquo;s right stick) from -1 to 1 on each axis, up positive; 0 without one.</td>
+</tr>
+
+<tr>
+<td><code>func (keys *Input) SecondScreenTouch() (x, y int, touching bool)</code></td>
+<td>SecondScreenTouch is where a finger or a stylus is on the second screen (a 3DS&rsquo;s bottom one, 320 × 240 pixels), and whether one is on it at all; never without a second screen.</td>
+</tr>
+
+<tr>
 <td><code>func (keys *Input) State() *input.State</code></td>
 <td>State is go-renderer&rsquo;s input, for what Input does not cover.</td>
+</tr>
+
+<tr>
+<td><code>func (keys *Input) Stick() (x, y float64)</code></td>
+<td>Stick is the main stick (a 3DS&rsquo;s circle pad, a game pad&rsquo;s left stick) from -1 to 1 on each axis, up positive.</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="inputchoice">InputChoice</h3>
+
+<p>InputChoice is a word an action can be bound with on a target, and its
+group.</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">InputChoice</span> <span class="kd">struct</span><span class="p">{</span> <span class="nx">Word</span><span class="p">,</span> <span class="nx">Group</span> <span class="kt">string</span> <span class="p">}</span>
+</code></pre>
+
+<table>
+<thead>
+<tr>
+<th>Function or method</th>
+<th></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>func InputChoices(target string) []InputChoice</code></td>
+<td>InputChoices are the words a target knows, group by group, each group in a reading order.</td>
 </tr>
 </tbody>
 </table>
@@ -294,6 +491,22 @@ playing, and how to play another.</p>
 	<span class="nx">File</span><span class="p">,</span> <span class="nx">Name</span> <span class="kt">string</span>
 <span class="p">}</span>
 </code></pre>
+
+<table>
+<thead>
+<tr>
+<th>Function or method</th>
+<th></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>func ScenesOf(files fs.FS) []MenuScene</code></td>
+<td>ScenesOf are the scenes in a project&rsquo;s files, in the order of their files, as the game&rsquo;s menu offers them.</td>
+</tr>
+</tbody>
+</table>
 
 <h3 id="node">Node</h3>
 
@@ -436,8 +649,18 @@ playing, and how to play another.</p>
 </tr>
 
 <tr>
+<td><code>func (node *Node) Mesh() (*scene.Mesh, bool)</code></td>
+<td>Mesh is the mesh the game&rsquo;s code gave the node, if any.</td>
+</tr>
+
+<tr>
 <td><code>func (node *Node) Model() string</code></td>
 <td>Model is the model the node shows, by its path in the project, or &ldquo;&rdquo;.</td>
+</tr>
+
+<tr>
+<td><code>func (node *Node) Moving() bool</code></td>
+<td>Moving tells whether the node is marked as moving every frame.</td>
 </tr>
 
 <tr>
@@ -486,8 +709,18 @@ playing, and how to play another.</p>
 </tr>
 
 <tr>
+<td><code>func (node *Node) SetMesh(mesh *scene.Mesh)</code></td>
+<td>SetMesh makes the node show a mesh the game&rsquo;s code built (a vehicle from its design), instead of its shape or model; another call replaces it, and nil goes back to the shape or model.</td>
+</tr>
+
+<tr>
 <td><code>func (node *Node) SetModel(path string) error</code></td>
 <td>SetModel makes the node show a model of the project&rsquo;s.</td>
+</tr>
+
+<tr>
+<td><code>func (node *Node) SetMoving(moving bool)</code></td>
+<td>SetMoving says the game moves or turns the node every frame.</td>
 </tr>
 
 <tr>
@@ -617,6 +850,11 @@ and what go-renderer draws of it.</p>
 </tr>
 
 <tr>
+<td><code>func (owner *Scene) Camera() models.Camera</code></td>
+<td>Camera is how the scene is seen: from its main camera, or from a little above when it has none.</td>
+</tr>
+
+<tr>
 <td><code>func (owner *Scene) CameraBounds(camera *Node) (space.Box, bool)</code></td>
 <td>CameraBounds is the box a camera&rsquo;s view stays inside while it follows: its own, or the tile maps&rsquo; together, with no top (an infinite one) unless the camera has a ceiling.</td>
 </tr>
@@ -679,6 +917,11 @@ and what go-renderer draws of it.</p>
 <tr>
 <td><code>func (owner *Scene) Picture(file string) (*draw2d.Image, error)</code></td>
 <td>Picture is a picture of the project&rsquo;s, read once: what the editor&rsquo;s Art workspace shows.</td>
+</tr>
+
+<tr>
+<td><code>func (owner *Scene) PlayFrame(seconds float64, keys *input.State)</code></td>
+<td>PlayFrame is a frame of the game&rsquo;s main scene: the calls asked for between frames and the frame hook run, then the scene moves on (Update).</td>
 </tr>
 
 <tr>
@@ -762,14 +1005,24 @@ and what go-renderer draws of it.</p>
 	<span class="c1">// CodeEditor is the command the editor opens the project&#39;s code with (&#34;code&#34;, &#34;zed&#34;, &#34;nvim&#34;…);</span>
 	<span class="c1">// empty tries $VISUAL, $EDITOR and the usual ones.</span>
 	<span class="nx">CodeEditor</span> <span class="kt">string</span> <span class="s">`json:&#34;codeEditor,omitempty&#34;`</span>
-	<span class="c1">// AndroidID is the game&#39;s application id on Android, as io.example.game; empty makes one from</span>
-	<span class="c1">// its name.</span>
-	<span class="nx">AndroidID</span> <span class="kt">string</span> <span class="s">`json:&#34;androidId,omitempty&#34;`</span>
-	<span class="c1">// ConsoleAddress is the 3DS&#39;s address on the network, to send the game to; empty looks for it.</span>
-	<span class="nx">ConsoleAddress</span> <span class="kt">string</span> <span class="s">`json:&#34;consoleAddress,omitempty&#34;`</span>
-	<span class="c1">// SceneMenu lists the game&#39;s scenes on the Nintendo 3DS&#39;s bottom screen, to play any of them</span>
+	<span class="c1">// ApplicationID is the game&#39;s application id, as io.example.game, which each target turns into</span>
+	<span class="c1">// what it needs (Android&#39;s package); empty makes one from its name.</span>
+	<span class="nx">ApplicationID</span> <span class="kt">string</span> <span class="s">`json:&#34;applicationId,omitempty&#34;`</span>
+	<span class="c1">// DeviceAddress is the address on the network of the device the game is sent to (a 3DS&#39;s);</span>
+	<span class="c1">// empty looks for it.</span>
+	<span class="nx">DeviceAddress</span> <span class="kt">string</span> <span class="s">`json:&#34;deviceAddress,omitempty&#34;`</span>
+	<span class="c1">// SceneMenu lists the game&#39;s scenes on a device&#39;s second screen (a 3DS&#39;s), to play any of them</span>
 	<span class="c1">// with a touch: a level select.</span>
 	<span class="nx">SceneMenu</span> <span class="kt">bool</span> <span class="s">`json:&#34;sceneMenu,omitempty&#34;`</span>
+	<span class="c1">// KeepStart gives a device&#39;s start button to the game (a pause, read as ButtonStart) instead of</span>
+	<span class="c1">// ending it, where the start button ends games (a 3DS&#39;s START; its HOME menu still ends it).</span>
+	<span class="nx">KeepStart</span> <span class="kt">bool</span> <span class="s">`json:&#34;keepStart,omitempty&#34;`</span>
+	<span class="c1">// Actions are what the player does, by name, each bound to inputs per target: &#34;fire&#34;:</span>
+	<span class="c1">// {&#34;desktop&#34;: [&#34;Space&#34;, &#34;Pad A&#34;], &#34;nintendo3ds&#34;: [&#34;A&#34;]} (Input.Action, inputwords.go).</span>
+	<span class="nx">Actions</span> <span class="kd">map</span><span class="p">[</span><span class="kt">string</span><span class="p">]</span><span class="kd">map</span><span class="p">[</span><span class="kt">string</span><span class="p">][]</span><span class="kt">string</span> <span class="s">`json:&#34;actions,omitempty&#34;`</span>
+	<span class="c1">// TouchControls are the sticks and buttons drawn on a touch screen (a phone&#39;s), as the editor</span>
+	<span class="c1">// places them; none keeps the engine&#39;s four touch buttons (touchcontrols.go).</span>
+	<span class="nx">TouchControls</span> <span class="p">[]</span><span class="nx">TouchControl</span> <span class="s">`json:&#34;touchControls,omitempty&#34;`</span>
 <span class="p">}</span>
 </code></pre>
 
@@ -785,6 +1038,11 @@ and what go-renderer draws of it.</p>
 <tr>
 <td><code>func ReadSettings(files fs.FS) (Settings, error)</code></td>
 <td>ReadSettings reads a project&rsquo;s settings.</td>
+</tr>
+
+<tr>
+<td><code>func (settings *Settings) UnmarshalJSON(data []byte) error</code></td>
+<td>UnmarshalJSON reads settings, taking the old names of two of them when the new ones are missing.</td>
 </tr>
 </tbody>
 </table>
@@ -806,6 +1064,34 @@ their JSON names). It does what it does through the methods it has:</p>
 <pre><code class="language-go"><span class="kd">type</span> <span class="nx">Starter</span> <span class="kd">interface</span><span class="p">{</span> <span class="nf">Start</span><span class="p">(</span><span class="nx">context</span> <span class="o">*</span><span class="nx">Context</span><span class="p">)</span> <span class="p">}</span>
 </code></pre>
 
+<h3 id="touchcontrol">TouchControl</h3>
+
+<p>TouchControl is a stick or a button drawn on a touch screen: its name,
+what it is, where its centre sits (X across the screen and Y down it,
+from 0 to 1) and its size (its width, as a share of the screen&rsquo;s height,
+the shorter side of a phone held sideways).</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">TouchControl</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">Name</span> <span class="kt">string</span>    <span class="s">`json:&#34;name&#34;`</span>
+	<span class="nx">Kind</span> <span class="nx">TouchKind</span> <span class="s">`json:&#34;kind&#34;`</span>
+	<span class="nx">X</span>    <span class="kt">float32</span>   <span class="s">`json:&#34;x&#34;`</span>
+	<span class="nx">Y</span>    <span class="kt">float32</span>   <span class="s">`json:&#34;y&#34;`</span>
+	<span class="nx">Size</span> <span class="kt">float32</span>   <span class="s">`json:&#34;size&#34;`</span>
+<span class="p">}</span>
+</code></pre>
+
+<h3 id="touchkind">TouchKind</h3>
+
+<p>TouchKind is what a touch control is.</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">TouchKind</span> <span class="kt">string</span>
+</code></pre>
+<pre><code class="language-go"><span class="kd">const</span> <span class="p">(</span>
+	<span class="nx">TouchButton</span> <span class="nx">TouchKind</span> <span class="p">=</span> <span class="s">&#34;button&#34;</span> <span class="c1">// pressed while a finger is on it</span>
+	<span class="nx">TouchStick</span>  <span class="nx">TouchKind</span> <span class="p">=</span> <span class="s">&#34;stick&#34;</span>  <span class="c1">// moves two axes as a finger drags it</span>
+<span class="p">)</span>
+</code></pre>
+
+<p>The kinds of touch control.</p>
+
 <h3 id="toucher">Toucher</h3>
 
 <p>Toucher is a behaviour that hears when its node&rsquo;s body begins touching
@@ -814,6 +1100,13 @@ behaviours hear it, each with the other node.</p>
 <pre><code class="language-go"><span class="kd">type</span> <span class="nx">Toucher</span> <span class="kd">interface</span> <span class="p">{</span>
 	<span class="nf">Touched</span><span class="p">(</span><span class="nx">context</span> <span class="o">*</span><span class="nx">Context</span><span class="p">,</span> <span class="nx">other</span> <span class="o">*</span><span class="nx">Node</span><span class="p">)</span>
 <span class="p">}</span>
+</code></pre>
+
+<h3 id="turn">Turn</h3>
+
+<p>Turn is how fast a device turns, in degrees a second: about the axis across
+its screen (Pitch), up through it (Yaw) and out of it (Roll).</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">Turn</span> <span class="kd">struct</span><span class="p">{</span> <span class="nx">Roll</span><span class="p">,</span> <span class="nx">Pitch</span><span class="p">,</span> <span class="nx">Yaw</span> <span class="kt">float64</span> <span class="p">}</span>
 </code></pre>
 
 <h3 id="updater">Updater</h3>

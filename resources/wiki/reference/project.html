@@ -44,23 +44,33 @@ and <code>go run .</code> plays it.</p>
 </code></pre>
 
 <p>LatestEngine is the branch go-engine&rsquo;s latest version is taken from.</p>
+<pre><code class="language-go"><span class="kd">const</span> <span class="nx">ReleaseWorkflowFile</span> <span class="p">=</span> <span class="s">&#34;.github/workflows/release.yml&#34;</span>
+</code></pre>
+
+<p>ReleaseWorkflowFile is where the workflow goes in the game&rsquo;s folder.</p>
 <pre><code class="language-go"><span class="kd">var</span> <span class="p">(</span>
-	<span class="nx">NotAProject</span>        <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;project.not-a-project&#34;</span><span class="p">,</span> <span class="s">&#34;the folder is not a go-engine project; make one with: go-engine new &lt;folder&gt;&#34;</span><span class="p">)</span>
-	<span class="nx">FolderNotEmpty</span>     <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;project.folder-not-empty&#34;</span><span class="p">,</span> <span class="s">&#34;a new project needs an empty folder&#34;</span><span class="p">)</span>
-	<span class="nx">SceneExists</span>        <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;project.scene-exists&#34;</span><span class="p">,</span> <span class="s">&#34;a scene of that name exists already&#34;</span><span class="p">)</span>
-	<span class="nx">ImportFormat</span>       <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;project.import-format&#34;</span><span class="p">,</span> <span class="s">&#34;only .glb models can be imported for now (export glTF as binary .glb)&#34;</span><span class="p">)</span>
-	<span class="nx">ImportFailed</span>       <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;project.import-failed&#34;</span><span class="p">,</span> <span class="s">&#34;the file could not be copied into the project&#34;</span><span class="p">)</span>
-	<span class="nx">CodeEditorNotFound</span> <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;project.code-editor-not-found&#34;</span><span class="p">,</span> <span class="s">&#34;no code editor found: set codeEditor in engine.json (\&#34;code\&#34;, \&#34;zed\&#34;, \&#34;nvim\&#34;…) or $VISUAL&#34;</span><span class="p">)</span>
-	<span class="nx">TerminalNotFound</span>   <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;project.terminal-not-found&#34;</span><span class="p">,</span> <span class="s">&#34;the code editor runs in a terminal, and no terminal was found&#34;</span><span class="p">)</span>
-	<span class="nx">SettingsNotSaved</span>   <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;project.settings-not-saved&#34;</span><span class="p">,</span> <span class="s">&#34;engine.json could not be written&#34;</span><span class="p">)</span>
-	<span class="nx">ApplicationIDWrong</span> <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;project.application-id-wrong&#34;</span><span class="p">,</span> <span class="s">&#34;an Android application id is two words or more joined by dots, each starting with a letter, as io.example.game&#34;</span><span class="p">)</span>
-	<span class="nx">EngineNotRead</span>      <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;project.engine-not-read&#34;</span><span class="p">,</span> <span class="s">&#34;the version of go-engine the project requires could not be read from its go.mod&#34;</span><span class="p">)</span>
-	<span class="nx">EngineNotUpdated</span>   <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;project.engine-not-updated&#34;</span><span class="p">,</span> <span class="s">&#34;go-engine could not be updated: check the network, and that the version exists&#34;</span><span class="p">)</span>
-	<span class="nx">NoAndroidDevice</span>    <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;project.no-android-device&#34;</span><span class="p">,</span> <span class="s">&#34;adb sees no Android device: plug a phone in with USB debugging on, or start the emulator&#34;</span><span class="p">)</span>
+	<span class="nx">NotAProject</span>                 <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;project.not-a-project&#34;</span><span class="p">,</span> <span class="s">&#34;the folder is not a go-engine project; make one with: go-engine new &lt;folder&gt;&#34;</span><span class="p">)</span>
+	<span class="nx">FolderNotEmpty</span>              <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;project.folder-not-empty&#34;</span><span class="p">,</span> <span class="s">&#34;a new project needs an empty folder&#34;</span><span class="p">)</span>
+	<span class="nx">SceneExists</span>                 <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;project.scene-exists&#34;</span><span class="p">,</span> <span class="s">&#34;a scene of that name exists already&#34;</span><span class="p">)</span>
+	<span class="nx">ImportFormat</span>                <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;project.import-format&#34;</span><span class="p">,</span> <span class="s">&#34;only .glb models can be imported for now (export glTF as binary .glb)&#34;</span><span class="p">)</span>
+	<span class="nx">ImportFailed</span>                <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;project.import-failed&#34;</span><span class="p">,</span> <span class="s">&#34;the file could not be copied into the project&#34;</span><span class="p">)</span>
+	<span class="nx">CodeEditorNotFound</span>          <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;project.code-editor-not-found&#34;</span><span class="p">,</span> <span class="s">&#34;no code editor found: set codeEditor in engine.json (\&#34;code\&#34;, \&#34;zed\&#34;, \&#34;nvim\&#34;…) or $VISUAL&#34;</span><span class="p">)</span>
+	<span class="nx">TerminalNotFound</span>            <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;project.terminal-not-found&#34;</span><span class="p">,</span> <span class="s">&#34;the code editor runs in a terminal, and no terminal was found&#34;</span><span class="p">)</span>
+	<span class="nx">SettingsNotSaved</span>            <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;project.settings-not-saved&#34;</span><span class="p">,</span> <span class="s">&#34;engine.json could not be written&#34;</span><span class="p">)</span>
+	<span class="nx">ApplicationIDWrong</span>          <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;project.application-id-wrong&#34;</span><span class="p">,</span> <span class="s">&#34;an application id is two words or more joined by dots, each starting with a letter, as io.example.game&#34;</span><span class="p">)</span>
+	<span class="nx">TargetCannot</span>                <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;project.target-cannot&#34;</span><span class="p">,</span> <span class="s">&#34;the target cannot do that&#34;</span><span class="p">)</span>
+	<span class="nx">EngineNotRead</span>               <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;project.engine-not-read&#34;</span><span class="p">,</span> <span class="s">&#34;the version of go-engine the project requires could not be read from its go.mod&#34;</span><span class="p">)</span>
+	<span class="nx">ReleaseNeedsPublishedEngine</span> <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;project.release-needs-published-engine&#34;</span><span class="p">,</span> <span class="s">&#34;the game&#39;s go.mod uses go-engine from a folder of this computer, which GitHub&#39;s machines do not have: update it first (go-engine -update)&#34;</span><span class="p">)</span>
+	<span class="nx">EngineNotUpdated</span>            <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;project.engine-not-updated&#34;</span><span class="p">,</span> <span class="s">&#34;go-engine could not be updated: check the network, and that the version exists&#34;</span><span class="p">)</span>
+	<span class="nx">NoAndroidDevice</span>             <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;project.no-android-device&#34;</span><span class="p">,</span> <span class="s">&#34;adb sees no Android device: plug a phone in with USB debugging on, or start the emulator&#34;</span><span class="p">)</span>
 <span class="p">)</span>
 </code></pre>
 
 <p>Error codes of the project package.</p>
+<pre><code class="language-go"><span class="kd">var</span> <span class="nx">Targets</span> <span class="p">=</span> <span class="p">[]</span><span class="nx">Target</span><span class="p">{</span><span class="nx">Desktop</span><span class="p">,</span> <span class="nx">Nintendo3DS</span><span class="p">,</span> <span class="nx">Android</span><span class="p">}</span>
+</code></pre>
+
+<p>Targets are every target, in the order the editor shows them.</p>
 
 <h3 id="assetentry">AssetEntry</h3>
 
@@ -167,13 +177,8 @@ of the methods the engine calls (behaviourMethods), as the editor offers it.</p>
 </tr>
 
 <tr>
-<td><code>func (project *Project) AndroidPackage() string</code></td>
-<td>AndroidPackage is where the Android package goes.</td>
-</tr>
-
-<tr>
 <td><code>func (project *Project) ApplicationID() string</code></td>
-<td>ApplicationID is the game&rsquo;s name on Android, as io.example.game: the settings&rsquo; AndroidID, or one made from the game&rsquo;s name.</td>
+<td>ApplicationID is the game&rsquo;s application id, as io.example.game, which each target turns into what it needs (Android&rsquo;s package name): the settings&rsquo; ApplicationID, or one made from its name.</td>
 </tr>
 
 <tr>
@@ -192,18 +197,8 @@ of the methods the engine calls (behaviourMethods), as the editor offers it.</p>
 </tr>
 
 <tr>
-<td><code>func (project *Project) Build3DS() (Built, error)</code></td>
-<td>Build3DS builds the game for the Nintendo 3DS into build/, with TinyGo.</td>
-</tr>
-
-<tr>
-<td><code>func (project *Project) BuildAndroid() (Built, error)</code></td>
-<td>BuildAndroid builds the game for Android into build/, a package signed for trying (not for a store), without the editor.</td>
-</tr>
-
-<tr>
-<td><code>func (project *Project) BuildDesktop() (Built, error)</code></td>
-<td>BuildDesktop builds the game for this computer into build/.</td>
+<td><code>func (project *Project) Build(target Target) (Built, error)</code></td>
+<td>Build builds the game for a target into build/: a program, a .3dsx, an .apk.</td>
 </tr>
 
 <tr>
@@ -219,11 +214,6 @@ of the methods the engine calls (behaviourMethods), as the editor offers it.</p>
 <tr>
 <td><code>func (project *Project) EditorProgram() string</code></td>
 <td>EditorProgram is where the game built with the editor in it goes.</td>
-</tr>
-
-<tr>
-<td><code>func (project *Project) EmulatorCommand() (*exec.Cmd, error)</code></td>
-<td>EmulatorCommand builds the game for the 3DS and returns the command that opens it in an emulator (Azahar, or Citra), not started: the editor shows what it prints and can stop it.</td>
 </tr>
 
 <tr>
@@ -272,13 +262,13 @@ of the methods the engine calls (behaviourMethods), as the editor offers it.</p>
 </tr>
 
 <tr>
-<td><code>func (project *Project) PlayCommand() (*exec.Cmd, error)</code></td>
-<td>PlayCommand builds the game for this computer, as BuildDesktop does, and returns the command that runs it from the project&rsquo;s folder, not started: the editor shows its output and can stop it (a program started through go run would outlive its stopping).</td>
+<td><code>func (project *Project) PlayInEmulator(target Target) (*exec.Cmd, error)</code></td>
+<td>PlayInEmulator builds the game for a target and returns the command that opens it in an emulator of the target, not started.</td>
 </tr>
 
 <tr>
-<td><code>func (project *Project) PlayOnAndroid() (*exec.Cmd, error)</code></td>
-<td>PlayOnAndroid builds the game for Android, installs it on the first device adb sees (a phone plugged in, or the emulator) and starts it.</td>
+<td><code>func (project *Project) PlayOn(target Target) (*exec.Cmd, error)</code></td>
+<td>PlayOn builds the game for a target and plays it there: in a window on this computer, sent to a 3DS&rsquo;s Homebrew Launcher, installed and started on the Android device adb sees.</td>
 </tr>
 
 <tr>
@@ -297,13 +287,8 @@ of the methods the engine calls (behaviourMethods), as the editor offers it.</p>
 </tr>
 
 <tr>
-<td><code>func (project *Project) SendTo3DS() error</code></td>
-<td>SendTo3DS builds the game for the 3DS and sends it to the console&rsquo;s Homebrew Launcher, which starts it.</td>
-</tr>
-
-<tr>
-<td><code>func (project *Project) StopOnAndroid() error</code></td>
-<td>StopOnAndroid stops the game on the first device adb sees.</td>
+<td><code>func (project *Project) StopOn(target Target) error</code></td>
+<td>StopOn stops the game where PlayOn played it, when stopping its command is not enough: on an Android device, where the game goes on after its log is closed.</td>
 </tr>
 
 <tr>
@@ -322,8 +307,44 @@ of the methods the engine calls (behaviourMethods), as the editor offers it.</p>
 </tr>
 
 <tr>
+<td><code>func (project *Project) WriteReleaseWorkflow() (string, error)</code></td>
+<td>WriteReleaseWorkflow writes the workflow that builds the game for Windows, macOS and Linux on each version tag (v1.0.0), and the notices it attaches.</td>
+</tr>
+
+<tr>
 <td><code>func (project *Project) WriteScene(file string, scene *scenefile.Scene) error</code></td>
 <td>WriteScene writes a scene file of the project.</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="target">Target</h3>
+
+<p>Target is a place a game runs.</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">Target</span> <span class="kt">int</span>
+</code></pre>
+<pre><code class="language-go"><span class="kd">const</span> <span class="p">(</span>
+	<span class="c1">// Desktop is this computer.</span>
+	<span class="nx">Desktop</span> <span class="nx">Target</span> <span class="p">=</span> <span class="kc">iota</span>
+	<span class="c1">// Nintendo3DS is the Nintendo 3DS, through the Homebrew Launcher.</span>
+	<span class="nx">Nintendo3DS</span>
+	<span class="c1">// Android is a phone or a tablet with Android.</span>
+	<span class="nx">Android</span>
+<span class="p">)</span>
+</code></pre>
+
+<table>
+<thead>
+<tr>
+<th>Function or method</th>
+<th></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>func (target Target) String() string</code></td>
+<td>String is the target&rsquo;s name, or &ldquo;an unknown target&rdquo; for a number that is none.</td>
 </tr>
 </tbody>
 </table>

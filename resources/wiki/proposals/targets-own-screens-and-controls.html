@@ -1,0 +1,229 @@
+<h1 id="11-each-target-s-own-screens-and-controls">11. Each target&rsquo;s own screens and controls</h1>
+
+<blockquote>
+<p>Status: building · Author&rsquo;s approval: proposal ☑ (2026-10-21, &ldquo;dale&rdquo;) plan ☑ (2026-10-21, &ldquo;si&rdquo;) · Controls redesign and R8 ☑ (2026-10-21, &ldquo;implementalo&rdquo;, &ldquo;si añade trazos&rdquo;)</p>
+</blockquote>
+
+<h2 id="why">Why</h2>
+
+<p>A game made for several devices lays out its interface and reads its controls differently on
+each, and today it has to do that by hand:</p>
+
+<ul>
+<li>pairs of files split by build tags (<code>controls.go</code> and <code>controls_nintendo3ds.go</code>);</li>
+<li>constants such as &ldquo;has a touch screen&rdquo;;</li>
+<li>on the desktop, a picture of the 3DS&rsquo;s touch screen pasted into the middle of the window, with
+mouse clicks turned into touches.</li>
+</ul>
+
+<p>That is one device&rsquo;s layout imposed on another. A game should say <em>what</em> it shows and <em>what</em> the
+player does, and each target should say <em>where</em> and <em>with which buttons</em>.</p>
+
+<h2 id="what">What</h2>
+
+<table>
+<thead>
+<tr>
+<th>Id</th>
+<th>Requirement</th>
+<th>Check</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>R1</td>
+<td>A game reads <strong>actions</strong> by name (<code>Input.Action(&quot;menu&quot;).Pressed</code>, <code>Input.Action(&quot;turn&quot;).Value</code>), with no build tags; engine.json binds each action to inputs per target (keys, mouse buttons, a pad&rsquo;s buttons and sticks, a 3DS&rsquo;s buttons, Android&rsquo;s back)</td>
+<td>tests of each kind of binding with a made-up input; a sample game with no per-target file</td>
+</tr>
+
+<tr>
+<td>R2</td>
+<td>The editor shows and edits the bindings, per target</td>
+<td>capture of the bindings in the editor; a binding changed there reaches the game</td>
+</tr>
+
+<tr>
+<td>R3</td>
+<td>A game can let the player rebind an action while it plays, and keep it on the device</td>
+<td>test <code>a binding changed while playing is kept and read back</code></td>
+</tr>
+
+<tr>
+<td>R4</td>
+<td>A game paints named <strong>surfaces</strong> (<code>&quot;main&quot;</code>, <code>&quot;panel&quot;</code>, <code>&quot;map&quot;</code>…) with go-ui or draw2d, and each target places them: on a 3DS, some on the second screen and touchable; on a computer, in a corner or as a floating window opened and closed, with the mouse as the pointer; on Android, as a bottom sheet</td>
+<td>captures of one sample on each target; the second screen becomes one way a target places a surface</td>
+</tr>
+
+<tr>
+<td>R5</td>
+<td>The editor&rsquo;s Play previews each target&rsquo;s layout (today&rsquo;s <code>-3ds</code> view, made general)</td>
+<td>captures in the editor for each target</td>
+</tr>
+
+<tr>
+<td>R6</td>
+<td>On a computer and on the web, a game starts windowed or fullscreen as engine.json says per target, and toggles it (<code>engine.SetFullscreen</code>, <code>engine.Fullscreen()</code>); a default action (F11, Alt+Enter) does it. On the web it waits for the next click or key, as browsers ask</td>
+<td>test of the setting; by hand on a desktop and in a browser</td>
+</tr>
+
+<tr>
+<td>R8</td>
+<td>On a phone the game shows sticks and buttons of its own, designed in the editor (where, how big, named) and bound to actions; with none, the engine&rsquo;s four buttons stay</td>
+<td>tests of placing and reading them; test <code>a touch control's actions follow its name and go with it</code></td>
+</tr>
+
+<tr>
+<td>R7</td>
+<td>What exists keeps working: <code>SetInterface</code>, <code>SetSecondScreen</code> and the keys a game reads today</td>
+<td>the platformer and lighthouse samples unchanged</td>
+</tr>
+</tbody>
+</table>
+
+<h2 id="out-of-scope">Out of scope</h2>
+
+<ul>
+<li>Touch gestures beyond the pointer (swipes, pinches) as actions.</li>
+<li>A full settings menu for players; the engine gives what one needs (R3), not the menu.</li>
+<li>Consoles other than the 3DS: the design makes room for them.</li>
+</ul>
+
+<h2 id="design">Design</h2>
+
+<h3 id="targets-at-run-time">Targets at run time</h3>
+
+<p>The engine knows which target it runs on (a constant per build: <code>desktop</code>, <code>nintendo3ds</code>,
+<code>android</code>, <code>web</code>), named as engine.json names them. <code>project.Target</code> gains <code>Web</code>&rsquo;s name for the
+settings, though building for the web stays out of this change.</p>
+
+<h3 id="actions-r1-r3">Actions (R1–R3)</h3>
+
+<p>engine.json gains <code>actions</code>. Each action lists, per target, the inputs that press it, as words a
+person can read and type:</p>
+<pre><code class="language-json"><span class="s2">&#34;actions&#34;</span><span class="err">:</span> <span class="p">{</span>
+  <span class="nt">&#34;menu&#34;</span><span class="p">:</span> <span class="p">{</span><span class="nt">&#34;desktop&#34;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&#34;Tab&#34;</span><span class="p">,</span> <span class="s2">&#34;P&#34;</span><span class="p">,</span> <span class="s2">&#34;Pad Start&#34;</span><span class="p">],</span> <span class="nt">&#34;nintendo3ds&#34;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&#34;Start&#34;</span><span class="p">],</span> <span class="nt">&#34;android&#34;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&#34;Back&#34;</span><span class="p">]},</span>
+  <span class="nt">&#34;fire&#34;</span><span class="p">:</span> <span class="p">{</span><span class="nt">&#34;desktop&#34;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&#34;Space&#34;</span><span class="p">,</span> <span class="s2">&#34;Mouse Left&#34;</span><span class="p">,</span> <span class="s2">&#34;Pad A&#34;</span><span class="p">],</span> <span class="nt">&#34;nintendo3ds&#34;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&#34;R&#34;</span><span class="p">,</span> <span class="s2">&#34;A&#34;</span><span class="p">]},</span>
+  <span class="nt">&#34;turn&#34;</span><span class="p">:</span> <span class="p">{</span><span class="nt">&#34;desktop&#34;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&#34;A-&#34;</span><span class="p">,</span> <span class="s2">&#34;D+&#34;</span><span class="p">,</span> <span class="s2">&#34;Left-&#34;</span><span class="p">,</span> <span class="s2">&#34;Right+&#34;</span><span class="p">,</span> <span class="s2">&#34;Stick X&#34;</span><span class="p">],</span> <span class="nt">&#34;nintendo3ds&#34;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&#34;Circle X&#34;</span><span class="p">,</span> <span class="s2">&#34;Left-&#34;</span><span class="p">,</span> <span class="s2">&#34;Right+&#34;</span><span class="p">]}</span>
+<span class="p">}</span>
+</code></pre>
+
+<ul>
+<li>A <strong>button</strong> input presses the action: a key, a mouse button, a pad&rsquo;s button, a 3DS&rsquo;s button,
+Android&rsquo;s back.</li>
+<li>An <strong>axis</strong> input moves it from -1 to 1: a stick&rsquo;s axis, or a button with <code>-</code> or <code>+</code> after it.</li>
+<li><code>Input.Action(name)</code> gives the action&rsquo;s state this frame: <code>Down</code>, <code>Pressed</code>, <code>Released</code> and its
+<code>Value</code> (-1 to 1; 1 while a button holds it). One call, one value returned: Go has no
+overloading, so <code>Input.Down</code> keeps taking keys, which games read today (R7).</li>
+<li>The bindings are read once into a table of the engine (<code>engine/actions.go</code>), so reading an
+action each frame is a map lookup and some booleans, with nothing allocated.</li>
+<li><strong>Rebinding</strong> (R3): <code>Input.Rebind(action, inputs)</code> changes the current target&rsquo;s inputs, and
+<code>engine.SaveBindings</code> keeps them in the user&rsquo;s configuration folder (on a 3DS, on the SD card).
+The game&rsquo;s own engine.json stays as its author wrote it.</li>
+<li><strong>The editor</strong> (R2): a workspace of its own, Controls, designed with the author in a canvas
+before it was built. The actions are cards on the left, each in a soft colour of its own, with
+buttons to rename it, switch its kind and remove it, and chips for the controls that do it. The
+device is drawn in the middle in thin grey lines, as Lucide draws icons, at its real
+proportions, in tabs: Gamepad, Keyboard and mouse (both kept for <code>desktop</code> and <code>web</code>),
+Nintendo 3DS and Mobile (<code>android</code>). A control that does an action takes its colour and names
+it at the drawing&rsquo;s edge with a dotted line. Clicking one opens a panel beside it: a field to
+find or create an action, and the actions it can do, one chosen (a button presses; a stick&rsquo;s
+two axes each move one). Every change is saved in engine.json at once, and Ctrl+Z undoes it
+in this workspace.</li>
+<li><strong>Strokes</strong> (Go Renderer): the drawings&rsquo; curves need lines, which draw2d did not have.
+<code>draw2d.Path</code> and <code>List.Stroke</code> draw a path into a smoothed mask kept in the path, shown as a
+tinted picture, so every backend that draws pictures draws strokes.</li>
+<li><strong>Touch controls</strong> (R8): engine.json&rsquo;s <code>touchControls</code> lists sticks and buttons, each placed
+and sized as shares of the screen. On Android the game draws them over its view and reads the
+fingers on them; actions bind them as <code>Touch &lt;name&gt;</code>, and a stick as <code>Touch &lt;name&gt; X</code> and
+<code>Y</code>. The Mobile tab&rsquo;s Layout designs them: add, drag, resize, rename, remove.</li>
+</ul>
+
+<h3 id="surfaces-r4-r5">Surfaces (R4, R5)</h3>
+
+<p><code>engine.SetSurface(name, paint func(context *ui.Context))</code> names what the game shows. engine.json&rsquo;s
+<code>surfaces</code> says, per target, where each goes:</p>
+
+<table>
+<thead>
+<tr>
+<th>Place</th>
+<th>What it is</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>over</code></td>
+<td>over the game&rsquo;s view, aligned to an edge or a corner, with a size</td>
+</tr>
+
+<tr>
+<td><code>window</code></td>
+<td>a floating window over the view, opened and closed by an action</td>
+</tr>
+
+<tr>
+<td><code>second-screen</code></td>
+<td>the second screen (a 3DS&rsquo;s), touchable; several share it in a column</td>
+</tr>
+
+<tr>
+<td><code>sheet</code></td>
+<td>a sheet from the bottom (Android), opened and closed by an action</td>
+</tr>
+
+<tr>
+<td><code>none</code></td>
+<td>not shown on that target</td>
+</tr>
+</tbody>
+</table>
+<p>The engine lays each surface out with what Go UI has (<code>Within</code>, <code>Overlay</code>, <code>PanelWith</code>, <code>Sheet</code>).
+<code>SetInterface</code> becomes the surface <code>interface</code>, placed on the second screen on the 3DS and over the
+view elsewhere, as today (R7). <code>SetSecondScreen</code>&rsquo;s 3D scene stays as it is. The editor&rsquo;s Play gains
+a target to preview beside the shapes it has (R5): each target&rsquo;s places for its surfaces.</p>
+
+<h3 id="fullscreen-r6">Fullscreen (R6)</h3>
+
+<ul>
+<li><strong>Go Renderer</strong>: <code>input.State.SetFullscreen</code> and <code>Fullscreen</code>, requested like the captured
+pointer and applied by the window loop with GLFW (<code>SetMonitor</code>, back to the window&rsquo;s last place
+and size). The browser loop calls the Fullscreen API on the next key or click. The function keys
+F1 to F12, and a game pad&rsquo;s buttons, join <code>input.Key</code> and the state.</li>
+<li><strong>Go UI</strong>: a scene&rsquo;s request reaches the window, as its captured pointer does.</li>
+<li><strong>go-engine</strong>: <code>engine.SetFullscreen(bool)</code> and <code>engine.Fullscreen()</code>; engine.json&rsquo;s <code>window</code>
+(<code>windowed</code> or <code>fullscreen</code>) per target; an action <code>fullscreen</code>, bound to F11 and Alt+Enter on
+the desktop unless the game binds it otherwise.</li>
+</ul>
+
+<h3 id="alternatives-not-taken">Alternatives not taken</h3>
+
+<ul>
+<li>Bindings in code: engine.json lets the editor show them and a player change them without a
+build.</li>
+<li>One layout file per target: a table per surface keeps a surface&rsquo;s places side by side.</li>
+</ul>
+
+<h2 id="tasks">Tasks</h2>
+
+<ul>
+<li>[x] T1 — Go Renderer: function keys, a pad&rsquo;s buttons in <code>input.State</code>, read from GLFW · R1 · tests of the mapping</li>
+<li>[x] T2 — the target at run time · engine · R1, R4 · test per build</li>
+<li>[x] T3 — actions: engine.json&rsquo;s <code>actions</code>, the inputs&rsquo; words, the table, <code>Input.Action(name)</code> · engine/actions.go · R1 · tests of each kind of input, and <code>reading an action allocates nothing</code></li>
+<li>[x] T4 — rebinding and keeping it, among Go UI&rsquo;s window preferences (a 3DS cannot keep them yet: a change there lasts the run) · R3 · test <code>a binding changed while playing is kept and read back</code></li>
+<li>[x] T5 — the editor&rsquo;s Controls workspace, each target&rsquo;s device drawn · editor · R2 · tests of toggling a button&rsquo;s actions and catching an input; captures of the 3DS, the phone and the computer</li>
+<li>[x] T5b — strokes in Go Renderer&rsquo;s draw2d · go-renderer feature/strokes · R2 · tests of covering a line, keeping the mask, allocating nothing</li>
+<li>[x] T5c — touch controls: engine.json&rsquo;s <code>touchControls</code>, drawn and read on Android, bound as words · engine · R8 · tests of placing, pressing, dragging a stick, allocating nothing</li>
+<li>[x] T5d — the Controls workspace redesigned: tabs per device, line drawings, action cards, the panel beside a control, autosave and its own undo, the phone&rsquo;s layout designer · editor · R2, R8 · tests of assigning, renaming, undoing, saving, the layout; captures of the four tabs</li>
+<li>[ ] T6 — surfaces: <code>SetSurface</code>, engine.json&rsquo;s <code>surfaces</code>, the five places on the desktop and the 3DS · engine · R4 · captures in the editor and Azahar</li>
+<li>[ ] T7 — <code>sheet</code> on Android, and <code>SetInterface</code> as the <code>interface</code> surface · R4, R7 · test; the samples unchanged</li>
+<li>[ ] T8 — the editor previews each target&rsquo;s surfaces · editor · R5 · captures</li>
+<li>[ ] T9 — fullscreen in Go Renderer (desktop and web) and Go UI · R6 · test of the request; by hand</li>
+<li>[ ] T10 — <code>SetFullscreen</code>, <code>window</code> per target, the <code>fullscreen</code> action · engine · R6 · tests</li>
+<li>[ ] T11 — a sample game with actions and surfaces and no per-target file; docs: a guide to actions and surfaces · examples, docs · R1, R4 · captures on the desktop and in Azahar</li>
+</ul>
+
+<h2 id="result">Result</h2>
+
+<p>Not built yet.</p>

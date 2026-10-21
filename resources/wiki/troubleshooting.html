@@ -76,11 +76,6 @@ hides the console, set its address in <strong>Project → Settings</strong>.</p>
 </tr>
 
 <tr>
-<td><code>build.console-emulator-not-found</code></td>
-<td>no 3DS emulator found (azahar, lime3ds, citra-qt or citra): install it or set its place in Build&rsquo;s tools, or put one on the path</td>
-</tr>
-
-<tr>
 <td><code>build.devkitpro-incomplete</code></td>
 <td>devkitPro lacks parts of the 3DS&rsquo;s: install its 3ds-dev packages (Install runs devkitPro&rsquo;s installer)</td>
 </tr>
@@ -96,6 +91,11 @@ hides the console, set its address in <strong>Project → Settings</strong>.</p>
 </tr>
 
 <tr>
+<td><code>build.nintendo3ds-emulator-not-found</code></td>
+<td>no 3DS emulator found (azahar, lime3ds, citra-qt or citra): install it or set its place in Build&rsquo;s tools, or put one on the path</td>
+</tr>
+
+<tr>
 <td><code>build.source-not-found</code></td>
 <td>go-engine&rsquo;s source, which programs build against, is not where the editor was built</td>
 </tr>
@@ -106,7 +106,7 @@ hides the console, set its address in <strong>Project → Settings</strong>.</p>
 </tr>
 
 <tr>
-<td><code>build.tinygo-without-console</code></td>
+<td><code>build.tinygo-without-nintendo3ds</code></td>
 <td>the TinyGo found has no nintendo3ds target: it is not tinygo-3ds&rsquo;s (Install gets it)</td>
 </tr>
 
@@ -156,6 +156,11 @@ hides the console, set its address in <strong>Project → Settings</strong>.</p>
 </tr>
 
 <tr>
+<td><code>editor.no-licence</code></td>
+<td>the tool has no licence to accept before it is installed</td>
+</tr>
+
+<tr>
 <td><code>editor.no-own-sheet</code></td>
 <td>the node does not cut its picture into frames itself</td>
 </tr>
@@ -183,6 +188,16 @@ hides the console, set its address in <strong>Project → Settings</strong>.</p>
 <tr>
 <td><code>engine.behaviour-unregistered</code></td>
 <td>no behaviour is registered by that name (engine.Register in the game&rsquo;s main)</td>
+</tr>
+
+<tr>
+<td><code>engine.bindings-not-saved</code></td>
+<td>the actions the player changed could not be kept on this device</td>
+</tr>
+
+<tr>
+<td><code>engine.input-unknown</code></td>
+<td>an action is bound to an input the target does not have: see the words an action can be bound to</td>
 </tr>
 
 <tr>
@@ -307,7 +322,7 @@ hides the console, set its address in <strong>Project → Settings</strong>.</p>
 
 <tr>
 <td><code>project.application-id-wrong</code></td>
-<td>an Android application id is two words or more joined by dots, each starting with a letter, as io.example.game</td>
+<td>an application id is two words or more joined by dots, each starting with a letter, as io.example.game</td>
 </tr>
 
 <tr>
@@ -346,6 +361,11 @@ hides the console, set its address in <strong>Project → Settings</strong>.</p>
 </tr>
 
 <tr>
+<td><code>project.release-needs-published-engine</code></td>
+<td>the game&rsquo;s go.mod uses go-engine from a folder of this computer, which GitHub&rsquo;s machines do not have: update it first (go-engine -update)</td>
+</tr>
+
+<tr>
 <td><code>project.scene-exists</code></td>
 <td>a scene of that name exists already</td>
 </tr>
@@ -353,6 +373,11 @@ hides the console, set its address in <strong>Project → Settings</strong>.</p>
 <tr>
 <td><code>project.settings-not-saved</code></td>
 <td>engine.json could not be written</td>
+</tr>
+
+<tr>
+<td><code>project.target-cannot</code></td>
+<td>the target cannot do that</td>
 </tr>
 
 <tr>

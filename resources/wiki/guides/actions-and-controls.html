@@ -1,0 +1,53 @@
+<h1 id="actions-and-controls">🎮 Actions and controls</h1>
+
+<p>This guide is for whoever makes a game that plays on several devices. At the end you will read
+what the player does by name, give it buttons on each device in the editor, and design the
+sticks and buttons a phone shows.</p>
+
+<h2 id="read-actions-not-keys">Read actions, not keys</h2>
+
+<p>A game that reads <code>Space</code> works on a keyboard and nowhere else. A game that reads <strong>actions</strong>
+works anywhere: it asks for <code>jump</code>, and each device says which of its buttons jump.</p>
+<pre><code class="language-go"><span class="kd">func</span> <span class="p">(</span><span class="nx">hero</span> <span class="o">*</span><span class="nx">Hero</span><span class="p">)</span> <span class="nf">Update</span><span class="p">(</span><span class="nx">context</span> <span class="o">*</span><span class="nx">engine</span><span class="p">.</span><span class="nx">Context</span><span class="p">)</span> <span class="p">{</span>
+	<span class="k">if</span> <span class="nx">context</span><span class="p">.</span><span class="nx">Input</span><span class="p">.</span><span class="nf">Action</span><span class="p">(</span><span class="s">&#34;jump&#34;</span><span class="p">).</span><span class="nx">Pressed</span> <span class="p">{</span>
+		<span class="nx">hero</span><span class="p">.</span><span class="nf">Jump</span><span class="p">()</span>
+	<span class="p">}</span>
+	<span class="nx">hero</span><span class="p">.</span><span class="nf">Turn</span><span class="p">(</span><span class="nx">context</span><span class="p">.</span><span class="nx">Input</span><span class="p">.</span><span class="nf">Action</span><span class="p">(</span><span class="s">&#34;turn&#34;</span><span class="p">).</span><span class="nx">Value</span><span class="p">)</span> <span class="c1">// from -1 to 1</span>
+<span class="p">}</span>
+</code></pre>
+
+<p>An action <strong>presses</strong> (<code>Down</code>, <code>Pressed</code>, <code>Released</code>) or moves an <strong>axis</strong> (<code>Value</code>, from -1 to 1).</p>
+
+<h2 id="give-them-buttons-in-the-editor">Give them buttons in the editor</h2>
+
+<p>Open the <strong>Controls</strong> workspace. The actions are cards on the left, each in its own colour; the
+device is drawn in the middle, chosen in its tabs: <strong>Gamepad</strong>, <strong>Keyboard and mouse</strong>,
+<strong>Nintendo 3DS</strong> and <strong>Mobile</strong>. A pad and a keyboard play the same game on a computer and in a
+browser, so what you give them holds for both.</p>
+
+<ul>
+<li><strong>Click a control</strong> of the device: a panel opens beside it. Pick an action, or type a new
+name and create it there. A button presses; a stick has two axes, across and up and down, each
+with its own action.</li>
+<li><strong>The cards</strong> say which controls do each action; click one to see its controls stand out.
+The pencil renames it, the next icon switches it between pressing and an axis.</li>
+<li><strong>Every change is kept</strong> in <code>engine.json</code> at once. Ctrl+Z undoes the last one.</li>
+</ul>
+
+<h2 id="design-a-phone-s-controls">Design a phone&rsquo;s controls</h2>
+
+<p>A phone has no buttons of its own, so the game draws them. Until you design some, it shows the
+engine&rsquo;s four: the arrows, B and A. In <strong>Mobile → Layout</strong>:</p>
+
+<ol>
+<li><strong>Design the game&rsquo;s own</strong> starts from a stick and two buttons.</li>
+<li><strong>Stick</strong> and <strong>Button</strong> add more; drag each where the thumbs rest.</li>
+<li>With one chosen, rename it, make it smaller or bigger, or remove it.</li>
+</ol>
+
+<p>Back in <strong>Actions</strong>, the controls on the screen get their actions like any other. Places and
+sizes are shares of the screen, so the layout fits every phone.</p>
+
+<hr>
+
+<p><a href="./guides/the-second-screen">← The second screen</a> · <a href="./reference/packages">The reference →</a></p>

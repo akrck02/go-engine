@@ -1,0 +1,192 @@
+<h1 id="10-names-for-any-device">10. Names for any device</h1>
+
+<blockquote>
+<p>Status: done, pending the author&rsquo;s review · Author&rsquo;s approval: proposal ☑ (2026-10-21, &ldquo;Si&rdquo;) plan ☑ (2026-10-21, &ldquo;Si&rdquo;)</p>
+</blockquote>
+
+<h2 id="why">Why</h2>
+
+<p>The guidelines now ask for generic functions: named, and shaped, for what they do on any device,
+not for the first one that needed them, as nobody knows how they will be used later. An audit of
+the author&rsquo;s Go libraries found nine places that break it. Most of them are in go-engine&rsquo;s
+building and running for each target, and in the word &ldquo;console&rdquo; standing for the 3DS. A second
+console, or a game pad&rsquo;s right stick, would already have nowhere to go.</p>
+
+<p>Nothing of go-engine&rsquo;s is used by others yet beyond its own sample and one game in development,
+so this is the cheapest moment to rename.</p>
+
+<h2 id="what">What</h2>
+
+<table>
+<thead>
+<tr>
+<th>Id</th>
+<th>Requirement</th>
+<th>Check</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>R1</td>
+<td><code>Input.RightStick</code> reads the second stick of whatever device has one: a New 3DS&rsquo;s C-stick, and a game pad&rsquo;s right stick on a computer</td>
+<td>tests with a made-up 3DS reading and a made-up game pad state</td>
+</tr>
+
+<tr>
+<td>R2</td>
+<td>A project builds, sends, plays and stops a game for a target through one set of functions that take the target (<code>Build(target)</code>, <code>SendTo(target)</code>, <code>PlayOn(target)</code>, <code>StopOn(target)</code>), instead of one function per device</td>
+<td>tests per target with the tools faked; the editor&rsquo;s Build cards call only these</td>
+</tr>
+
+<tr>
+<td>R3</td>
+<td>A game has one application id (<code>applicationId</code> in engine.json), which each target turns into what it needs; <code>androidId</code> is still read, so older projects keep working</td>
+<td>test <code>an old androidId is read as the application id</code></td>
+</tr>
+
+<tr>
+<td>R4</td>
+<td>Accepting a tool&rsquo;s licence is one set of functions that take the tool (<code>ReadLicence</code>, <code>Licence</code>, <code>AcceptLicence</code>, <code>DeclineLicence</code>), not Android&rsquo;s own</td>
+<td>test of the licence flow through the generic functions</td>
+</tr>
+
+<tr>
+<td>R5</td>
+<td>&ldquo;Console&rdquo; no longer stands for the 3DS: names that mean the 3DS say so (<code>Nintendo3DSTarget</code>, the 3DS&rsquo;s emulator), and names that are general become general (<code>DeviceAddress</code>, <code>SendToDevice</code>); engine.json&rsquo;s <code>consoleAddress</code> is still read</td>
+<td>tests of the renamed settings; an old engine.json still opens</td>
+</tr>
+
+<tr>
+<td>R6</td>
+<td><code>SetBottomScreen</code> is removed, and <code>Settings.SceneMenu</code>&rsquo;s comment describes a general scene menu</td>
+<td><code>go vet</code>; the reference shows no 3DS words in general names</td>
+</tr>
+
+<tr>
+<td>R7</td>
+<td>Go Sound: a sound output that cannot start returns one general error, <code>ErrOutputUnavailable</code>, defined on every system; on the 3DS it is returned when the DSP cannot start</td>
+<td>test in Go Sound that a program checking it builds everywhere; built for the 3DS</td>
+</tr>
+
+<tr>
+<td>R8</td>
+<td>Go for 3DS: the <code>bottom</code> package becomes <code>secondscreen</code>, matching the engine</td>
+<td>Go for 3DS&rsquo;s tests; the 3DS sample builds</td>
+</tr>
+
+<tr>
+<td>R9</td>
+<td>The engine&rsquo;s code and docs are checked again with the audit&rsquo;s search, and nothing general is named after one device</td>
+<td>the audit run again finds nothing in the engine</td>
+</tr>
+</tbody>
+</table>
+
+<h2 id="out-of-scope">Out of scope</h2>
+
+<ul>
+<li>Packages that exist for one platform only (Go Renderer&rsquo;s <code>ctr</code>, Go for 3DS&rsquo;s own) keep their
+platform&rsquo;s names inside.</li>
+<li>New targets: this only makes room for them.</li>
+<li>Error codes across Go Sound: it uses plain sentinel errors throughout, which is its own change.</li>
+<li>Keeping the old names as aliases. Nothing is released with them except go-engine v0.0.x, which
+is still experimental. The two settings in engine.json are read under both names, because they
+live in people&rsquo;s files.</li>
+</ul>
+
+<h2 id="design">Design</h2>
+
+<h3 id="go-renderer-a-game-pad-on-a-computer-r1">Go Renderer: a game pad on a computer (R1)</h3>
+
+<p><code>input.State</code> gains <code>RightStickX</code> and <code>RightStickY</code>, as <code>StickX</code> and <code>StickY</code> are for the main
+stick. The desktop&rsquo;s window loop reads the first game pad GLFW knows (<code>GetGamepadState</code>, which maps
+every pad to one layout) into both sticks, each with a dead zone. The 3DS&rsquo;s <code>ctr.Controls</code> puts the
+C-stick into the right stick once the motion controls are on. Go Renderer&rsquo;s <code>feature/</code> branch, as
+before.</p>
+
+<h3 id="go-engine">go-engine</h3>
+
+<ul>
+<li><strong>Sticks</strong> (R1): <code>Input.RightStick</code> reads <code>RightStickX</code> and <code>RightStickY</code>, whatever filled them;
+the engine&rsquo;s own reading of the C-stick goes.</li>
+<li><strong>Targets</strong> (R2, R5): the <code>project</code> package gets a <code>Target</code> type (<code>Desktop</code>, <code>Nintendo3DS</code>,
+<code>Android</code>) with <code>Build</code>, <code>PlayOn</code>, <code>PlayInEmulator</code> and <code>StopOn</code>, each choosing the target&rsquo;s way
+inside: today&rsquo;s <code>Build3DS</code>, <code>SendTo3DS</code>, <code>BuildAndroid</code>, <code>PlayOnAndroid</code>, <code>StopOnAndroid</code>,
+<code>EmulatorCommand</code> and <code>PlayCommand</code> become their private parts. Sending to the 3DS is playing
+there, as its Homebrew Launcher starts what it is sent (built: the plan&rsquo;s separate <code>SendTo</code> was
+one verb too many). A target without something (an emulator of its own) is refused with a code.
+The editor&rsquo;s <code>BuildTarget</code> becomes <code>project.Target</code>, and <code>ConsoleTarget</code> becomes <code>Nintendo3DS</code>;
+the editor&rsquo;s <code>PlayOn(target)</code> and <code>PlayInEmulator(target)</code> replace <code>PlayInWindow</code>, <code>PlayOnDevice</code>,
+<code>SendToConsole</code> and the old <code>PlayInEmulator</code>.</li>
+<li><strong>Settings</strong> (R3, R5): <code>Settings.ApplicationID</code> (<code>applicationId</code>) and <code>Settings.DeviceAddress</code>
+(<code>deviceAddress</code>). Reading engine.json takes <code>androidId</code> and <code>consoleAddress</code> when the new names
+are missing, and saving writes only the new ones.</li>
+<li><strong>Tools</strong> (R5): <code>build.Tools.ConsoleEmulator</code> becomes <code>Nintendo3DSEmulator</code> (<code>nintendo3dsEmulator</code>
+in tools.json, the old name still read); and the Play workspace&rsquo;s <code>ConsoleScreen</code> shape becomes
+<code>Nintendo3DSScreens</code>.</li>
+<li><strong>Licences</strong> (R4): the editor&rsquo;s licence sheet takes a tool&rsquo;s name; Android&rsquo;s SDK is today&rsquo;s only
+tool with one.</li>
+<li><strong>Leftovers</strong> (R6): <code>SetBottomScreen</code> goes; <code>SceneMenu</code>&rsquo;s comment is made general.</li>
+</ul>
+
+<h3 id="go-for-3ds-and-go-sound-r7-r8">Go for 3DS and Go Sound (R7, R8)</h3>
+
+<p>Each on a <code>feature/</code> branch: Go for 3DS&rsquo;s <code>bottom</code> package is renamed <code>secondscreen</code>, its sample
+with it; Go Sound defines <code>ErrOutputUnavailable</code> in <code>sound.go</code>, and the 3DS&rsquo;s output returns it.</p>
+
+<h3 id="alternatives-not-taken">Alternatives not taken</h3>
+
+<ul>
+<li>Aliases for the old function names: they would keep the old names alive in new code.</li>
+<li>One <code>Do(target, action)</code>: four verbs read better, and each has its own errors.</li>
+</ul>
+
+<h2 id="tasks">Tasks</h2>
+
+<ul>
+<li>[x] T1 — Go Renderer: <code>RightStickX</code>/<code>RightStickY</code>, the desktop&rsquo;s game pad into both sticks, the C-stick into the right one · R1 · tests of the dead zone and the mapping with a made-up pad state</li>
+<li>[x] T2 — <code>Input.RightStick</code> from the right stick · engine/controls.go · R1 · test with a made-up state</li>
+<li>[x] T3 — <code>project.Target</code> with <code>Build</code>, <code>PlayOn</code>, <code>PlayInEmulator</code>, <code>StopOn</code>; the old functions made private · project · R2 · tests per target; <code>a target that cannot be sent to says so by its code</code></li>
+<li>[x] T4 — the editor on <code>project.Target</code>: <code>PlayOn(target)</code>, <code>PlayInEmulator(target)</code>, <code>Nintendo3DSScreens</code> · editor · R2, R5 · the editor&rsquo;s tests</li>
+<li>[x] T5 — <code>applicationId</code>, <code>deviceAddress</code>, <code>nintendo3dsEmulator</code>, the old names still read · engine/run.go, internal/build/tools.go · R3, R5 · tests <code>an old androidId is read as the application id</code>, and the same for the others</li>
+<li>[x] T6 — generic licences · editor/install.go · R4 · test of the licence flow</li>
+<li>[x] T7 — <code>SetBottomScreen</code> removed, <code>SceneMenu</code>&rsquo;s comment · engine · R6 · <code>go vet</code></li>
+<li>[x] T8 — Go Sound <code>ErrOutputUnavailable</code> · R7 · test; built for the 3DS</li>
+<li>[x] T9 — Go for 3DS <code>bottom</code> → <code>secondscreen</code> · R8 · its tests; its sample built</li>
+<li>[x] T10 — the audit again, and the reference and docs regenerated · R9 · the audit&rsquo;s search finds nothing in the engine</li>
+</ul>
+
+<h2 id="result">Result</h2>
+
+<p>Built, on <code>feature/</code> branches until the author merges them:</p>
+
+<ul>
+<li>go-engine <code>feature/engine</code>: R1–R6 and R9. The second screen&rsquo;s guide is now
+<code>docs/5-guides/8-the-second-screen.md</code>.</li>
+<li>Go Renderer <code>feature/game-pad</code> (on <code>feature/scene-area</code>): a computer&rsquo;s game pad into both
+sticks, and the 3DS&rsquo;s C-stick into the right one (R1).</li>
+<li>Go Sound <code>feature/output-unavailable</code>: <code>ErrOutputUnavailable</code> (R7).</li>
+<li>Go for 3DS <code>feature/second-screen</code>: the <code>secondscreen</code> package (R8).</li>
+</ul>
+
+<p>The review found 14 things, all fixed or answered here:</p>
+
+<ul>
+<li>the guide and test names that still said &ldquo;bottom screen&rdquo; or &ldquo;console&rdquo;;</li>
+<li>a stale comment;</li>
+<li>a test for a game sent with nothing to watch;</li>
+<li>the game pad made private, and letting its sticks go only when it is unplugged;</li>
+<li>targets outside the list given a name instead of a panic;</li>
+<li>Go Sound&rsquo;s failure made through one tested function.</li>
+</ul>
+
+<p>Two things stay as they are, for a person to judge:</p>
+
+<ul>
+<li>GLFW&rsquo;s game pad reading allocates while a pad is plugged in, because its Go binding returns a
+new state each time; avoiding it would need cgo of the engine&rsquo;s own.</li>
+<li>go-engine pins Go Renderer&rsquo;s unmerged <code>feature/game-pad</code> by pseudo-version: merge Go Renderer,
+Go UI, Go Sound and Go for 3DS first, then pin go-engine to their versions before it is
+released.</li>
+</ul>

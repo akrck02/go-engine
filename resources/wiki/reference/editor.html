@@ -50,6 +50,7 @@ draws its window with go-ui and viewport.go its 3D view.</p>
 <pre><code class="language-go"><span class="kd">var</span> <span class="p">(</span>
 	<span class="nx">RestartFailed</span>  <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;editor.restart-failed&#34;</span><span class="p">,</span> <span class="s">&#34;the editor could not start again with the project&#39;s new code&#34;</span><span class="p">)</span>
 	<span class="nx">ToolsInUse</span>     <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;editor.tools-in-use&#34;</span><span class="p">,</span> <span class="s">&#34;the tools cannot change while the game builds or plays: wait for it to end, or stop it&#34;</span><span class="p">)</span>
+	<span class="nx">NoLicence</span>      <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;editor.no-licence&#34;</span><span class="p">,</span> <span class="s">&#34;the tool has no licence to accept before it is installed&#34;</span><span class="p">)</span>
 	<span class="nx">FramesWrong</span>    <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;editor.frames-wrong&#34;</span><span class="p">,</span> <span class="s">&#34;an animation&#39;s frames are not numbers and runs of the sheet&#39;s frames, as 0-3, 6&#34;</span><span class="p">)</span>
 	<span class="nx">ArtNotFound</span>    <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;editor.art-not-found&#34;</span><span class="p">,</span> <span class="s">&#34;the sprite or tileset is not a file of the project&#39;s&#34;</span><span class="p">)</span>
 	<span class="nx">ArtNotSaved</span>    <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;editor.art-not-saved&#34;</span><span class="p">,</span> <span class="s">&#34;the sprite or tileset could not be written&#34;</span><span class="p">)</span>
@@ -61,10 +62,6 @@ draws its window with go-ui and viewport.go its 3D view.</p>
 </code></pre>
 
 <p>Error codes of the editor package.</p>
-<pre><code class="language-go"><span class="kd">var</span> <span class="nx">BuildTargets</span> <span class="p">=</span> <span class="p">[]</span><span class="nx">BuildTarget</span><span class="p">{</span><span class="nx">ComputerTarget</span><span class="p">,</span> <span class="nx">ConsoleTarget</span><span class="p">,</span> <span class="nx">AndroidTarget</span><span class="p">}</span>
-</code></pre>
-
-<p>BuildTargets are the targets in the order of their cards.</p>
 <pre><code class="language-go"><span class="kd">var</span> <span class="nx">Kinds</span> <span class="p">=</span> <span class="p">[]</span><span class="kt">string</span><span class="p">{</span><span class="s">&#34;Empty&#34;</span><span class="p">,</span> <span class="s">&#34;Cube&#34;</span><span class="p">,</span> <span class="s">&#34;Sphere&#34;</span><span class="p">,</span> <span class="s">&#34;Plane&#34;</span><span class="p">,</span> <span class="s">&#34;Cylinder&#34;</span><span class="p">,</span> <span class="s">&#34;Camera&#34;</span><span class="p">,</span> <span class="s">&#34;Light&#34;</span><span class="p">}</span>
 </code></pre>
 
@@ -77,7 +74,7 @@ draws its window with go-ui and viewport.go its 3D view.</p>
 </code></pre>
 
 <p>Tools are the tools in the order of the rail.</p>
-<pre><code class="language-go"><span class="kd">var</span> <span class="nx">Workspaces</span> <span class="p">=</span> <span class="p">[]</span><span class="nx">Workspace</span><span class="p">{</span><span class="nx">ProjectWorkspace</span><span class="p">,</span> <span class="nx">ArtWorkspace</span><span class="p">,</span> <span class="nx">LevelWorkspace</span><span class="p">,</span> <span class="nx">CodeWorkspace</span><span class="p">,</span> <span class="nx">PlayWorkspace</span><span class="p">,</span> <span class="nx">BuildWorkspace</span><span class="p">}</span>
+<pre><code class="language-go"><span class="kd">var</span> <span class="nx">Workspaces</span> <span class="p">=</span> <span class="p">[]</span><span class="nx">Workspace</span><span class="p">{</span><span class="nx">ProjectWorkspace</span><span class="p">,</span> <span class="nx">ArtWorkspace</span><span class="p">,</span> <span class="nx">LevelWorkspace</span><span class="p">,</span> <span class="nx">CodeWorkspace</span><span class="p">,</span> <span class="nx">ControlsWorkspace</span><span class="p">,</span> <span class="nx">PlayWorkspace</span><span class="p">,</span> <span class="nx">BuildWorkspace</span><span class="p">}</span>
 </code></pre>
 
 <p>Workspaces are the workspaces in the order of the bar.</p>
@@ -93,47 +90,6 @@ draws its window with go-ui and viewport.go its 3D view.</p>
 	<span class="nx">Log</span>     <span class="p">[]</span><span class="kt">string</span>
 <span class="p">}</span>
 </code></pre>
-
-<h3 id="buildtarget">BuildTarget</h3>
-
-<p>BuildTarget is a place the game runs.</p>
-<pre><code class="language-go"><span class="kd">type</span> <span class="nx">BuildTarget</span> <span class="kt">int</span>
-</code></pre>
-<pre><code class="language-go"><span class="kd">const</span> <span class="p">(</span>
-	<span class="c1">// ComputerTarget is this computer.</span>
-	<span class="nx">ComputerTarget</span> <span class="nx">BuildTarget</span> <span class="p">=</span> <span class="kc">iota</span>
-	<span class="c1">// ConsoleTarget is the Nintendo 3DS.</span>
-	<span class="nx">ConsoleTarget</span>
-	<span class="c1">// AndroidTarget is a phone or tablet with Android.</span>
-	<span class="nx">AndroidTarget</span>
-<span class="p">)</span>
-</code></pre>
-
-<table>
-<thead>
-<tr>
-<th>Function or method</th>
-<th></th>
-</tr>
-</thead>
-
-<tbody>
-<tr>
-<td><code>func (target BuildTarget) Icon() string</code></td>
-<td>Icon is the target&rsquo;s icon on its card.</td>
-</tr>
-
-<tr>
-<td><code>func (target BuildTarget) Makes() string</code></td>
-<td>Makes says what a build for the target makes.</td>
-</tr>
-
-<tr>
-<td><code>func (target BuildTarget) Name() string</code></td>
-<td>Name is the target&rsquo;s name on its card.</td>
-</tr>
-</tbody>
-</table>
 
 <h3 id="editor-1">Editor</h3>
 
@@ -179,8 +135,8 @@ draws its window with go-ui and viewport.go its 3D view.</p>
 </tr>
 
 <tr>
-<td><code>func (editor *Editor) AcceptAndroidLicence()</code></td>
-<td>AcceptAndroidLicence installs Android&rsquo;s SDK, with the NDK and what a game&rsquo;s build needs, the licence the person read (AndroidLicence) accepted, and sets the SDK&rsquo;s place.</td>
+<td><code>func (editor *Editor) AcceptLicence()</code></td>
+<td>AcceptLicence installs the tool whose licence the person read (Licence), with that licence accepted, and sets its place.</td>
 </tr>
 
 <tr>
@@ -219,11 +175,6 @@ draws its window with go-ui and viewport.go its 3D view.</p>
 </tr>
 
 <tr>
-<td><code>func (editor *Editor) AndroidLicence() (string, bool)</code></td>
-<td>AndroidLicence is Android&rsquo;s licence while it waits for the person to accept it or not.</td>
-</tr>
-
-<tr>
 <td><code>func (editor *Editor) ArtOpen() (file string, isSprite, isTileset bool)</code></td>
 <td>ArtOpen is the file open in Art, and whether it is a sprite or a tileset.</td>
 </tr>
@@ -249,7 +200,7 @@ draws its window with go-ui and viewport.go its 3D view.</p>
 </tr>
 
 <tr>
-<td><code>func (editor *Editor) BuildFor(target BuildTarget)</code></td>
+<td><code>func (editor *Editor) BuildFor(target project.Target)</code></td>
 <td>BuildFor builds the game for a target in the background; its result is kept when it ends.</td>
 </tr>
 
@@ -289,8 +240,8 @@ draws its window with go-ui and viewport.go its 3D view.</p>
 </tr>
 
 <tr>
-<td><code>func (editor *Editor) DeclineAndroidLicence()</code></td>
-<td>DeclineAndroidLicence leaves the SDK uninstalled.</td>
+<td><code>func (editor *Editor) DeclineLicence()</code></td>
+<td>DeclineLicence leaves the tool whose licence waits uninstalled.</td>
 </tr>
 
 <tr>
@@ -369,13 +320,18 @@ draws its window with go-ui and viewport.go its 3D view.</p>
 </tr>
 
 <tr>
-<td><code>func (editor *Editor) LastBuild(target BuildTarget) (BuildResult, bool)</code></td>
+<td><code>func (editor *Editor) LastBuild(target project.Target) (BuildResult, bool)</code></td>
 <td>LastBuild is a target&rsquo;s last build in this session.</td>
 </tr>
 
 <tr>
 <td><code>func (editor *Editor) LeavePlay()</code></td>
 <td>LeavePlay goes back from Play to the workspace it was entered from.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) Licence() (PendingLicence, bool)</code></td>
+<td>Licence is the licence waiting for the person to accept it or not, if one is.</td>
 </tr>
 
 <tr>
@@ -474,13 +430,8 @@ draws its window with go-ui and viewport.go its 3D view.</p>
 </tr>
 
 <tr>
-<td><code>func (editor *Editor) PlayInEmulator()</code></td>
-<td>PlayInEmulator builds the game for the 3DS and opens it in an emulator; Stop closes it.</td>
-</tr>
-
-<tr>
-<td><code>func (editor *Editor) PlayInWindow()</code></td>
-<td>PlayInWindow saves the scene, builds the game and runs it in a window of its own, in the background: what happens arrives through Events.</td>
+<td><code>func (editor *Editor) PlayInEmulator(target project.Target)</code></td>
+<td>PlayInEmulator builds the game for a target and opens it in the target&rsquo;s emulator; Stop closes it.</td>
 </tr>
 
 <tr>
@@ -489,8 +440,8 @@ draws its window with go-ui and viewport.go its 3D view.</p>
 </tr>
 
 <tr>
-<td><code>func (editor *Editor) PlayOnDevice()</code></td>
-<td>PlayOnDevice builds the game for Android and plays it on the device adb sees, its log shown as a window&rsquo;s output is; stopping it stops the game on the device.</td>
+<td><code>func (editor *Editor) PlayOn(target project.Target)</code></td>
+<td>PlayOn builds the game for a target and plays it there (project.Project.PlayOn): in a window, on the device, or sent to the 3DS.</td>
 </tr>
 
 <tr>
@@ -499,18 +450,18 @@ draws its window with go-ui and viewport.go its 3D view.</p>
 </tr>
 
 <tr>
-<td><code>func (editor *Editor) PlayingOn() (BuildTarget, bool)</code></td>
+<td><code>func (editor *Editor) PlayingOn() (project.Target, bool)</code></td>
 <td>PlayingOn tells where the game plays now, when it does.</td>
-</tr>
-
-<tr>
-<td><code>func (editor *Editor) ReadAndroidLicence()</code></td>
-<td>ReadAndroidLicence reads Android&rsquo;s licence in the background, for the person to read and accept before the SDK is installed (AndroidLicence).</td>
 </tr>
 
 <tr>
 <td><code>func (editor *Editor) ReadBehaviours()</code></td>
 <td>ReadBehaviours reads the project&rsquo;s code again for its behaviours: after it was edited.</td>
+</tr>
+
+<tr>
+<td><code>func (editor *Editor) ReadLicence(tool string)</code></td>
+<td>ReadLicence reads a tool&rsquo;s licence in the background, for the person to read and accept before the tool is installed (Licence).</td>
 </tr>
 
 <tr>
@@ -579,6 +530,11 @@ draws its window with go-ui and viewport.go its 3D view.</p>
 </tr>
 
 <tr>
+<td><code>func (editor *Editor) SaveControls(actions map[string]map[string][]string, touch []engine.TouchControl) error</code></td>
+<td>SaveControls keeps the actions and the touch controls in the project&rsquo;s settings.</td>
+</tr>
+
+<tr>
 <td><code>func (editor *Editor) SaveTools(tools build.Tools) error</code></td>
 <td>SaveTools keeps the tools&rsquo; places on this computer, for the builds and every project, and looks for them again.</td>
 </tr>
@@ -586,11 +542,6 @@ draws its window with go-ui and viewport.go its 3D view.</p>
 <tr>
 <td><code>func (editor *Editor) Select(node *engine.Node)</code></td>
 <td>Select chooses a node (nil for none), and lets go of any other chosen with it.</td>
-</tr>
-
-<tr>
-<td><code>func (editor *Editor) SendToConsole()</code></td>
-<td>SendToConsole builds the game for the 3DS and sends it to the console&rsquo;s Homebrew Launcher, in the background.</td>
 </tr>
 
 <tr>
@@ -727,6 +678,11 @@ draws its window with go-ui and viewport.go its 3D view.</p>
 <td><code>func (editor *Editor) Watch() []WatchLine</code></td>
 <td>Watch is what the chosen node of the scene played is doing: where it is, its body&rsquo;s velocity and whether it stands on the floor, the animation it plays, and its behaviours&rsquo; exported fields.</td>
 </tr>
+
+<tr>
+<td><code>func (editor *Editor) WriteReleaseWorkflow()</code></td>
+<td>WriteReleaseWorkflow writes the workflow that builds the game for Windows, macOS and Linux on GitHub at each version tag, and says where it went or why it did not.</td>
+</tr>
 </tbody>
 </table>
 
@@ -750,6 +706,15 @@ not define.</p>
 <span class="p">}</span>
 </code></pre>
 
+<h3 id="pendinglicence">PendingLicence</h3>
+
+<p>PendingLicence is a tool&rsquo;s licence, read and waiting for the person to
+accept it or not.</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">PendingLicence</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">Tool</span><span class="p">,</span> <span class="nx">Text</span> <span class="kt">string</span>
+<span class="p">}</span>
+</code></pre>
+
 <h3 id="playtarget">PlayTarget</h3>
 
 <p>PlayTarget is the shape of the screen the game is shown at while it plays in
@@ -759,8 +724,9 @@ the view.</p>
 <pre><code class="language-go"><span class="kd">const</span> <span class="p">(</span>
 	<span class="c1">// WideScreen is a computer&#39;s screen, sixteen wide for nine high.</span>
 	<span class="nx">WideScreen</span> <span class="nx">PlayTarget</span> <span class="p">=</span> <span class="kc">iota</span>
-	<span class="c1">// ConsoleScreen is the Nintendo 3DS&#39;s top screen, 400 × 240 pixels.</span>
-	<span class="nx">ConsoleScreen</span>
+	<span class="c1">// Nintendo3DSScreens are the Nintendo 3DS&#39;s two screens: the top one, 400 × 240 pixels, and</span>
+	<span class="c1">// the second under it.</span>
+	<span class="nx">Nintendo3DSScreens</span>
 <span class="p">)</span>
 </code></pre>
 
@@ -923,6 +889,8 @@ and its value.</p>
 	<span class="nx">LevelWorkspace</span>
 	<span class="c1">// CodeWorkspace shows the behaviours the project&#39;s Go code defines.</span>
 	<span class="nx">CodeWorkspace</span>
+	<span class="c1">// ControlsWorkspace binds the game&#39;s actions to each target&#39;s inputs.</span>
+	<span class="nx">ControlsWorkspace</span>
 	<span class="c1">// PlayWorkspace plays the scene, to try it.</span>
 	<span class="nx">PlayWorkspace</span>
 	<span class="c1">// BuildWorkspace makes the game for each place it runs.</span>

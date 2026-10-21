@@ -1,0 +1,255 @@
+<h1 id="9-3d-games-driven-by-code">9. 3D games driven by code</h1>
+
+<blockquote>
+<p>Status: done, pending the author&rsquo;s review · Author&rsquo;s approval: proposal ☑ (2026-10-21, &ldquo;Okay&rdquo;) plan ☑ (2026-10-21, &ldquo;Si&rdquo;)</p>
+</blockquote>
+
+<h2 id="why">Why</h2>
+
+<p>The engine serves games whose scenes are arranged in the editor: models from <code>.glb</code> files,
+cameras placed by hand, keys for input. An online 3D game made mostly in code needs more.</p>
+
+<ul>
+<li>Its vehicles are built from designs at run time.</li>
+<li>They move every frame.</li>
+<li>Its effects glow or fade.</li>
+<li>Its camera chases the player.</li>
+<li>On the 3DS it uses the slider&rsquo;s depth, both screens, and every control the console has.</li>
+<li>On the desktop it captures the mouse.</li>
+<li>It ships for Windows and macOS.</li>
+</ul>
+
+<p>Without these, such a game has to skip the engine and draw with Go Renderer on its own. One game
+is waiting on them now; every 3D game in code will want them.</p>
+
+<h2 id="what">What</h2>
+
+<p>In the order that unblocks the most. Each requirement can come out in its own version.</p>
+
+<table>
+<thead>
+<tr>
+<th>Id</th>
+<th>Requirement</th>
+<th>Check</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>R1</td>
+<td>A behaviour gives a node a mesh it built at run time, and gives it another later; the old one is let go of</td>
+<td>test <code>a mesh set from code is drawn, and replacing it frees the old one</code></td>
+</tr>
+
+<tr>
+<td>R2</td>
+<td>A node is marked as moving every frame, so it is lit on the GPU and not baked again on each turn on the 3DS</td>
+<td>test of the flag reaching Go Renderer; on the 3DS, a turning node at full frame rate</td>
+</tr>
+
+<tr>
+<td>R3</td>
+<td>A mesh from code gets a material that is unlit, additive or translucent, and double-sided; its opacity changes from frame to frame</td>
+<td>test per kind; capture of each on the desktop and in Azahar</td>
+</tr>
+
+<tr>
+<td>R4</td>
+<td>The game draws a 2D layer each frame over the 3D view: over the window on the desktop, over the top screen on the 3DS, in both eyes when stereo is on</td>
+<td>capture on the desktop; capture of both eyes in Azahar</td>
+</tr>
+
+<tr>
+<td>R5</td>
+<td>A camera has its own far plane (up to thousands of metres) and field of view, set in the editor or from code</td>
+<td>test <code>a camera's far plane is the one set</code></td>
+</tr>
+
+<tr>
+<td>R6</td>
+<td>On the 3DS, the top screen is drawn in stereo, its depth following the slider; slider down is flat</td>
+<td>Azahar&rsquo;s stereo capture; by hand on a console</td>
+</tr>
+
+<tr>
+<td>R7</td>
+<td>On the 3DS, the bottom screen shows a second 3D scene with its own camera, with a go-ui interface over it</td>
+<td>capture in Azahar</td>
+</tr>
+
+<tr>
+<td>R8</td>
+<td><code>engine.Input</code> gives the 3DS&rsquo;s circle pad, C-stick, gyroscope, ZL/ZR, L/R, START and touches on the bottom screen; on the desktop, the mouse&rsquo;s movement with the pointer captured, and the keys; each pressed this frame as well as held</td>
+<td>tests of each mapping with a made-up input state</td>
+</tr>
+
+<tr>
+<td>R9</td>
+<td>A game runs code once a frame before the behaviours (a network exchange), and asks for something to run between frames (the 3DS&rsquo;s system keyboard, which takes both screens)</td>
+<td>test <code>the frame's hook runs before every behaviour</code>; test of the call between frames</td>
+</tr>
+
+<tr>
+<td>R10</td>
+<td>The 3DS loop yields once a frame, so Go Sound&rsquo;s buffers are filled on time</td>
+<td>a sound plays without crackles in Azahar with a slow frame</td>
+</tr>
+
+<tr>
+<td>R11</td>
+<td>A game&rsquo;s releases carry desktop programs for Windows, macOS and Linux, as well as the one Build makes for this computer</td>
+<td>the workflow Build writes runs on GitHub and its programs start on each system</td>
+</tr>
+</tbody>
+</table>
+
+<h2 id="out-of-scope">Out of scope</h2>
+
+<ul>
+<li>Networking itself: the game brings its own (Go for 3DS has TCP and TLS).</li>
+<li>Sound in the engine: the game uses Go Sound directly. R10 only keeps the loop fair to it.</li>
+<li>Editing meshes from code in the editor: they exist only while the game plays.</li>
+<li>Signing and notarising macOS programs, and Windows installers.</li>
+<li>A text field of the engine&rsquo;s own: a game shows go-ui&rsquo;s over the 3D window (R4&rsquo;s layer, for
+go-ui).</li>
+</ul>
+
+<h2 id="design">Design</h2>
+
+<h3 id="what-is-there-already">What is there already</h3>
+
+<p>Go UI&rsquo;s window on the 3DS already draws the top screen in stereo with the slider (R6), paints the
+scene&rsquo;s own drawing (<code>World.Overlay.Drawing</code>) in each eye (R4 on the 3DS), and yields each frame
+(<code>runtime.Gosched</code>, R10). Go Renderer&rsquo;s nodes have <code>Moving</code> (R2), and its materials are lit,
+unlit, translucent and double-sided (most of R3). The engine only has to reach them.</p>
+
+<h3 id="in-the-engine">In the engine</h3>
+
+<ul>
+<li><strong>Meshes from code</strong> (R1, R2): <code>Node.SetMesh(*scene.Mesh)</code> replaces the node&rsquo;s geometry, and
+<code>Node.SetMoving(bool)</code> sets Go Renderer&rsquo;s flag on it, kept when a scene is copied for playing.
+Games use Go Renderer&rsquo;s <code>scene.Mesh</code> and <code>scene.Material</code> as they are: a type of the engine&rsquo;s
+own would only copy them.</li>
+<li><strong>Camera</strong> (R5): <code>scenefile.Camera</code> gains <code>near</code> and <code>far</code> (metres; 0 keeps today&rsquo;s 0.05 and
+2000), shown in the inspector. <code>Node.Camera()</code> and <code>Node.SetCamera()</code> let code change them.</li>
+<li><strong>Over the 3D</strong> (R4): <code>engine.SetOverlay(func(list *draw2d.List, width, height float32))</code> draws
+each frame over a 3D scene. It goes to Go UI&rsquo;s new <code>SceneView.Drawing</code>, which Go UI paints over
+the scene and under the interface on the desktop and phones (its window used to overwrite
+<code>World.Overlay.Drawing</code> with the interface), and on the 3DS&rsquo;s top screen in each eye. <code>SetBottomScreen</code> becomes
+<code>SetInterface</code>: the bottom screen on the 3DS, over the window elsewhere (login fields).</li>
+<li><strong>Below, in 3D</strong> (R7): <code>engine.SetSecondScreen(scene)</code> gives the 3DS&rsquo;s bottom screen a
+scene of its own, with the interface over it.</li>
+<li><strong>Input</strong> (R8): <code>engine.Input</code> gains <code>Stick()</code>, <code>CStick()</code>, <code>Gyroscope()</code>, <code>Touches()</code> and
+<code>MouseMovement()</code>; L, R, ZL, ZR and START become keys with <code>Down</code> and <code>Pressed</code>.
+<code>SetPointerCaptured(bool)</code> hides and holds the desktop&rsquo;s pointer.</li>
+<li><strong>Hooks</strong> (R9): <code>engine.BeforeBehaviours(func(context *Context))</code> runs first in each
+step, with the frame&rsquo;s context (its Node nil), in the game and in the editor&rsquo;s Play. <code>engine.BetweenFrames(func())</code> runs once at the start of the next step. On the 3DS
+that is outside the frame being drawn, where the system keyboard can take both screens.</li>
+<li><strong>Releases</strong> (R11): Build gains &ldquo;Release workflow&rdquo;. It writes <code>.github/workflows/release.yml</code>
+into the game: Go builds the game on GitHub&rsquo;s Windows, macOS and Linux machines and attaches
+each program to a release. Building for another system from Linux is not taken: GLFW needs
+cgo, and so a C compiler and the system&rsquo;s own libraries for each target.</li>
+</ul>
+
+<h3 id="in-the-author-s-libraries-each-on-a-feature-branch-with-the-author-s-permission">In the author&rsquo;s libraries (each on a <code>feature/</code> branch, with the author&rsquo;s permission)</h3>
+
+<ul>
+<li><strong>Go Renderer</strong>: <code>Material.Additive</code> (light adds to what is behind: beams, sparks) in OpenGL,
+Metal and ctr. The C-stick and the gyroscope in <code>ctr.Reading</code>, as Go for 3DS reads them.</li>
+<li><strong>Go UI</strong>: <code>SceneView.Below</code> (a scene and camera for the bottom screen, the interface painted
+over it), <code>Options.KeepStart</code> (START reaches the game instead of quitting), and
+a scene&rsquo;s <code>LockCursor</code> passed on to the window (Go Renderer&rsquo;s window loop applies it).</li>
+</ul>
+
+<h3 id="versions">Versions</h3>
+
+<p>Each version leaves the engine working and can be used by a game at once.</p>
+
+<table>
+<thead>
+<tr>
+<th>Version</th>
+<th>Requirements</th>
+<th>Needs</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>v0.0.4</td>
+<td>R1, R2, R5, R9, R10 (checked)</td>
+<td>the engine only</td>
+</tr>
+
+<tr>
+<td>v0.0.5</td>
+<td>R3, R4</td>
+<td>Go Renderer&rsquo;s additive blend</td>
+</tr>
+
+<tr>
+<td>v0.0.6</td>
+<td>R6 (checked), R7, R8</td>
+<td>Go UI and Go Renderer as above</td>
+</tr>
+
+<tr>
+<td>v0.0.7</td>
+<td>R11</td>
+<td>the engine only</td>
+</tr>
+</tbody>
+</table>
+
+<h2 id="tasks">Tasks</h2>
+
+<ul>
+<li>[x] T1 — <code>Node.SetMesh</code> and <code>Node.SetMoving</code> (set by the game while it plays, so not in scene files) · engine/node.go · R1, R2 · tests <code>a mesh set from code is drawn, and replacing it frees the old one</code>, <code>a moving node is lit on the GPU whatever it shows</code></li>
+<li>[x] T2 — the camera&rsquo;s near and far, in files, the inspector and code · scenefile, engine/scene.go, editor/inspector.go · R5 · test <code>a camera's far plane is the one set</code></li>
+<li>[x] T3 — <code>BeforeBehaviours</code> and <code>BetweenFrames</code> · engine/run.go, engine/play.go · R9 · tests <code>the frame's hook runs before every behaviour</code>, <code>a call between frames runs once</code></li>
+<li>[x] T4 — check the 3DS loop yields each frame · R10 · checked in the code: the engine&rsquo;s 3DS loop is Go UI v0.1.1&rsquo;s <code>window.Run</code>, which calls <code>runtime.Gosched()</code> after every frame, slow ones included; and the engine builds with TinyGo for the 3DS after T1–T3. Listening for crackles needs the author&rsquo;s ears, on a console</li>
+<li>[ ] T5 — Go Renderer: <code>Material.Additive</code> in OpenGL, Metal and ctr · R3 · test of the blend chosen; captures</li>
+<li>[x] T6 — <code>examples/lighthouse</code>: a beam (additive, moving), fog (translucent, its opacity changed each frame), a buoy (unlit), the game&rsquo;s 2D over the scene and a chart on the bottom screen · R1–R4, R7 · captures in the editor&rsquo;s Play and in Azahar at 60 frames a second</li>
+<li>[x] T7 — <code>SetOverlay</code> and <code>SetInterface</code> on the desktop and the 3DS (Go UI <code>feature/scene-drawing</code>: <code>SceneView.Drawing</code>) · engine/overlay.go, engine/screen*.go · R4 · tests <code>the game's overlay is drawn over a 3D scene at the screen's size</code> and Go UI&rsquo;s <code>the program's drawing is painted over the scene and under the interface</code>; on Android the game&rsquo;s interface is not shown yet (the touch buttons fill the window)</li>
+<li>[x] T8 — Go UI (<code>feature/scene-drawing</code>): <code>SceneView.Below</code>, <code>Options.KeepStart</code>, and a scene&rsquo;s <code>LockCursor</code> reaching the window (Go Renderer&rsquo;s input already captures the pointer, so no option was needed) · R7, R8 · Go UI&rsquo;s tests; built for the 3DS through the engine&rsquo;s example</li>
+<li>[x] T9 — Go Renderer (<code>feature/motion-controls</code>): <code>StartMotionControls</code>, <code>Reading.CStick()</code> and <code>Reading.Gyroscope</code> · R8 · test of the C-stick&rsquo;s dead zone; built with TinyGo; on a console by hand</li>
+<li>[x] T10 — <code>SetSecondScreen</code>: it plays, and is seen from its main camera · engine/secondscreen.go · R7 · test <code>the bottom scene plays and is seen from its camera</code>; a look in Azahar is pending</li>
+<li>[x] T11 — <code>Input.Stick</code>, <code>RightStick</code>, <code>Gyroscope</code>, <code>SecondScreenTouch</code>, <code>MouseMovement</code>; shoulders, triggers and START as <code>ButtonLeftShoulder</code>… keys; <code>SetPointerCaptured</code>; <code>keepStart</code> in engine.json · engine/controls.go, engine/console.go · R8 · tests of each mapping</li>
+<li>[x] T12 — the release workflow from Build (&ldquo;Release workflow&rdquo; on This computer&rsquo;s card), refused for a game on a local go-engine · project/release.go, editor · R11 · tests <code>the release workflow builds for each system</code>, <code>a release of a game on a local engine is refused</code>; the YAML parses; a run on GitHub is pending, in a game&rsquo;s repository</li>
+</ul>
+
+<h2 id="result">Result</h2>
+
+<p>After the build, at the author&rsquo;s word (&ldquo;the 3DS&rsquo;s things should be generic&rdquo;), the engine&rsquo;s
+names say what a control or a screen is on any device, not on the 3DS: <code>SetSecondScreen</code>,
+<code>RightStick</code>, <code>SecondScreenTouch</code>, <code>engine.Turn</code>, <code>ButtonLeftShoulder</code> and the rest. The editor&rsquo;s
+Play also shows a 3D game at its screen&rsquo;s shape, with the second screen under the 3DS&rsquo;s hinge
+(Go Renderer <code>feature/scene-area</code>: <code>DrawIn</code>; Go UI <code>feature/scene-area</code>: scene areas).</p>
+
+<p>Built, on <code>feature/</code> branches until the author merges and releases them:</p>
+
+<ul>
+<li>go-engine <code>feature/engine</code>: R1–R5 and R7–R9 in the engine, R11&rsquo;s workflow, and
+<code>examples/lighthouse</code>. Seen working in the editor&rsquo;s Play and in Azahar at 60 frames a second.</li>
+<li>Go UI <code>feature/scene-drawing</code>: <code>SceneView.Drawing</code>, <code>SceneView.Below</code>, <code>Options.KeepStart</code>, and
+a scene&rsquo;s captured pointer reaching the window.</li>
+<li>Go Renderer <code>feature/motion-controls</code> (with <code>feature/additive</code> in it): <code>Material.Additive</code> and
+the C-stick and gyroscope.</li>
+</ul>
+
+<p>The review found 14 things: all fixed, among them the stick&rsquo;s sign (<code>Input.Move</code> read the stick&rsquo;s
+forward the wrong way before this change too), the frame hook running again for the bottom
+screen&rsquo;s scene (hooks now run in <code>Scene.PlayFrame</code>, the main scene&rsquo;s frame), and the gyroscope
+left on when its coefficient could not be read.</p>
+
+<p>Still to be checked by a person:</p>
+
+<ul>
+<li>Metal&rsquo;s additive pipeline, written on Linux, on a Mac.</li>
+<li>The sound with a slow frame on a console (R10), and the stereo, C-stick and gyroscope there.</li>
+<li>A run of the release workflow on GitHub; its YAML was checked by hand (a test that parses it
+would need a YAML library, not taken without asking).</li>
+<li>An early commit of the sample carried its editor&rsquo;s binary (<code>examples/lighthouse/build</code>); a later
+one removed it, but it stays in the history unless the author wants it rewritten.</li>
+</ul>

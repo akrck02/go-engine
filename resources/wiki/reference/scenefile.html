@@ -218,6 +218,11 @@ Main (or the first camera, if none is).</p>
 	<span class="nx">Projection</span>  <span class="nx">Projection</span> <span class="s">`json:&#34;projection&#34;`</span>
 	<span class="nx">FieldOfView</span> <span class="kt">float64</span>    <span class="s">`json:&#34;fieldOfView,omitempty&#34;`</span> <span class="c1">// degrees, top to bottom, in perspective; 0 is 45</span>
 	<span class="nx">Height</span>      <span class="kt">float64</span>    <span class="s">`json:&#34;height,omitempty&#34;`</span>      <span class="c1">// metres seen top to bottom, orthographic and isometric; 0 is 10</span>
+	<span class="nx">Near</span>        <span class="kt">float64</span>    <span class="s">`json:&#34;near,omitempty&#34;`</span>        <span class="c1">// metres to the nearest thing seen, in perspective; 0 is 0.05</span>
+	<span class="nx">Far</span>         <span class="kt">float64</span>    <span class="s">`json:&#34;far,omitempty&#34;`</span>         <span class="c1">// metres to the farthest thing seen, in any projection; 0 is 2000</span>
+	<span class="c1">// Focus is the metres to what the camera looks at: where a stereoscopic screen (a 3DS&#39;s) puts</span>
+	<span class="c1">// its surface, nearer things coming out of it and farther ones going in; 0 is 10.</span>
+	<span class="nx">Focus</span> <span class="kt">float64</span> <span class="s">`json:&#34;focus,omitempty&#34;`</span>
 	<span class="c1">// Width is the metres a 2D camera sees across, at least: a screen narrower than Height and</span>
 	<span class="c1">// Width make (a phone held upright) sees more height instead of losing the sides. 0 is no least.</span>
 	<span class="nx">Width</span> <span class="kt">float64</span> <span class="s">`json:&#34;width,omitempty&#34;`</span>
