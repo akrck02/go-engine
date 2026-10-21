@@ -31,7 +31,8 @@ A phone needs **USB debugging** on (in its developer options) and a cable, or an
 
 
 - **Touch buttons.** The game draws round buttons for the arrows and A; a keyboard plugged in still
-  works.
+  works. To place sticks and buttons of the game's own, design them in **Controls → Mobile →
+  Layout** ([actions and controls](9-actions-and-controls.md)).
 - **Held upright or sideways.** Sideways, the game fills the screen. Upright, it sits at the top at
   its camera's shape, with the buttons under it. A camera's **metres seen across** keeps the
   level's sides in view.

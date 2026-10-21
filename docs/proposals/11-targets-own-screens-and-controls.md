@@ -1,6 +1,6 @@
 # 11. Each target's own screens and controls
 
-> Status: building · Author's approval: proposal ☑ (2026-10-21, "dale") plan ☑ (2026-10-21, "si")
+> Status: building · Author's approval: proposal ☑ (2026-10-21, "dale") plan ☑ (2026-10-21, "si") · Controls redesign and R8 ☑ (2026-10-21, "implementalo", "si añade trazos")
 
 ## Why
 
@@ -25,6 +25,7 @@ player does, and each target should say *where* and *with which buttons*.
 | R4 | A game paints named **surfaces** (`"main"`, `"panel"`, `"map"`…) with go-ui or draw2d, and each target places them: on a 3DS, some on the second screen and touchable; on a computer, in a corner or as a floating window opened and closed, with the mouse as the pointer; on Android, as a bottom sheet | captures of one sample on each target; the second screen becomes one way a target places a surface |
 | R5 | The editor's Play previews each target's layout (today's `-3ds` view, made general) | captures in the editor for each target |
 | R6 | On a computer and on the web, a game starts windowed or fullscreen as engine.json says per target, and toggles it (`engine.SetFullscreen`, `engine.Fullscreen()`); a default action (F11, Alt+Enter) does it. On the web it waits for the next click or key, as browsers ask | test of the setting; by hand on a desktop and in a browser |
+| R8 | On a phone the game shows sticks and buttons of its own, designed in the editor (where, how big, named) and bound to actions; with none, the engine's four buttons stay | tests of placing and reading them; test `a touch control's actions follow its name and go with it` |
 | R7 | What exists keeps working: `SetInterface`, `SetSecondScreen` and the keys a game reads today | the platformer and lighthouse samples unchanged |
 
 ## Out of scope
@@ -65,14 +66,23 @@ person can read and type:
 - **Rebinding** (R3): `Input.Rebind(action, inputs)` changes the current target's inputs, and
   `engine.SaveBindings` keeps them in the user's configuration folder (on a 3DS, on the SD card).
   The game's own engine.json stays as its author wrote it.
-- **The editor** (R2): a workspace of its own, Controls, between Code and Play. At the author's
-  word ("draw the controls: on a 3DS the 3DS, on a phone a phone, and put the actions there"), the
-  device of the target chosen is drawn with its buttons where they sit: a 3DS (both screens, the
-  circle pad, the cross, the face buttons, the C-stick, the shoulders, Select and Start), a phone
-  (the engine's touch buttons and the system's back), a computer's keyboard, mouse and game pad.
-  Each button says the actions it does; clicking it lists the actions to tick, an axis's twice
-  (− and +). The actions are listed on the left, each a press or an axis, and a key or a pad's
-  button can be caught by pressing it.
+- **The editor** (R2): a workspace of its own, Controls, designed with the author in a canvas
+  before it was built. The actions are cards on the left, each in a soft colour of its own, with
+  buttons to rename it, switch its kind and remove it, and chips for the controls that do it. The
+  device is drawn in the middle in thin grey lines, as Lucide draws icons, at its real
+  proportions, in tabs: Gamepad, Keyboard and mouse (both kept for `desktop` and `web`),
+  Nintendo 3DS and Mobile (`android`). A control that does an action takes its colour and names
+  it at the drawing's edge with a dotted line. Clicking one opens a panel beside it: a field to
+  find or create an action, and the actions it can do, one chosen (a button presses; a stick's
+  two axes each move one). Every change is saved in engine.json at once, and Ctrl+Z undoes it
+  in this workspace.
+- **Strokes** (Go Renderer): the drawings' curves need lines, which draw2d did not have.
+  `draw2d.Path` and `List.Stroke` draw a path into a smoothed mask kept in the path, shown as a
+  tinted picture, so every backend that draws pictures draws strokes.
+- **Touch controls** (R8): engine.json's `touchControls` lists sticks and buttons, each placed
+  and sized as shares of the screen. On Android the game draws them over its view and reads the
+  fingers on them; actions bind them as `Touch <name>`, and a stick as `Touch <name> X` and
+  `Y`. The Mobile tab's Layout designs them: add, drag, resize, rename, remove.
 
 ### Surfaces (R4, R5)
 
@@ -116,6 +126,9 @@ a target to preview beside the shapes it has (R5): each target's places for its 
 - [x] T3 — actions: engine.json's `actions`, the inputs' words, the table, `Input.Action(name)` · engine/actions.go · R1 · tests of each kind of input, and `reading an action allocates nothing`
 - [x] T4 — rebinding and keeping it, among Go UI's window preferences (a 3DS cannot keep them yet: a change there lasts the run) · R3 · test `a binding changed while playing is kept and read back`
 - [x] T5 — the editor's Controls workspace, each target's device drawn · editor · R2 · tests of toggling a button's actions and catching an input; captures of the 3DS, the phone and the computer
+- [x] T5b — strokes in Go Renderer's draw2d · go-renderer feature/strokes · R2 · tests of covering a line, keeping the mask, allocating nothing
+- [x] T5c — touch controls: engine.json's `touchControls`, drawn and read on Android, bound as words · engine · R8 · tests of placing, pressing, dragging a stick, allocating nothing
+- [x] T5d — the Controls workspace redesigned: tabs per device, line drawings, action cards, the panel beside a control, autosave and its own undo, the phone's layout designer · editor · R2, R8 · tests of assigning, renaming, undoing, saving, the layout; captures of the four tabs
 - [ ] T6 — surfaces: `SetSurface`, engine.json's `surfaces`, the five places on the desktop and the 3DS · engine · R4 · captures in the editor and Azahar
 - [ ] T7 — `sheet` on Android, and `SetInterface` as the `interface` surface · R4, R7 · test; the samples unchanged
 - [ ] T8 — the editor previews each target's surfaces · editor · R5 · captures

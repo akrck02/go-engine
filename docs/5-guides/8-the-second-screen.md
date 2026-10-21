@@ -57,4 +57,4 @@ It needs `import ui "github.com/akrck02/go-ui"`, which the engine already brings
 
 ---
 
-[← Building for Android](7-building-for-android.md) · [The reference →](../6-reference/0-packages.md)
+[← Building for Android](7-building-for-android.md) · [Actions and controls →](9-actions-and-controls.md)
