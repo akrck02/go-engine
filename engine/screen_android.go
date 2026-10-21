@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"github.com/akrck02/go-renderer/ctr"
 	"github.com/akrck02/go-renderer/draw2d"
 	"github.com/akrck02/go-renderer/input"
 	ui "github.com/akrck02/go-ui"
@@ -24,6 +25,10 @@ func interfaceFor(game *runner) func(context *ui.Context) {
 				Width: area.Width - insets.Left - insets.Right, Height: area.Height - insets.Top - insets.Bottom}
 			played := game.played
 			layout := touchLayoutFor(area, safe, played.designedAspect())
+			if len(touchPanel.controls) > 0 { // the game's own controls lie over the whole screen
+				layout = touchLayout{scene: area}
+				placeTouchControls(safe)
+			}
 			game.console.buttons = layout.buttons
 			if played.Is2D() { // a 3D scene is drawn under the interface: covering it would hide it
 				list.Rectangle(area, 0, draw2d.Color{0, 0, 0, 1}, draw2d.Color{}, 0)
@@ -31,14 +36,34 @@ func interfaceFor(game *runner) func(context *ui.Context) {
 				played.Draw2D(list, layout.scene, played.View2D())
 				list.PopClip()
 			}
+			if len(touchPanel.controls) > 0 {
+				drawTouchControls(list)
+				return
+			}
 			drawTouchButtons(list, layout.buttons)
 		})
-		game.console.describeTouchButtons(context)
+		if len(touchPanel.controls) == 0 {
+			// TODO(akrck02): a screen reader reads the engine's four buttons, not a game's own touch controls yet
+			game.console.describeTouchButtons(context)
+		}
 	}
 }
 
 // consoleKeys is the game's keys on Android: a keyboard's, if one is plugged in, and the touch
 // buttons'.
 func consoleKeys(console *consoleInput, window *input.State) *input.State {
+	readTouchControls(window.Touches())
 	return touchKeys(&console.keys, window, console.buttons, console.readerHeld())
 }
+
+// readConsole is an empty reading: there is no 3DS here.
+func readConsole() ctr.Reading { return ctr.Reading{} }
+
+// startConsole does nothing: there is no 3DS here.
+func startConsole() {}
+
+// stopConsole does nothing: there is no 3DS here.
+func stopConsole() {}
+
+// runningTarget is the target this build runs on.
+const runningTarget = AndroidTarget

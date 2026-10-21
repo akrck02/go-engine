@@ -8,6 +8,7 @@ import (
 
 	"github.com/akrck02/go-renderer/draw2d"
 	"github.com/akrck02/go-renderer/input"
+	"github.com/akrck02/go-renderer/models"
 	"github.com/akrck02/go-ui/window"
 
 	"github.com/akrck02/go-engine/failure"
@@ -22,18 +23,52 @@ type Settings struct {
 	// CodeEditor is the command the editor opens the project's code with ("code", "zed", "nvim"…);
 	// empty tries $VISUAL, $EDITOR and the usual ones.
 	CodeEditor string `json:"codeEditor,omitempty"`
-	// AndroidID is the game's application id on Android, as io.example.game; empty makes one from
-	// its name.
-	AndroidID string `json:"androidId,omitempty"`
-	// ConsoleAddress is the 3DS's address on the network, to send the game to; empty looks for it.
-	ConsoleAddress string `json:"consoleAddress,omitempty"`
-	// SceneMenu lists the game's scenes on the Nintendo 3DS's bottom screen, to play any of them
+	// ApplicationID is the game's application id, as io.example.game, which each target turns into
+	// what it needs (Android's package); empty makes one from its name.
+	ApplicationID string `json:"applicationId,omitempty"`
+	// DeviceAddress is the address on the network of the device the game is sent to (a 3DS's);
+	// empty looks for it.
+	DeviceAddress string `json:"deviceAddress,omitempty"`
+	// SceneMenu lists the game's scenes on a device's second screen (a 3DS's), to play any of them
 	// with a touch: a level select.
 	SceneMenu bool `json:"sceneMenu,omitempty"`
+	// KeepStart gives a device's start button to the game (a pause, read as ButtonStart) instead of
+	// ending it, where the start button ends games (a 3DS's START; its HOME menu still ends it).
+	KeepStart bool `json:"keepStart,omitempty"`
+	// Actions are what the player does, by name, each bound to inputs per target: "fire":
+	// {"desktop": ["Space", "Pad A"], "nintendo3ds": ["A"]} (Input.Action, inputwords.go).
+	Actions map[string]map[string][]string `json:"actions,omitempty"`
+	// Axes are the actions that move an axis (-1 to 1) instead of pressing, by name: an action
+	// with no inputs yet says so here, as its inputs cannot.
+	Axes []string `json:"axes,omitempty"`
+	// TouchControls are the sticks and buttons drawn on a touch screen (a phone's), as the editor
+	// places them; none keeps the engine's four touch buttons (touchcontrols.go).
+	TouchControls []TouchControl `json:"touchControls,omitempty"`
 }
 
 // SettingsFile is the settings' file in a project.
 const SettingsFile = "engine.json"
+
+// UnmarshalJSON reads settings, taking the old names of two of them when the new ones are missing.
+func (settings *Settings) UnmarshalJSON(data []byte) error {
+	type plain Settings // without this method, so that decoding it does not call it again
+	var file struct {
+		plain
+		OldApplicationID string `json:"androidId"`
+		OldDeviceAddress string `json:"consoleAddress"`
+	}
+	if err := json.Unmarshal(data, &file); err != nil {
+		return err
+	}
+	*settings = Settings(file.plain)
+	if settings.ApplicationID == "" {
+		settings.ApplicationID = file.OldApplicationID
+	}
+	if settings.DeviceAddress == "" {
+		settings.DeviceAddress = file.OldDeviceAddress
+	}
+	return nil
+}
 
 // ReadSettings reads a project's settings.
 func ReadSettings(files fs.FS) (Settings, error) {
@@ -62,6 +97,9 @@ func Run(files fs.FS) error {
 		return err
 	}
 	slog.Info("Go Engine", "version", Version(), "game", settings.Name)
+	for _, problem := range bindGame(settings, RunningOn()) {
+		slog.Warn("an action's input is unknown here; the rest are bound", "error", problem)
+	}
 	played, err := Load(files, settings.StartScene)
 	if played == nil {
 		return err
@@ -72,8 +110,9 @@ func Run(files fs.FS) error {
 	for _, problem := range played.Start() {
 		slog.Warn("a behaviour could not be made", "error", problem)
 	}
-	game := &runner{played: played, name: settings.Name}
-	if settings.SceneMenu || bottomScreen != nil {
+	useTouchControls(settings.TouchControls)
+	game := &runner{played: played, name: settings.Name, keepStart: settings.KeepStart}
+	if settings.SceneMenu || gameInterface != nil {
 		game.menu = scenesOf(files)
 	}
 	return game.run(settings.Name)
@@ -97,32 +136,43 @@ type runner struct {
 	played  *Scene
 	last    time.Time
 	flat    draw2d.List      // a 2D scene's drawing on the console, made again every frame
+	overlay draw2d.List      // the game's drawing over a 3D scene (SetOverlay), made again every frame
+	below   window.BelowView // how the bottom screen's scene is seen this frame (SetSecondScreen)
 	console consoleInput     // the console's buttons, as keys
 	view    window.SceneView // what the window shows this frame
 	name    string           // the game's
 	menu    []MenuScene      // the scenes the bottom screen offers, when it offers them
+	// keepStart gives the 3DS's START to the game instead of ending it (Settings.KeepStart)
+	keepStart bool
 }
 
 // run opens the window and plays until it is closed.
 func (game *runner) run(title string) error {
-	options := window.Options{Title: title, Width: windowWidth, Height: windowHeight, Continuous: true}
+	options := window.Options{Title: title, Width: windowWidth, Height: windowHeight, Continuous: true, KeepStart: game.keepStart}
 	options.Scene = game.step
+	startConsole()
+	defer stopConsole()
 	return window.Run(options, interfaceFor(game))
 }
 
 // step moves the game on a frame and gives the window what to show.
 func (game *runner) step(state *input.State, step float64) *window.SceneView {
 	seconds := game.secondsSince(state, step)
+	game.console.reading = readConsole()
 	keys := consoleKeys(&game.console, state)
-	game.played.Update(seconds, keys)
+	state.LockCursor(pointerCaptured)
+	game.played.input.console = game.console.reading
+	game.played.PlayFrame(seconds, keys)
+	quitIfAsked()
+	below := game.playSecondScreen(seconds, keys)
 	game.replaceIfAsked()
 	if game.played.Is2D() && !flatNeedsScene {
 		return nil // the interface paints a 2D scene (interfaceFor): no 3D scene behind it
 	}
 	drawOver(game.played, state, &game.flat)
-	game.view = window.SceneView{World: game.played.World(), Camera: CameraAt(fallbackCamera, defaultCamera)}
-	if camera, found := game.played.MainCamera(); found {
-		game.view.Camera = camera.View()
+	game.view = window.SceneView{World: game.played.World(), Camera: game.played.Camera(), Below: below}
+	if overlayPainter != nil && !game.played.Is2D() {
+		game.view.Drawing = game.paintOverlay(state)
 	}
 	return &game.view
 }
@@ -149,6 +199,14 @@ func (game *runner) replaceIfAsked() {
 	if replaced {
 		game.played = next
 	}
+}
+
+// Camera is how the scene is seen: from its main camera, or from a little above when it has none.
+func (owner *Scene) Camera() models.Camera {
+	if camera, found := owner.MainCamera(); found {
+		return camera.View()
+	}
+	return CameraAt(fallbackCamera, defaultCamera)
 }
 
 // defaultCamera is how a scene with no camera is seen: in perspective, from a little above.

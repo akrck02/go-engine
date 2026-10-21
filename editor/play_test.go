@@ -89,7 +89,7 @@ func TestWhatIsLoggedWhilePlayingIsKept(test *testing.T) {
 	}
 }
 
-func TestTheConsoleShapeShowsTheBottomScreenUnderTheTopOne(test *testing.T) {
+func TestTheNintendo3DSShapeShowsTheSecondScreenUnderTheTopOne(test *testing.T) {
 	top, bottom := consoleScreens(draw2d.Rect{X: 100, Width: 1000, Height: 520})
 	if math.Abs(float64(top.Width/top.Height)-400.0/240) > 1e-3 || math.Abs(float64(bottom.Width/bottom.Height)-320.0/240) > 1e-3 {
 		test.Fatalf("the screens are %v and %v, not the 3DS's shapes", top, bottom)

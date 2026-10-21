@@ -77,6 +77,11 @@ type Camera struct {
 	Projection  Projection `json:"projection"`
 	FieldOfView float64    `json:"fieldOfView,omitempty"` // degrees, top to bottom, in perspective; 0 is 45
 	Height      float64    `json:"height,omitempty"`      // metres seen top to bottom, orthographic and isometric; 0 is 10
+	Near        float64    `json:"near,omitempty"`        // metres to the nearest thing seen, in perspective; 0 is 0.05
+	Far         float64    `json:"far,omitempty"`         // metres to the farthest thing seen, in any projection; 0 is 2000
+	// Focus is the metres to what the camera looks at: where a stereoscopic screen (a 3DS's) puts
+	// its surface, nearer things coming out of it and farther ones going in; 0 is 10.
+	Focus float64 `json:"focus,omitempty"`
 	// Width is the metres a 2D camera sees across, at least: a screen narrower than Height and
 	// Width make (a phone held upright) sees more height instead of losing the sides. 0 is no least.
 	Width float64 `json:"width,omitempty"`

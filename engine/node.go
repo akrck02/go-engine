@@ -67,6 +67,8 @@ type Node struct {
 	geometry  *scene.Node // the shape or the model, inside render
 	helper    *scene.Node // what the editor shows for a node with nothing to show (a camera, an empty)
 	modelBase string      // the model the geometry was made from
+	codeMesh  *scene.Mesh // a mesh the game's code gave the node, shown instead of its shape or model
+	moving    bool        // the game moves the node every frame: lit on the GPU (SetMoving)
 }
 
 // newNode makes a node of a scene with nothing to show yet.
@@ -185,6 +187,9 @@ func (node *Node) detach() {
 // and helper, then its children's.
 func (node *Node) rebuildRenderChildren() {
 	node.render.Children = node.render.Children[:0]
+	if node.moving {
+		markMoving(node.geometry, true) // a node not marked leaves its model's own flags as they are
+	}
 	if node.geometry != nil {
 		node.render.Children = append(node.render.Children, node.geometry)
 	}
@@ -270,11 +275,48 @@ func (node *Node) SetCamera(camera *scenefile.Camera) {
 	node.rebuild()
 }
 
+// SetMesh makes the node show a mesh the game's code built (a vehicle from its design), instead
+// of its shape or model; another call replaces it, and nil goes back to the shape or model. The
+// mesh lives only while the game plays: scene files keep shapes and models.
+func (node *Node) SetMesh(mesh *scene.Mesh) {
+	node.codeMesh = mesh
+	node.rebuild()
+}
+
+// Mesh is the mesh the game's code gave the node, if any.
+func (node *Node) Mesh() (*scene.Mesh, bool) { return node.codeMesh, node.codeMesh != nil }
+
+// SetMoving says the game moves or turns the node every frame. Go Renderer then lights it on the
+// GPU each frame; otherwise the 3DS works its light out again for every way it is turned.
+func (node *Node) SetMoving(moving bool) {
+	node.moving = moving
+	markMoving(node.geometry, moving)
+}
+
+// Moving tells whether the node is marked as moving every frame.
+func (node *Node) Moving() bool { return node.moving }
+
+// markMoving sets Go Renderer's moving flag on a render node and all it holds.
+func markMoving(render *scene.Node, moving bool) {
+	if render == nil {
+		return
+	}
+	render.Moving = moving
+	for _, child := range render.Children {
+		markMoving(child, moving)
+	}
+}
+
 // rebuild makes the node's geometry again after what it shows changed.
 func (node *Node) rebuild() {
 	node.geometry, node.helper = nil, nil
 	if node.scene.Is2D() {
 		node.rebuildRenderChildren() // a 2D scene is drawn flat, by Draw2D
+		return
+	}
+	if node.codeMesh != nil {
+		node.geometry = &scene.Node{Name: node.codeMesh.Name, Transform: graphics.Identity(), Mesh: node.codeMesh}
+		node.rebuildRenderChildren()
 		return
 	}
 	if node.shape != "" {

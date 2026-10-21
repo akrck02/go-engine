@@ -44,13 +44,13 @@ hides the console, set its address in **Project → Settings**.
 | `build.android-ndk-not-found` | building for Android needs the Android NDK, in the SDK's ndk folder (Android Studio's SDK Manager): install it or set its place in Build's tools, or $ANDROID_NDK_HOME |
 | `build.android-sdk-incomplete` | the Android SDK lacks parts a build needs: install them with its SDK Manager, or Install |
 | `build.android-sdk-not-found` | building for Android needs the Android SDK (Android Studio installs it): install it or set its place in Build's tools, or $ANDROID_HOME |
-| `build.console-emulator-not-found` | no 3DS emulator found (azahar, lime3ds, citra-qt or citra): install it or set its place in Build's tools, or put one on the path |
 | `build.devkitpro-incomplete` | devkitPro lacks parts of the 3DS's: install its 3ds-dev packages (Install runs devkitPro's installer) |
 | `build.java-not-found` | Android's builds need a JDK (17 or newer, as Adoptium's Temurin, or Android Studio's): install one or set its folder in Build's tools, or $JAVA_HOME |
 | `build.java-without-compiler` | the Java found is only a runtime, with no javac: Android's builds need a JDK |
+| `build.nintendo3ds-emulator-not-found` | no 3DS emulator found (azahar, lime3ds, citra-qt or citra): install it or set its place in Build's tools, or put one on the path |
 | `build.source-not-found` | go-engine's source, which programs build against, is not where the editor was built |
 | `build.tinygo-not-found` | building for the 3DS needs TinyGo with the nintendo3ds target (github.com/akrck02/tinygo-3ds): install it or set its place in Build's tools, or $TINYGO |
-| `build.tinygo-without-console` | the TinyGo found has no nintendo3ds target: it is not tinygo-3ds's (Install gets it) |
+| `build.tinygo-without-nintendo3ds` | the TinyGo found has no nintendo3ds target: it is not tinygo-3ds's (Install gets it) |
 | `build.tool-failed` | a Go tool failed |
 | `build.tool-place-wrong` | nothing is where the tool was set: change it in Build's tools, or empty it to look for the tool |
 | `build.tools-not-read` | the tools' places kept on this computer could not be read |
@@ -60,12 +60,15 @@ hides the console, set its address in **Project → Settings**.
 | `editor.art-unsaved` | the sprite or tileset open in Art has changes not saved: save it first |
 | `editor.art-wrong-kind` | the file is not a sprite's or a tileset's |
 | `editor.frames-wrong` | an animation's frames are not numbers and runs of the sheet's frames, as 0-3, 6 |
+| `editor.no-licence` | the tool has no licence to accept before it is installed |
 | `editor.no-own-sheet` | the node does not cut its picture into frames itself |
 | `editor.restart-failed` | the editor could not start again with the project's new code |
 | `editor.tools-in-use` | the tools cannot change while the game builds or plays: wait for it to end, or stop it |
 | `editor.unsaved-changes` | the scene has changes not saved: save it first (Ctrl+S) |
 | `engine.behaviour-fields` | the scene's fields do not fit the behaviour's |
 | `engine.behaviour-unregistered` | no behaviour is registered by that name (engine.Register in the game's main) |
+| `engine.bindings-not-saved` | the actions the player changed could not be kept on this device |
+| `engine.input-unknown` | an action is bound to an input the target does not have: see the words an action can be bound to |
 | `engine.model-format` | only .glb models are read for now |
 | `engine.model-not-found` | the model's file does not exist |
 | `engine.model-unreadable` | the model's file is not a .glb go-renderer reads |
@@ -90,7 +93,7 @@ hides the console, set its address in **Project → Settings**.
 | `install.no-build-for-system` | there is no build of this tool for this system to download |
 | `install.path-outside` | the archive names a file outside the folder it unpacks into: it was not unpacked |
 | `install.unpack-failed` | the archive downloaded could not be unpacked |
-| `project.application-id-wrong` | an Android application id is two words or more joined by dots, each starting with a letter, as io.example.game |
+| `project.application-id-wrong` | an application id is two words or more joined by dots, each starting with a letter, as io.example.game |
 | `project.engine-not-read` | the version of go-engine the project requires could not be read from its go.mod |
 | `project.engine-not-updated` | go-engine could not be updated: check the network, and that the version exists |
 | `project.folder-not-empty` | a new project needs an empty folder |
@@ -98,8 +101,10 @@ hides the console, set its address in **Project → Settings**.
 | `project.import-format` | only .glb models can be imported for now (export glTF as binary .glb) |
 | `project.no-android-device` | adb sees no Android device: plug a phone in with USB debugging on, or start the emulator |
 | `project.not-a-project` | the folder is not a go-engine project; make one with: go-engine new <folder> |
+| `project.release-needs-published-engine` | the game's go.mod uses go-engine from a folder of this computer, which GitHub's machines do not have: update it first (go-engine -update) |
 | `project.scene-exists` | a scene of that name exists already |
 | `project.settings-not-saved` | engine.json could not be written |
+| `project.target-cannot` | the target cannot do that |
 | `project.terminal-not-found` | the code editor runs in a terminal, and no terminal was found |
 | `scenefile.frame-outside-sheet` | an animation shows a frame the sheet does not have |
 | `scenefile.light-radii-wrong` | a light's radii are below zero, or the inner one is beyond the outer |

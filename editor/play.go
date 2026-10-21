@@ -37,13 +37,14 @@ type PlayTarget int
 const (
 	// WideScreen is a computer's screen, sixteen wide for nine high.
 	WideScreen PlayTarget = iota
-	// ConsoleScreen is the Nintendo 3DS's top screen, 400 × 240 pixels.
-	ConsoleScreen
+	// Nintendo3DSScreens are the Nintendo 3DS's two screens: the top one, 400 × 240 pixels, and
+	// the second under it.
+	Nintendo3DSScreens
 )
 
 // Aspect is the target's width over its height.
 func (target PlayTarget) Aspect() float64 {
-	if target == ConsoleScreen {
+	if target == Nintendo3DSScreens {
 		return 400.0 / 240
 	}
 	return 16.0 / 9

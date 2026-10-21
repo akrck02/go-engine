@@ -26,6 +26,7 @@ draws its window with go-ui and viewport.go its 3D view.
 var (
 	RestartFailed  = failure.Define("editor.restart-failed", "the editor could not start again with the project's new code")
 	ToolsInUse     = failure.Define("editor.tools-in-use", "the tools cannot change while the game builds or plays: wait for it to end, or stop it")
+	NoLicence      = failure.Define("editor.no-licence", "the tool has no licence to accept before it is installed")
 	FramesWrong    = failure.Define("editor.frames-wrong", "an animation's frames are not numbers and runs of the sheet's frames, as 0-3, 6")
 	ArtNotFound    = failure.Define("editor.art-not-found", "the sprite or tileset is not a file of the project's")
 	ArtNotSaved    = failure.Define("editor.art-not-saved", "the sprite or tileset could not be written")
@@ -37,12 +38,6 @@ var (
 ```
 
 Error codes of the editor package.
-
-```go
-var BuildTargets = []BuildTarget{ComputerTarget, ConsoleTarget, AndroidTarget}
-```
-
-BuildTargets are the targets in the order of their cards.
 
 ```go
 var Kinds = []string{"Empty", "Cube", "Sphere", "Plane", "Cylinder", "Camera", "Light"}
@@ -63,7 +58,7 @@ var Tools = []Tool{SelectTool, PaintTool, EraseTool, FillTool, HandTool}
 Tools are the tools in the order of the rail.
 
 ```go
-var Workspaces = []Workspace{ProjectWorkspace, ArtWorkspace, LevelWorkspace, CodeWorkspace, PlayWorkspace, BuildWorkspace}
+var Workspaces = []Workspace{ProjectWorkspace, ArtWorkspace, LevelWorkspace, CodeWorkspace, ControlsWorkspace, PlayWorkspace, BuildWorkspace}
 ```
 
 Workspaces are the workspaces in the order of the bar.
@@ -81,31 +76,6 @@ type BuildResult struct {
 	Log     []string
 }
 ```
-
-### BuildTarget
-
-BuildTarget is a place the game runs.
-
-```go
-type BuildTarget int
-```
-
-```go
-const (
-	// ComputerTarget is this computer.
-	ComputerTarget BuildTarget = iota
-	// ConsoleTarget is the Nintendo 3DS.
-	ConsoleTarget
-	// AndroidTarget is a phone or tablet with Android.
-	AndroidTarget
-)
-```
-
-| Function or method | |
-|---|---|
-| `func (target BuildTarget) Icon() string` | Icon is the target's icon on its card. |
-| `func (target BuildTarget) Makes() string` | Makes says what a build for the target makes. |
-| `func (target BuildTarget) Name() string` | Name is the target's name on its card. |
 
 ### Editor
 
@@ -141,7 +111,7 @@ type Editor struct {
 | Function or method | |
 |---|---|
 | `func Open(opened *project.Project) (*Editor, error)` | Open opens a project at its start scene. |
-| `func (editor *Editor) AcceptAndroidLicence()` | AcceptAndroidLicence installs Android's SDK, with the NDK and what a game's build needs, the licence the person read (AndroidLicence) accepted, and sets the SDK's place. |
+| `func (editor *Editor) AcceptLicence()` | AcceptLicence installs the tool whose licence the person read (Licence), with that licence accepted, and sets its place. |
 | `func (editor *Editor) Add(kind string) *engine.Node` | Add adds a node of a kind ("Cube", "Camera"…) under the selected node's parent, after it (or at the end of the scene), and selects it. |
 | `func (editor *Editor) AddAnimation() int` | AddAnimation adds an animation of the first frame to the sheet being edited, with a name of its own, and tells where it is in the sheet's list (-1 without a sheet). |
 | `func (editor *Editor) AddFrame(index, frame int)` | AddFrame puts a frame of the sheet at the end of an animation: clicking frames on the picture makes an animation of them, in the order clicked. |
@@ -149,13 +119,12 @@ type Editor struct {
 | `func (editor *Editor) AddSprite(picture string) *engine.Node` | AddSprite adds a node showing one of the project's pictures, in a 2D scene, and selects it. |
 | `func (editor *Editor) AdvancePlay(seconds float64, keys *input.State)` | AdvancePlay moves the scene played in the view on a frame, and goes on to the scene the game asked for (a level started again, the next one); one that cannot be read is reported and the view stays where it is. |
 | `func (editor *Editor) AllChosen() []*engine.Node` | AllChosen are the nodes chosen, the inspector's first. |
-| `func (editor *Editor) AndroidLicence() (string, bool)` | AndroidLicence is Android's licence while it waits for the person to accept it or not. |
 | `func (editor *Editor) ArtOpen() (file string, isSprite, isTileset bool)` | ArtOpen is the file open in Art, and whether it is a sprite or a tileset. |
 | `func (editor *Editor) ArtSaved() bool` | ArtSaved tells whether the file open in Art has no changes left to save. |
 | `func (editor *Editor) AttachBehaviour(name string)` | AttachBehaviour gives the selected node a behaviour of the project's, its fields empty. |
 | `func (editor *Editor) BehaviourUses(name string) []project.Use` | BehaviourUses are the nodes of the project's saved scenes that have a behaviour. |
 | `func (editor *Editor) Behaviours() []project.Behaviour` | Behaviours are the behaviours the project's code defines, as last read. |
-| `func (editor *Editor) BuildFor(target BuildTarget)` | BuildFor builds the game for a target in the background; its result is kept when it ends. |
+| `func (editor *Editor) BuildFor(target project.Target)` | BuildFor builds the game for a target in the background; its result is kept when it ends. |
 | `func (editor *Editor) CanRedo() bool` |  |
 | `func (editor *Editor) CanUndo() bool` | CanUndo and CanRedo tell whether there is a step to go back or forward to. |
 | `func (editor *Editor) Changed()` | Changed marks the scene as changed since it was saved, and keeps it for undo. |
@@ -163,7 +132,7 @@ type Editor struct {
 | `func (editor *Editor) CloseArt() error` | CloseArt closes the file open in Art, which must have no changes left to save. |
 | `func (editor *Editor) CloseNotice(index int)` | CloseNotice lets go of a notice, by its place among Notices. |
 | `func (editor *Editor) CodeChanged() bool` | CodeChanged tells whether the project's code changed since the game the editor runs in was built: Reload brings the changes in. |
-| `func (editor *Editor) DeclineAndroidLicence()` | DeclineAndroidLicence leaves the SDK uninstalled. |
+| `func (editor *Editor) DeclineLicence()` | DeclineLicence leaves the tool whose licence waits uninstalled. |
 | `func (editor *Editor) Delete()` | Delete removes the nodes chosen and what hangs from them; the node after the inspector's is chosen next. |
 | `func (editor *Editor) DetachBehaviour(index int)` | DetachBehaviour takes a behaviour off the selected node. |
 | `func (editor *Editor) Duplicate()` | Duplicate copies the nodes chosen, and what hangs from them, each beside its original; the copies are chosen. |
@@ -179,8 +148,9 @@ type Editor struct {
 | `func (editor *Editor) Installing() (tool string, done, total int64, busy bool)` | Installing tells which tool is being installed, and how much of its download has arrived (total is 0 when unknown). |
 | `func (editor *Editor) IsChosen(node *engine.Node) bool` | IsChosen tells whether a node is among those chosen. |
 | `func (editor *Editor) KindsHere() []string` | KindsHere are the kinds of node the scene shown takes. |
-| `func (editor *Editor) LastBuild(target BuildTarget) (BuildResult, bool)` | LastBuild is a target's last build in this session. |
+| `func (editor *Editor) LastBuild(target project.Target) (BuildResult, bool)` | LastBuild is a target's last build in this session. |
 | `func (editor *Editor) LeavePlay()` | LeavePlay goes back from Play to the workspace it was entered from. |
+| `func (editor *Editor) Licence() (PendingLicence, bool)` | Licence is the licence waiting for the person to accept it or not, if one is. |
 | `func (editor *Editor) LightChanged()` | LightChanged keeps a change to a light or the ambient, and shows it at once. |
 | `func (editor *Editor) LookForTools(tools build.Tools)` | LookForTools looks for every tool where some places say (the ones typed, before saving them). |
 | `func (editor *Editor) MakeSprite(picture string, columns, rows int) (string, error)` | MakeSprite makes a picture of the project a sprite of columns and rows of frames, in a file beside it ("lamp.png" makes "lamp.sprite.json"), and opens it; a sprite already made is opened. |
@@ -200,14 +170,13 @@ type Editor struct {
 | `func (editor *Editor) Pick(origin, direction space.Vector) (*engine.Node, bool)` | Pick finds the node a ray from the camera meets first: the one whose box it enters nearest. |
 | `func (editor *Editor) PickFlat(point space.Vector, reach float64) (*engine.Node, bool)` | PickFlat finds the node drawn on top at a point of a 2D scene: a sprite or a shape there, or an empty node or a camera within a share of a metre of it. |
 | `func (editor *Editor) PlayHere()` | PlayHere plays the scene in the view, with the behaviours compiled into the game the editor runs in; the scene edited stays as it was. |
-| `func (editor *Editor) PlayInEmulator()` | PlayInEmulator builds the game for the 3DS and opens it in an emulator; Stop closes it. |
-| `func (editor *Editor) PlayInWindow()` | PlayInWindow saves the scene, builds the game and runs it in a window of its own, in the background: what happens arrives through Events. |
+| `func (editor *Editor) PlayInEmulator(target project.Target)` | PlayInEmulator builds the game for a target and opens it in the target's emulator; Stop closes it. |
 | `func (editor *Editor) PlayLog() []string` | PlayLog is what the game and the engine said while the scene played in the view, oldest first. |
-| `func (editor *Editor) PlayOnDevice()` | PlayOnDevice builds the game for Android and plays it on the device adb sees, its log shown as a window's output is; stopping it stops the game on the device. |
+| `func (editor *Editor) PlayOn(target project.Target)` | PlayOn builds the game for a target and plays it there (project.Project.PlayOn): in a window, on the device, or sent to the 3DS. |
 | `func (editor *Editor) PlayingHere() (*engine.Scene, bool)` | PlayingHere is the scene played in the view, while it is. |
-| `func (editor *Editor) PlayingOn() (BuildTarget, bool)` | PlayingOn tells where the game plays now, when it does. |
-| `func (editor *Editor) ReadAndroidLicence()` | ReadAndroidLicence reads Android's licence in the background, for the person to read and accept before the SDK is installed (AndroidLicence). |
+| `func (editor *Editor) PlayingOn() (project.Target, bool)` | PlayingOn tells where the game plays now, when it does. |
 | `func (editor *Editor) ReadBehaviours()` | ReadBehaviours reads the project's code again for its behaviours: after it was edited. |
+| `func (editor *Editor) ReadLicence(tool string)` | ReadLicence reads a tool's licence in the background, for the person to read and accept before the tool is installed (Licence). |
 | `func (editor *Editor) Redo()` | Redo takes the scene forward one step, after an undo. |
 | `func (editor *Editor) Reload()` | Reload saves the scene, builds the game again with the project's code as it is now, and starts the editor again in it, on the same scene and node. |
 | `func (editor *Editor) RemoveAnimation(index int)` | RemoveAnimation takes an animation from the sheet being edited; if it was the one the scene starts with, the first one left starts it. |
@@ -221,9 +190,9 @@ type Editor struct {
 | `func (editor *Editor) Running() bool` | Running tells whether the game is building or playing. |
 | `func (editor *Editor) Save() error` | Save writes the scene shown to its file. |
 | `func (editor *Editor) SaveArt() error` | SaveArt writes the file open in Art; the scene shows it changed at once. |
+| `func (editor *Editor) SaveControls(actions map[string]map[string][]string, axes []string, touch []engine.TouchControl) error` | SaveControls keeps the actions, which of them move an axis, and the touch controls in the project's settings. |
 | `func (editor *Editor) SaveTools(tools build.Tools) error` | SaveTools keeps the tools' places on this computer, for the builds and every project, and looks for them again. |
 | `func (editor *Editor) Select(node *engine.Node)` | Select chooses a node (nil for none), and lets go of any other chosen with it. |
-| `func (editor *Editor) SendToConsole()` | SendToConsole builds the game for the 3DS and sends it to the console's Homebrew Launcher, in the background. |
 | `func (editor *Editor) SetAmbient(ambient *scenefile.Ambient)` | SetAmbient gives the scene an ambient light of its own, or takes it away (nil). |
 | `func (editor *Editor) SetAnimationFrames(index int, written string) error` | SetAnimationFrames sets the frames an animation shows, written as numbers and runs ("0-3, 6"). |
 | `func (editor *Editor) SetArtTileSize(pixels int)` | SetArtTileSize sets how many pixels a side the tiles of the tileset open in Art are. |
@@ -251,6 +220,7 @@ type Editor struct {
 | `func (editor *Editor) Undo()` | Undo takes the scene back one step. |
 | `func (editor *Editor) Unnest()` | Unnest hangs the selected node from its grandparent, after its parent, keeping where it is. |
 | `func (editor *Editor) Watch() []WatchLine` | Watch is what the chosen node of the scene played is doing: where it is, its body's velocity and whether it stands on the floor, the animation it plays, and its behaviours' exported fields. |
+| `func (editor *Editor) WriteReleaseWorkflow()` | WriteReleaseWorkflow writes the workflow that builds the game for Windows, macOS and Linux on GitHub at each version tag, and says where it went or why it did not. |
 
 ### MissingBehaviour
 
@@ -276,6 +246,17 @@ type Notice struct {
 }
 ```
 
+### PendingLicence
+
+PendingLicence is a tool's licence, read and waiting for the person to
+accept it or not.
+
+```go
+type PendingLicence struct {
+	Tool, Text string
+}
+```
+
 ### PlayTarget
 
 PlayTarget is the shape of the screen the game is shown at while it plays in
@@ -289,8 +270,9 @@ type PlayTarget int
 const (
 	// WideScreen is a computer's screen, sixteen wide for nine high.
 	WideScreen PlayTarget = iota
-	// ConsoleScreen is the Nintendo 3DS's top screen, 400 × 240 pixels.
-	ConsoleScreen
+	// Nintendo3DSScreens are the Nintendo 3DS's two screens: the top one, 400 × 240 pixels, and
+	// the second under it.
+	Nintendo3DSScreens
 )
 ```
 
@@ -407,6 +389,8 @@ const (
 	LevelWorkspace
 	// CodeWorkspace shows the behaviours the project's Go code defines.
 	CodeWorkspace
+	// ControlsWorkspace binds the game's actions to each target's inputs.
+	ControlsWorkspace
 	// PlayWorkspace plays the scene, to try it.
 	PlayWorkspace
 	// BuildWorkspace makes the game for each place it runs.

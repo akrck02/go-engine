@@ -12,36 +12,31 @@ import (
 // in the background, and keeping each target's last result (what it made, how large, when, and
 // what building said) until the next.
 
-// BuildTarget is a place the game runs.
-type BuildTarget int
-
-const (
-	// ComputerTarget is this computer.
-	ComputerTarget BuildTarget = iota
-	// ConsoleTarget is the Nintendo 3DS.
-	ConsoleTarget
-	// AndroidTarget is a phone or tablet with Android.
-	AndroidTarget
-)
-
-// BuildTargets are the targets in the order of their cards.
-var BuildTargets = []BuildTarget{ComputerTarget, ConsoleTarget, AndroidTarget}
-
-// targetParts are each target's name, icon and what its build makes, in the order of BuildTargets.
+// targetParts are each target's name, icon and what its build makes, in the order of
+// project.Targets.
 var targetParts = []struct{ name, icon, makes string }{
 	{"This computer", iconComputer, "a program for this computer"},
 	{"Nintendo 3DS", iconConsole, "a .3dsx for the Homebrew Launcher"},
 	{"Android", iconPhone, "an .apk to install on a phone, signed for trying"},
 }
 
-// Name is the target's name on its card.
-func (target BuildTarget) Name() string { return targetParts[target].name }
+// targetName is a target's name on its card.
+func targetName(target project.Target) string { return partsOf(target).name }
 
-// Icon is the target's icon on its card.
-func (target BuildTarget) Icon() string { return targetParts[target].icon }
+// targetIcon is a target's icon on its card.
+func targetIcon(target project.Target) string { return partsOf(target).icon }
 
-// Makes says what a build for the target makes.
-func (target BuildTarget) Makes() string { return targetParts[target].makes }
+// targetMakes says what a build for a target makes.
+func targetMakes(target project.Target) string { return partsOf(target).makes }
+
+// partsOf is a target's card, or the target's own name with nothing more for a target the editor
+// has no card for yet.
+func partsOf(target project.Target) struct{ name, icon, makes string } {
+	if target < 0 || int(target) >= len(targetParts) {
+		return struct{ name, icon, makes string }{name: target.String()}
+	}
+	return targetParts[target]
+}
 
 // BuildResult is what the last build for a target made, or why it did not.
 type BuildResult struct {
@@ -53,14 +48,14 @@ type BuildResult struct {
 }
 
 // LastBuild is a target's last build in this session.
-func (editor *Editor) LastBuild(target BuildTarget) (BuildResult, bool) {
+func (editor *Editor) LastBuild(target project.Target) (BuildResult, bool) {
 	result, found := editor.builds[target]
 	return result, found
 }
 
 // BuildFor builds the game for a target in the background; its result is kept when it ends.
 // What is built is what is on disk: the scene and the file open in Art are saved first.
-func (editor *Editor) BuildFor(target BuildTarget) {
+func (editor *Editor) BuildFor(target project.Target) {
 	if editor.running {
 		editor.say("Busy: wait for what is running to end, or stop the game", true)
 		return
@@ -72,7 +67,7 @@ func (editor *Editor) BuildFor(target BuildTarget) {
 		editor.say(err.Error(), true)
 		return
 	}
-	editor.Run("Building for "+target.Name()+"…", func() (string, error) {
+	editor.Run("Building for "+targetName(target)+"…", func() (string, error) {
 		result := editor.buildNow(target)
 		editor.send(func(editor *Editor) { editor.recordBuild(target, result) })
 		if result.Err != nil {
@@ -83,7 +78,7 @@ func (editor *Editor) BuildFor(target BuildTarget) {
 }
 
 // buildNow builds the game for a target and says how it went.
-func (editor *Editor) buildNow(target BuildTarget) BuildResult {
+func (editor *Editor) buildNow(target project.Target) BuildResult {
 	built, err := editor.builderFor(target)()
 	result := BuildResult{Program: built.Program, At: time.Now(), Err: err}
 	if err != nil {
@@ -98,20 +93,25 @@ func (editor *Editor) buildNow(target BuildTarget) BuildResult {
 }
 
 // builderFor is how a target is built: the project's own builds, unless a test set another.
-func (editor *Editor) builderFor(target BuildTarget) func() (project.Built, error) {
+func (editor *Editor) builderFor(target project.Target) func() (project.Built, error) {
 	if builder := editor.builders[target]; builder != nil {
 		return builder
 	}
-	switch target {
-	case ConsoleTarget:
-		return editor.Project.Build3DS
-	case AndroidTarget:
-		return editor.Project.BuildAndroid
-	}
-	return editor.Project.BuildDesktop
+	return func() (project.Built, error) { return editor.Project.Build(target) }
 }
 
 // recordBuild keeps a target's last build.
-func (editor *Editor) recordBuild(target BuildTarget, result BuildResult) {
+func (editor *Editor) recordBuild(target project.Target, result BuildResult) {
 	editor.builds[target] = result
+}
+
+// WriteReleaseWorkflow writes the workflow that builds the game for Windows, macOS and Linux on
+// GitHub at each version tag, and says where it went or why it did not.
+func (editor *Editor) WriteReleaseWorkflow() {
+	workflow, err := editor.Project.WriteReleaseWorkflow()
+	if err != nil {
+		editor.say(err.Error(), true)
+		return
+	}
+	editor.say("Wrote "+workflow+" and THIRD_PARTY_NOTICES.md: commit both, push a tag such as v1.0.0, and GitHub attaches the programs to its release", false)
 }

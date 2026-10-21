@@ -1,6 +1,7 @@
 package editor
 
 import (
+	"github.com/akrck02/go-renderer/input"
 	"path/filepath"
 	"testing"
 
@@ -202,5 +203,49 @@ func TestPlayingInTheViewFollowsTheGamesSceneChanges(test *testing.T) {
 	again, playing := editor.PlayingHere()
 	if !playing || again == first {
 		test.Fatal("the view did not go on to the restarted scene")
+	}
+}
+
+func TestAGameThatQuitsInTheViewStopsAndTheEditorStays(test *testing.T) {
+	editor := open(test)
+	editor.PlayHere()
+	engine.Quit()
+	editor.AdvancePlay(0.1, input.NewState())
+	if _, playing := editor.PlayingHere(); playing {
+		test.Fatal("a game that asked to quit still plays in the view")
+	}
+}
+
+func TestANodeMovesAmongItsSiblingsAndStopsAtTheEnds(test *testing.T) {
+	editor := open(test)
+	first := editor.Add("Cube")
+	second := editor.Add("Sphere")
+	editor.MoveUp() // the sphere goes before the cube
+	if second.Index() != first.Index()-1 || editor.Saved {
+		test.Fatalf("after moving up, the sphere is at %d and the cube at %d", second.Index(), first.Index())
+	}
+	for range len(second.Parent().Children()) {
+		editor.MoveUp() // past the first place it stays first
+	}
+	if second.Index() != 0 {
+		test.Fatalf("moved up past the start, the sphere is at %d", second.Index())
+	}
+	editor.MoveDown()
+	if second.Index() != 1 {
+		test.Fatalf("after moving down, the sphere is at %d", second.Index())
+	}
+}
+
+func TestABehaviourIsTakenOffItsNode(test *testing.T) {
+	editor := open(test)
+	editor.Add("Sphere")
+	editor.AttachBehaviour("Spin")
+	editor.AttachBehaviour("Spin")
+	editor.Selected.Behaviours[0].Fields["speed"] = 10.0
+	editor.Selected.Behaviours[1].Fields["speed"] = 20.0
+	editor.DetachBehaviour(0)
+	editor.DetachBehaviour(3) // no behaviour there: nothing changes
+	if behaviours := editor.Selected.Behaviours; len(behaviours) != 1 || behaviours[0].Fields["speed"] != 20.0 {
+		test.Fatalf("after taking the first Spin off, the node keeps %+v", behaviours)
 	}
 }

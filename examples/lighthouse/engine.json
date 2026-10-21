@@ -1,0 +1,9 @@
+{
+	"name": "Lighthouse",
+	"startScene": "scenes/coast.scene.json",
+	"keepStart": true,
+	"actions": {
+		"turn": {"desktop": ["Left-", "Right+", "Stick X"], "nintendo3ds": ["Left-", "Right+", "Stick X"]},
+		"menu": {"desktop": ["Tab", "Pad Start"], "nintendo3ds": ["Start"], "android": ["Back"]}
+	}
+}

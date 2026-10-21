@@ -25,12 +25,12 @@ func drawOver(played *Scene, _ *input.State, flat *draw2d.List) {
 // flatNeedsScene is true on the console: a 2D scene is drawn over the top screen's scene.
 const flatNeedsScene = true
 
-// interfaceFor is the bottom screen's interface: the game's own (SetBottomScreen), or the menu of
+// interfaceFor is the bottom screen's interface: the game's own (SetInterface), or the menu of
 // scenes when the settings ask for it.
 func interfaceFor(game *runner) func(context *ui.Context) {
 	return func(context *ui.Context) {
-		if bottomScreen != nil {
-			bottomScreen(context, Menu{game})
+		if gameInterface != nil {
+			gameInterface(context, Menu{game})
 			return
 		}
 		if len(game.menu) == 0 {
@@ -59,5 +59,18 @@ const (
 // consoleKeys is the game's keys on the console: the cross as the arrow keys and A as Space, read
 // from the console itself, whatever the bottom screen's interface did with them (consoleInput).
 func consoleKeys(console *consoleInput, window *input.State) *input.State {
-	return console.keysFrom(window, ctr.ReadControls().Held)
+	return console.keysFrom(window, console.reading.Held)
 }
+
+// readConsole reads the console's controls for this frame.
+func readConsole() ctr.Reading { return ctr.ReadControls() }
+
+// startConsole starts the C-stick and the gyroscope, for the game to read. A console without one
+// (or an emulator) reads it as still, so which started does not matter here.
+func startConsole() { ctr.StartMotionControls() }
+
+// stopConsole stops them when the game ends: the gyroscope uses power.
+func stopConsole() { ctr.StopMotionControls() }
+
+// runningTarget is the target this build runs on.
+const runningTarget = Nintendo3DSTarget

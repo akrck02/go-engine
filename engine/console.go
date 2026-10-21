@@ -6,8 +6,9 @@ import (
 )
 
 // consoleButtons are the console's buttons a game reads as keys: the cross as the arrows, A as
-// Space, B as Escape, X and Y as themselves. With the circle pad (Input.Move) they are all a game
-// reads on the console: the touch screen and L and R belong to the bottom screen's interface.
+// Space, B as Escape, X and Y as themselves, and the shoulders and START as the keys that stand for
+// them on a keyboard (ButtonLeftShoulder and the rest). The sticks, the gyroscope and the touch screen are
+// read whole (Input.Stick and the rest, controls.go).
 var consoleButtons = [...]struct {
 	button ctr.Buttons
 	key    input.Key
@@ -15,6 +16,8 @@ var consoleButtons = [...]struct {
 	{ctr.ButtonUp, input.KeyUp}, {ctr.ButtonDown, input.KeyDown}, {ctr.ButtonLeft, input.KeyLeft},
 	{ctr.ButtonRight, input.KeyRight}, {ctr.ButtonA, input.KeySpace}, {ctr.ButtonB, input.KeyEscape},
 	{ctr.ButtonX, input.KeyX}, {ctr.ButtonY, input.KeyY},
+	{ctr.ButtonL, ButtonLeftShoulder}, {ctr.ButtonR, ButtonRightShoulder}, {ctr.ButtonZL, ButtonLeftTrigger}, {ctr.ButtonZR, ButtonRightTrigger},
+	{ctr.ButtonStart, ButtonStart},
 }
 
 // consoleInput is a game's keys on the console, and on a touch screen (Android). go-ui's window
@@ -23,6 +26,7 @@ var consoleButtons = [...]struct {
 // once and then held. The game's keys are kept here instead, from frame to frame, set from the
 // buttons themselves.
 type consoleInput struct {
+	reading ctr.Reading // the console's controls this frame (readConsole)
 	keys    input.State
 	buttons [4]touchButton // where a touch screen's buttons were last drawn (Android)
 	// readerFrames is, by button, the frames a screen reader's press still holds it for
@@ -36,5 +40,6 @@ func (console *consoleInput) keysFrom(window *input.State, held ctr.Buttons) *in
 		console.keys.SetKey(mapping.key, held&mapping.button != 0)
 	}
 	console.keys.StickX, console.keys.StickY = window.StickX, window.StickY
+	console.keys.RightStickX, console.keys.RightStickY = window.RightStickX, window.RightStickY
 	return &console.keys
 }

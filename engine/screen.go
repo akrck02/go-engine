@@ -3,6 +3,7 @@
 package engine
 
 import (
+	"github.com/akrck02/go-renderer/ctr"
 	"github.com/akrck02/go-renderer/draw2d"
 	"github.com/akrck02/go-renderer/input"
 	ui "github.com/akrck02/go-ui"
@@ -23,6 +24,9 @@ func interfaceFor(game *runner) func(context *ui.Context) {
 	return func(context *ui.Context) {
 		played := game.played
 		if !played.Is2D() {
+			if gameInterface != nil {
+				gameInterface(context, Menu{game}) // over the 3D scene, and over the game's overlay
+			}
 			return
 		}
 		context.Paint(ui.Layout{Width: ui.Grow(), Height: ui.Grow()}, func(area draw2d.Rect, list *draw2d.List) {
@@ -33,3 +37,15 @@ func interfaceFor(game *runner) func(context *ui.Context) {
 
 // consoleKeys is the window's own keys on the desktop, where the keyboard is the game's.
 func consoleKeys(_ *consoleInput, window *input.State) *input.State { return window }
+
+// readConsole is an empty reading: there is no 3DS here.
+func readConsole() ctr.Reading { return ctr.Reading{} }
+
+// startConsole does nothing: there is no 3DS here.
+func startConsole() {}
+
+// stopConsole does nothing: there is no 3DS here.
+func stopConsole() {}
+
+// runningTarget is the target this build runs on.
+const runningTarget = DesktopTarget

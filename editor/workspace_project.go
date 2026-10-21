@@ -31,18 +31,18 @@ var assetFilters = []string{"All", "Pictures", "Sprites", "Tilesets", "Models", 
 
 // projectView is what the Project workspace remembers between frames.
 type projectView struct {
-	folder   string // the folder shown, "assets" or one under it
-	filter   int    // the kind shown, by its place in assetFilters
-	search   string
-	chosen   string // the asset or scene chosen
-	uses     []project.Use
-	settings bool // the right column shows the project's settings
-	name     string
-	editor   string
-	android  string // the application id on Android; empty makes one from the name
-	console  string // the 3DS's address on the network; empty looks for it
-	menu     bool   // the 3DS's bottom screen lists the scenes
-	start    int    // the start scene, by its place among the scenes
+	folder        string // the folder shown, "assets" or one under it
+	filter        int    // the kind shown, by its place in assetFilters
+	search        string
+	chosen        string // the asset or scene chosen
+	uses          []project.Use
+	settings      bool // the right column shows the project's settings
+	name          string
+	editor        string
+	applicationID string // the game's application id; empty makes one from the name
+	deviceAddress string // the address of the device the game is sent to; empty looks for it
+	menu          bool   // the game's interface lists the scenes
+	start         int    // the start scene, by its place among the scenes
 }
 
 func (view *View) projectWorkspace(context *ui.Context) {
@@ -337,13 +337,13 @@ func (view *View) usesList(context *ui.Context) {
 func (view *View) openSettings() {
 	settings := view.Editor.Project.Settings
 	view.project.settings, view.project.name, view.project.editor = true, settings.Name, settings.CodeEditor
-	view.project.android, view.project.console = settings.AndroidID, settings.ConsoleAddress
+	view.project.applicationID, view.project.deviceAddress = settings.ApplicationID, settings.DeviceAddress
 	view.project.menu = settings.SceneMenu
 	view.project.start = max(0, indexOf(view.Editor.Project.Scenes(), settings.StartScene))
 }
 
 // settingsPanel changes the project's name, the scene it starts with, its code editor, its
-// application id on Android and the 3DS's address.
+// application id and the address of the device it is sent to.
 func (view *View) settingsPanel(context *ui.Context) {
 	editor := view.Editor
 	settings := &editor.Project.Settings
@@ -358,14 +358,14 @@ func (view *View) settingsPanel(context *ui.Context) {
 	context.Select("Start scene", &view.project.start, scenes)
 	context.Caption("Code editor: a command, as zed, code or nvim; empty tries $VISUAL and $EDITOR")
 	context.TextField("Code editor", &view.project.editor)
-	context.Caption("Android application id, as io.example.game; empty is " + editor.Project.ApplicationID())
-	context.TextField("Android id", &view.project.android)
-	context.Caption("The 3DS's address, to send the game to; empty looks for it on the network")
-	context.TextField("Console address", &view.project.console)
-	context.Checkbox("List the scenes on the 3DS's bottom screen, to play any", &view.project.menu)
+	context.Caption("Application id, as io.example.game; empty is " + editor.Project.ApplicationID())
+	context.TextField("Application id", &view.project.applicationID)
+	context.Caption("The address of the device the game is sent to (a 3DS); empty looks for it on the network")
+	context.TextField("Device address", &view.project.deviceAddress)
+	context.Checkbox("List the scenes in the game's interface, to play any", &view.project.menu)
 	if context.PrimaryIconButton(iconSave, "Save settings") {
 		settings.Name, settings.CodeEditor = strings.TrimSpace(view.project.name), strings.TrimSpace(view.project.editor)
-		settings.AndroidID, settings.ConsoleAddress = strings.TrimSpace(view.project.android), strings.TrimSpace(view.project.console)
+		settings.ApplicationID, settings.DeviceAddress = strings.TrimSpace(view.project.applicationID), strings.TrimSpace(view.project.deviceAddress)
 		settings.SceneMenu = view.project.menu
 		if view.project.start < len(scenes) {
 			settings.StartScene = scenes[view.project.start]

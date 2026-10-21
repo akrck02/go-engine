@@ -93,55 +93,87 @@ func (editor *Editor) installEnded(set func(tools *build.Tools, place string), p
 	editor.LookForTools(tools)
 }
 
-// ReadAndroidLicence reads Android's licence in the background, for the person to read and accept
-// before the SDK is installed (AndroidLicence).
-func (editor *Editor) ReadAndroidLicence() {
+// Some tools are installed only once the person has read and accepted their licence: the
+// licence is read first, shown, and the tool installed with the text accepted.
+
+// licensedTool is how a tool with a licence is installed: getting ready (what it needs to run),
+// reading its licence, and installing it with the licence accepted.
+type licensedTool struct {
+	ready   func(editor *Editor) bool
+	read    func(installer install.Installer) (string, error)
+	install func(editor *Editor, accepted string)
+}
+
+// licensedTools are the tools with a licence, by their names among the tools.
+var licensedTools = map[string]licensedTool{
+	"Android SDK": {
+		ready: func(editor *Editor) bool { _, found := editor.javaForAndroid(); return found },
+		read:  install.Installer.AndroidLicence,
+		install: func(editor *Editor, accepted string) {
+			java, found := editor.javaForAndroid()
+			if !found {
+				return // javaForAndroid has said why
+			}
+			android := func(installer install.Installer) (string, error) { return installer.AndroidSDK(accepted, java) }
+			editor.installTool("Android SDK", android, func(tools *build.Tools, place string) { tools.AndroidSDK = place })
+		},
+	},
+}
+
+// PendingLicence is a tool's licence, read and waiting for the person to accept it or not.
+type PendingLicence struct {
+	Tool, Text string
+}
+
+// ReadLicence reads a tool's licence in the background, for the person to read and accept before
+// the tool is installed (Licence). A tool without one is refused.
+func (editor *Editor) ReadLicence(tool string) {
+	licensed, found := licensedTools[tool]
+	if !found {
+		editor.say(tool+": "+NoLicence.Error(), true)
+		return
+	}
 	if editor.running {
 		editor.say(ToolsInUse.Error(), true)
 		return
 	}
-	if _, found := editor.javaForAndroid(); !found {
-		return // no need to read a licence for tools that could not run
+	if !licensed.ready(editor) {
+		return // no need to read a licence for a tool that could not run
 	}
 	folder, err := install.DataFolder()
 	if err != nil {
 		editor.say(err.Error(), true)
 		return
 	}
-	editor.Run("Reading Android's licence…", func() (string, error) {
-		licence, err := install.Installer{Folder: folder}.AndroidLicence()
+	editor.Run("Reading the licence of "+tool+"…", func() (string, error) {
+		text, err := licensed.read(install.Installer{Folder: folder})
 		if err != nil {
 			return "", err
 		}
-		editor.send(func(editor *Editor) { editor.androidLicence = licence })
-		return "Read Android's licence: accept it to install the SDK", nil
+		editor.send(func(editor *Editor) { editor.licence = PendingLicence{Tool: tool, Text: text} })
+		return "Read the licence of " + tool + ": accept it to install it", nil
 	})
 }
 
-// AndroidLicence is Android's licence while it waits for the person to accept it or not.
-func (editor *Editor) AndroidLicence() (string, bool) {
-	return editor.androidLicence, editor.androidLicence != ""
+// Licence is the licence waiting for the person to accept it or not, if one is.
+func (editor *Editor) Licence() (PendingLicence, bool) {
+	return editor.licence, editor.licence.Text != ""
 }
 
-// DeclineAndroidLicence leaves the SDK uninstalled.
-func (editor *Editor) DeclineAndroidLicence() { editor.androidLicence = "" }
+// DeclineLicence leaves the tool whose licence waits uninstalled.
+func (editor *Editor) DeclineLicence() { editor.licence = PendingLicence{} }
 
-// AcceptAndroidLicence installs Android's SDK, with the NDK and what a game's build needs, the
-// licence the person read (AndroidLicence) accepted, and sets the SDK's place. With no licence
-// read, nothing is installed.
-func (editor *Editor) AcceptAndroidLicence() {
-	accepted := editor.androidLicence
-	editor.androidLicence = ""
-	if accepted == "" {
+// AcceptLicence installs the tool whose licence the person read (Licence), with that licence
+// accepted, and sets its place. With no licence read, nothing is installed.
+func (editor *Editor) AcceptLicence() {
+	accepted := editor.licence
+	editor.licence = PendingLicence{}
+	licensed, found := licensedTools[accepted.Tool]
+	if accepted.Text == "" || !found {
 		editor.say(install.LicenceNotAccepted.Error(), true)
 		return
 	}
-	java, found := editor.javaForAndroid()
-	if !found {
-		return
-	}
-	android := func(installer install.Installer) (string, error) { return installer.AndroidSDK(accepted, java) }
-	editor.installTool("Android SDK", android, func(tools *build.Tools, place string) { tools.AndroidSDK = place })
+	licensed.install(editor, accepted.Text)
 }
 
 // javaForAndroid is the JDK Android's sdkmanager runs on, as the tools kept say; it says why when
@@ -158,5 +190,5 @@ func (editor *Editor) javaForAndroid() (string, bool) {
 // InstallEmulator installs Azahar's latest release for this system and sets the 3DS emulator's
 // place.
 func (editor *Editor) InstallEmulator() {
-	editor.installTool("3DS emulator", install.Installer.Azahar, func(tools *build.Tools, place string) { tools.ConsoleEmulator = place })
+	editor.installTool("3DS emulator", install.Installer.Azahar, func(tools *build.Tools, place string) { tools.Nintendo3DSEmulator = place })
 }

@@ -3,8 +3,10 @@ package editor
 import (
 	"errors"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 	"time"
 
@@ -17,15 +19,15 @@ func TestABuildsResultIsKeptPerTarget(test *testing.T) {
 	editor := open(test)
 	program := filepath.Join(test.TempDir(), "lights.3dsx")
 	os.WriteFile(program, make([]byte, 2048), 0o644)
-	editor.builders[ConsoleTarget] = func() (project.Built, error) { return project.Built{Program: program}, nil }
-	editor.builders[ComputerTarget] = func() (project.Built, error) { return project.Built{}, errors.New("no compiler here") }
-	editor.recordBuild(ConsoleTarget, editor.buildNow(ConsoleTarget))
-	editor.recordBuild(ComputerTarget, editor.buildNow(ComputerTarget))
-	console, found := editor.LastBuild(ConsoleTarget)
+	editor.builders[project.Nintendo3DS] = func() (project.Built, error) { return project.Built{Program: program}, nil }
+	editor.builders[project.Desktop] = func() (project.Built, error) { return project.Built{}, errors.New("no compiler here") }
+	editor.recordBuild(project.Nintendo3DS, editor.buildNow(project.Nintendo3DS))
+	editor.recordBuild(project.Desktop, editor.buildNow(project.Desktop))
+	console, found := editor.LastBuild(project.Nintendo3DS)
 	if !found || console.Program != program || console.Bytes != 2048 || console.Err != nil || console.At.IsZero() {
 		test.Fatalf("the console's build is %+v", console)
 	}
-	computer, _ := editor.LastBuild(ComputerTarget)
+	computer, _ := editor.LastBuild(project.Desktop)
 	if computer.Err == nil || len(computer.Log) == 0 {
 		test.Fatalf("the computer's failed build is %+v", computer)
 	}
@@ -161,14 +163,14 @@ func TestAToolInstalledIsSetAndKept(test *testing.T) {
 	}
 }
 
-func TestAndroidsLicenceWaitsToBeAcceptedOrDeclined(test *testing.T) {
+func TestALicenceWaitsToBeAcceptedOrDeclined(test *testing.T) {
 	editor := open(test)
-	editor.androidLicence = "Use the lighthouse kindly."
-	if licence, waiting := editor.AndroidLicence(); !waiting || licence != "Use the lighthouse kindly." {
+	editor.licence = PendingLicence{Tool: "Android SDK", Text: "Use the lighthouse kindly."}
+	if licence, waiting := editor.Licence(); !waiting || licence.Text != "Use the lighthouse kindly." || licence.Tool != "Android SDK" {
 		test.Fatal("the licence read does not wait to be accepted")
 	}
-	editor.DeclineAndroidLicence()
-	if _, waiting := editor.AndroidLicence(); waiting {
+	editor.DeclineLicence()
+	if _, waiting := editor.Licence(); waiting {
 		test.Fatal("a licence declined still waits")
 	}
 }
@@ -188,10 +190,28 @@ func TestEveryToolThatCanBeInstalledIsOne(test *testing.T) {
 	}
 }
 
-func TestNothingIsInstalledForAndroidWithoutTheLicenceRead(test *testing.T) {
+func TestNothingIsInstalledWithoutTheLicenceRead(test *testing.T) {
 	editor := open(test)
-	editor.AcceptAndroidLicence()
+	editor.AcceptLicence()
 	if _, _, _, busy := editor.Installing(); busy || editor.Running() {
 		test.Fatal("Android is installed with no licence read")
+	}
+}
+
+func TestAToolWithoutALicenceIsRefused(test *testing.T) {
+	editor := open(test)
+	editor.ReadLicence("TinyGo")
+	if editor.Running() {
+		test.Fatal("a licence is read for a tool that has none")
+	}
+}
+
+func TestAGameSentWithNothingToWatchEndsTheTaskAndSaysSo(test *testing.T) {
+	editor := open(test)
+	editor.playWith(project.Nintendo3DS, func() (*exec.Cmd, error) { return nil, nil }, nil)
+	waitForTheTask(test, editor)
+	notices := editor.Notices()
+	if editor.playing != nil || len(notices) == 0 || !strings.Contains(notices[len(notices)-1].Text, "Sent the game") {
+		test.Fatalf("after sending, the editor plays %v and says %+v", editor.playing, notices)
 	}
 }
