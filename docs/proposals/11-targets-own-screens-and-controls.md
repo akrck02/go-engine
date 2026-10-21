@@ -1,6 +1,6 @@
 # 11. Each target's own screens and controls
 
-> Status: building · Author's approval: proposal ☑ (2026-10-21, "dale") plan ☑ (2026-10-21, "si") · Controls redesign and R8 ☑ (2026-10-21, "implementalo", "si añade trazos")
+> Status: done · Author's approval: proposal ☑ (2026-10-21, "dale") plan ☑ (2026-10-21, "si") · Controls redesign and R8 ☑ (2026-10-21, "implementalo", "si añade trazos")
 
 ## Why
 
@@ -142,4 +142,22 @@ a target to preview beside the shapes it has (R5): each target's places for its 
 
 ## Result
 
-Not built yet.
+Built, T1–T11. What was checked, and what a person must still check:
+
+- **R1, R3, R8**: tests of each kind of binding, rebinding, touch controls; actions now also read a
+  key held with a modifier (`Alt+Enter`) and a key tapped between two frames.
+- **R4**: `SetSurface` and engine.json's `surfaces`, the five places and their fallbacks, tested
+  with Go UI's `uitest`. Seen working: on the desktop (an `over` corner, a `window` toggled by Tab),
+  in Azahar (an `over` corner and a `window` on the top screen, painted by a context of their own;
+  surfaces on the second screen) and on an Android emulator (a `sheet` opened by a touch button,
+  kept off the system's bars). Not checked: a 3DS console, a real phone.
+- **R5**: Play's tabs 16:9, 3DS and Phone preview each target's places; test and captures.
+- **R6**: Go Renderer asks GLFW for the whole screen and back, and a page on its next key or click;
+  Go UI passes a scene's request on; go-engine's `window` per target, `SetFullscreen`, F11 and
+  Alt+Enter. Seen working by hand under Xvfb (F11, Alt+Enter, starting fullscreen). Not checked:
+  a browser (no page was built: building for the web is out of scope), Metal on a Mac (it uses the
+  same window loop, untouched, but was not run), a desktop with several screens.
+- **R7**: the platformer's and lighthouse's code and tests unchanged; `SetInterface` is the surface
+  `interface`, and `ShowInterface` (the editor's only) became `ShowSurfaces`.
+- **Sample**: `examples/watch`, with no per-target file; captures on the desktop, in the editor for
+  each target, in Azahar and on an Android emulator.
