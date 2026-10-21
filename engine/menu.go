@@ -75,4 +75,3 @@ var gameInterface func(context *ui.Context, menu Menu)
 // its scenes (Menu), a map, its controls, a login form. On the Nintendo 3DS it is the bottom
 // screen; on the desktop it is painted over a 3D scene's window. Call it before Run.
 func SetInterface(paint func(context *ui.Context, menu Menu)) { gameInterface = paint }
-
