@@ -21,4 +21,5 @@ var (
 	TilesetNotFound       = failure.Define("engine.tileset-not-found", "the tileset's file does not exist")
 	SceneNotRestartable   = failure.Define("engine.scene-not-restartable", "the scene was not made from a description, so it cannot start again")
 	InputUnknown          = failure.Define("engine.input-unknown", "an action is bound to an input the target does not have: see the words an action can be bound to")
+	BindingsNotSaved      = failure.Define("engine.bindings-not-saved", "the actions the player changed could not be kept on this device")
 )

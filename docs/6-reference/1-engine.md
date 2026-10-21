@@ -30,6 +30,7 @@ A game's main registers its behaviours and runs the project it embeds:
 | `func Registered() []string` | Registered are the names of the behaviours registered, in order. |
 | `func Run(files fs.FS) error` | Run plays a project, from its files (embedded in the game, or a folder), until its window is closed: on the desktop in a window, on the Nintendo 3DS on the top screen. |
 | `func RunningOn() string` | RunningOn is the name of the target the game runs on now. |
+| `func SaveBindings() error` | SaveBindings keeps the actions the player changed, for the next time the game plays here. |
 | `func SecondScreen() (*Scene, bool)` | SecondScreen is the scene the second screen shows (SetSecondScreen), if any: one who plays the game elsewhere than Run moves it on each frame (Scene.Update) and shows it from Scene.Camera. |
 | `func SetEditor(run func() error)` | SetEditor installs the editor (the editor package does, from a project's editor.go). |
 | `func SetInterface(paint func(context *ui.Context, menu Menu))` | SetInterface makes a game show an interface of its own, with go-ui, in its own look: a menu of its scenes (Menu), a map, its controls, a login form. |
@@ -168,6 +169,7 @@ var (
 	TilesetNotFound       = failure.Define("engine.tileset-not-found", "the tileset's file does not exist")
 	SceneNotRestartable   = failure.Define("engine.scene-not-restartable", "the scene was not made from a description, so it cannot start again")
 	InputUnknown          = failure.Define("engine.input-unknown", "an action is bound to an input the target does not have: see the words an action can be bound to")
+	BindingsNotSaved      = failure.Define("engine.bindings-not-saved", "the actions the player changed could not be kept on this device")
 )
 ```
 
@@ -225,6 +227,7 @@ type Input struct {
 | `func (keys *Input) Move() space.Vector` | Move is the direction the arrows (or WASD, or a 3DS's cross and circle pad) point, on the ground: right is +X, up is Forward (-Z). |
 | `func (keys *Input) Pointer() (x, y float64, pressed bool)` | Pointer is where the mouse (or a finger) is, in window pixels, and whether it is pressed. |
 | `func (keys *Input) Pressed(key Key) bool` |  |
+| `func (keys *Input) Rebind(name string, words []string) []error` | Rebind changes an action's inputs on the target played to some words (as engine.json's), and remembers the change for SaveBindings. |
 | `func (keys *Input) RightStick() (x, y float64)` | RightStick is the second stick (a New 3DS's C-stick, a game pad's right stick) from -1 to 1 on each axis, up positive; 0 without one. |
 | `func (keys *Input) SecondScreenTouch() (x, y int, touching bool)` | SecondScreenTouch is where a finger or a stylus is on the second screen (a 3DS's bottom one, 320 × 240 pixels), and whether one is on it at all; never without a second screen. |
 | `func (keys *Input) State() *input.State` | State is go-renderer's input, for what Input does not cover. |

@@ -91,7 +91,7 @@ func Run(files fs.FS) error {
 		return err
 	}
 	slog.Info("Go Engine", "version", Version(), "game", settings.Name)
-	for _, problem := range BindActions(settings.Actions, RunningOn()) {
+	for _, problem := range bindGame(settings, RunningOn()) {
 		slog.Warn("an action's input is unknown here; the rest are bound", "error", problem)
 	}
 	played, err := Load(files, settings.StartScene)

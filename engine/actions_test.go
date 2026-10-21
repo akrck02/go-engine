@@ -93,3 +93,30 @@ func TestReadingAnActionAllocatesNothing(test *testing.T) {
 		test.Fatalf("a frame of actions allocates %v times", allocations)
 	}
 }
+
+func TestABindingChangedWhilePlayingIsKeptAndReadBack(test *testing.T) {
+	for _, variable := range []string{"XDG_CONFIG_HOME", "HOME", "APPDATA", "LOCALAPPDATA"} {
+		test.Setenv(variable, test.TempDir())
+	}
+	settings := Settings{Name: "Lighthouse", Actions: gameActions}
+	bindGame(settings, DesktopTarget)
+	keys := &Input{state: input.NewState()}
+	if problems := keys.Rebind("fire", []string{"Enter"}); len(problems) != 0 {
+		test.Fatal(problems)
+	}
+	if err := SaveBindings(); err != nil {
+		test.Fatal(err)
+	}
+	bindGame(settings, DesktopTarget) // the next time the game plays
+	state := input.NewState()
+	state.SetKey(input.KeyEnter, true)
+	if fire := frameWith(state, ctr.Reading{}).Action("fire"); !fire.Pressed {
+		test.Fatalf("Enter, rebound to fire and kept, fires %+v", fire)
+	}
+	space := input.NewState()
+	space.SetKey(input.KeySpace, true)
+	frameWith(input.NewState(), ctr.Reading{})
+	if fire := frameWith(space, ctr.Reading{}).Action("fire"); fire.Down {
+		test.Fatal("Space still fires after fire was rebound to Enter")
+	}
+}
