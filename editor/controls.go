@@ -35,6 +35,7 @@ type controlsView struct {
 
 	design   touchDesign // the phone's layout, being designed
 	drawings [4]drawing  // each tab's device, made the first time it is shown
+	tags     []edgeTag   // the names at the drawing's edges, kept from frame to frame
 	area     draw2d.Rect // where the drawing was painted last frame
 	undo     []controlsSnapshot
 	redo     []controlsSnapshot
@@ -72,7 +73,7 @@ func (controls *controlsView) load(settings engine.Settings) {
 		for target, words := range targets {
 			controls.actions[name][target] = slices.Clone(words)
 		}
-		controls.axes[name] = movesAnAxis(targets)
+		controls.axes[name] = movesAnAxis(targets) || slices.Contains(settings.Axes, name)
 	}
 	controls.touch = slices.Clone(settings.TouchControls)
 	controls.chosen, controls.design.selected, controls.design.dragging = noControl, noControl, noControl

@@ -1,6 +1,9 @@
 package editor
 
 import (
+	"cmp"
+	"math"
+	"slices"
 	"unicode/utf8"
 
 	"github.com/akrck02/go-renderer/draw2d"
@@ -79,8 +82,14 @@ func (device drawing) controlAt(area draw2d.Rect, x, y float32) (int, bool) {
 func (view *View) paintDrawing(theme *ui.Theme, list *draw2d.List, area draw2d.Rect, device drawing, hovered int) {
 	scale, originX, originY := device.fitted(area)
 	list.Stroke(device.outline, originX, originY, scale, drawingLine, lineColor(theme))
+	controls := &view.controls
+	controls.tags = controls.tags[:0]
 	for index, each := range device.controls {
-		view.paintControl(theme, list, area, device, each, index == hovered, index == view.controls.chosen)
+		view.paintControl(theme, list, area, device, each, index == hovered, index == controls.chosen)
+	}
+	spreadTags(controls.tags)
+	for _, tag := range controls.tags {
+		paintEdgeTag(list, tag)
 	}
 }
 
@@ -126,8 +135,18 @@ func (view *View) paintControl(theme *ui.Theme, list *draw2d.List, area draw2d.R
 	view.paintTags(theme, list, area, device, each, shape, alpha)
 }
 
-// paintTags names the actions a control does: at the drawing's edge with a dotted line to it, or
-// under it for a key.
+// edgeTag is an action's name at a drawing's edge: its text and ink, where its control's side is,
+// and the height it is written at, moved down from its control's when another name was there.
+type edgeTag struct {
+	label        string
+	ink          draw2d.Color
+	where        side
+	fromX, fromY float32 // the control's side, where the dotted line starts
+	edge, y      float32 // where the name is written
+}
+
+// paintTags names the actions a control does: under it for a key, written at once; at the
+// drawing's edge for the rest, gathered for paintDrawing to spread and write.
 func (view *View) paintTags(theme *ui.Theme, list *draw2d.List, area draw2d.Rect, device drawing, each control, shape draw2d.Rect, alpha float32) {
 	controls := &view.controls
 	row := 0
@@ -142,23 +161,51 @@ func (view *View) paintTags(theme *ui.Theme, list *draw2d.List, area draw2d.Rect
 		ink := controls.actionColor(name).Mix(theme.Ink, tagInkShare).WithAlpha(alpha)
 		if each.tags == belowSide {
 			below := draw2d.Rect{X: shape.X, Y: shape.Y + shape.Height + 2 + float32(row)*keyTagSize, Width: shape.Width, Height: keyTagSize}
+			width := textWidth(label, keyTagSize) + 6
+			backing := draw2d.Rect{X: below.X + (below.Width-width)/2, Y: below.Y, Width: width, Height: below.Height}
+			list.Rectangle(backing, keyTagSize/2, theme.Surface, draw2d.Transparent, 0) // over the key below, to be read
 			centredText(list, label, below, keyTagSize, ink, draw2d.Medium)
 			row++
 			continue
 		}
-		edge := device.placed(area, device.tagsLeft, 0, 0, 0).X
-		if each.tags == rightSide {
-			edge = device.placed(area, device.tagsRight, 0, 0, 0).X
-		}
-		centreY := shape.Y + shape.Height/2 + float32(row)*(tagSize+4)
-		paintLeader(list, shape, edge, centreY, each.tags, ink.WithAlpha(0.5*alpha))
-		textX := edge + tagLineGap
+		tag := edgeTag{label: label, ink: ink, where: each.tags, fromX: shape.X + shape.Width + tagLineGap,
+			fromY: shape.Y + shape.Height/2, edge: device.placed(area, device.tagsRight, 0, 0, 0).X}
 		if each.tags == leftSide {
-			textX = edge - tagLineGap - textWidth(label, tagSize)
+			tag.fromX, tag.edge = shape.X-tagLineGap, device.placed(area, device.tagsLeft, 0, 0, 0).X
 		}
-		list.Text(label, textX, centreY+tagSize*0.35, tagSize, draw2d.Medium, ink)
-		row++
+		tag.y = tag.fromY
+		controls.tags = append(controls.tags, tag)
 	}
+}
+
+// tagSpacing is the least height between two names on the same edge, in pixels.
+const tagSpacing = tagSize + 4
+
+// spreadTags moves names down where they would be written over one another on the same edge,
+// keeping them in the order of their controls from top to bottom.
+func spreadTags(tags []edgeTag) {
+	slices.SortStableFunc(tags, func(first, second edgeTag) int {
+		if first.where != second.where {
+			return int(first.where) - int(second.where)
+		}
+		return cmp.Compare(first.fromY, second.fromY)
+	})
+	for index := 1; index < len(tags); index++ {
+		above := tags[index-1]
+		if above.where == tags[index].where {
+			tags[index].y = max(tags[index].y, above.y+tagSpacing)
+		}
+	}
+}
+
+// paintEdgeTag writes a name at the drawing's edge, and a dotted line from its control to it.
+func paintEdgeTag(list *draw2d.List, tag edgeTag) {
+	paintLeader(list, tag.fromX, tag.fromY, tag.edge, tag.y, tag.ink.WithAlpha(0.5*tag.ink[3]))
+	textX := tag.edge + tagLineGap
+	if tag.where == leftSide {
+		textX = tag.edge - tagLineGap - textWidth(tag.label, tagSize)
+	}
+	list.Text(tag.label, textX, tag.y+tagSize*0.35, tagSize, draw2d.Medium, tag.ink)
 }
 
 // axisMark is how a stick's axis is shown after its action's name: across or up and down.
@@ -169,14 +216,13 @@ func axisMark(word string) string {
 	return " ↔"
 }
 
-// paintLeader paints a dotted line from a control's side to the drawing's edge.
-func paintLeader(list *draw2d.List, shape draw2d.Rect, edge, y float32, where side, ink draw2d.Color) {
-	from, to := shape.X+shape.Width+tagLineGap, edge
-	if where == leftSide {
-		from, to = edge, shape.X-tagLineGap
-	}
-	for x := from; x < to; x += leaderStep {
-		dot := draw2d.Rect{X: x, Y: y - leaderDot/2, Width: leaderDot, Height: leaderDot}
+// paintLeader paints a dotted line between two points: from a control's side to its name.
+func paintLeader(list *draw2d.List, fromX, fromY, toX, toY float32, ink draw2d.Color) {
+	acrossX, downY := toX-fromX, toY-fromY
+	length := float32(math.Hypot(float64(acrossX), float64(downY)))
+	for along := float32(0); along < length; along += leaderStep {
+		x, y := fromX+acrossX*along/length, fromY+downY*along/length
+		dot := draw2d.Rect{X: x - leaderDot/2, Y: y - leaderDot/2, Width: leaderDot, Height: leaderDot}
 		list.Rectangle(dot, leaderDot/2, ink, draw2d.Transparent, 0)
 	}
 }

@@ -117,3 +117,33 @@ func TestArtOpensTheChosenMapsTileset(test *testing.T) {
 		test.Fatalf("Art opened %q", open)
 	}
 }
+
+func TestAFrameIsTakenOutOfAnAnimation(test *testing.T) {
+	editor := openFlat(test)
+	tilesetPicture(test, editor, "assets/lamp.png")
+	editor.MakeSprite("assets/lamp.png", 3, 1)
+	flicker := editor.AddAnimation()
+	editor.ClearFrames(flicker)
+	editor.AddFrame(flicker, 0)
+	editor.AddFrame(flicker, 1)
+	editor.AddFrame(flicker, 2)
+	editor.RemoveFrameAt(flicker, 1)
+	editor.RemoveFrameAt(flicker, 5) // no frame there: nothing changes
+	sheet, _ := editor.editedSheet()
+	if !slices.Equal(sheet.Animations[flicker].Frames, []int{0, 2}) {
+		test.Fatalf("the animation shows %v after taking its middle frame out", sheet.Animations[flicker].Frames)
+	}
+}
+
+func TestTheAnimationChosenToStartIsTheOneTheSceneStartsWith(test *testing.T) {
+	editor := openFlat(test)
+	tilesetPicture(test, editor, "assets/lamp.png")
+	editor.MakeSprite("assets/lamp.png", 3, 1)
+	first, second := editor.AddAnimation(), editor.AddAnimation()
+	editor.RenameAnimation(first, "idle")
+	editor.RenameAnimation(second, "flicker")
+	editor.StartWith(second)
+	if sheet, _ := editor.editedSheet(); sheet.Start != "flicker" {
+		test.Fatalf("the sprite starts with %q", sheet.Start)
+	}
+}

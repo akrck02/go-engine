@@ -190,7 +190,7 @@ type Editor struct {
 | `func (editor *Editor) Running() bool` | Running tells whether the game is building or playing. |
 | `func (editor *Editor) Save() error` | Save writes the scene shown to its file. |
 | `func (editor *Editor) SaveArt() error` | SaveArt writes the file open in Art; the scene shows it changed at once. |
-| `func (editor *Editor) SaveControls(actions map[string]map[string][]string, touch []engine.TouchControl) error` | SaveControls keeps the actions and the touch controls in the project's settings. |
+| `func (editor *Editor) SaveControls(actions map[string]map[string][]string, axes []string, touch []engine.TouchControl) error` | SaveControls keeps the actions, which of them move an axis, and the touch controls in the project's settings. |
 | `func (editor *Editor) SaveTools(tools build.Tools) error` | SaveTools keeps the tools' places on this computer, for the builds and every project, and looks for them again. |
 | `func (editor *Editor) Select(node *engine.Node)` | Select chooses a node (nil for none), and lets go of any other chosen with it. |
 | `func (editor *Editor) SetAmbient(ambient *scenefile.Ambient)` | SetAmbient gives the scene an ambient light of its own, or takes it away (nil). |

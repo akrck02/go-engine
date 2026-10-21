@@ -14,6 +14,7 @@ lists each key; the editor sets them all, so you only need it to read a file or 
 | `consoleAddress` | text | The 3DS's address to send the game to; empty looks for it on the network |
 | `sceneMenu` | yes/no | Lists the scenes on the 3DS's bottom screen |
 | `actions` | actions | What the player does, by name, and its inputs on each target (below) |
+| `axes` | list of text | The actions that move an axis (-1 to 1) instead of pressing, even with no inputs yet |
 | `touchControls` | touch controls | The sticks and buttons a phone shows; none keeps the engine's four buttons (below) |
 
 ### `actions`
@@ -30,7 +31,7 @@ Each action names, per target, the words of the inputs that do it:
 | `name` | text | Its name: actions bind a button as `Touch <name>`, a stick as `Touch <name> X` and `Touch <name> Y` |
 | `kind` | `button` or `stick` | |
 | `x`, `y` | number | Where its centre is, from 0 to 1 across and down the screen |
-| `size` | number | Its width, as a share of the screen's height |
+| `size` | number | Its width, as a share of the screen's shorter side |
 
 ## A scene: `scenes/*.scene.json`
 

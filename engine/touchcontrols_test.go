@@ -81,3 +81,16 @@ func TestReadingTouchControlsAllocatesNothing(test *testing.T) {
 		test.Fatalf("reading the touch controls allocates %v times", allocations)
 	}
 }
+
+func TestATouchControlIsAsBigUprightAndStaysOnTheScreen(test *testing.T) {
+	useTouchControls(someTouchControls())
+	upright := draw2d.Rect{Width: 500, Height: 1000}
+	placeTouchControls(upright)
+	stick := touchPanel.areas[0]
+	if stick.Width != 0.4*500 {
+		test.Fatalf("the stick held upright is %v wide, not a share of the shorter side", stick.Width)
+	}
+	if stick.X < 0 || stick.X+stick.Width > upright.Width || stick.Y+stick.Height > upright.Height {
+		test.Fatalf("the stick at %v leaves the screen", stick)
+	}
+}

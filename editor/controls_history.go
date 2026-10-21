@@ -72,15 +72,28 @@ func (controls *controlsView) redoChange() bool {
 // saveControls keeps the controls in engine.json, saying so only when it fails.
 func (view *View) saveControls() {
 	controls := &view.controls
-	if err := view.Editor.SaveControls(controls.actions, controls.touch); err != nil {
+	if err := view.Editor.SaveControls(controls.actions, controls.axisNames(), controls.touch); err != nil {
 		view.Editor.say(err.Error(), true)
 	}
 }
 
-// SaveControls keeps the actions and the touch controls in the project's settings.
-func (editor *Editor) SaveControls(actions map[string]map[string][]string, touch []engine.TouchControl) error {
-	editor.Project.Settings.Actions, editor.Project.Settings.TouchControls = actions, touch
+// SaveControls keeps the actions, which of them move an axis, and the touch controls in the
+// project's settings.
+func (editor *Editor) SaveControls(actions map[string]map[string][]string, axes []string, touch []engine.TouchControl) error {
+	settings := &editor.Project.Settings
+	settings.Actions, settings.Axes, settings.TouchControls = actions, axes, touch
 	return editor.Project.SaveSettings()
+}
+
+// axisNames are the actions that move an axis, by name, in order.
+func (controls *controlsView) axisNames() []string {
+	var names []string
+	for _, name := range controls.names() {
+		if controls.axes[name] {
+			names = append(names, name)
+		}
+	}
+	return names
 }
 
 // undo takes back the last change of the workspace shown: the controls' in Controls, the scene's

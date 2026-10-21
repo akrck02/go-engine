@@ -113,7 +113,7 @@ func TestTheControlsAreKeptInTheProjectAsTheyChange(test *testing.T) {
 	}
 }
 
-func TestControlZInControlsUndoesTheControlsNotTheScene(test *testing.T) {
+func TestControlZInControlsUndoesAndRedoesTheControlsNotTheScene(test *testing.T) {
 	editor := open(test)
 	view := NewView(editor)
 	editor.Add("Cube")
@@ -129,6 +129,14 @@ func TestControlZInControlsUndoesTheControlsNotTheScene(test *testing.T) {
 	}
 	if _, found := editor.Scene.Find("Cube 2"); !found {
 		test.Fatal("Ctrl+Z in Controls undid the scene")
+	}
+	state.SetKey(input.KeyZ, false) // let go of Z, then press it again with Shift
+	state.EndFrame()
+	state.SetKey(input.KeyShift, true)
+	state.SetKey(input.KeyZ, true)
+	view.keys(state)
+	if view.controls.actions["jump"] == nil {
+		test.Fatal("Ctrl+Shift+Z in Controls does not bring the action back")
 	}
 }
 
@@ -211,5 +219,66 @@ func TestATouchControlsActionsFollowItsNameAndGoWithIt(test *testing.T) {
 	controls.removeTouch()
 	if len(controls.actions["turn"][engine.AndroidTarget]) != 0 || controls.touchIndex("Move") >= 0 {
 		test.Fatal("a touch control removed leaves its words bound")
+	}
+}
+
+func TestRemovingAnActionFreesItsControls(test *testing.T) {
+	controls := controlsWith(map[string]map[string][]string{"jump": {}})
+	controls.assign("Pad A", "jump")
+	controls.highlighted = "jump"
+	controls.removeAction("jump")
+	if name, _ := controls.actionOn("Pad A"); name != "" || controls.highlighted != "" {
+		test.Fatalf("after removing jump, Pad A does %q and %q stands out", name, controls.highlighted)
+	}
+}
+
+func TestATouchControlGrowsAndShrinksWithinItsLimits(test *testing.T) {
+	controls := controlsWith(nil)
+	controls.startLayout()
+	controls.chooseTouch(controls.touchIndex("A"))
+	for range 100 {
+		controls.resizeTouch(touchSizeStep)
+	}
+	if size := controls.touch[controls.design.selected].Size; size != touchLargest {
+		test.Fatalf("grown as far as it goes, the button is %v, not %v", size, touchLargest)
+	}
+	for range 100 {
+		controls.resizeTouch(-touchSizeStep)
+	}
+	if size := controls.touch[controls.design.selected].Size; size != touchSmallest {
+		test.Fatalf("shrunk as far as it goes, the button is %v, not %v", size, touchSmallest)
+	}
+}
+
+func TestNamesOnTheSameEdgeAreNotWrittenOverOneAnother(test *testing.T) {
+	// the cross's left and right arms do one action each way, at the same height, on the left edge
+	tags := []edgeTag{
+		{label: "turn +", where: leftSide, fromY: 100, y: 100},
+		{label: "turn −", where: leftSide, fromY: 100, y: 100},
+		{label: "jump", where: rightSide, fromY: 100, y: 100},
+	}
+	spreadTags(tags)
+	if tags[0].y != 100 || tags[1].y != 100+tagSpacing {
+		test.Fatalf("the left names are written at %v and %v", tags[0].y, tags[1].y)
+	}
+	if tags[2].y != 100 {
+		test.Fatalf("a name on the other edge moved to %v", tags[2].y)
+	}
+}
+
+func TestAnAxisWithNoInputsIsStillAnAxisWhenTheProjectOpensAgain(test *testing.T) {
+	editor := open(test)
+	view := NewView(editor)
+	view.controls.load(editor.Project.Settings)
+	view.controls.addAction("turn", true)
+	view.saveControls()
+	settings, err := engine.ReadSettings(os.DirFS(editor.Project.Folder))
+	if err != nil {
+		test.Fatal(err)
+	}
+	var reopened controlsView
+	reopened.load(settings)
+	if !reopened.axes["turn"] {
+		test.Fatal("an axis with no inputs comes back as a press")
 	}
 }
