@@ -312,7 +312,7 @@ func (node *Node) View() models.Camera {
 // CameraAt is go-renderer's camera for a camera placed at a transform with some settings.
 func CameraAt(world space.Transform, settings scenefile.Camera) models.Camera {
 	position := world.Position
-	target := position.Add(world.Forward())
+	target := position.Add(world.Forward().Scale(orDefault(settings.Focus, DefaultFocus)))
 	up := world.Up()
 	view := models.Camera{
 		Position: graphics.Vec4{float32(position.X), float32(position.Y), float32(position.Z), 1},
@@ -340,8 +340,9 @@ func CameraAt(world space.Transform, settings scenefile.Camera) models.Camera {
 
 // A camera's distances when its settings leave them at 0, in metres.
 const (
-	DefaultNear = 0.05
-	DefaultFar  = 2000
+	DefaultNear  = 0.05
+	DefaultFar   = 2000
+	DefaultFocus = 10 // a room's depth: most scenes look at things about this far
 )
 
 // orDefault is a value, or another when the value is not set (0 or less).

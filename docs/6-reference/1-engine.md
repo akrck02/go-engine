@@ -98,8 +98,9 @@ Keys.
 
 ```go
 const (
-	DefaultNear = 0.05
-	DefaultFar  = 2000
+	DefaultNear  = 0.05
+	DefaultFar   = 2000
+	DefaultFocus = 10 // a room's depth: most scenes look at things about this far
 )
 ```
 

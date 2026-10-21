@@ -433,6 +433,13 @@ func (view *View) distancesField(context *ui.Context, settings *scenefile.Camera
 	}
 	context.Caption("Sees to (metres)")
 	changed = numberField(context, "Far", &far, numberLimits{float32(max(near*2, 1)), farthest, 100}, "%.0f m") || changed
+	focus := orEngines(settings.Focus, engine.DefaultFocus)
+	if settings.Projection == scenefile.Perspective {
+		context.Caption("Looks at (metres): where a 3D screen puts its surface")
+		if numberField(context, "Focus", &focus, numberLimits{float32(near), float32(far), 1}, "%.0f m") {
+			settings.Focus, changed = focus, true
+		}
+	}
 	if !changed {
 		return
 	}

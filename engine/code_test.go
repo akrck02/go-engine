@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"github.com/akrck02/go-engine/space"
 	"testing"
 
 	"github.com/akrck02/go-renderer/scene"
@@ -80,5 +81,22 @@ func TestACamerasFarPlaneIsTheOneSet(test *testing.T) {
 	settings.Near, settings.Far = 1, 7000
 	if view := eye.View(); view.Far != 7000 || view.Near != 1 {
 		test.Fatalf("a camera set to see from 1 to 7000 sees from %v to %v", view.Near, view.Far)
+	}
+}
+
+func TestACameraLooksAtItsFocus(test *testing.T) {
+	eye, _ := load(test).Find("Eye")
+	distance := func() float64 {
+		view := eye.View()
+		position, target := view.Position, view.Target
+		return space.NewVector(float64(target[0]-position[0]), float64(target[1]-position[1]), float64(target[2]-position[2])).Length()
+	}
+	if seen := distance(); seen < DefaultFocus-0.01 || seen > DefaultFocus+0.01 {
+		test.Fatalf("a camera without a focus looks %v metres ahead", seen)
+	}
+	settings, _ := eye.Camera()
+	settings.Focus = 15
+	if seen := distance(); seen < 14.99 || seen > 15.01 {
+		test.Fatalf("a camera focused at 15 metres looks %v metres ahead", seen)
 	}
 }

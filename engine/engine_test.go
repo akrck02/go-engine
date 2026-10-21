@@ -154,7 +154,7 @@ func TestTheMainCameraLooksWhereItsNodeLooks(test *testing.T) {
 	}
 	view := camera.View()
 	direction := space.NewVector(float64(view.Target[0]-view.Position[0]), float64(view.Target[1]-view.Position[1]), float64(view.Target[2]-view.Position[2]))
-	if !direction.Near(space.NewVector(0, -math.Sin(space.Radians(20)), -math.Cos(space.Radians(20))), 1e-6) {
+	if !direction.Normalized().Near(space.NewVector(0, -math.Sin(space.Radians(20)), -math.Cos(space.Radians(20))), 1e-6) {
 		test.Fatalf("the camera looks along %v", direction)
 	}
 	camera.SetCamera(&scenefile.Camera{Projection: scenefile.Isometric, Height: 12})
