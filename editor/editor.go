@@ -592,6 +592,10 @@ func (editor *Editor) AdvancePlay(seconds float64, keys *input.State) {
 		editor.stepOnce, seconds = false, oneFrame
 	}
 	played.PlayFrame(seconds, keys)
+	if engine.TakeQuit() {
+		editor.StopHere() // the game asked to quit: it stops, the editor stays
+		return
+	}
 	if below, found := engine.SecondScreen(); found {
 		below.Update(seconds, keys) // the second screen's scene plays too, shown with the 3DS's shape
 	}

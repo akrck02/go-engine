@@ -150,6 +150,7 @@ func (game *runner) step(state *input.State, step float64) *window.SceneView {
 	state.LockCursor(pointerCaptured)
 	game.played.input.console = game.console.reading
 	game.played.PlayFrame(seconds, keys)
+	quitIfAsked()
 	below := game.playSecondScreen(seconds, keys)
 	game.replaceIfAsked()
 	if game.played.Is2D() && !flatNeedsScene {

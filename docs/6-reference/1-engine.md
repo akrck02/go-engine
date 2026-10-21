@@ -23,6 +23,7 @@ A game's main registers its behaviours and runs the project it embeds:
 | `func DrawOverlay(list *draw2d.List, width, height float32) bool` | DrawOverlay draws the game's 2D over a 3D scene (SetOverlay) into a list, in an area of a width and a height starting at 0, 0; it tells whether the game has any. |
 | `func HasInterface() bool` | HasInterface tells whether the game shows a go-ui interface of its own (SetInterface). |
 | `func HeightSeen(settings *scenefile.Camera, aspect float64) float64` | HeightSeen is the metres a 2D camera sees top to bottom on a screen of a shape (its width over its height): the camera's height (10 when it has none), or more on a screen too narrow for the width it must see. |
+| `func Quit()` | Quit ends the game once the frame being played ends. |
 | `func Register(behaviours ...any)` | Register makes behaviours known by their type's name: Register(Spin{}) is "Spin". |
 | `func RegisterAs(name string, behaviour any)` | RegisterAs makes a behaviour known by a name of its own. |
 | `func Registered() []string` | Registered are the names of the behaviours registered, in order. |
@@ -34,6 +35,7 @@ A game's main registers its behaviours and runs the project it embeds:
 | `func SetPointerCaptured(captured bool)` | SetPointerCaptured holds and hides the pointer, for a game that turns with the mouse, or lets it go (a pause menu): MouseMovement still reads the mouse. |
 | `func SetSecondScreen(shown *Scene)` | SetSecondScreen shows a scene on the second screen, under the game's interface (SetInterface), seen from its main camera; nil leaves the screen to the interface. |
 | `func ShowInterface(context *ui.Context, played *Scene, scenes []MenuScene)` | ShowInterface builds the game's own interface (SetInterface) for a scene played, offering some scenes (ScenesOf); playing another asks the scene to be replaced (Scene.TakeReplacement). |
+| `func TakeQuit() bool` | TakeQuit tells whether the game asked to quit since the last time, and forgets it: one who plays the game elsewhere than Run (the editor's Play) stops it then. |
 | `func Version() string` | Version says which Go Engine this program was built with: its release and commit, as "v0.0.1 (ba08523)", or "v0.0.1 (77aa001, local)" for a local copy, as the editor's window and the logs show it. |
 
 ### Constants and variables

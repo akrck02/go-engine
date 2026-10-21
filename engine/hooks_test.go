@@ -61,3 +61,10 @@ func TestTheFramesHookRunsOnceWithASecondScreenScene(test *testing.T) {
 		test.Fatalf("with a bottom scene the hook ran %d times in a frame", runs)
 	}
 }
+
+func TestAGameAsksToQuitOnce(test *testing.T) {
+	Quit()
+	if !TakeQuit() || TakeQuit() {
+		test.Fatal("a quit asked for is not taken once")
+	}
+}
