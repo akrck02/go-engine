@@ -109,7 +109,7 @@ a target to preview beside the shapes it has (R5): each target's places for its 
 - [x] T2 — the target at run time · engine · R1, R4 · test per build
 - [x] T3 — actions: engine.json's `actions`, the inputs' words, the table, `Input.Action(name)` · engine/actions.go · R1 · tests of each kind of input, and `reading an action allocates nothing`
 - [x] T4 — rebinding and keeping it, among Go UI's window preferences (a 3DS cannot keep them yet: a change there lasts the run) · R3 · test `a binding changed while playing is kept and read back`
-- [ ] T5 — the editor's Controls table · editor · R2 · capture; a binding changed reaches the game
+- [x] T5 — the editor's Controls table · editor · R2 · capture; a binding changed reaches the game
 - [ ] T6 — surfaces: `SetSurface`, engine.json's `surfaces`, the five places on the desktop and the 3DS · engine · R4 · captures in the editor and Azahar
 - [ ] T7 — `sheet` on Android, and `SetInterface` as the `interface` surface · R4, R7 · test; the samples unchanged
 - [ ] T8 — the editor previews each target's surfaces · editor · R5 · captures

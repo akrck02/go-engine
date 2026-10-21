@@ -122,3 +122,17 @@ func readButton(word, target string) (boundInput, bool) {
 	key, found := keyWords[word]
 	return boundInput{kind: keyInput, code: int(key)}, found
 }
+
+// InputTargets are the targets an action can be bound on, in the order the editor shows them.
+var InputTargets = []string{DesktopTarget, Nintendo3DSTarget, AndroidTarget, WebTarget}
+
+// CheckInputs tells which of some words a target does not know, each by its code (InputUnknown).
+func CheckInputs(words []string, target string) []error {
+	var problems []error
+	for _, word := range words {
+		if _, err := readWord(word, target); err != nil {
+			problems = append(problems, err)
+		}
+	}
+	return problems
+}

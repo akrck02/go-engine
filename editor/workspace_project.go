@@ -39,10 +39,12 @@ type projectView struct {
 	settings      bool // the right column shows the project's settings
 	name          string
 	editor        string
-	applicationID string // the game's application id; empty makes one from the name
-	deviceAddress string // the address of the device the game is sent to; empty looks for it
-	menu          bool   // the game's interface lists the scenes
-	start         int    // the start scene, by its place among the scenes
+	applicationID string       // the game's application id; empty makes one from the name
+	deviceAddress string       // the address of the device the game is sent to; empty looks for it
+	menu          bool         // the game's interface lists the scenes
+	start         int          // the start scene, by its place among the scenes
+	actions       actionsTyped // the actions' inputs as typed (controls.go)
+	newAction     string
 }
 
 func (view *View) projectWorkspace(context *ui.Context) {
@@ -339,6 +341,7 @@ func (view *View) openSettings() {
 	view.project.settings, view.project.name, view.project.editor = true, settings.Name, settings.CodeEditor
 	view.project.applicationID, view.project.deviceAddress = settings.ApplicationID, settings.DeviceAddress
 	view.project.menu = settings.SceneMenu
+	view.project.actions = typedFrom(settings.Actions)
 	view.project.start = max(0, indexOf(view.Editor.Project.Scenes(), settings.StartScene))
 }
 
@@ -363,7 +366,9 @@ func (view *View) settingsPanel(context *ui.Context) {
 	context.Caption("The address of the device the game is sent to (a 3DS); empty looks for it on the network")
 	context.TextField("Device address", &view.project.deviceAddress)
 	context.Checkbox("List the scenes in the game's interface, to play any", &view.project.menu)
+	view.controlsSection(context)
 	if context.PrimaryIconButton(iconSave, "Save settings") {
+		settings.Actions = view.project.actions.bindings()
 		settings.Name, settings.CodeEditor = strings.TrimSpace(view.project.name), strings.TrimSpace(view.project.editor)
 		settings.ApplicationID, settings.DeviceAddress = strings.TrimSpace(view.project.applicationID), strings.TrimSpace(view.project.deviceAddress)
 		settings.SceneMenu = view.project.menu

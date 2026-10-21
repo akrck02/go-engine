@@ -21,6 +21,7 @@ A game's main registers its behaviours and runs the project it embeds:
 | `func BetweenFrames(call func())` | BetweenFrames asks for a call to run once, at the start of the next frame, before anything is drawn: on the 3DS, the system keyboard can take both screens there. |
 | `func BindActions(bindings map[string]map[string][]string, target string) []error` | BindActions reads the actions' bindings (engine.json's actions) for a target, replacing those read before. |
 | `func CameraAt(world space.Transform, settings scenefile.Camera) models.Camera` | CameraAt is go-renderer's camera for a camera placed at a transform with some settings. |
+| `func CheckInputs(words []string, target string) []error` | CheckInputs tells which of some words a target does not know, each by its code (InputUnknown). |
 | `func DrawOverlay(list *draw2d.List, width, height float32) bool` | DrawOverlay draws the game's 2D over a 3D scene (SetOverlay) into a list, in an area of a width and a height starting at 0, 0; it tells whether the game has any. |
 | `func HasInterface() bool` | HasInterface tells whether the game shows a go-ui interface of its own (SetInterface). |
 | `func HeightSeen(settings *scenefile.Camera, aspect float64) float64` | HeightSeen is the metres a 2D camera sees top to bottom on a screen of a shape (its width over its height): the camera's height (10 when it has none), or more on a screen too narrow for the width it must see. |
@@ -174,6 +175,12 @@ var (
 ```
 
 Error codes of the engine package.
+
+```go
+var InputTargets = []string{DesktopTarget, Nintendo3DSTarget, AndroidTarget, WebTarget}
+```
+
+InputTargets are the targets an action can be bound on, in the order the editor shows them.
 
 ### ActionState
 
