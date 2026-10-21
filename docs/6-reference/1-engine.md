@@ -25,6 +25,7 @@ A game's main registers its behaviours and runs the project it embeds:
 | `func DrawOverlay(list *draw2d.List, width, height float32) bool` | DrawOverlay draws the game's 2D over a 3D scene (SetOverlay) into a list, in an area of a width and a height starting at 0, 0; it tells whether the game has any. |
 | `func HasInterface() bool` | HasInterface tells whether the game shows a go-ui interface of its own (SetInterface). |
 | `func HeightSeen(settings *scenefile.Camera, aspect float64) float64` | HeightSeen is the metres a 2D camera sees top to bottom on a screen of a shape (its width over its height): the camera's height (10 when it has none), or more on a screen too narrow for the width it must see. |
+| `func PressedInput(state *input.State, target string) (string, bool)` | PressedInput is the word of an input pressed this frame on a target, if one was: a key, a mouse button or a pad's button (a 3DS's buttons and Android's back cannot be pressed from a computer). |
 | `func Quit()` | Quit ends the game once the frame being played ends. |
 | `func Register(behaviours ...any)` | Register makes behaviours known by their type's name: Register(Spin{}) is "Spin". |
 | `func RegisterAs(name string, behaviour any)` | RegisterAs makes a behaviour known by a name of its own. |
@@ -55,6 +56,19 @@ const (
 ```
 
 The keys shoulder buttons, triggers and START are read as (a 3DS's L, R, ZL, ZR and START), and that press them on a keyboard.
+
+```go
+const (
+	KeyboardInputs = "Keyboard"
+	MouseInputs    = "Mouse"
+	PadInputs      = "Pad"
+	StickInputs    = "Sticks"
+	ButtonInputs   = "Buttons" // a device's own buttons (a 3DS's)
+	SystemInputs   = "System"  // the system's back (Android's)
+)
+```
+
+The groups of inputs, as an editor shows them.
 
 ```go
 const (
@@ -239,6 +253,19 @@ type Input struct {
 | `func (keys *Input) SecondScreenTouch() (x, y int, touching bool)` | SecondScreenTouch is where a finger or a stylus is on the second screen (a 3DS's bottom one, 320 × 240 pixels), and whether one is on it at all; never without a second screen. |
 | `func (keys *Input) State() *input.State` | State is go-renderer's input, for what Input does not cover. |
 | `func (keys *Input) Stick() (x, y float64)` | Stick is the main stick (a 3DS's circle pad, a game pad's left stick) from -1 to 1 on each axis, up positive. |
+
+### InputChoice
+
+InputChoice is a word an action can be bound with on a target, and its
+group.
+
+```go
+type InputChoice struct{ Word, Group string }
+```
+
+| Function or method | |
+|---|---|
+| `func InputChoices(target string) []InputChoice` | InputChoices are the words a target knows, group by group, each group in a reading order. |
 
 ### Key
 

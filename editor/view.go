@@ -40,11 +40,12 @@ type View struct {
 	playedScenes []engine.MenuScene // the scenes the game's interface offers, read once
 	shift        bool               // Shift was held on the last frame: a click joins the choice
 
-	art     artView      // the Art workspace's choices
-	project projectView  // the Project workspace's choices
-	code    codeView     // the Code workspace's choices
-	build   buildView    // the Build workspace's choices
-	picking *filePicking // the file asked for, while the file picker is shown
+	art      artView      // the Art workspace's choices
+	project  projectView  // the Project workspace's choices
+	code     codeView     // the Code workspace's choices
+	build    buildView    // the Build workspace's choices
+	controls controlsView // the Controls workspace's actions as edited
+	picking  *filePicking // the file asked for, while the file picker is shown
 
 	assetTree    project.AssetEntry
 	assetsReadAt time.Time
@@ -80,6 +81,9 @@ func (view *View) Options(options window.Options) window.Options {
 
 func (view *View) keys(state *input.State) {
 	editor := view.Editor
+	if view.catchInput(state) {
+		return // the next input pressed is an action's, not the editor's
+	}
 	if view.workspaceKeys(state) || editor.ShownWorkspace() == PlayWorkspace {
 		return // while playing, the game has the other keys
 	}

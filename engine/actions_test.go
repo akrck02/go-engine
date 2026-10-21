@@ -120,3 +120,26 @@ func TestABindingChangedWhilePlayingIsKeptAndReadBack(test *testing.T) {
 		test.Fatal("Space still fires after fire was rebound to Enter")
 	}
 }
+
+func TestEveryInputChoiceIsAWordItsTargetKnows(test *testing.T) {
+	for _, target := range InputTargets {
+		for _, choice := range InputChoices(target) {
+			if problems := CheckInputs([]string{choice.Word}, target); len(problems) != 0 {
+				test.Errorf("%s offers %q, which it does not know", target, choice.Word)
+			}
+		}
+	}
+}
+
+func TestAKeyPressedIsCaughtAsItsWord(test *testing.T) {
+	state := input.NewState()
+	state.SetPadButton(input.PadStart, true)
+	if word, found := PressedInput(state, DesktopTarget); !found || word != "Pad Start" {
+		test.Fatalf("the pad's Start is caught as %q, %v", word, found)
+	}
+	state.EndFrame()
+	state.SetKey(input.KeyF11, true)
+	if word, _ := PressedInput(state, DesktopTarget); word != "F11" {
+		test.Fatalf("F11 is caught as %q", word)
+	}
+}

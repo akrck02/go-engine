@@ -18,6 +18,8 @@ func (view *View) workspaceBody(context *ui.Context) {
 		view.artWorkspace(context)
 	case CodeWorkspace:
 		view.codeWorkspace(context)
+	case ControlsWorkspace:
+		view.controlsWorkspace(context)
 	case PlayWorkspace:
 		view.playWorkspace(context)
 	case BuildWorkspace:

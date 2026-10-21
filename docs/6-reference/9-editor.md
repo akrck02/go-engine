@@ -58,7 +58,7 @@ var Tools = []Tool{SelectTool, PaintTool, EraseTool, FillTool, HandTool}
 Tools are the tools in the order of the rail.
 
 ```go
-var Workspaces = []Workspace{ProjectWorkspace, ArtWorkspace, LevelWorkspace, CodeWorkspace, PlayWorkspace, BuildWorkspace}
+var Workspaces = []Workspace{ProjectWorkspace, ArtWorkspace, LevelWorkspace, CodeWorkspace, ControlsWorkspace, PlayWorkspace, BuildWorkspace}
 ```
 
 Workspaces are the workspaces in the order of the bar.
@@ -190,6 +190,7 @@ type Editor struct {
 | `func (editor *Editor) Running() bool` | Running tells whether the game is building or playing. |
 | `func (editor *Editor) Save() error` | Save writes the scene shown to its file. |
 | `func (editor *Editor) SaveArt() error` | SaveArt writes the file open in Art; the scene shows it changed at once. |
+| `func (editor *Editor) SaveControls(actions map[string]map[string][]string) error` | SaveControls keeps the actions edited in the project's settings. |
 | `func (editor *Editor) SaveTools(tools build.Tools) error` | SaveTools keeps the tools' places on this computer, for the builds and every project, and looks for them again. |
 | `func (editor *Editor) Select(node *engine.Node)` | Select chooses a node (nil for none), and lets go of any other chosen with it. |
 | `func (editor *Editor) SetAmbient(ambient *scenefile.Ambient)` | SetAmbient gives the scene an ambient light of its own, or takes it away (nil). |
@@ -388,6 +389,8 @@ const (
 	LevelWorkspace
 	// CodeWorkspace shows the behaviours the project's Go code defines.
 	CodeWorkspace
+	// ControlsWorkspace binds the game's actions to each target's inputs.
+	ControlsWorkspace
 	// PlayWorkspace plays the scene, to try it.
 	PlayWorkspace
 	// BuildWorkspace makes the game for each place it runs.

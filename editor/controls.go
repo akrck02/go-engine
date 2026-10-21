@@ -4,105 +4,123 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/akrck02/go-renderer/input"
+
 	"github.com/akrck02/go-engine/engine"
-	ui "github.com/akrck02/go-ui"
 )
 
-// The project's controls, in its settings: each action the game reads (engine.json's actions),
-// and for each target the inputs that press it, typed as words separated by commas ("Space, Pad
-// A"). A word the target does not know is shown in red under its field.
+// The Controls workspace's work, without its interface: the game's actions as they are edited
+// (engine.json's actions), the target shown, the action that palette clicks and caught inputs go
+// to, and catching the next input pressed.
 
-// actionsTyped are the project's actions as typed: for each action and target, its words.
-type actionsTyped map[string]map[string]string
+// controlsView is what the Controls workspace remembers between frames.
+type controlsView struct {
+	actions   map[string]map[string][]string // being edited: each action's words per target
+	loaded    bool                           // actions was filled from the project's settings
+	changed   bool                           // the actions differ from the ones saved
+	target    int                            // the target shown, by its place in engine.InputTargets
+	chosen    string                         // the action inputs are added to
+	catching  bool                           // the next input pressed is added to chosen
+	newAction string
+}
 
-// typedFrom is a project's actions ready to be typed over.
-func typedFrom(actions map[string]map[string][]string) actionsTyped {
-	typed := actionsTyped{}
-	for name, targets := range actions {
-		typed[name] = map[string]string{}
+// shownTarget is the target the workspace shows.
+func (controls *controlsView) shownTarget() string { return engine.InputTargets[controls.target] }
+
+// load fills the actions from the project's settings, the first time they are shown.
+func (controls *controlsView) load(saved map[string]map[string][]string) {
+	if controls.loaded {
+		return
+	}
+	controls.actions = map[string]map[string][]string{}
+	for name, targets := range saved {
+		controls.actions[name] = map[string][]string{}
 		for target, words := range targets {
-			typed[name][target] = strings.Join(words, ", ")
+			controls.actions[name][target] = slices.Clone(words)
 		}
 	}
-	return typed
+	controls.loaded = true
 }
 
-// bindings are the actions as engine.json keeps them, with the words typed split and trimmed;
-// a target with none is left out.
-func (typed actionsTyped) bindings() map[string]map[string][]string {
-	actions := map[string]map[string][]string{}
-	for name, targets := range typed {
-		actions[name] = map[string][]string{}
-		for target, text := range targets {
-			if words := wordsOf(text); len(words) > 0 {
-				actions[name][target] = words
-			}
-		}
-	}
-	return actions
-}
-
-// wordsOf are the words typed in a field, split at commas.
-func wordsOf(text string) []string {
-	var words []string
-	for _, word := range strings.Split(text, ",") {
-		if word = strings.TrimSpace(word); word != "" {
-			words = append(words, word)
-		}
-	}
-	return words
-}
-
-// controlsSection shows the actions, a field for each target's inputs, and a way to add one.
-func (view *View) controlsSection(context *ui.Context) {
-	context.Separator()
-	context.Heading("Controls")
-	note(context, "Each action the game reads (Input.Action), and the inputs that press it on each target, separated by commas: Space, Mouse Left, Pad A; on a 3DS, its buttons: A, R, Start.")
-	typed := view.project.actions
-	names := make([]string, 0, len(typed))
-	for name := range typed {
+// names are the actions' names, in order.
+func (controls *controlsView) names() []string {
+	names := make([]string, 0, len(controls.actions))
+	for name := range controls.actions {
 		names = append(names, name)
 	}
 	slices.Sort(names)
-	for _, name := range names {
-		view.actionRows(context, name)
-	}
-	context.Row(func() {
-		context.Box(ui.Layout{Width: ui.Grow()}, func() { context.TextField("New action", &view.project.newAction) })
-		if context.IconButton(iconAdd, "Add action") {
-			view.addAction()
-		}
-	})
+	return names
 }
 
-// actionRows are one action: its name, a button that removes it, and a field for each target.
-func (view *View) actionRows(context *ui.Context, name string) {
-	context.Push(name)
-	defer context.Pop()
-	context.Row(func() {
-		context.Text(name, ui.TextStyle{Weight: weightFor(true)})
-		if context.FlatIconButton(iconDelete, "") {
-			delete(view.project.actions, name)
-		}
-		context.Tooltip("Remove the action " + name)
-	})
-	for _, target := range engine.InputTargets {
-		text := view.project.actions[name][target]
-		context.Caption(target)
-		context.TextField(target, &text)
-		view.project.actions[name][target] = text
-		for _, problem := range engine.CheckInputs(wordsOf(text), target) {
-			wrapped(context, explained(problem), ui.TextStyle{Color: context.Theme.Danger, Size: context.Theme.SmallTextSize})
-		}
-	}
-}
-
-// addAction adds the action named in the new action's field, with no inputs yet.
-func (view *View) addAction() {
-	name := strings.TrimSpace(view.project.newAction)
-	if name == "" || view.project.actions[name] != nil {
+// addAction adds an action with no inputs yet, and chooses it.
+func (controls *controlsView) addAction(name string) {
+	name = strings.TrimSpace(name)
+	if name == "" || controls.actions[name] != nil {
 		return
 	}
-	view.project.actions[name] = map[string]string{}
-	view.project.newAction = ""
+	controls.actions[name] = map[string][]string{}
+	controls.chosen, controls.changed = name, true
+}
+
+// removeAction removes an action from every target.
+func (controls *controlsView) removeAction(name string) {
+	delete(controls.actions, name)
+	controls.changed = true
+}
+
+// addInput binds the chosen action to a word on the target shown, once.
+func (controls *controlsView) addInput(word string) {
+	inputs := controls.actions[controls.chosen]
+	if inputs == nil || slices.Contains(inputs[controls.shownTarget()], word) {
+		return
+	}
+	inputs[controls.shownTarget()] = append(inputs[controls.shownTarget()], word)
+	controls.changed = true
+}
+
+// removeInput unbinds an action from one of its words on the target shown.
+func (controls *controlsView) removeInput(name string, index int) {
+	target := controls.shownTarget()
+	controls.actions[name][target] = slices.Delete(controls.actions[name][target], index, index+1)
+	controls.changed = true
+}
+
+// turnInput changes how a button moves an action: pressing it, then towards -1, then towards 1.
+func (controls *controlsView) turnInput(name string, index int) {
+	words := controls.actions[name][controls.shownTarget()]
+	word := words[index]
+	switch {
+	case strings.HasSuffix(word, "-"):
+		words[index] = strings.TrimSuffix(word, "-") + "+"
+	case strings.HasSuffix(word, "+"):
+		words[index] = strings.TrimSuffix(word, "+")
+	default:
+		words[index] = word + "-"
+	}
+	controls.changed = true
+}
+
+// catchInput adds the input pressed this frame to the chosen action, while the workspace waits for
+// one; Escape stops waiting. It tells whether the frame's input was taken.
+func (view *View) catchInput(state *input.State) bool {
+	controls := &view.controls
+	if !controls.catching || view.Editor.ShownWorkspace() != ControlsWorkspace {
+		controls.catching = false
+		return false
+	}
+	if state.Pressed(input.KeyEscape) {
+		controls.catching = false
+		return true
+	}
+	if word, found := engine.PressedInput(state, controls.shownTarget()); found {
+		controls.addInput(word)
+		controls.catching = false
+	}
+	return true
+}
+
+// SaveControls keeps the actions edited in the project's settings.
+func (editor *Editor) SaveControls(actions map[string]map[string][]string) error {
+	editor.Project.Settings.Actions = actions
+	return editor.Project.SaveSettings()
 }
