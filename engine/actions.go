@@ -87,6 +87,11 @@ func (keys *Input) readInputs(inputs []boundInput) (down bool, value float64) {
 			value += keys.stickAxis(stickAxis(bound.code))
 			continue
 		}
+		if bound.kind == touchInput && bound.code != touchAxisNone {
+			_, axis := touchValue(bound)
+			value += axis
+			continue
+		}
 		if !keys.held(bound) {
 			continue
 		}
@@ -108,6 +113,9 @@ func (keys *Input) held(bound boundInput) bool {
 		return keys.console.Held&ctr.Buttons(bound.code) != 0
 	case backInput:
 		return state != nil && state.TakeBack()
+	case touchInput:
+		held, _ := touchValue(bound)
+		return held
 	}
 	if state == nil {
 		return false

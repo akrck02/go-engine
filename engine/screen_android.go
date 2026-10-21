@@ -25,12 +25,20 @@ func interfaceFor(game *runner) func(context *ui.Context) {
 				Width: area.Width - insets.Left - insets.Right, Height: area.Height - insets.Top - insets.Bottom}
 			played := game.played
 			layout := touchLayoutFor(area, safe, played.designedAspect())
+			if len(touchPanel.controls) > 0 { // the game's own controls lie over the whole screen
+				layout = touchLayout{scene: area}
+				placeTouchControls(safe)
+			}
 			game.console.buttons = layout.buttons
 			if played.Is2D() { // a 3D scene is drawn under the interface: covering it would hide it
 				list.Rectangle(area, 0, draw2d.Color{0, 0, 0, 1}, draw2d.Color{}, 0)
 				list.PushClip(layout.scene)
 				played.Draw2D(list, layout.scene, played.View2D())
 				list.PopClip()
+			}
+			if len(touchPanel.controls) > 0 {
+				drawTouchControls(list)
+				return
 			}
 			drawTouchButtons(list, layout.buttons)
 		})
@@ -40,6 +48,7 @@ func interfaceFor(game *runner) func(context *ui.Context) {
 // consoleKeys is the game's keys on Android: a keyboard's, if one is plugged in, and the touch
 // buttons'.
 func consoleKeys(console *consoleInput, window *input.State) *input.State {
+	readTouchControls(window.Touches())
 	return touchKeys(&console.keys, window, console.buttons)
 }
 

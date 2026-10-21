@@ -38,6 +38,9 @@ type Settings struct {
 	// Actions are what the player does, by name, each bound to inputs per target: "fire":
 	// {"desktop": ["Space", "Pad A"], "nintendo3ds": ["A"]} (Input.Action, inputwords.go).
 	Actions map[string]map[string][]string `json:"actions,omitempty"`
+	// TouchControls are the sticks and buttons drawn on a touch screen (a phone's), as the editor
+	// places them; none keeps the engine's four touch buttons (touchcontrols.go).
+	TouchControls []TouchControl `json:"touchControls,omitempty"`
 }
 
 // SettingsFile is the settings' file in a project.
@@ -104,6 +107,7 @@ func Run(files fs.FS) error {
 	for _, problem := range played.Start() {
 		slog.Warn("a behaviour could not be made", "error", problem)
 	}
+	useTouchControls(settings.TouchControls)
 	game := &runner{played: played, name: settings.Name, keepStart: settings.KeepStart}
 	if settings.SceneMenu || gameInterface != nil {
 		game.menu = scenesOf(files)

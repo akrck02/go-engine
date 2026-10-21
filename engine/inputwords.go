@@ -23,6 +23,7 @@ const (
 	consoleInput3DS
 	backInput
 	stickInput
+	touchInput // a touch control the game draws (touchcontrols.go)
 )
 
 // stickAxis is one axis of one stick.
@@ -41,6 +42,7 @@ type boundInput struct {
 	kind    inputKind
 	code    int // the key, mouse button, pad button, 3DS button bit or stick axis
 	towards float64
+	name    string // a touch control's
 }
 
 // The words for a stick's axes, the same on every target: a 3DS's circle pad is its main stick and
@@ -108,6 +110,11 @@ func readButton(word, target string) (boundInput, bool) {
 	if target == Nintendo3DSTarget {
 		button, found := consoleWords[word]
 		return boundInput{kind: consoleInput3DS, code: int(button)}, found
+	}
+	if target == AndroidTarget {
+		if touch, found := readTouchWord(word); found {
+			return touch, true
+		}
 	}
 	if word == "Back" && target == AndroidTarget {
 		return boundInput{kind: backInput}, true

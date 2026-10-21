@@ -41,6 +41,7 @@ A game's main registers its behaviours and runs the project it embeds:
 | `func SetSecondScreen(shown *Scene)` | SetSecondScreen shows a scene on the second screen, under the game's interface (SetInterface), seen from its main camera; nil leaves the screen to the interface. |
 | `func ShowInterface(context *ui.Context, played *Scene, scenes []MenuScene)` | ShowInterface builds the game's own interface (SetInterface) for a scene played, offering some scenes (ScenesOf); playing another asks the scene to be replaced (Scene.TakeReplacement). |
 | `func TakeQuit() bool` | TakeQuit tells whether the game asked to quit since the last time, and forgets it: one who plays the game elsewhere than Run (the editor's Play) stops it then. |
+| `func TouchWords(control TouchControl) []string` | TouchWords are the words a touch control is bound with: a button's name, a stick's two axes. |
 | `func Version() string` | Version says which Go Engine this program was built with: its release and commit, as "v0.0.1 (ba08523)", or "v0.0.1 (77aa001, local)" for a local copy, as the editor's window and the logs show it. |
 
 ### Constants and variables
@@ -469,6 +470,9 @@ type Settings struct {
 	// Actions are what the player does, by name, each bound to inputs per target: "fire":
 	// {"desktop": ["Space", "Pad A"], "nintendo3ds": ["A"]} (Input.Action, inputwords.go).
 	Actions map[string]map[string][]string `json:"actions,omitempty"`
+	// TouchControls are the sticks and buttons drawn on a touch screen (a phone's), as the editor
+	// places them; none keeps the engine's four touch buttons (touchcontrols.go).
+	TouchControls []TouchControl `json:"touchControls,omitempty"`
 }
 ```
 
@@ -497,6 +501,40 @@ Start, when the behaviour has it, runs once before the first Update.
 ```go
 type Starter interface{ Start(context *Context) }
 ```
+
+### TouchControl
+
+TouchControl is a stick or a button drawn on a touch screen: its name,
+what it is, where its centre sits (X across the screen and Y down it,
+from 0 to 1) and its size (its width, as a share of the screen's height,
+the shorter side of a phone held sideways).
+
+```go
+type TouchControl struct {
+	Name string    `json:"name"`
+	Kind TouchKind `json:"kind"`
+	X    float32   `json:"x"`
+	Y    float32   `json:"y"`
+	Size float32   `json:"size"`
+}
+```
+
+### TouchKind
+
+TouchKind is what a touch control is.
+
+```go
+type TouchKind string
+```
+
+```go
+const (
+	TouchButton TouchKind = "button" // pressed while a finger is on it
+	TouchStick  TouchKind = "stick"  // moves two axes as a finger drags it
+)
+```
+
+The kinds of touch control.
 
 ### Toucher
 
