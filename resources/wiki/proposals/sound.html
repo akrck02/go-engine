@@ -1,0 +1,96 @@
+<h1 id="12-sound-effects-and-music-from-go-sound">12. Sound: effects and music from Go Sound</h1>
+
+<blockquote>
+<p>Status: proposed · Author&rsquo;s approval: proposal ☐ plan ☐</p>
+</blockquote>
+
+<h2 id="why">Why</h2>
+
+<p>Go Engine&rsquo;s games are silent. A jump with no sound feels half done, and io-world&rsquo;s Unity version
+already had a jump and a calm piece of music (<code>jump.mp3</code>, <code>tranquil.mp3</code>). Go Sound, the author&rsquo;s
+own library, plays WAV and Ogg Vorbis on the desktop, Android, the web and the 3DS. The engine
+only has to use it.</p>
+
+<h2 id="what">What</h2>
+
+<table>
+<thead>
+<tr>
+<th>Id</th>
+<th>Requirement</th>
+<th>Check</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>R1</td>
+<td>A behaviour plays a sound by its file, once, with <code>context.Play(&quot;assets/sounds/jump.ogg&quot;)</code></td>
+<td>test <code>a played sound reaches the mixer once</code></td>
+</tr>
+
+<tr>
+<td>R2</td>
+<td>A scene can have music, which loops, set in its inspector, and keeps playing across a restart of the same scene</td>
+<td>tests <code>a scene's music loops</code>, <code>restarting a scene keeps its music</code></td>
+</tr>
+
+<tr>
+<td>R3</td>
+<td>Sounds are read once, through the asset cache, and playing one allocates nothing a frame</td>
+<td>the allocation test</td>
+</tr>
+
+<tr>
+<td>R4</td>
+<td>Project shows sound files with a play button, and Play mutes and unmutes the game</td>
+<td>capture; test <code>muting stops the game's sound</code></td>
+</tr>
+
+<tr>
+<td>R5</td>
+<td>The same game sounds on the desktop, Android and the 3DS</td>
+<td>heard on the emulators (Android&rsquo;s reports it playing; Azahar plays it)</td>
+</tr>
+</tbody>
+</table>
+
+<h2 id="out-of-scope">Out of scope</h2>
+
+<ul>
+<li>MP3: Go Sound reads WAV and Ogg Vorbis. io-world&rsquo;s two MP3s are converted once, to Ogg.</li>
+<li>Sound placed in the world (louder when near): a later change, with a listener on the camera.</li>
+<li>An editor of sounds.</li>
+</ul>
+
+<h2 id="design">Design</h2>
+
+<p><strong>Engine</strong>: a <code>sounds</code> part of the runner owns one Go Sound mixer. <code>context.Play(file)</code> finds the
+sound in the asset cache (reading it the first time) and starts a player. A scene&rsquo;s <code>music</code> is a
+file and a volume, started when the scene starts. It is left alone when the next scene has the
+same music, so a restart does not cut it.</p>
+
+<p><strong>Scene files</strong>: <code>Scene</code> gains <code>music: {file, volume}</code>.</p>
+
+<p><strong>Editor</strong>: Project lists <code>.wav</code> and <code>.ogg</code> files with a play button. The scene&rsquo;s inspector chooses
+its music. Play has a mute switch, and Stop silences everything.</p>
+
+<p><strong>Builds</strong>: the 3DS build links Go Sound&rsquo;s 3DS output. Android needs nothing more than go-ui
+already asks for.</p>
+
+<p><strong>Alternative not taken</strong>: a sound component on nodes (Unity&rsquo;s AudioSource). For one-off effects a
+call from a behaviour is shorter, and music belongs to the scene, not to a node.</p>
+
+<h2 id="tasks">Tasks</h2>
+
+<ul>
+<li>[ ] T1 — <code>scenefile</code>: a scene&rsquo;s <code>music</code> · R2 · test: <code>a scene with music comes back as written</code></li>
+<li>[ ] T2 — <code>engine</code>: the mixer, <code>Play</code>, music that loops and survives a restart · R1–R3 · tests</li>
+<li>[ ] T3 — builds: Go Sound on the 3DS and Android · R5</li>
+<li>[ ] T4 — editor: sounds in Project, music in the inspector, mute in Play · R4 · capture and test</li>
+<li>[ ] T5 — the quest: a coin&rsquo;s sound and the forest&rsquo;s music, in level 4 · R5</li>
+</ul>
+
+<h2 id="result">Result</h2>
+
+<p>Not built yet.</p>

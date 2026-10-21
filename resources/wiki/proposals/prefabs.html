@@ -1,0 +1,129 @@
+<h1 id="9-prefabs-a-scene-placed-inside-another">9. Prefabs: a scene placed inside another</h1>
+
+<blockquote>
+<p>Status: proposed · Author&rsquo;s approval: proposal ☐ plan ☐</p>
+</blockquote>
+
+<h2 id="why">Why</h2>
+
+<p>io-world&rsquo;s jump pad, rail and button are small scenes placed many times. In Go Engine each one is
+written out in full, node by node, wherever it stands. Changing how a pad looks means changing
+every pad. Proposal 7 found this the biggest missing piece, and any game with enemies, doors or
+coins will hit it.</p>
+
+<p>Godot calls them instanced scenes, Unity prefabs. We take Godot&rsquo;s idea, since our scenes are
+already files: a node may <em>be</em> another scene.</p>
+
+<h2 id="what">What</h2>
+
+<table>
+<thead>
+<tr>
+<th>Id</th>
+<th>Requirement</th>
+<th>Check</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>R1</td>
+<td>A node can name a scene file; it then holds that scene&rsquo;s nodes, under its own name and transform</td>
+<td>test <code>a placed scene brings its nodes under the node</code></td>
+</tr>
+
+<tr>
+<td>R2</td>
+<td>Changing the placed scene&rsquo;s file changes every place it is used, the next time the scene opens</td>
+<td>test <code>every place shows the scene file as it is now</code></td>
+</tr>
+
+<tr>
+<td>R3</td>
+<td>A place can set the fields of its top node&rsquo;s behaviours, so two pads push with different strengths</td>
+<td>test <code>a place's own fields win over the scene file's</code></td>
+</tr>
+
+<tr>
+<td>R4</td>
+<td>A scene that places itself, directly or through others, is refused with its code, not loaded forever</td>
+<td>test <code>a scene that places itself says so</code></td>
+</tr>
+
+<tr>
+<td>R5</td>
+<td>In the editor: Project&rsquo;s <strong>Place in the scene</strong> places a scene file; Level shows the placed nodes greyed, and <strong>Open</strong> opens their file</td>
+<td>captures; test <code>placing a scene file adds a node that names it</code></td>
+</tr>
+
+<tr>
+<td>R6</td>
+<td><strong>Make it local</strong> turns a place into ordinary nodes, copied from the file, to change one alone</td>
+<td>test <code>making a place local copies its nodes</code></td>
+</tr>
+
+<tr>
+<td>R7</td>
+<td>Placed scenes play the same on the desktop, the 3DS and Android, and cost nothing a frame beyond their nodes</td>
+<td>the allocation test; Io World&rsquo;s pads as placed scenes on the 3DS</td>
+</tr>
+</tbody>
+</table>
+
+<h2 id="out-of-scope">Out of scope</h2>
+
+<ul>
+<li>Changing a placed node deep inside a place (only the top node&rsquo;s behaviour fields, R3). Godot
+allows any property; that can come later, once a game needs it.</li>
+<li>Placing scenes while the game runs (spawning). A behaviour can already add nodes in code.</li>
+<li>3D models made of scenes: this is for any scene, but only 2D is tried here.</li>
+</ul>
+
+<h2 id="design">Design</h2>
+
+<p><strong>Scene files</strong> (<code>scenefile</code>): <code>Node</code> gains <code>scene</code>, a scene file in the project, and <code>fields</code>, a
+map from behaviour name to field values. A node with <code>scene</code> has no children of its own in the
+file. Reading a scene stays as it is: placing happens when the engine builds it.</p>
+
+<p><strong>Building</strong> (<code>engine</code>): <code>Build</code> reads each placed file once per build, through the asset cache,
+and adds its nodes under the place. The place&rsquo;s name and transform are its own; the file&rsquo;s top
+node&rsquo;s transform is applied under it. A stack of the files being built finds a scene that places
+itself (<code>engine.scene-places-itself</code>). The place&rsquo;s <code>fields</code> are set after the file&rsquo;s.</p>
+
+<p>Each place remembers its file (<code>Node.Placed</code>), so the editor can grey its nodes and save the
+place, not its copied nodes.</p>
+
+<p><strong>Editor</strong>: Project&rsquo;s <strong>Place in the scene</strong> accepts scene files. Level draws a placed node&rsquo;s
+children greyed, with a mark in the tree, and the inspector shows <strong>Open</strong> and <strong>Make it local</strong>.
+The top node&rsquo;s behaviours show their fields, which write into the place&rsquo;s <code>fields</code>.</p>
+
+<p><strong>Io World</strong> turns its pads, rails and buttons into placed scenes, as the check of R7.</p>
+
+<p><strong>Alternatives not taken</strong>:</p>
+
+<ul>
+<li>Copying the file&rsquo;s nodes into the scene when placed (a template). It is simpler, but R2 is the
+whole point.</li>
+<li>Overrides of any property by node path, as Godot does. They are powerful but hard to show in an
+inspector, and no game here needs them yet.</li>
+</ul>
+
+<h2 id="tasks">Tasks</h2>
+
+<ul>
+<li>[ ] T1 — <code>scenefile</code>: <code>scene</code> and <code>fields</code> on a node, read, checked and written · R1, R3 ·
+test: <code>a scene with a placed scene comes back as written</code></li>
+<li>[ ] T2 — <code>engine</code>: placed scenes built under their node, fields set, a loop refused · R1–R4 ·
+tests of R1–R4</li>
+<li>[ ] T3 — <code>engine</code>: placed scenes on every platform, without allocating a frame · R7 · the
+allocation test</li>
+<li>[ ] T4 — editor: place a scene file, grey its nodes, Open, the top node&rsquo;s fields · R5 · test and
+captures</li>
+<li>[ ] T5 — editor: Make it local · R6 · test <code>making a place local copies its nodes</code></li>
+<li>[ ] T6 — Io World: pads, rails and buttons as placed scenes, played on the 3DS · R7</li>
+<li>[ ] T7 — docs: a guide, &ldquo;Scenes inside scenes&rdquo;, and the quest&rsquo;s coins as one placed scene</li>
+</ul>
+
+<h2 id="result">Result</h2>
+
+<p>Not built yet.</p>

@@ -1,0 +1,114 @@
+<h1 id="10-richer-tile-maps-several-tilesets-turned-tiles-tiles-solid-in-part">10. Richer tile maps: several tilesets, turned tiles, tiles solid in part</h1>
+
+<blockquote>
+<p>Status: proposed · Author&rsquo;s approval: proposal ☐ plan ☐</p>
+</blockquote>
+
+<h2 id="why">Why</h2>
+
+<p>Making io-world (proposal 7) found three limits of tile maps:</p>
+
+<ul>
+<li>A tile map takes one tileset. Godot&rsquo;s tile set mixes pictures, so one level became two tile
+maps, painted apart.</li>
+<li>Tiles cannot be mirrored or turned. io-world&rsquo;s flipped tiles are drawn unflipped, and an artist
+draws every corner four times.</li>
+<li>A solid tile is solid all over. io-world&rsquo;s attractor tiles are solid only in part, here whole
+squares.</li>
+</ul>
+
+<p>Tiled and Godot both solve the first two the same way, and the third with a shape per tile.</p>
+
+<h2 id="what">What</h2>
+
+<table>
+<thead>
+<tr>
+<th>Id</th>
+<th>Requirement</th>
+<th>Check</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>R1</td>
+<td>A tile map can use several tilesets; the palette shows each, and any cell can hold a tile of any of them</td>
+<td>test <code>a map paints tiles of two tilesets</code>; capture</td>
+</tr>
+
+<tr>
+<td>R2</td>
+<td>A painted tile can be mirrored across, mirrored up and down, or turned a quarter, with keys while painting</td>
+<td>test <code>a turned tile is drawn turned</code>; capture</td>
+</tr>
+
+<tr>
+<td>R3</td>
+<td>A tileset&rsquo;s tile can be solid in part: a box inside it, in pixels, set by dragging in Art</td>
+<td>test <code>a half-solid tile stops a body at its half</code></td>
+</tr>
+
+<tr>
+<td>R4</td>
+<td>Old tile maps open and play as before</td>
+<td>the platformer&rsquo;s and Io World&rsquo;s tests</td>
+</tr>
+
+<tr>
+<td>R5</td>
+<td>On the 3DS and on Android, turned tiles cost no more a frame than plain ones</td>
+<td>the allocation test; Io World in Azahar</td>
+</tr>
+</tbody>
+</table>
+
+<h2 id="out-of-scope">Out of scope</h2>
+
+<ul>
+<li>Slopes and shapes other than boxes: the physics only has boxes (see proposal 1).</li>
+<li>Animated tiles (water that ripples). A sprite does it for now.</li>
+<li>Tiles painted by rules (autotiling): a later proposal.</li>
+</ul>
+
+<h2 id="design">Design</h2>
+
+<p><strong>Several tilesets</strong>, as Tiled does it. A tile map lists <code>tilesets</code>, in order. Tile numbers run
+through them: the first tileset&rsquo;s tiles come first, then the second&rsquo;s. A map with one <code>tileset</code>
+keeps working (R4). The palette has a tab per tileset.</p>
+
+<p><strong>Turned tiles</strong>: a tile map gains <code>turns</code>, a number per cell from 0 to 7. Its three bits are
+mirror across, mirror up and down, and swap the axes, as Tiled&rsquo;s. Absent means none. When a map
+loads, each turned tile used gets its own picture, made once, as mirrored sprites are. Drawing
+stays one picture per cell (R5). In Level, <strong>X</strong>, <strong>Y</strong> and <strong>Z</strong> turn the tile being painted.</p>
+
+<p><strong>Solid in part</strong>: a tileset&rsquo;s <code>solid</code> stays a list of whole tiles. A new <code>boxes</code> maps a tile
+number to a box in pixels inside it. Merging rows into one body only joins whole tiles; a part
+box is a body of its own. Art draws the box over the tile, and dragging changes it. A turned
+tile turns its box too.</p>
+
+<p><strong>Alternatives not taken</strong>:</p>
+
+<ul>
+<li>A layer per tileset (several tile maps under one node). It is what io-world does now, and
+painting means switching nodes all the time.</li>
+<li>Turn bits inside the tile number, as Tiled&rsquo;s files do. That is compact, but unreadable in a
+scene file a person opens.</li>
+</ul>
+
+<h2 id="tasks">Tasks</h2>
+
+<ul>
+<li>[ ] T1 — <code>scenefile</code>: <code>tilesets</code>, <code>turns</code> and a tileset&rsquo;s <code>boxes</code> · R1–R4 · test: <code>a map with
+two tilesets and turned tiles comes back as written</code></li>
+<li>[ ] T2 — <code>engine</code>: tile numbers across tilesets; turned pictures made once · R1, R2, R5 · tests
+of R1, R2</li>
+<li>[ ] T3 — <code>engine</code>: part boxes as bodies, turned with their tile · R3 · test of R3</li>
+<li>[ ] T4 — editor: palette tabs, X/Y/Z while painting · R1, R2 · captures</li>
+<li>[ ] T5 — Art: drag a tile&rsquo;s box · R3 · capture</li>
+<li>[ ] T6 — Io World: one tile map, turned and part-solid tiles from Godot&rsquo;s level · R4, R5</li>
+</ul>
+
+<h2 id="result">Result</h2>
+
+<p>Not built yet.</p>

@@ -1,0 +1,82 @@
+<h1 id="13-io-world-s-unity-levels-made-again">13. io-world&rsquo;s Unity levels, made again</h1>
+
+<blockquote>
+<p>Status: proposed, after 9 to 12 · Author&rsquo;s approval: proposal ☐ plan ☐</p>
+</blockquote>
+
+<h2 id="why">Why</h2>
+
+<p>io-world began in Unity, in December 2022. Its scene <code>Demoivania</code> had more than the Godot level
+proposal 7 made again: a menu with music and lights, a long level with levels 2 and 3 started,
+buttons, a cube, rails, magnets, liquids and a second character. They went away when the game
+moved to Godot.</p>
+
+<p>Made again in Go Engine, they are the next test of the engine. They need prefabs (proposal 9),
+richer tile maps (10), sprites made of tiles (11) and sound (12). And they bring two pieces of
+their own.</p>
+
+<h2 id="what">What</h2>
+
+<table>
+<thead>
+<tr>
+<th>Id</th>
+<th>Requirement</th>
+<th>Check</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>R1</td>
+<td>A <strong>liquid</strong>: a trigger that slows what moves in it and lets it float up</td>
+<td>tests <code>a body slows in a liquid</code>, <code>a light body floats up in a liquid</code></td>
+</tr>
+
+<tr>
+<td>R2</td>
+<td><strong>Two characters</strong>: a behaviour hands control from one to the other, and the camera follows the one in control</td>
+<td>test <code>the camera follows the character in control</code></td>
+</tr>
+
+<tr>
+<td>R3</td>
+<td>io-world&rsquo;s start menu, with its music and lights, opens the game</td>
+<td>capture on the 3DS</td>
+</tr>
+
+<tr>
+<td>R4</td>
+<td>The long level, with levels 2 and 3 as far as Unity had them, plays on the 3DS</td>
+<td>the author on the console</td>
+</tr>
+</tbody>
+</table>
+
+<h2 id="out-of-scope">Out of scope</h2>
+
+<ul>
+<li>What Unity&rsquo;s version never finished: levels 2 and 3 end where they ended.</li>
+<li>Changing io-world&rsquo;s design. Its open choices are written down, not decided here.</li>
+</ul>
+
+<h2 id="design">Design</h2>
+
+<p><strong>Liquids</strong> (<code>physics</code>): a trigger gains a <code>drag</code>, a share of speed lost each second, and a
+<code>lift</code>, a pull upwards, the opposite of gravity. Both are settings beside <code>pull</code> (proposal 7), so
+the inspector shows them with it.</p>
+
+<p><strong>Two characters</strong> live in the game, not the engine: a <code>Swap</code> behaviour moves the camera&rsquo;s
+<code>follow</code> and which node reads the input. The engine only needs <code>follow</code> to change while playing,
+which the test of R2 checks.</p>
+
+<p><strong>io-world</strong>: a script reads <code>Demoivania.unity</code> from io-world&rsquo;s history once, as proposal 7&rsquo;s did
+for Godot. Its pieces become placed scenes (9), its bricks a tileset (10), and its music Ogg (12).</p>
+
+<h2 id="tasks">Tasks</h2>
+
+<p>To be planned once proposals 9 to 12 are built: they change what this one needs.</p>
+
+<h2 id="result">Result</h2>
+
+<p>Not built yet.</p>
