@@ -7,7 +7,7 @@ import (
 
 // consoleButtons are the console's buttons a game reads as keys: the cross as the arrows, A as
 // Space, B as Escape, X and Y as themselves, and the shoulders and START as the keys that stand for
-// them on a keyboard (ButtonL and the rest). The sticks, the gyroscope and the touch screen are
+// them on a keyboard (ButtonLeftShoulder and the rest). The sticks, the gyroscope and the touch screen are
 // read whole (Input.Stick and the rest, controls.go).
 var consoleButtons = [...]struct {
 	button ctr.Buttons
@@ -16,7 +16,7 @@ var consoleButtons = [...]struct {
 	{ctr.ButtonUp, input.KeyUp}, {ctr.ButtonDown, input.KeyDown}, {ctr.ButtonLeft, input.KeyLeft},
 	{ctr.ButtonRight, input.KeyRight}, {ctr.ButtonA, input.KeySpace}, {ctr.ButtonB, input.KeyEscape},
 	{ctr.ButtonX, input.KeyX}, {ctr.ButtonY, input.KeyY},
-	{ctr.ButtonL, ButtonL}, {ctr.ButtonR, ButtonR}, {ctr.ButtonZL, ButtonZL}, {ctr.ButtonZR, ButtonZR},
+	{ctr.ButtonL, ButtonLeftShoulder}, {ctr.ButtonR, ButtonRightShoulder}, {ctr.ButtonZL, ButtonLeftTrigger}, {ctr.ButtonZR, ButtonRightTrigger},
 	{ctr.ButtonStart, ButtonStart},
 }
 

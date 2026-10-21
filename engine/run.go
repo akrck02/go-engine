@@ -102,7 +102,7 @@ type runner struct {
 	last    time.Time
 	flat    draw2d.List      // a 2D scene's drawing on the console, made again every frame
 	overlay draw2d.List      // the game's drawing over a 3D scene (SetOverlay), made again every frame
-	below   window.BelowView // how the bottom screen's scene is seen this frame (SetBottomScene)
+	below   window.BelowView // how the bottom screen's scene is seen this frame (SetSecondScreen)
 	console consoleInput     // the console's buttons, as keys
 	view    window.SceneView // what the window shows this frame
 	name    string           // the game's
@@ -128,7 +128,7 @@ func (game *runner) step(state *input.State, step float64) *window.SceneView {
 	state.LockCursor(pointerCaptured)
 	game.played.input.console = game.console.reading
 	game.played.PlayFrame(seconds, keys)
-	below := game.playBelow(seconds, keys)
+	below := game.playSecondScreen(seconds, keys)
 	game.replaceIfAsked()
 	if game.played.Is2D() && !flatNeedsScene {
 		return nil // the interface paints a 2D scene (interfaceFor): no 3D scene behind it

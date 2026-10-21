@@ -11,7 +11,7 @@ import (
 
 // A 3D game played in the view is drawn behind the interface, in the stage at its target's shape:
 // a computer's screen, or the 3DS's top screen with its bottom one under it, where the game's
-// bottom scene (engine.SetBottomScene) plays. Over it, the game's own 2D (engine.SetOverlay) and
+// second screen's scene (engine.SetSecondScreen) plays. Over it, the game's own 2D (engine.SetOverlay) and
 // its interface (engine.SetInterface) are shown as the game shows them: over its window, or on the
 // 3DS's bottom screen.
 
@@ -22,7 +22,7 @@ type stagedScreens struct{ top, bottom draw2d.Rect }
 // stage3D shows a 3D game at its target's shape, with the game's 2D and interface over it.
 func (view *View) stage3D(context *ui.Context, played *engine.Scene) {
 	console := view.Editor.Target == ConsoleScreen
-	_, hasBelow := engine.BottomScene()
+	_, hasBelow := engine.SecondScreen()
 	ink := context.Theme.InkSoft
 	context.Paint(ui.Layout{Width: ui.Grow(), Height: ui.Grow()}, func(area draw2d.Rect, list *draw2d.List) {
 		view.staged = stagedScreens{top: fitted(area, view.Editor.Target.Aspect())}
@@ -66,7 +66,7 @@ func (view *View) playedView(world *scene.Scene, camera models.Camera) *window.S
 		return shown // the stage is not laid out yet: the whole window, for a frame
 	}
 	shown.Area = &staged.top
-	below, found := engine.BottomScene()
+	below, found := engine.SecondScreen()
 	if !found || staged.bottom.Width == 0 {
 		return shown
 	}

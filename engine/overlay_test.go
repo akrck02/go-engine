@@ -30,8 +30,8 @@ func TestTheGamesOverlayIsDrawnOverA3DSceneAtTheScreensSize(test *testing.T) {
 func TestTheBottomScenePlaysAndIsSeenFromItsCamera(test *testing.T) {
 	game := &runner{played: load(test)}
 	below := load(test)
-	SetBottomScene(below)
-	defer SetBottomScene(nil)
+	SetSecondScreen(below)
+	defer SetSecondScreen(nil)
 	spinner, _ := below.Find("Spinner")
 	before := spinner.Transform.Rotation
 	state := input.NewState()

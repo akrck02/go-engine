@@ -19,7 +19,6 @@ A game's main registers its behaviours and runs the project it embeds:
 | `func BeforeBehaviours(hook func(context *Context))` | BeforeBehaviours sets code that runs once a frame, before every behaviour, with the frame's context (its Node is nil); nil removes it. |
 | `func Behaviour[Wanted any](node *Node) (*Wanted, bool)` | Behaviour finds a node's behaviour of a type, while the game runs. |
 | `func BetweenFrames(call func())` | BetweenFrames asks for a call to run once, at the start of the next frame, before anything is drawn: on the 3DS, the system keyboard can take both screens there. |
-| `func BottomScene() (*Scene, bool)` | BottomScene is the scene the game shows on the 3DS's bottom screen (SetBottomScene), if any: one who plays the game elsewhere moves it on each frame (Scene.Update) and shows it from its main camera. |
 | `func CameraAt(world space.Transform, settings scenefile.Camera) models.Camera` | CameraAt is go-renderer's camera for a camera placed at a transform with some settings. |
 | `func DrawOverlay(list *draw2d.List, width, height float32) bool` | DrawOverlay draws the game's 2D over a 3D scene (SetOverlay) into a list, in an area of a width and a height starting at 0, 0; it tells whether the game has any. |
 | `func HasInterface() bool` | HasInterface tells whether the game shows a go-ui interface of its own (SetInterface). |
@@ -28,12 +27,13 @@ A game's main registers its behaviours and runs the project it embeds:
 | `func RegisterAs(name string, behaviour any)` | RegisterAs makes a behaviour known by a name of its own. |
 | `func Registered() []string` | Registered are the names of the behaviours registered, in order. |
 | `func Run(files fs.FS) error` | Run plays a project, from its files (embedded in the game, or a folder), until its window is closed: on the desktop in a window, on the Nintendo 3DS on the top screen. |
-| `func SetBottomScene(below *Scene)` | SetBottomScene shows a scene on the 3DS's bottom screen, under the game's interface (SetInterface), seen from its main camera; nil leaves the screen to the interface. |
+| `func SecondScreen() (*Scene, bool)` | SecondScreen is the scene the second screen shows (SetSecondScreen), if any: one who plays the game elsewhere than Run moves it on each frame (Scene.Update) and shows it from Scene.Camera. |
 | `func SetBottomScreen(paint func(context *ui.Context, menu Menu))` | SetBottomScreen is SetInterface, by the name it had when only the 3DS showed it. |
 | `func SetEditor(run func() error)` | SetEditor installs the editor (the editor package does, from a project's editor.go). |
 | `func SetInterface(paint func(context *ui.Context, menu Menu))` | SetInterface makes a game show an interface of its own, with go-ui, in its own look: a menu of its scenes (Menu), a map, its controls, a login form. |
 | `func SetOverlay(paint func(list *draw2d.List, width, height float32))` | SetOverlay sets what the game draws over a 3D scene each frame, in the pixels of the screen it is on (the window's, or the 3DS's top screen, 400 × 240): the list is empty when it is called. |
 | `func SetPointerCaptured(captured bool)` | SetPointerCaptured holds and hides the pointer, for a game that turns with the mouse, or lets it go (a pause menu): MouseMovement still reads the mouse. |
+| `func SetSecondScreen(shown *Scene)` | SetSecondScreen shows a scene on the second screen, under the game's interface (SetInterface), seen from its main camera; nil leaves the screen to the interface. |
 | `func ShowInterface(context *ui.Context, played *Scene, scenes []MenuScene)` | ShowInterface builds the game's own interface (SetInterface) for a scene played, offering some scenes (ScenesOf); playing another asks the scene to be replaced (Scene.TakeReplacement). |
 | `func Version() string` | Version says which Go Engine this program was built with: its release and commit, as "v0.0.1 (ba08523)", or "v0.0.1 (77aa001, local)" for a local copy, as the editor's window and the logs show it. |
 
@@ -41,15 +41,15 @@ A game's main registers its behaviours and runs the project it embeds:
 
 ```go
 const (
-	ButtonL     = input.KeyQ
-	ButtonR     = input.KeyE
-	ButtonZL    = input.KeyZ
-	ButtonZR    = input.KeyC
-	ButtonStart = input.KeyEnter
+	ButtonLeftShoulder  = input.KeyQ
+	ButtonRightShoulder = input.KeyE
+	ButtonLeftTrigger   = input.KeyZ
+	ButtonRightTrigger  = input.KeyC
+	ButtonStart         = input.KeyEnter
 )
 ```
 
-The keys the 3DS's shoulder buttons and START are read as, and press on a keyboard.
+The keys shoulder buttons, triggers and START are read as (a 3DS's L, R, ZL, ZR and START), and that press them on a keyboard.
 
 ```go
 const (
@@ -190,16 +190,16 @@ type Input struct {
 | Function or method | |
 |---|---|
 | `func (keys *Input) Axis(negative, positive Key) float64` | Axis is -1 while the first key is held, 1 while the second is, 0 with neither or both. |
-| `func (keys *Input) CStick() (x, y float64)` | CStick is a New 3DS's C-stick from -1 to 1 on each axis, up positive; 0 elsewhere. |
 | `func (keys *Input) Down(key Key) bool` | Down tells whether a key is held; Pressed whether it went down this frame. |
-| `func (keys *Input) Gyroscope() ctr.Gyroscope` | Gyroscope is how fast the 3DS turns, in degrees a second; zero elsewhere, or in an emulator. |
+| `func (keys *Input) Gyroscope() Turn` | Gyroscope is how fast the device turns (a 3DS's gyroscope); still without one, or in an emulator. |
 | `func (keys *Input) MouseMovement() (x, y float64)` | MouseMovement is how far the mouse moved since the last frame, in window pixels: it keeps counting while the pointer is captured (SetPointerCaptured). |
 | `func (keys *Input) Move() space.Vector` | Move is the direction the arrows (or WASD, or a 3DS's cross and circle pad) point, on the ground: right is +X, up is Forward (-Z). |
 | `func (keys *Input) Pointer() (x, y float64, pressed bool)` | Pointer is where the mouse (or a finger) is, in window pixels, and whether it is pressed. |
 | `func (keys *Input) Pressed(key Key) bool` |  |
+| `func (keys *Input) RightStick() (x, y float64)` | RightStick is the second stick (a New 3DS's C-stick) from -1 to 1 on each axis, up positive; 0 without one. |
+| `func (keys *Input) SecondScreenTouch() (x, y int, touching bool)` | SecondScreenTouch is where a finger or a stylus is on the second screen (a 3DS's bottom one, 320 × 240 pixels), and whether one is on it at all; never without a second screen. |
 | `func (keys *Input) State() *input.State` | State is go-renderer's input, for what Input does not cover. |
-| `func (keys *Input) Stick() (x, y float64)` | Stick is the circle pad (or a game pad's left stick) from -1 to 1 on each axis, up positive. |
-| `func (keys *Input) Touch() (x, y int, touching bool)` | Touch is where a finger or the stylus is on the 3DS's bottom screen (320 × 240 pixels), and whether one is on it at all; on other systems, never. |
+| `func (keys *Input) Stick() (x, y float64)` | Stick is the main stick (a 3DS's circle pad, a game pad's left stick) from -1 to 1 on each axis, up positive. |
 
 ### Key
 
@@ -437,6 +437,15 @@ behaviours hear it, each with the other node.
 type Toucher interface {
 	Touched(context *Context, other *Node)
 }
+```
+
+### Turn
+
+Turn is how fast a device turns, in degrees a second: about the axis across
+its screen (Pitch), up through it (Yaw) and out of it (Roll).
+
+```go
+type Turn struct{ Roll, Pitch, Yaw float64 }
 ```
 
 ### Updater

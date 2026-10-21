@@ -5,20 +5,23 @@ import (
 	"github.com/akrck02/go-renderer/input"
 )
 
-// The controls a game reads whole rather than as keys: the sticks, the gyroscope and the touch
-// screen of a 3DS, and the mouse's movement on a computer. The 3DS's shoulders and START are keys
-// too, the ones that stand for them on a keyboard.
+// The controls a game reads whole rather than as keys: two sticks, how fast the device turns, a
+// second screen's touches and the mouse's movement. Each system gives what it has (a 3DS all but
+// the mouse, a computer the mouse and a game pad's sticks) and the rest reads as still. Shoulder
+// buttons, triggers and START are keys, the ones that stand for them on a keyboard.
 
-// The keys the 3DS's shoulder buttons and START are read as, and press on a keyboard.
+// The keys shoulder buttons, triggers and START are read as (a 3DS's L, R, ZL, ZR and START), and
+// that press them on a keyboard.
 const (
-	ButtonL     = input.KeyQ
-	ButtonR     = input.KeyE
-	ButtonZL    = input.KeyZ
-	ButtonZR    = input.KeyC
-	ButtonStart = input.KeyEnter
+	ButtonLeftShoulder  = input.KeyQ
+	ButtonRightShoulder = input.KeyE
+	ButtonLeftTrigger   = input.KeyZ
+	ButtonRightTrigger  = input.KeyC
+	ButtonStart         = input.KeyEnter
 )
 
-// Stick is the circle pad (or a game pad's left stick) from -1 to 1 on each axis, up positive.
+// Stick is the main stick (a 3DS's circle pad, a game pad's left stick) from -1 to 1 on each
+// axis, up positive.
 func (keys *Input) Stick() (x, y float64) {
 	if keys.state == nil {
 		return 0, 0
@@ -26,15 +29,24 @@ func (keys *Input) Stick() (x, y float64) {
 	return keys.state.StickX, keys.state.StickY
 }
 
-// CStick is a New 3DS's C-stick from -1 to 1 on each axis, up positive; 0 elsewhere.
-func (keys *Input) CStick() (x, y float64) { return keys.console.CStick() }
+// RightStick is the second stick (a New 3DS's C-stick) from -1 to 1 on each axis, up positive; 0
+// without one.
+func (keys *Input) RightStick() (x, y float64) { return keys.console.CStick() }
 
-// Gyroscope is how fast the 3DS turns, in degrees a second; zero elsewhere, or in an emulator.
-func (keys *Input) Gyroscope() ctr.Gyroscope { return keys.console.Gyroscope }
+// Turn is how fast a device turns, in degrees a second: about the axis across its screen (Pitch),
+// up through it (Yaw) and out of it (Roll).
+type Turn struct{ Roll, Pitch, Yaw float64 }
 
-// Touch is where a finger or the stylus is on the 3DS's bottom screen (320 × 240 pixels), and
-// whether one is on it at all; on other systems, never.
-func (keys *Input) Touch() (x, y int, touching bool) {
+// Gyroscope is how fast the device turns (a 3DS's gyroscope); still without one, or in an
+// emulator.
+func (keys *Input) Gyroscope() Turn {
+	turn := keys.console.Gyroscope
+	return Turn{Roll: turn.Roll, Pitch: turn.Pitch, Yaw: turn.Yaw}
+}
+
+// SecondScreenTouch is where a finger or a stylus is on the second screen (a 3DS's bottom one,
+// 320 × 240 pixels), and whether one is on it at all; never without a second screen.
+func (keys *Input) SecondScreenTouch() (x, y int, touching bool) {
 	console := keys.console
 	return console.TouchX, console.TouchY, console.Held&ctr.ButtonTouch != 0
 }

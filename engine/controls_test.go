@@ -10,7 +10,7 @@ import (
 func TestTheConsolesShouldersAndStartAreReadAsTheirKeys(test *testing.T) {
 	var console consoleInput
 	window := input.NewState()
-	cases := map[ctr.Buttons]Key{ctr.ButtonL: ButtonL, ctr.ButtonR: ButtonR, ctr.ButtonZL: ButtonZL, ctr.ButtonZR: ButtonZR, ctr.ButtonStart: ButtonStart}
+	cases := map[ctr.Buttons]Key{ctr.ButtonL: ButtonLeftShoulder, ctr.ButtonR: ButtonRightShoulder, ctr.ButtonZL: ButtonLeftTrigger, ctr.ButtonZR: ButtonRightTrigger, ctr.ButtonStart: ButtonStart}
 	for button, key := range cases {
 		keys := console.keysFrom(window, button)
 		if !keys.Pressed(key) || !keys.Down(key) {
@@ -24,13 +24,13 @@ func TestTheConsolesSticksGyroscopeAndTouchAreReadWhole(test *testing.T) {
 	reading := ctr.Reading{CStickX: 146, CStickY: 0, Gyroscope: ctr.Gyroscope{Yaw: 30},
 		Held: ctr.ButtonTouch, TouchX: 160, TouchY: 120}
 	keys := Input{state: input.NewState(), console: reading}
-	if x, y := keys.CStick(); x != 1 || y != 0 {
+	if x, y := keys.RightStick(); x != 1 || y != 0 {
 		test.Errorf("the C-stick at its right edge reads %v, %v", x, y)
 	}
 	if keys.Gyroscope().Yaw != 30 {
 		test.Errorf("the gyroscope reads %+v", keys.Gyroscope())
 	}
-	if x, y, touching := keys.Touch(); !touching || x != 160 || y != 120 {
+	if x, y, touching := keys.SecondScreenTouch(); !touching || x != 160 || y != 120 {
 		test.Errorf("a touch in the middle reads %v, %v, %v", x, y, touching)
 	}
 	keys.state.StickX, keys.state.StickY = 0.5, 1

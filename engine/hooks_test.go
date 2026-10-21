@@ -46,8 +46,8 @@ func TestACallBetweenFramesRunsOnceInOrder(test *testing.T) {
 
 func TestTheFramesHookRunsOnceWithABottomScene(test *testing.T) {
 	game := &runner{played: load(test)}
-	SetBottomScene(load(test))
-	defer SetBottomScene(nil)
+	SetSecondScreen(load(test))
+	defer SetSecondScreen(nil)
 	runs := 0
 	BeforeBehaviours(func(context *Context) {
 		runs++

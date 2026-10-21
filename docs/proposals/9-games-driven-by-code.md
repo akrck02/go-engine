@@ -67,7 +67,7 @@ unlit, translucent and double-sided (most of R3). The engine only has to reach t
   the scene and under the interface on the desktop and phones (its window used to overwrite
   `World.Overlay.Drawing` with the interface), and on the 3DS's top screen in each eye. `SetBottomScreen` becomes
   `SetInterface`: the bottom screen on the 3DS, over the window elsewhere (login fields).
-- **Below, in 3D** (R7): `engine.SetBottomScene(scene, camera)` gives the 3DS's bottom screen a
+- **Below, in 3D** (R7): `engine.SetSecondScreen(scene)` gives the 3DS's bottom screen a
   scene of its own, with the interface over it.
 - **Input** (R8): `engine.Input` gains `Stick()`, `CStick()`, `Gyroscope()`, `Touches()` and
   `MouseMovement()`; L, R, ZL, ZR and START become keys with `Down` and `Pressed`.
@@ -110,11 +110,17 @@ Each version leaves the engine working and can be used by a game at once.
 - [x] T7 — `SetOverlay` and `SetInterface` on the desktop and the 3DS (Go UI `feature/scene-drawing`: `SceneView.Drawing`) · engine/overlay.go, engine/screen*.go · R4 · tests `the game's overlay is drawn over a 3D scene at the screen's size` and Go UI's `the program's drawing is painted over the scene and under the interface`; on Android the game's interface is not shown yet (the touch buttons fill the window)
 - [x] T8 — Go UI (`feature/scene-drawing`): `SceneView.Below`, `Options.KeepStart`, and a scene's `LockCursor` reaching the window (Go Renderer's input already captures the pointer, so no option was needed) · R7, R8 · Go UI's tests; built for the 3DS through the engine's example
 - [x] T9 — Go Renderer (`feature/motion-controls`): `StartMotionControls`, `Reading.CStick()` and `Reading.Gyroscope` · R8 · test of the C-stick's dead zone; built with TinyGo; on a console by hand
-- [x] T10 — `SetBottomScene`: it plays, and is seen from its main camera · engine/below.go · R7 · test `the bottom scene plays and is seen from its camera`; a look in Azahar is pending
-- [x] T11 — `Input.Stick`, `CStick`, `Gyroscope`, `Touch`, `MouseMovement`; L, R, ZL, ZR and START as `ButtonL`… keys; `SetPointerCaptured`; `keepStart` in engine.json · engine/controls.go, engine/console.go · R8 · tests of each mapping
+- [x] T10 — `SetSecondScreen`: it plays, and is seen from its main camera · engine/secondscreen.go · R7 · test `the bottom scene plays and is seen from its camera`; a look in Azahar is pending
+- [x] T11 — `Input.Stick`, `RightStick`, `Gyroscope`, `SecondScreenTouch`, `MouseMovement`; shoulders, triggers and START as `ButtonLeftShoulder`… keys; `SetPointerCaptured`; `keepStart` in engine.json · engine/controls.go, engine/console.go · R8 · tests of each mapping
 - [x] T12 — the release workflow from Build ("Release workflow" on This computer's card), refused for a game on a local go-engine · project/release.go, editor · R11 · tests `the release workflow builds for each system`, `a release of a game on a local engine is refused`; the YAML parses; a run on GitHub is pending, in a game's repository
 
 ## Result
+
+After the build, at the author's word ("the 3DS's things should be generic"), the engine's
+names say what a control or a screen is on any device, not on the 3DS: `SetSecondScreen`,
+`RightStick`, `SecondScreenTouch`, `engine.Turn`, `ButtonLeftShoulder` and the rest. The editor's
+Play also shows a 3D game at its screen's shape, with the second screen under the 3DS's hinge
+(Go Renderer `feature/scene-area`: `DrawIn`; Go UI `feature/scene-area`: scene areas).
 
 Built, on `feature/` branches until the author merges and releases them:
 

@@ -24,7 +24,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	engine.SetBottomScene(chart)
+	engine.SetSecondScreen(chart)
 	engine.SetOverlay(drawTitle)
 	engine.SetInterface(chartCaption)
 	if err := engine.Run(files); err != nil {
