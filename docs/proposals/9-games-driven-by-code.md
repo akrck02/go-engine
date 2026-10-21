@@ -1,6 +1,6 @@
 # 9. 3D games driven by code
 
-> Status: building · Author's approval: proposal ☑ (2026-10-21, "Okay") plan ☑ (2026-10-21, "Si")
+> Status: done, pending the author's review · Author's approval: proposal ☑ (2026-10-21, "Okay") plan ☑ (2026-10-21, "Si")
 
 ## Why
 
@@ -116,4 +116,25 @@ Each version leaves the engine working and can be used by a game at once.
 
 ## Result
 
-Not built yet.
+Built, on `feature/` branches until the author merges and releases them:
+
+- go-engine `feature/engine`: R1–R5 and R7–R9 in the engine, R11's workflow, and
+  `examples/lighthouse`. Seen working in the editor's Play and in Azahar at 60 frames a second.
+- Go UI `feature/scene-drawing`: `SceneView.Drawing`, `SceneView.Below`, `Options.KeepStart`, and
+  a scene's captured pointer reaching the window.
+- Go Renderer `feature/motion-controls` (with `feature/additive` in it): `Material.Additive` and
+  the C-stick and gyroscope.
+
+The review found 14 things: all fixed, among them the stick's sign (`Input.Move` read the stick's
+forward the wrong way before this change too), the frame hook running again for the bottom
+screen's scene (hooks now run in `Scene.PlayFrame`, the main scene's frame), and the gyroscope
+left on when its coefficient could not be read.
+
+Still to be checked by a person:
+
+- Metal's additive pipeline, written on Linux, on a Mac.
+- The sound with a slow frame on a console (R10), and the stereo, C-stick and gyroscope there.
+- A run of the release workflow on GitHub; its YAML was checked by hand (a test that parses it
+  would need a YAML library, not taken without asking).
+- An early commit of the sample carried its editor's binary (`examples/lighthouse/build`); a later
+  one removed it, but it stays in the history unless the author wants it rewritten.

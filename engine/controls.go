@@ -23,7 +23,7 @@ func (keys *Input) Stick() (x, y float64) {
 	if keys.state == nil {
 		return 0, 0
 	}
-	return keys.state.StickX, -keys.state.StickY
+	return keys.state.StickX, keys.state.StickY
 }
 
 // CStick is a New 3DS's C-stick from -1 to 1 on each axis, up positive; 0 elsewhere.

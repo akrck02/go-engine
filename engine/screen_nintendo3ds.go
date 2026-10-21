@@ -65,6 +65,9 @@ func consoleKeys(console *consoleInput, window *input.State) *input.State {
 // readConsole reads the console's controls for this frame.
 func readConsole() ctr.Reading { return ctr.ReadControls() }
 
-// startConsole starts the C-stick and the gyroscope, for the game to read; the console stops them
-// when the game ends.
+// startConsole starts the C-stick and the gyroscope, for the game to read. A console without one
+// (or an emulator) reads it as still, so which started does not matter here.
 func startConsole() { ctr.StartMotionControls() }
+
+// stopConsole stops them when the game ends: the gyroscope uses power.
+func stopConsole() { ctr.StopMotionControls() }

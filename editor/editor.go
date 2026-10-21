@@ -591,7 +591,7 @@ func (editor *Editor) AdvancePlay(seconds float64, keys *input.State) {
 	if editor.stepOnce {
 		editor.stepOnce, seconds = false, oneFrame
 	}
-	played.Update(seconds, keys)
+	played.PlayFrame(seconds, keys)
 	next, replaced, err := played.TakeReplacement()
 	if err != nil {
 		editor.say(err.Error(), true)

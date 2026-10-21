@@ -115,6 +115,7 @@ func (game *runner) run(title string) error {
 	options := window.Options{Title: title, Width: windowWidth, Height: windowHeight, Continuous: true, KeepStart: game.keepStart}
 	options.Scene = game.step
 	startConsole()
+	defer stopConsole()
 	return window.Run(options, interfaceFor(game))
 }
 
@@ -125,7 +126,7 @@ func (game *runner) step(state *input.State, step float64) *window.SceneView {
 	keys := consoleKeys(&game.console, state)
 	state.LockCursor(pointerCaptured)
 	game.played.input.console = game.console.reading
-	game.played.Update(seconds, keys)
+	game.played.PlayFrame(seconds, keys)
 	below := game.playBelow(seconds, keys)
 	game.replaceIfAsked()
 	if game.played.Is2D() && !flatNeedsScene {

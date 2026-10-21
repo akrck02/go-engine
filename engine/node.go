@@ -187,7 +187,9 @@ func (node *Node) detach() {
 // and helper, then its children's.
 func (node *Node) rebuildRenderChildren() {
 	node.render.Children = node.render.Children[:0]
-	markMoving(node.geometry, node.moving)
+	if node.moving {
+		markMoving(node.geometry, true) // a node not marked leaves its model's own flags as they are
+	}
 	if node.geometry != nil {
 		node.render.Children = append(node.render.Children, node.geometry)
 	}

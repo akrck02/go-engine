@@ -1,11 +1,16 @@
 package engine
 
-import "sync"
+import (
+	"sync"
+
+	"github.com/akrck02/go-renderer/input"
+)
 
 // A game's code that is no node's: once a frame before the behaviours (a network exchange, whose
 // news the behaviours then read), and calls that must run between frames (a system keyboard that
-// takes both screens of a console). Both run in Scene.Update, before any behaviour, so in the
-// editor's Play as in the game.
+// takes both screens of a console). Both run once a frame in PlayFrame, the main scene's frame,
+// before any behaviour, in the editor's Play as in the game; a scene of the bottom screen does not
+// run them again.
 
 // frameHook runs once a frame before the behaviours, when the game sets one.
 var frameHook func(context *Context)
@@ -38,6 +43,16 @@ func runBetweenFrames() {
 	for _, call := range betweenFrames.running {
 		call()
 	}
+	clear(betweenFrames.running) // let go of what the calls held until the list is used again
+}
+
+// PlayFrame is a frame of the game's main scene: the calls asked for between frames and the frame
+// hook run, then the scene moves on (Update).
+func (owner *Scene) PlayFrame(seconds float64, keys *input.State) {
+	runBetweenFrames()
+	owner.beginFrame(seconds, keys)
+	owner.runFrameHook()
+	owner.advance(seconds)
 }
 
 // runFrameHook runs the game's frame hook, if it set one.

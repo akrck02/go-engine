@@ -26,8 +26,12 @@ const releaseNoticesFile = "THIRD_PARTY_NOTICES.md"
 // A game whose go.mod replaces go-engine with a folder of this computer cannot be built elsewhere:
 // it is refused, to be updated first (go-engine -update).
 func (project *Project) WriteReleaseWorkflow() (string, error) {
-	if _, localCopy, err := project.EngineVersion(); err != nil || localCopy != "" {
-		return "", failure.Wrap(ReleaseNeedsPublishedEngine, localCopy, err)
+	_, localCopy, err := project.EngineVersion()
+	if err != nil {
+		return "", err
+	}
+	if localCopy != "" {
+		return "", failure.Wrap(ReleaseNeedsPublishedEngine, localCopy, nil)
 	}
 	workflow := project.Path(ReleaseWorkflowFile)
 	if err := writeFile(workflow, []byte(project.releaseWorkflow())); err != nil {

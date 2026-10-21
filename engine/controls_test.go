@@ -33,7 +33,7 @@ func TestTheConsolesSticksGyroscopeAndTouchAreReadWhole(test *testing.T) {
 	if x, y, touching := keys.Touch(); !touching || x != 160 || y != 120 {
 		test.Errorf("a touch in the middle reads %v, %v, %v", x, y, touching)
 	}
-	keys.state.StickX, keys.state.StickY = 0.5, -1
+	keys.state.StickX, keys.state.StickY = 0.5, 1
 	if x, y := keys.Stick(); x != 0.5 || y != 1 {
 		test.Errorf("the circle pad up and right reads %v, %v", x, y)
 	}

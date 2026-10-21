@@ -124,5 +124,5 @@ func (editor *Editor) WriteReleaseWorkflow() {
 		editor.say(err.Error(), true)
 		return
 	}
-	editor.say("Wrote "+workflow+": push a tag such as v1.0.0 and GitHub attaches the programs to its release", false)
+	editor.say("Wrote "+workflow+" and THIRD_PARTY_NOTICES.md: commit both, push a tag such as v1.0.0, and GitHub attaches the programs to its release", false)
 }

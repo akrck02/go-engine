@@ -48,3 +48,6 @@ func readConsole() ctr.Reading { return ctr.Reading{} }
 
 // startConsole does nothing: there is no 3DS here.
 func startConsole() {}
+
+// stopConsole does nothing: there is no 3DS here.
+func stopConsole() {}

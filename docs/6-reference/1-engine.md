@@ -92,6 +92,15 @@ const (
 Keys.
 
 ```go
+const (
+	DefaultNear = 0.05
+	DefaultFar  = 2000
+)
+```
+
+A camera's distances when its settings leave them at 0, in metres.
+
+```go
 const DefaultGravity = 9.81
 ```
 
@@ -343,6 +352,7 @@ type Scene struct {
 | `func (owner *Scene) NewNode(description scenefile.Node) (*Node, error)` | NewNode makes a node of the scene from a description (and its children), not yet in the scene: Add it to a node. |
 | `func (owner *Scene) Physics() *physics.World` | Physics is the scene's physics world while it plays; nil for a 3D scene, or one not started. |
 | `func (owner *Scene) Picture(file string) (*draw2d.Image, error)` | Picture is a picture of the project's, read once: what the editor's Art workspace shows. |
+| `func (owner *Scene) PlayFrame(seconds float64, keys *input.State)` | PlayFrame is a frame of the game's main scene: the calls asked for between frames and the frame hook run, then the scene moves on (Update). |
 | `func (owner *Scene) SetAmbient(ambient *scenefile.Ambient)` | SetAmbient sets the scene's ambient light (nil for none): in 2D the light that reaches everything; in 3D how strong its sky light is, from 0 (none) to 2 (twice the default). |
 | `func (owner *Scene) SetMode(mode scenefile.Mode)` | SetMode makes the scene 3D or 2D: its nodes show their shapes and models in 3D, or their sprites and flat shapes in 2D. |
 | `func (owner *Scene) SetSky(colour string)` | SetSky sets the background colour ("" for a daylight sky). |
@@ -354,7 +364,7 @@ type Scene struct {
 | `func (owner *Scene) TilesetColumns(node *Node) int` | TilesetColumns is how many tiles across a tile map's tileset picture is: the palette shows them in its rows, as they were drawn. |
 | `func (owner *Scene) TilesetFile(file string) (*scenefile.Tileset, error)` | TilesetFile is a tileset's file of the project's, read once. |
 | `func (owner *Scene) Time() float64` | Time is the seconds the scene has been playing. |
-| `func (owner *Scene) Update(seconds float64, keys *input.State)` | Update moves the scene on by some seconds: the calls asked for between frames and the game's frame hook run (hooks.go), behaviours that were just made start, every behaviour updates, the bodies of a 2D scene move, the tweens move, and what go-renderer draws follows. |
+| `func (owner *Scene) Update(seconds float64, keys *input.State)` | Update moves the scene on by some seconds: behaviours that were just made start, every behaviour updates, the bodies of a 2D scene move, the tweens move, and what go-renderer draws follows. |
 | `func (owner *Scene) View2D() View2D` | View2D is what the scene's main camera sees, or, without one, ten metres around the origin. |
 | `func (owner *Scene) World() *scene.Scene` | World is what go-renderer draws, transforms brought up to date. |
 

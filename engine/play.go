@@ -44,16 +44,24 @@ func (owner *Scene) Start() []error {
 	return problems
 }
 
-// Update moves the scene on by some seconds: the calls asked for between frames and the game's
-// frame hook run (hooks.go), behaviours that were just made start, every behaviour updates, the bodies of a 2D scene move, the tweens move, and what go-renderer draws
+// Update moves the scene on by some seconds: behaviours that were just made start, every
+// behaviour updates, the bodies of a 2D scene move, the tweens move, and what go-renderer draws
 // follows. A frame allocates nothing it can avoid.
 func (owner *Scene) Update(seconds float64, keys *input.State) {
+	owner.beginFrame(seconds, keys)
+	owner.advance(seconds)
+}
+
+// beginFrame moves the scene's clock on and sets the frame's context.
+func (owner *Scene) beginFrame(seconds float64, keys *input.State) {
 	owner.Start()
 	owner.clock += seconds
 	owner.input.state = keys
 	owner.context = Context{Scene: owner, Delta: seconds, Time: owner.clock, Input: &owner.input}
-	runBetweenFrames()
-	owner.runFrameHook()
+}
+
+// advance runs the frame's behaviours, physics and animations, and syncs what is drawn.
+func (owner *Scene) advance(seconds float64) {
 	owner.startPending()
 	owner.updateBehaviours()
 	owner.stepPhysics(seconds)
@@ -128,7 +136,7 @@ func (keys *Input) Move() space.Vector {
 	forward := keys.Axis(KeyDown, KeyUp) + keys.Axis(KeyS, KeyW)
 	if keys.state != nil {
 		x += keys.state.StickX
-		forward -= keys.state.StickY
+		forward += keys.state.StickY // up on the stick is forward
 	}
 	direction := space.NewVector(x, 0, -forward)
 	if direction.Length() > 1 {

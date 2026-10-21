@@ -1,6 +1,8 @@
 package engine
 
 import (
+	"log/slog"
+
 	"github.com/akrck02/go-renderer/input"
 	"github.com/akrck02/go-ui/window"
 )
@@ -18,7 +20,9 @@ var bottomScene *Scene
 // with Load or NewScene.
 func SetBottomScene(below *Scene) {
 	if below != nil {
-		below.Start()
+		for _, problem := range below.Start() {
+			slog.Warn("a behaviour of the bottom screen's scene could not be made", "error", problem)
+		}
 	}
 	bottomScene = below
 }
