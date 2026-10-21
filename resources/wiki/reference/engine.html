@@ -1020,6 +1020,9 @@ and what go-renderer draws of it.</p>
 	<span class="c1">// Actions are what the player does, by name, each bound to inputs per target: &#34;fire&#34;:</span>
 	<span class="c1">// {&#34;desktop&#34;: [&#34;Space&#34;, &#34;Pad A&#34;], &#34;nintendo3ds&#34;: [&#34;A&#34;]} (Input.Action, inputwords.go).</span>
 	<span class="nx">Actions</span> <span class="kd">map</span><span class="p">[</span><span class="kt">string</span><span class="p">]</span><span class="kd">map</span><span class="p">[</span><span class="kt">string</span><span class="p">][]</span><span class="kt">string</span> <span class="s">`json:&#34;actions,omitempty&#34;`</span>
+	<span class="c1">// Axes are the actions that move an axis (-1 to 1) instead of pressing, by name: an action</span>
+	<span class="c1">// with no inputs yet says so here, as its inputs cannot.</span>
+	<span class="nx">Axes</span> <span class="p">[]</span><span class="kt">string</span> <span class="s">`json:&#34;axes,omitempty&#34;`</span>
 	<span class="c1">// TouchControls are the sticks and buttons drawn on a touch screen (a phone&#39;s), as the editor</span>
 	<span class="c1">// places them; none keeps the engine&#39;s four touch buttons (touchcontrols.go).</span>
 	<span class="nx">TouchControls</span> <span class="p">[]</span><span class="nx">TouchControl</span> <span class="s">`json:&#34;touchControls,omitempty&#34;`</span>
@@ -1067,9 +1070,8 @@ their JSON names). It does what it does through the methods it has:</p>
 <h3 id="touchcontrol">TouchControl</h3>
 
 <p>TouchControl is a stick or a button drawn on a touch screen: its name,
-what it is, where its centre sits (X across the screen and Y down it,
-from 0 to 1) and its size (its width, as a share of the screen&rsquo;s height,
-the shorter side of a phone held sideways).</p>
+what it is, where its centre sits (X across the screen and Y down it, from 0
+to 1) and its size (its width, as a share of the screen&rsquo;s shorter side).</p>
 <pre><code class="language-go"><span class="kd">type</span> <span class="nx">TouchControl</span> <span class="kd">struct</span> <span class="p">{</span>
 	<span class="nx">Name</span> <span class="kt">string</span>    <span class="s">`json:&#34;name&#34;`</span>
 	<span class="nx">Kind</span> <span class="nx">TouchKind</span> <span class="s">`json:&#34;kind&#34;`</span>

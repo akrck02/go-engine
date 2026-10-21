@@ -530,8 +530,8 @@ draws its window with go-ui and viewport.go its 3D view.</p>
 </tr>
 
 <tr>
-<td><code>func (editor *Editor) SaveControls(actions map[string]map[string][]string, touch []engine.TouchControl) error</code></td>
-<td>SaveControls keeps the actions and the touch controls in the project&rsquo;s settings.</td>
+<td><code>func (editor *Editor) SaveControls(actions map[string]map[string][]string, axes []string, touch []engine.TouchControl) error</code></td>
+<td>SaveControls keeps the actions, which of them move an axis, and the touch controls in the project&rsquo;s settings.</td>
 </tr>
 
 <tr>
