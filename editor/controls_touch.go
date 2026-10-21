@@ -23,7 +23,7 @@ type touchDesign struct {
 	nameFocused bool   // its field had the keyboard last frame
 }
 
-// The touch controls' sizes, as shares of the screen's height.
+// The touch controls' sizes, as shares of the screen's shorter side (its height, held sideways).
 const (
 	touchStickSize  = 0.34
 	touchButtonSize = 0.18

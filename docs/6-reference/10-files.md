@@ -30,7 +30,7 @@ Each action names, per target, the words of the inputs that do it:
 | `name` | text | Its name: actions bind a button as `Touch <name>`, a stick as `Touch <name> X` and `Touch <name> Y` |
 | `kind` | `button` or `stick` | |
 | `x`, `y` | number | Where its centre is, from 0 to 1 across and down the screen |
-| `size` | number | Its width, as a share of the screen's height |
+| `size` | number | Its width, as a share of the screen's shorter side |
 
 ## A scene: `scenes/*.scene.json`
 

@@ -26,7 +26,7 @@ const (
 
 // TouchControl is a stick or a button drawn on a touch screen: its name, what it is, where its
 // centre sits (X across the screen and Y down it, from 0 to 1) and its size (its width, as a
-// share of the screen's height, the shorter side of a phone held sideways).
+// share of the screen's shorter side).
 type TouchControl struct {
 	Name string    `json:"name"`
 	Kind TouchKind `json:"kind"`
@@ -96,12 +96,16 @@ func useTouchControls(controls []TouchControl) {
 	touchPanel.axes = make([][2]float64, len(controls))
 }
 
-// placeTouchControls works out where each touch control goes on a screen's safe part.
+// placeTouchControls works out where each touch control goes on a screen's safe part: its size a
+// share of the screen's shorter side, so it is as big held upright as held sideways, and kept
+// whole on the screen.
 func placeTouchControls(safe draw2d.Rect) {
+	shorter := min(safe.Width, safe.Height)
 	for index, control := range touchPanel.controls {
-		side := control.Size * safe.Height
-		touchPanel.areas[index] = draw2d.Rect{X: safe.X + control.X*safe.Width - side/2,
-			Y: safe.Y + control.Y*safe.Height - side/2, Width: side, Height: side}
+		side := min(control.Size*shorter, shorter)
+		centreX := min(max(safe.X+control.X*safe.Width, safe.X+side/2), safe.X+safe.Width-side/2)
+		centreY := min(max(safe.Y+control.Y*safe.Height, safe.Y+side/2), safe.Y+safe.Height-side/2)
+		touchPanel.areas[index] = draw2d.Rect{X: centreX - side/2, Y: centreY - side/2, Width: side, Height: side}
 	}
 }
 

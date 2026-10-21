@@ -505,9 +505,8 @@ type Starter interface{ Start(context *Context) }
 ### TouchControl
 
 TouchControl is a stick or a button drawn on a touch screen: its name,
-what it is, where its centre sits (X across the screen and Y down it,
-from 0 to 1) and its size (its width, as a share of the screen's height,
-the shorter side of a phone held sideways).
+what it is, where its centre sits (X across the screen and Y down it, from 0
+to 1) and its size (its width, as a share of the screen's shorter side).
 
 ```go
 type TouchControl struct {
