@@ -1,11 +1,15 @@
 github.com/akrck02/go-renderer v0.2.1-0.20261021190439-40b0cbc29a4f h1:vMcZal+AZjxWHbWwMwPZnxFA5MCOVmjxm3E0qkECa2w=
 github.com/akrck02/go-renderer v0.2.1-0.20261021190439-40b0cbc29a4f/go.mod h1:Z835tJYTrI/B+rxk5BbIMsDFokk+P36R8kZ0CVbEZzA=
+github.com/akrck02/go-renderer v0.2.1-0.20261021230256-a5337a49c634 h1:sm8xO9uOxclEz0sZYT+MZ2HzVxpXITgPJbwEzkrsbWw=
+github.com/akrck02/go-renderer v0.2.1-0.20261021230256-a5337a49c634/go.mod h1:Z835tJYTrI/B+rxk5BbIMsDFokk+P36R8kZ0CVbEZzA=
 github.com/akrck02/go-scene-builder v0.1.0 h1:qR+MsHtcmDhiYfaICQurwWpFapAFPgTfTVgNMczQb1U=
 github.com/akrck02/go-scene-builder v0.1.0/go.mod h1:/o6DN0ehHZoOa1tBdBanz93gO2QAQzQ1f9dxOLN5ap0=
 github.com/akrck02/go-ui v0.1.2-0.20261021190537-43d9b0328c6d h1:dmICP8IAO9IVNtScLVDVHV7TLxSA+DyxZrQdWWD+LpE=
 github.com/akrck02/go-ui v0.1.2-0.20261021190537-43d9b0328c6d/go.mod h1:dxPULNQ4MfCSBLRe3scU/UO6msrYKJpkKYxjScNkEgs=
 github.com/akrck02/go-ui v0.1.2-0.20261021193458-f175044b8e54 h1:0Q6LyoN0H4PG//YILsoaZCr4kPWIm4cdi7aKY6rwJag=
 github.com/akrck02/go-ui v0.1.2-0.20261021193458-f175044b8e54/go.mod h1:dxPULNQ4MfCSBLRe3scU/UO6msrYKJpkKYxjScNkEgs=
+github.com/akrck02/go-ui v0.1.2-0.20261021230348-a604ccd5b0ca h1:6D5clWWpgmsIksticZr+YSYifGO2UB5XJHepx+ilbwk=
+github.com/akrck02/go-ui v0.1.2-0.20261021230348-a604ccd5b0ca/go.mod h1:dxPULNQ4MfCSBLRe3scU/UO6msrYKJpkKYxjScNkEgs=
 github.com/go-gl/gl v0.0.0-20260331235117-4566fea9a276 h1:IO5P06Pcj9K04d+l4nrf3c2U56+dAotIFG6u4P1wAHI=
 github.com/go-gl/gl v0.0.0-20260331235117-4566fea9a276/go.mod h1:9YTyiznxEY1fVinfM7RvRcjRHbw2xLBJ3AAGIT0I4Nw=
 github.com/go-gl/glfw/v3.4/glfw v0.1.0-pre.1 h1:nIVzcwqIaO1mK8LFr0fGkKpgQD4wJDDHRyv4t5k40Ps=
