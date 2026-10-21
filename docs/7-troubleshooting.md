@@ -91,7 +91,7 @@ hides the console, set its address in **Project → Settings**.
 | `install.no-build-for-system` | there is no build of this tool for this system to download |
 | `install.path-outside` | the archive names a file outside the folder it unpacks into: it was not unpacked |
 | `install.unpack-failed` | the archive downloaded could not be unpacked |
-| `project.application-id-wrong` | an Android application id is two words or more joined by dots, each starting with a letter, as io.example.game |
+| `project.application-id-wrong` | an application id is two words or more joined by dots, each starting with a letter, as io.example.game |
 | `project.engine-not-read` | the version of go-engine the project requires could not be read from its go.mod |
 | `project.engine-not-updated` | go-engine could not be updated: check the network, and that the version exists |
 | `project.folder-not-empty` | a new project needs an empty folder |

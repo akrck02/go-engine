@@ -89,9 +89,9 @@ with it; Go Sound defines `ErrOutputUnavailable` in `sound.go`, and the 3DS's ou
 - [x] T5 — `applicationId`, `deviceAddress`, `nintendo3dsEmulator`, the old names still read · engine/run.go, internal/build/tools.go · R3, R5 · tests `an old androidId is read as the application id`, and the same for the others
 - [x] T6 — generic licences · editor/install.go · R4 · test of the licence flow
 - [x] T7 — `SetBottomScreen` removed, `SceneMenu`'s comment · engine · R6 · `go vet`
-- [ ] T8 — Go Sound `ErrOutputUnavailable` · R7 · test; built for the 3DS
-- [ ] T9 — Go for 3DS `bottom` → `secondscreen` · R8 · its tests; its sample built
-- [ ] T10 — the audit again, and the reference and docs regenerated · R9 · the audit's search finds nothing in the engine
+- [x] T8 — Go Sound `ErrOutputUnavailable` · R7 · test; built for the 3DS
+- [x] T9 — Go for 3DS `bottom` → `secondscreen` · R8 · its tests; its sample built
+- [x] T10 — the audit again, and the reference and docs regenerated · R9 · the audit's search finds nothing in the engine
 
 ## Result
 
