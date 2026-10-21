@@ -13,11 +13,14 @@ import (
 // in a game, or where a preview shows the game's screen (within is then true, and a surface on the
 // whole view is as large as what it holds, so the rest of the area keeps the mouse).
 func paintSurfaces(context *ui.Context, menu Menu, area draw2d.Rect, within bool) {
+	paintOnWholeView(context, menu, area, within)
 	for index := range surfaces.list {
 		each := &surfaces.list[index]
 		switch each.place.Place {
 		case OverPlace:
-			paintOver(context, each, menu, area, within)
+			if !onWholeView(each.place) {
+				paintOver(context, each, menu, area)
+			}
 		case WindowPlace:
 			if each.shown {
 				paintWindow(context, each, menu, area)
@@ -30,14 +33,41 @@ func paintSurfaces(context *ui.Context, menu Menu, area draw2d.Rect, within bool
 	}
 }
 
-// paintOver paints a surface over the view: on the whole of it, as a game's interface is, or
-// aligned to an edge or a corner.
-func paintOver(context *ui.Context, each *surface, menu Menu, area draw2d.Rect, within bool) {
-	place := each.place
-	if place.Align == "" && place.Width == 0 && place.Height == 0 && !within {
-		each.paint(context, menu)
+// onWholeView tells whether a place lays a surface out on the whole view, as a game's interface
+// is: over it, with no alignment or size.
+func onWholeView(place SurfacePlace) bool {
+	return place.Place == OverPlace && place.Align == "" && place.Width == 0 && place.Height == 0
+}
+
+// paintOnWholeView paints the surfaces laid out on the whole view, one under another: straight on
+// the window's screen, or, within an area, in one layer as large as what they hold.
+func paintOnWholeView(context *ui.Context, menu Menu, area draw2d.Rect, within bool) {
+	if !within {
+		paintEachOnWholeView(context, menu)
 		return
 	}
+	for _, each := range surfaces.list {
+		if onWholeView(each.place) {
+			context.Within(area, func() {
+				context.Overlay("Surfaces over the view", ui.LayerOptions{}, func() { paintEachOnWholeView(context, menu) })
+			})
+			return
+		}
+	}
+}
+
+// paintEachOnWholeView paints each surface laid out on the whole view.
+func paintEachOnWholeView(context *ui.Context, menu Menu) {
+	for index := range surfaces.list {
+		if each := &surfaces.list[index]; onWholeView(each.place) {
+			each.paint(context, menu)
+		}
+	}
+}
+
+// paintOver paints a surface over the view, aligned to an edge or a corner, or sized.
+func paintOver(context *ui.Context, each *surface, menu Menu, area draw2d.Rect) {
+	place := each.place
 	across, down, _ := alignment(place.Align)
 	options := ui.LayerOptions{AlignX: across, AlignY: down, Width: sizing(place.Width), Height: sizing(place.Height)}
 	if place.Align != "" {

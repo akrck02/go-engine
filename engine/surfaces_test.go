@@ -228,3 +228,22 @@ func TestASheetOpensWithItsActionAndClosesWhenThePlayerDismissesIt(test *testing
 		test.Fatal("the sheet stays open when the player dismisses it")
 	}
 }
+
+func TestSurfacesOnTheWholeViewOfAPreviewGoOneUnderAnother(test *testing.T) {
+	forgetSurfaces()
+	SetSurface("Map", captionSurface("Map"))
+	SetSurface("Lamp", captionSurface("Lamp"))
+	UseSurfaces(nil, DesktopTarget)
+	preview := draw2d.Rect{X: 100, Y: 50, Width: 640, Height: 360}
+	window, err := uitest.New(func(context *ui.Context) { paintSurfaces(context, Menu{}, preview, true) },
+		uitest.Size(gameWidth, gameHeight), uitest.Test(test))
+	if err != nil {
+		test.Fatal(err)
+	}
+	window.Frame()
+	mapShown, _ := shownAt(window, "Map")
+	lampShown, _ := shownAt(window, "Lamp")
+	if mapShown.X < preview.X || lampShown.Y < mapShown.Y+mapShown.Height {
+		test.Fatalf("the map is at %+v and the lamp at %+v, in a preview at %+v", mapShown, lampShown, preview)
+	}
+}

@@ -54,6 +54,12 @@ A place a target lacks becomes the nearest it has: a second screen on a computer
 sheet on a 3DS is a `window`. On the 3DS's top screen no finger reaches, so what is placed there
 is to be read, not touched. The [file reference](../6-reference/10-files.md) lists every key.
 
+## See each target's layout in the editor
+
+In the **Play** workspace, the tabs over the game choose the target it is shown at: **16:9** (a
+computer), **3DS** (its two screens) and **Phone**. The game's surfaces go where engine.json places
+them on that target, so one click shows the 3DS's second screen and the next the phone's sheet.
+
 ## Variations
 
 - **Open with the game.** `"open": true` shows a window or a sheet when the game starts.

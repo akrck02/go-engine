@@ -26,14 +26,20 @@ func HasInterface() bool {
 	return found
 }
 
-// ShowInterface builds the game's own interface (SetInterface) for a scene played, offering some
-// scenes (ScenesOf); playing another asks the scene to be replaced (Scene.TakeReplacement).
-func ShowInterface(context *ui.Context, played *Scene, scenes []MenuScene) {
-	shown, found := surfaceNamed(InterfaceSurface)
-	if !found {
+// ShowSurfaces builds the game's surfaces (SetSurface, SetInterface) for a scene played, offering
+// some scenes (ScenesOf), where the target UseSurfaces chose places them: those on the main screen
+// in an area of the window, those on the second screen in another (an empty one shows none).
+// Playing another scene asks the scene to be replaced (Scene.TakeReplacement).
+func ShowSurfaces(context *ui.Context, played *Scene, scenes []MenuScene, main, second draw2d.Rect) {
+	menu := Menu{&runner{played: played, menu: scenes}}
+	paintSurfaces(context, menu, main, true)
+	if second.Width == 0 {
 		return
 	}
-	shown.paint(context, Menu{&runner{played: played, menu: scenes}})
+	whole := ui.LayerOptions{Width: ui.Fixed(second.Width), Height: ui.Fixed(second.Height)}
+	context.Within(second, func() {
+		context.Overlay("Second screen", whole, func() { paintSecondScreen(context, menu) })
+	})
 }
 
 // ScenesOf are the scenes in a project's files, in the order of their files, as the game's menu

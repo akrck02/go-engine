@@ -200,6 +200,7 @@ type Editor struct {
 | `func (editor *Editor) SetMode(mode scenefile.Mode)` | SetMode makes the scene shown 3D or 2D. |
 | `func (editor *Editor) SetSprite(path string) error` | SetSprite makes the chosen node show a picture, or a sprite's file, of the project's. |
 | `func (editor *Editor) SetStartsWith(name string)` | SetStartsWith makes the chosen node start with an animation of its sprite; "" starts with the sprite's own first one. |
+| `func (editor *Editor) SetTarget(target PlayTarget)` | SetTarget shows the game played at a target's screens, its surfaces placed as engine.json places them there. |
 | `func (editor *Editor) SetTileSize(pixels int)` | SetTileSize sets how many pixels a side the chosen tile map's tiles are, at least one. |
 | `func (editor *Editor) SetTileset(picture string)` | SetTileset sets the picture the chosen tile map's tiles are cut from. |
 | `func (editor *Editor) SetZonePull(pull *[2]float64)` | SetZonePull gives the chosen trigger a gravity of its own, across and up, or the world's (nil). |
@@ -259,8 +260,8 @@ type PendingLicence struct {
 
 ### PlayTarget
 
-PlayTarget is the shape of the screen the game is shown at while it plays in
-the view.
+PlayTarget is the target whose screens the game is shown at while it plays
+in the view, with its surfaces where that target places them.
 
 ```go
 type PlayTarget int
@@ -273,12 +274,16 @@ const (
 	// Nintendo3DSScreens are the Nintendo 3DS's two screens: the top one, 400 × 240 pixels, and
 	// the second under it.
 	Nintendo3DSScreens
+	// PhoneScreen is a phone held sideways, twenty wide for nine high.
+	PhoneScreen
 )
 ```
 
 | Function or method | |
 |---|---|
 | `func (target PlayTarget) Aspect() float64` | Aspect is the target's width over its height. |
+| `func (target PlayTarget) Name() string` | Name is the target's name in engine.json. |
+| `func (target PlayTarget) String() string` | String is the target's name, for messages. |
 
 ### Tool
 
