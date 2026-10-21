@@ -68,6 +68,18 @@ lists each key; the editor sets them all, so you only need it to read a file or 
 <td>touch controls</td>
 <td>The sticks and buttons a phone shows; none keeps the engine&rsquo;s four buttons (below)</td>
 </tr>
+
+<tr>
+<td><code>surfaces</code></td>
+<td>surfaces</td>
+<td>Where each of the game&rsquo;s surfaces (<code>engine.SetSurface</code>) goes on each target (below)</td>
+</tr>
+
+<tr>
+<td><code>window</code></td>
+<td><code>windowed</code> or <code>fullscreen</code>, by target</td>
+<td>How the game starts on <code>desktop</code> and <code>web</code>: in a window (the default) or on the whole screen</td>
+</tr>
 </tbody>
 </table>
 
@@ -76,7 +88,9 @@ lists each key; the editor sets them all, so you only need it to read a file or 
 <p>Each action names, per target, the words of the inputs that do it:
 <code>&quot;jump&quot;: {&quot;desktop&quot;: [&quot;Space&quot;, &quot;Pad A&quot;], &quot;android&quot;: [&quot;Touch A&quot;]}</code>. A stick&rsquo;s axis
 (<code>Stick X</code>, <code>Touch Stick Y</code>) moves an action from -1 to 1; a button with <code>-</code> or <code>+</code> after it
-(<code>Left-</code>) moves it one way.</p>
+(<code>Left-</code>) moves it one way. A key after <code>Alt+</code>, <code>Control+</code> or <code>Shift+</code> (<code>Alt+Enter</code>) presses only
+while both are held. The action <code>fullscreen</code> is bound to <code>F11</code> and <code>Alt+Enter</code> on <code>desktop</code> and
+<code>web</code> unless the game binds it.</p>
 
 <h3 id="touchcontrols"><code>touchControls</code></h3>
 
@@ -112,6 +126,55 @@ lists each key; the editor sets them all, so you only need it to read a file or 
 <td><code>size</code></td>
 <td>number</td>
 <td>Its width, as a share of the screen&rsquo;s shorter side</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="surfaces"><code>surfaces</code></h3>
+
+<p>Each surface names, per target, its place:
+<code>&quot;map&quot;: {&quot;nintendo3ds&quot;: {&quot;place&quot;: &quot;second-screen&quot;}, &quot;desktop&quot;: {&quot;place&quot;: &quot;window&quot;, &quot;action&quot;: &quot;map&quot;}}</code>.
+A surface not named, or a target not named for it, goes on the second screen of a 3DS and over the
+view elsewhere, as a game&rsquo;s interface always did.</p>
+
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>What it is</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>place</code></td>
+<td><code>over</code>, <code>window</code>, <code>second-screen</code>, <code>sheet</code> or <code>none</code></td>
+<td>Over the view; a floating window; the 3DS&rsquo;s second screen, in a column with the rest there; a sheet from the bottom; not shown. A second screen elsewhere than a 3DS is <code>over</code>, a sheet on a 3DS is a <code>window</code></td>
+</tr>
+
+<tr>
+<td><code>align</code></td>
+<td><code>top-left</code>, <code>top</code>, <code>top-right</code>, <code>left</code>, <code>center</code>, <code>right</code>, <code>bottom-left</code>, <code>bottom</code>, <code>bottom-right</code></td>
+<td>Where an <code>over</code> or <code>window</code> surface sits; empty lays <code>over</code> on the whole view</td>
+</tr>
+
+<tr>
+<td><code>width</code>, <code>height</code></td>
+<td>number</td>
+<td>Its size in pixels; 0 is its content&rsquo;s</td>
+</tr>
+
+<tr>
+<td><code>action</code></td>
+<td>text</td>
+<td>The action that opens and closes a <code>window</code> or a <code>sheet</code></td>
+</tr>
+
+<tr>
+<td><code>open</code></td>
+<td>yes/no</td>
+<td>A <code>window</code> or a <code>sheet</code> shown when the game starts</td>
 </tr>
 </tbody>
 </table>

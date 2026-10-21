@@ -580,6 +580,11 @@ draws its window with go-ui and viewport.go its 3D view.</p>
 </tr>
 
 <tr>
+<td><code>func (editor *Editor) SetTarget(target PlayTarget)</code></td>
+<td>SetTarget shows the game played at a target&rsquo;s screens, its surfaces placed as engine.json places them there.</td>
+</tr>
+
+<tr>
 <td><code>func (editor *Editor) SetTileSize(pixels int)</code></td>
 <td>SetTileSize sets how many pixels a side the chosen tile map&rsquo;s tiles are, at least one.</td>
 </tr>
@@ -717,8 +722,8 @@ accept it or not.</p>
 
 <h3 id="playtarget">PlayTarget</h3>
 
-<p>PlayTarget is the shape of the screen the game is shown at while it plays in
-the view.</p>
+<p>PlayTarget is the target whose screens the game is shown at while it plays
+in the view, with its surfaces where that target places them.</p>
 <pre><code class="language-go"><span class="kd">type</span> <span class="nx">PlayTarget</span> <span class="kt">int</span>
 </code></pre>
 <pre><code class="language-go"><span class="kd">const</span> <span class="p">(</span>
@@ -727,6 +732,8 @@ the view.</p>
 	<span class="c1">// Nintendo3DSScreens are the Nintendo 3DS&#39;s two screens: the top one, 400 × 240 pixels, and</span>
 	<span class="c1">// the second under it.</span>
 	<span class="nx">Nintendo3DSScreens</span>
+	<span class="c1">// PhoneScreen is a phone held sideways, twenty wide for nine high.</span>
+	<span class="nx">PhoneScreen</span>
 <span class="p">)</span>
 </code></pre>
 
@@ -742,6 +749,16 @@ the view.</p>
 <tr>
 <td><code>func (target PlayTarget) Aspect() float64</code></td>
 <td>Aspect is the target&rsquo;s width over its height.</td>
+</tr>
+
+<tr>
+<td><code>func (target PlayTarget) Name() string</code></td>
+<td>Name is the target&rsquo;s name in engine.json.</td>
+</tr>
+
+<tr>
+<td><code>func (target PlayTarget) String() string</code></td>
+<td>String is the target&rsquo;s name, for messages.</td>
 </tr>
 </tbody>
 </table>

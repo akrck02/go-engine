@@ -60,7 +60,11 @@ the game&rsquo;s own look: on the second screen of a device that has one, over t
 </tbody>
 </table>
 <p>It needs <code>import ui &quot;github.com/akrck02/go-ui&quot;</code>, which the engine already brings. The function runs every frame the interface is drawn. On the 3DS it fills the second screen, 320 ×
-240 pixels, where touch is its pointer; on a computer it is laid over the game&rsquo;s window.</p>
+240 pixels, where touch is its pointer; on a computer and a phone it is laid over the game&rsquo;s view.</p>
+
+<p>The interface is the game&rsquo;s surface named <code>interface</code>: engine.json&rsquo;s <code>surfaces</code> can put it
+elsewhere on a target, and a game can show more surfaces beside it with <code>engine.SetSurface</code>
+(<a href="./guides/surfaces-on-each-screen">Surfaces on each screen</a>).</p>
 
 <h2 id="variations">Variations</h2>
 

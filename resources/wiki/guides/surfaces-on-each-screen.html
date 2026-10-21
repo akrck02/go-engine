@@ -1,0 +1,117 @@
+<h1 id="surfaces-on-each-screen">🪟 Surfaces on each screen</h1>
+
+<p>This guide is for whoever makes a game that shows more than its scene (a map, a log, a score) on
+several devices. At the end the game will paint each of them once, engine.json will say where
+each goes on a 3DS, a computer and a phone, and whether a computer shows the game in a window or
+on the whole screen.</p>
+
+<h2 id="paint-a-surface">Paint a surface</h2>
+
+<p>A <strong>surface</strong> is something the game shows besides its scene, painted with
+<a href="https://github.com/akrck02/go-ui" target="_blank">Go UI</a> every frame. The game names it and paints it, and says
+nothing of where it goes:</p>
+<pre><code class="language-go"><span class="kd">func</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+	<span class="nx">engine</span><span class="p">.</span><span class="nf">SetSurface</span><span class="p">(</span><span class="s">&#34;log&#34;</span><span class="p">,</span> <span class="nx">keeperLog</span><span class="p">)</span>
+	<span class="k">if</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">engine</span><span class="p">.</span><span class="nf">Run</span><span class="p">(</span><span class="nx">files</span><span class="p">);</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+		<span class="nx">log</span><span class="p">.</span><span class="nf">Fatal</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+
+<span class="c1">// keeperLog is the lighthouse keeper&#39;s notes.</span>
+<span class="kd">func</span> <span class="nf">keeperLog</span><span class="p">(</span><span class="nx">context</span> <span class="o">*</span><span class="nx">ui</span><span class="p">.</span><span class="nx">Context</span><span class="p">)</span> <span class="p">{</span>
+	<span class="nx">context</span><span class="p">.</span><span class="nf">Label</span><span class="p">(</span><span class="s">&#34;Fog at dawn. Two ships passed.&#34;</span><span class="p">)</span>
+<span class="p">}</span>
+</code></pre>
+
+<p>With nothing else, the log goes where a game&rsquo;s interface always went: on the second screen of a
+3DS, over the view on a computer and a phone. The game&rsquo;s interface (<code>engine.SetInterface</code>) is a
+surface too, named <code>interface</code>.</p>
+
+<h2 id="place-it-on-each-target">Place it on each target</h2>
+
+<p>engine.json&rsquo;s <code>surfaces</code> says, for each surface and each target, its <strong>place</strong>:</p>
+<pre><code class="language-json"><span class="s2">&#34;surfaces&#34;</span><span class="err">:</span> <span class="p">{</span>
+	<span class="nt">&#34;log&#34;</span><span class="p">:</span> <span class="p">{</span>
+		<span class="nt">&#34;nintendo3ds&#34;</span><span class="p">:</span> <span class="p">{</span><span class="nt">&#34;place&#34;</span><span class="p">:</span> <span class="s2">&#34;second-screen&#34;</span><span class="p">},</span>
+		<span class="nt">&#34;desktop&#34;</span><span class="p">:</span> <span class="p">{</span><span class="nt">&#34;place&#34;</span><span class="p">:</span> <span class="s2">&#34;window&#34;</span><span class="p">,</span> <span class="nt">&#34;align&#34;</span><span class="p">:</span> <span class="s2">&#34;top-right&#34;</span><span class="p">,</span> <span class="nt">&#34;width&#34;</span><span class="p">:</span> <span class="mi">260</span><span class="p">,</span> <span class="nt">&#34;action&#34;</span><span class="p">:</span> <span class="s2">&#34;log&#34;</span><span class="p">},</span>
+		<span class="nt">&#34;android&#34;</span><span class="p">:</span> <span class="p">{</span><span class="nt">&#34;place&#34;</span><span class="p">:</span> <span class="s2">&#34;sheet&#34;</span><span class="p">,</span> <span class="nt">&#34;action&#34;</span><span class="p">:</span> <span class="s2">&#34;log&#34;</span><span class="p">}</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+</code></pre>
+
+<table>
+<thead>
+<tr>
+<th>Place</th>
+<th>Where it goes</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>over</code></td>
+<td>Over the view, at an edge or a corner (<code>align</code>); with no <code>align</code>, on the whole view</td>
+</tr>
+
+<tr>
+<td><code>window</code></td>
+<td>A floating window over the view, titled with the surface&rsquo;s name, opened and closed by its <code>action</code></td>
+</tr>
+
+<tr>
+<td><code>second-screen</code></td>
+<td>The 3DS&rsquo;s bottom screen, touchable; several share it, one under another</td>
+</tr>
+
+<tr>
+<td><code>sheet</code></td>
+<td>A sheet from the bottom of a phone, opened by its <code>action</code>, closed by it or by the back button</td>
+</tr>
+
+<tr>
+<td><code>none</code></td>
+<td>Not shown on that target</td>
+</tr>
+</tbody>
+</table>
+<p>A place a target lacks becomes the nearest it has: a second screen on a computer is <code>over</code>, a
+sheet on a 3DS is a <code>window</code>. On the 3DS&rsquo;s top screen no finger reaches, so what is placed there
+is to be read, not touched. The <a href="./reference/files">file reference</a> lists every key.</p>
+
+<h2 id="see-each-target-s-layout-in-the-editor">See each target&rsquo;s layout in the editor</h2>
+
+<p>In the <strong>Play</strong> workspace, the tabs over the game choose the target it is shown at: <strong>16:9</strong> (a
+computer), <strong>3DS</strong> (its two screens) and <strong>Phone</strong>. The game&rsquo;s surfaces go where engine.json places
+them on that target, so one click shows the 3DS&rsquo;s second screen and the next the phone&rsquo;s sheet.</p>
+
+<h2 id="in-a-window-or-on-the-whole-screen">In a window or on the whole screen</h2>
+
+<p>On a computer and in a browser, engine.json&rsquo;s <code>window</code> says how the game starts on each target:</p>
+<pre><code class="language-json"><span class="s2">&#34;window&#34;</span><span class="err">:</span> <span class="p">{</span><span class="nt">&#34;desktop&#34;</span><span class="p">:</span> <span class="s2">&#34;fullscreen&#34;</span><span class="p">,</span> <span class="nt">&#34;web&#34;</span><span class="p">:</span> <span class="s2">&#34;windowed&#34;</span><span class="p">}</span>
+</code></pre>
+
+<p>The player switches with <strong>F11</strong> or <strong>Alt+Enter</strong> (the action <code>fullscreen</code>, which the game may bind
+to other keys), and the game with <code>engine.SetFullscreen(true)</code>; <code>engine.Fullscreen()</code> tells which.
+A browser lets a page take the whole screen only when it answers a key or a click, so there the
+request waits for the next one. Consoles and phones are always on their whole screen.</p>
+
+<h2 id="a-sample-to-read">A sample to read</h2>
+
+<p><a href="../../examples/watch">Night watch</a> plays the same on every device with no file of its own for
+any: the keeper turns the lamp (<code>turn</code>) and marks ships in a log (<code>mark</code>). The lamp&rsquo;s heading sits
+in a corner; the log is a window on a computer (Tab), the 3DS&rsquo;s second screen, and a sheet on a
+phone (its Log button).</p>
+
+<h2 id="variations">Variations</h2>
+
+<ul>
+<li><strong>Open with the game.</strong> <code>&quot;open&quot;: true</code> shows a window or a sheet when the game starts.</li>
+<li><strong>A fixed size.</strong> <code>width</code> and <code>height</code> in pixels; 0 is the size of what it holds. On the second
+screen, a height gives a surface that much of it.</li>
+<li><strong>Read the scene menu.</strong> <code>engine.SetInterface</code> gets the game&rsquo;s <code>Menu</code> (its scenes, the one
+playing); a surface that needs it is the interface.</li>
+</ul>
+
+<hr>
+
+<p><a href="./guides/actions-and-controls">← Actions and controls</a> · <a href="./reference/packages">The reference →</a></p>

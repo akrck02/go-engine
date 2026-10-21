@@ -1,7 +1,7 @@
 <h1 id="11-each-target-s-own-screens-and-controls">11. Each target&rsquo;s own screens and controls</h1>
 
 <blockquote>
-<p>Status: building · Author&rsquo;s approval: proposal ☑ (2026-10-21, &ldquo;dale&rdquo;) plan ☑ (2026-10-21, &ldquo;si&rdquo;) · Controls redesign and R8 ☑ (2026-10-21, &ldquo;implementalo&rdquo;, &ldquo;si añade trazos&rdquo;)</p>
+<p>Status: done · Author&rsquo;s approval: proposal ☑ (2026-10-21, &ldquo;dale&rdquo;) plan ☑ (2026-10-21, &ldquo;si&rdquo;) · Controls redesign and R8 ☑ (2026-10-21, &ldquo;implementalo&rdquo;, &ldquo;si añade trazos&rdquo;)</p>
 </blockquote>
 
 <h2 id="why">Why</h2>
@@ -179,7 +179,11 @@ fingers on them; actions bind them as <code>Touch &lt;name&gt;</code>, and a sti
 </tr>
 </tbody>
 </table>
-<p>The engine lays each surface out with what Go UI has (<code>Within</code>, <code>Overlay</code>, <code>PanelWith</code>, <code>Sheet</code>).
+<p>The engine lays each surface out with what Go UI has (<code>Within</code>, <code>Overlay</code>, <code>PanelWith</code>, <code>Modal</code>
+for the sheet). A 3DS&rsquo;s top screen has no interface of its own: the engine paints the surfaces
+placed there with a Go UI context of their own, given no pointer, over the scene. A place a
+target lacks is the nearest it has: a second screen elsewhere is <code>over</code>, a sheet on a 3DS a
+<code>window</code>.
 <code>SetInterface</code> becomes the surface <code>interface</code>, placed on the second screen on the 3DS and over the
 view elsewhere, as today (R7). <code>SetSecondScreen</code>&rsquo;s 3D scene stays as it is. The editor&rsquo;s Play gains
 a target to preview beside the shapes it has (R5): each target&rsquo;s places for its surfaces.</p>
@@ -216,14 +220,34 @@ build.</li>
 <li>[x] T5b — strokes in Go Renderer&rsquo;s draw2d · go-renderer feature/strokes · R2 · tests of covering a line, keeping the mask, allocating nothing</li>
 <li>[x] T5c — touch controls: engine.json&rsquo;s <code>touchControls</code>, drawn and read on Android, bound as words · engine · R8 · tests of placing, pressing, dragging a stick, allocating nothing</li>
 <li>[x] T5d — the Controls workspace redesigned: tabs per device, line drawings, action cards, the panel beside a control, autosave and its own undo, the phone&rsquo;s layout designer · editor · R2, R8 · tests of assigning, renaming, undoing, saving, the layout; captures of the four tabs</li>
-<li>[ ] T6 — surfaces: <code>SetSurface</code>, engine.json&rsquo;s <code>surfaces</code>, the five places on the desktop and the 3DS · engine · R4 · captures in the editor and Azahar</li>
-<li>[ ] T7 — <code>sheet</code> on Android, and <code>SetInterface</code> as the <code>interface</code> surface · R4, R7 · test; the samples unchanged</li>
-<li>[ ] T8 — the editor previews each target&rsquo;s surfaces · editor · R5 · captures</li>
-<li>[ ] T9 — fullscreen in Go Renderer (desktop and web) and Go UI · R6 · test of the request; by hand</li>
-<li>[ ] T10 — <code>SetFullscreen</code>, <code>window</code> per target, the <code>fullscreen</code> action · engine · R6 · tests</li>
-<li>[ ] T11 — a sample game with actions and surfaces and no per-target file; docs: a guide to actions and surfaces · examples, docs · R1, R4 · captures on the desktop and in Azahar</li>
+<li>[x] T6 — surfaces: <code>SetSurface</code>, engine.json&rsquo;s <code>surfaces</code>, the five places on the desktop and the 3DS · engine · R4 · captures in the editor and Azahar</li>
+<li>[x] T7 — <code>sheet</code> on Android, and <code>SetInterface</code> as the <code>interface</code> surface · R4, R7 · test; the samples unchanged</li>
+<li>[x] T8 — the editor previews each target&rsquo;s surfaces · editor · R5 · captures</li>
+<li>[x] T9 — fullscreen in Go Renderer (desktop and web) and Go UI · R6 · test of the request; by hand</li>
+<li>[x] T10 — <code>SetFullscreen</code>, <code>window</code> per target, the <code>fullscreen</code> action · engine · R6 · tests</li>
+<li>[x] T11 — a sample game with actions and surfaces and no per-target file; docs: a guide to actions and surfaces · examples, docs · R1, R4 · captures on the desktop and in Azahar</li>
 </ul>
 
 <h2 id="result">Result</h2>
 
-<p>Not built yet.</p>
+<p>Built, T1–T11. What was checked, and what a person must still check:</p>
+
+<ul>
+<li><strong>R1, R3, R8</strong>: tests of each kind of binding, rebinding, touch controls; actions now also read a
+key held with a modifier (<code>Alt+Enter</code>) and a key tapped between two frames.</li>
+<li><strong>R4</strong>: <code>SetSurface</code> and engine.json&rsquo;s <code>surfaces</code>, the five places and their fallbacks, tested
+with Go UI&rsquo;s <code>uitest</code>. Seen working: on the desktop (an <code>over</code> corner, a <code>window</code> toggled by Tab),
+in Azahar (an <code>over</code> corner and a <code>window</code> on the top screen, painted by a context of their own;
+surfaces on the second screen) and on an Android emulator (a <code>sheet</code> opened by a touch button,
+kept off the system&rsquo;s bars). Not checked: a 3DS console, a real phone.</li>
+<li><strong>R5</strong>: Play&rsquo;s tabs 16:9, 3DS and Phone preview each target&rsquo;s places; test and captures.</li>
+<li><strong>R6</strong>: Go Renderer asks GLFW for the whole screen and back, and a page on its next key or click;
+Go UI passes a scene&rsquo;s request on; go-engine&rsquo;s <code>window</code> per target, <code>SetFullscreen</code>, F11 and
+Alt+Enter. Seen working by hand under Xvfb (F11, Alt+Enter, starting fullscreen). Not checked:
+a browser (no page was built: building for the web is out of scope), Metal on a Mac (it uses the
+same window loop, untouched, but was not run), a desktop with several screens.</li>
+<li><strong>R7</strong>: the platformer&rsquo;s and lighthouse&rsquo;s code and tests unchanged; <code>SetInterface</code> is the surface
+<code>interface</code>, and <code>ShowInterface</code> (the editor&rsquo;s only) became <code>ShowSurfaces</code>.</li>
+<li><strong>Sample</strong>: <code>examples/watch</code>, with no per-target file; captures on the desktop, in the editor for
+each target, in Azahar and on an Android emulator.</li>
+</ul>

@@ -57,6 +57,11 @@ to its parent, in metres and degrees (see package space).</p>
 </tr>
 
 <tr>
+<td><code>func Fullscreen() bool</code></td>
+<td>Fullscreen tells whether the game is asked to be on the whole screen.</td>
+</tr>
+
+<tr>
 <td><code>func HasInterface() bool</code></td>
 <td>HasInterface tells whether the game shows a go-ui interface of its own (SetInterface).</td>
 </tr>
@@ -117,6 +122,11 @@ to its parent, in metres and degrees (see package space).</p>
 </tr>
 
 <tr>
+<td><code>func SetFullscreen(on bool)</code></td>
+<td>SetFullscreen asks for the game on the whole screen, or in its window again.</td>
+</tr>
+
+<tr>
 <td><code>func SetInterface(paint func(context *ui.Context, menu Menu))</code></td>
 <td>SetInterface makes a game show an interface of its own, with go-ui, in its own look: a menu of its scenes (Menu), a map, its controls, a login form.</td>
 </tr>
@@ -137,8 +147,13 @@ to its parent, in metres and degrees (see package space).</p>
 </tr>
 
 <tr>
-<td><code>func ShowInterface(context *ui.Context, played *Scene, scenes []MenuScene)</code></td>
-<td>ShowInterface builds the game&rsquo;s own interface (SetInterface) for a scene played, offering some scenes (ScenesOf); playing another asks the scene to be replaced (Scene.TakeReplacement).</td>
+<td><code>func SetSurface(name string, paint func(context *ui.Context))</code></td>
+<td>SetSurface makes a game show a surface of its own, by name, painted with Go UI every frame; engine.json&rsquo;s surfaces say where it goes on each target.</td>
+</tr>
+
+<tr>
+<td><code>func ShowSurfaces(context *ui.Context, played *Scene, scenes []MenuScene, main, second draw2d.Rect)</code></td>
+<td>ShowSurfaces builds the game&rsquo;s surfaces (SetSurface, SetInterface) for a scene played, offering some scenes (ScenesOf), where the target UseSurfaces chose places them: those on the main screen in an area of the window, those on the second screen in another (an empty one shows none).</td>
 </tr>
 
 <tr>
@@ -149,6 +164,11 @@ to its parent, in metres and degrees (see package space).</p>
 <tr>
 <td><code>func TouchWords(control TouchControl) []string</code></td>
 <td>TouchWords are the words a touch control is bound with: a button&rsquo;s name, a stick&rsquo;s two axes.</td>
+</tr>
+
+<tr>
+<td><code>func UseSurfaces(places map[string]map[string]SurfacePlace, target string) []error</code></td>
+<td>UseSurfaces places the game&rsquo;s surfaces on a target, as engine.json&rsquo;s surfaces say (by surface, then by target); Run does it, and the editor for the target it previews.</td>
 </tr>
 
 <tr>
@@ -169,6 +189,13 @@ to its parent, in metres and degrees (see package space).</p>
 </code></pre>
 
 <p>The keys shoulder buttons, triggers and START are read as (a 3DS&rsquo;s L, R, ZL, ZR and START), and that press them on a keyboard.</p>
+<pre><code class="language-go"><span class="kd">const</span> <span class="p">(</span>
+	<span class="nx">Windowed</span>         <span class="p">=</span> <span class="s">&#34;windowed&#34;</span>
+	<span class="nx">FullscreenWindow</span> <span class="p">=</span> <span class="s">&#34;fullscreen&#34;</span>
+<span class="p">)</span>
+</code></pre>
+
+<p>The ways a game&rsquo;s window can start (engine.json&rsquo;s window).</p>
 <pre><code class="language-go"><span class="kd">const</span> <span class="p">(</span>
 	<span class="nx">KeyboardInputs</span> <span class="p">=</span> <span class="s">&#34;Keyboard&#34;</span>
 	<span class="nx">MouseInputs</span>    <span class="p">=</span> <span class="s">&#34;Mouse&#34;</span>
@@ -231,6 +258,16 @@ to its parent, in metres and degrees (see package space).</p>
 
 <p>A camera&rsquo;s distances when its settings leave them at 0, in metres.</p>
 <pre><code class="language-go"><span class="kd">const</span> <span class="p">(</span>
+	<span class="nx">OverPlace</span>         <span class="p">=</span> <span class="s">&#34;over&#34;</span>          <span class="c1">// over the game&#39;s view, aligned to an edge or a corner</span>
+	<span class="nx">WindowPlace</span>       <span class="p">=</span> <span class="s">&#34;window&#34;</span>        <span class="c1">// a floating window over the view, opened and closed by an action</span>
+	<span class="nx">SecondScreenPlace</span> <span class="p">=</span> <span class="s">&#34;second-screen&#34;</span> <span class="c1">// the second screen (a 3DS&#39;s), touchable, in a column with the rest there</span>
+	<span class="nx">SheetPlace</span>        <span class="p">=</span> <span class="s">&#34;sheet&#34;</span>         <span class="c1">// a sheet from the bottom (a phone&#39;s), opened and closed by an action</span>
+	<span class="nx">NoPlace</span>           <span class="p">=</span> <span class="s">&#34;none&#34;</span>          <span class="c1">// not shown on that target</span>
+<span class="p">)</span>
+</code></pre>
+
+<p>The places a surface can go.</p>
+<pre><code class="language-go"><span class="kd">const</span> <span class="p">(</span>
 	<span class="nx">DesktopTarget</span>     <span class="p">=</span> <span class="s">&#34;desktop&#34;</span>
 	<span class="nx">Nintendo3DSTarget</span> <span class="p">=</span> <span class="s">&#34;nintendo3ds&#34;</span>
 	<span class="nx">AndroidTarget</span>     <span class="p">=</span> <span class="s">&#34;android&#34;</span>
@@ -247,6 +284,14 @@ to its parent, in metres and degrees (see package space).</p>
 </code></pre>
 
 <p>EditorVariable is set, in the environment, when go-engine starts a game to edit it.</p>
+<pre><code class="language-go"><span class="kd">const</span> <span class="nx">FullscreenAction</span> <span class="p">=</span> <span class="s">&#34;fullscreen&#34;</span>
+</code></pre>
+
+<p>FullscreenAction is the action that puts the game on the whole screen and back.</p>
+<pre><code class="language-go"><span class="kd">const</span> <span class="nx">InterfaceSurface</span> <span class="p">=</span> <span class="s">&#34;interface&#34;</span>
+</code></pre>
+
+<p>InterfaceSurface is the name of the game&rsquo;s interface among its surfaces (SetInterface).</p>
 <pre><code class="language-go"><span class="kd">const</span> <span class="nx">Module</span> <span class="p">=</span> <span class="s">&#34;github.com/akrck02/go-engine&#34;</span>
 </code></pre>
 
@@ -278,6 +323,8 @@ to its parent, in metres and degrees (see package space).</p>
 	<span class="nx">SceneNotRestartable</span>   <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;engine.scene-not-restartable&#34;</span><span class="p">,</span> <span class="s">&#34;the scene was not made from a description, so it cannot start again&#34;</span><span class="p">)</span>
 	<span class="nx">InputUnknown</span>          <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;engine.input-unknown&#34;</span><span class="p">,</span> <span class="s">&#34;an action is bound to an input the target does not have: see the words an action can be bound to&#34;</span><span class="p">)</span>
 	<span class="nx">BindingsNotSaved</span>      <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;engine.bindings-not-saved&#34;</span><span class="p">,</span> <span class="s">&#34;the actions the player changed could not be kept on this device&#34;</span><span class="p">)</span>
+	<span class="nx">WindowUnknown</span>         <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;engine.window-unknown&#34;</span><span class="p">,</span> <span class="s">&#34;engine.json&#39;s window is neither windowed nor fullscreen&#34;</span><span class="p">)</span>
+	<span class="nx">SurfacePlaceUnknown</span>   <span class="p">=</span> <span class="nx">failure</span><span class="p">.</span><span class="nf">Define</span><span class="p">(</span><span class="s">&#34;engine.surface-place-unknown&#34;</span><span class="p">,</span> <span class="s">&#34;engine.json places a surface somewhere the engine does not know: see the places and alignments a surface can have&#34;</span><span class="p">)</span>
 <span class="p">)</span>
 </code></pre>
 
@@ -921,7 +968,7 @@ and what go-renderer draws of it.</p>
 
 <tr>
 <td><code>func (owner *Scene) PlayFrame(seconds float64, keys *input.State)</code></td>
-<td>PlayFrame is a frame of the game&rsquo;s main scene: the calls asked for between frames and the frame hook run, then the scene moves on (Update).</td>
+<td>PlayFrame is a frame of the game&rsquo;s main scene: the calls asked for between frames run, the actions are read (opening and closing the surfaces they open, and the whole screen), the frame hook runs, then the scene moves on (Update).</td>
 </tr>
 
 <tr>
@@ -1026,6 +1073,13 @@ and what go-renderer draws of it.</p>
 	<span class="c1">// TouchControls are the sticks and buttons drawn on a touch screen (a phone&#39;s), as the editor</span>
 	<span class="c1">// places them; none keeps the engine&#39;s four touch buttons (touchcontrols.go).</span>
 	<span class="nx">TouchControls</span> <span class="p">[]</span><span class="nx">TouchControl</span> <span class="s">`json:&#34;touchControls,omitempty&#34;`</span>
+	<span class="c1">// Surfaces place the game&#39;s surfaces (SetSurface) on each target, by surface and then by</span>
+	<span class="c1">// target: &#34;map&#34;: {&#34;nintendo3ds&#34;: {&#34;place&#34;: &#34;second-screen&#34;}, &#34;desktop&#34;: {&#34;place&#34;: &#34;over&#34;,</span>
+	<span class="c1">// &#34;align&#34;: &#34;top-right&#34;}} (surfaces.go).</span>
+	<span class="nx">Surfaces</span> <span class="kd">map</span><span class="p">[</span><span class="kt">string</span><span class="p">]</span><span class="kd">map</span><span class="p">[</span><span class="kt">string</span><span class="p">]</span><span class="nx">SurfacePlace</span> <span class="s">`json:&#34;surfaces,omitempty&#34;`</span>
+	<span class="c1">// Window says, per target with windows (desktop, web), whether the game starts &#34;windowed&#34; (the</span>
+	<span class="c1">// default) or &#34;fullscreen&#34; (fullscreen.go).</span>
+	<span class="nx">Window</span> <span class="kd">map</span><span class="p">[</span><span class="kt">string</span><span class="p">]</span><span class="kt">string</span> <span class="s">`json:&#34;window,omitempty&#34;`</span>
 <span class="p">}</span>
 </code></pre>
 
@@ -1065,6 +1119,24 @@ their JSON names). It does what it does through the methods it has:</p>
 
 <p>Start, when the behaviour has it, runs once before the first Update.</p>
 <pre><code class="language-go"><span class="kd">type</span> <span class="nx">Starter</span> <span class="kd">interface</span><span class="p">{</span> <span class="nf">Start</span><span class="p">(</span><span class="nx">context</span> <span class="o">*</span><span class="nx">Context</span><span class="p">)</span> <span class="p">}</span>
+</code></pre>
+
+<h3 id="surfaceplace">SurfacePlace</h3>
+
+<p>SurfacePlace is where a surface goes on one target, as engine.json says.</p>
+<pre><code class="language-go"><span class="kd">type</span> <span class="nx">SurfacePlace</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">Place</span> <span class="kt">string</span> <span class="s">`json:&#34;place&#34;`</span>
+	<span class="c1">// Align is where an over or window surface sits in the view: top-left, top, top-right, left,</span>
+	<span class="c1">// center, right, bottom-left, bottom or bottom-right. Empty lays an over surface out on the</span>
+	<span class="c1">// whole view, as a game&#39;s interface is, and a window in the top left corner.</span>
+	<span class="nx">Align</span> <span class="kt">string</span> <span class="s">`json:&#34;align,omitempty&#34;`</span>
+	<span class="c1">// Width and Height are its size in pixels; 0 is its content&#39;s.</span>
+	<span class="nx">Width</span>  <span class="kt">float32</span> <span class="s">`json:&#34;width,omitempty&#34;`</span>
+	<span class="nx">Height</span> <span class="kt">float32</span> <span class="s">`json:&#34;height,omitempty&#34;`</span>
+	<span class="c1">// Action opens and closes a window or a sheet; Open shows it when the game starts.</span>
+	<span class="nx">Action</span> <span class="kt">string</span> <span class="s">`json:&#34;action,omitempty&#34;`</span>
+	<span class="nx">Open</span>   <span class="kt">bool</span>   <span class="s">`json:&#34;open,omitempty&#34;`</span>
+<span class="p">}</span>
 </code></pre>
 
 <h3 id="touchcontrol">TouchControl</h3>
