@@ -25,8 +25,10 @@ A game's main registers its behaviours and runs the project it embeds:
 | `func RegisterAs(name string, behaviour any)` | RegisterAs makes a behaviour known by a name of its own. |
 | `func Registered() []string` | Registered are the names of the behaviours registered, in order. |
 | `func Run(files fs.FS) error` | Run plays a project, from its files (embedded in the game, or a folder), until its window is closed: on the desktop in a window, on the Nintendo 3DS on the top screen. |
-| `func SetBottomScreen(paint func(context *ui.Context, menu Menu))` | SetBottomScreen makes a game draw the Nintendo 3DS's bottom screen itself, with go-ui, in its own look: a menu of its scenes (Menu), a map, its controls. |
+| `func SetBottomScreen(paint func(context *ui.Context, menu Menu))` | SetBottomScreen is SetInterface, by the name it had when only the 3DS showed it. |
 | `func SetEditor(run func() error)` | SetEditor installs the editor (the editor package does, from a project's editor.go). |
+| `func SetInterface(paint func(context *ui.Context, menu Menu))` | SetInterface makes a game show an interface of its own, with go-ui, in its own look: a menu of its scenes (Menu), a map, its controls, a login form. |
+| `func SetOverlay(paint func(list *draw2d.List, width, height float32))` | SetOverlay sets what the game draws over a 3D scene each frame, in the pixels of the screen it is on (the window's, or the 3DS's top screen, 400 × 240): the list is empty when it is called. |
 | `func Version() string` | Version says which Go Engine this program was built with: its release and commit, as "v0.0.1 (ba08523)", or "v0.0.1 (77aa001, local)" for a local copy, as the editor's window and the logs show it. |
 
 ### Constants and variables

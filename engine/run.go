@@ -73,7 +73,7 @@ func Run(files fs.FS) error {
 		slog.Warn("a behaviour could not be made", "error", problem)
 	}
 	game := &runner{played: played, name: settings.Name}
-	if settings.SceneMenu || bottomScreen != nil {
+	if settings.SceneMenu || gameInterface != nil {
 		game.menu = scenesOf(files)
 	}
 	return game.run(settings.Name)
@@ -97,6 +97,7 @@ type runner struct {
 	played  *Scene
 	last    time.Time
 	flat    draw2d.List      // a 2D scene's drawing on the console, made again every frame
+	overlay draw2d.List      // the game's drawing over a 3D scene (SetOverlay), made again every frame
 	console consoleInput     // the console's buttons, as keys
 	view    window.SceneView // what the window shows this frame
 	name    string           // the game's
@@ -121,6 +122,9 @@ func (game *runner) step(state *input.State, step float64) *window.SceneView {
 	}
 	drawOver(game.played, state, &game.flat)
 	game.view = window.SceneView{World: game.played.World(), Camera: CameraAt(fallbackCamera, defaultCamera)}
+	if overlayPainter != nil && !game.played.Is2D() {
+		game.view.Drawing = game.paintOverlay(state)
+	}
 	if camera, found := game.played.MainCamera(); found {
 		game.view.Camera = camera.View()
 	}

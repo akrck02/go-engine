@@ -62,9 +62,10 @@ unlit, translucent and double-sided (most of R3). The engine only has to reach t
   own would only copy them.
 - **Camera** (R5): `scenefile.Camera` gains `near` and `far` (metres; 0 keeps today's 0.05 and
   2000), shown in the inspector. `Node.Camera()` and `Node.SetCamera()` let code change them.
-- **Over the 3D** (R4): `engine.SetOverlay(func(list *draw2d.List, size Size))` draws each frame
-  over a 3D scene. On the 3DS it becomes `World.Overlay.Drawing`, as 2D scenes do today; on the
-  desktop and phones Go UI paints it under the interface. `SetBottomScreen` becomes
+- **Over the 3D** (R4): `engine.SetOverlay(func(list *draw2d.List, width, height float32))` draws
+  each frame over a 3D scene. It goes to Go UI's new `SceneView.Drawing`, which Go UI paints over
+  the scene and under the interface on the desktop and phones (its window used to overwrite
+  `World.Overlay.Drawing` with the interface), and on the 3DS's top screen in each eye. `SetBottomScreen` becomes
   `SetInterface`: the bottom screen on the 3DS, over the window elsewhere (login fields).
 - **Below, in 3D** (R7): `engine.SetBottomScene(scene, camera)` gives the 3DS's bottom screen a
   scene of its own, with the interface over it.
@@ -106,7 +107,7 @@ Each version leaves the engine working and can be used by a game at once.
 - [x] T4 — check the 3DS loop yields each frame · R10 · checked in the code: the engine's 3DS loop is Go UI v0.1.1's `window.Run`, which calls `runtime.Gosched()` after every frame, slow ones included; and the engine builds with TinyGo for the 3DS after T1–T3. Listening for crackles needs the author's ears, on a console
 - [ ] T5 — Go Renderer: `Material.Additive` in OpenGL, Metal and ctr · R3 · test of the blend chosen; captures
 - [ ] T6 — materials from code: a sample with each kind and opacity changing per frame · examples · R3 · captures on the desktop and in Azahar
-- [ ] T7 — `SetOverlay` and `SetInterface` on the desktop, phones and the 3DS · engine/screen*.go · R4 · captures, both eyes in Azahar
+- [x] T7 — `SetOverlay` and `SetInterface` on the desktop and the 3DS (Go UI `feature/scene-drawing`: `SceneView.Drawing`) · engine/overlay.go, engine/screen*.go · R4 · tests `the game's overlay is drawn over a 3D scene at the screen's size` and Go UI's `the program's drawing is painted over the scene and under the interface`; on Android the game's interface is not shown yet (the touch buttons fill the window)
 - [ ] T8 — Go UI: `SceneView.Below`, `KeepStart`, `PointerCaptured` · R7, R8 · Go UI's tests
 - [ ] T9 — Go Renderer: the C-stick and the gyroscope in `ctr.Reading` · R8 · by hand in Azahar
 - [ ] T10 — `SetBottomScene` · engine/screen_nintendo3ds.go · R7 · capture in Azahar

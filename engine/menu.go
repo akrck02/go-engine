@@ -67,10 +67,15 @@ func (menu Menu) Playing() *Scene { return menu.game.played }
 // Play plays a scene next, by its file.
 func (menu Menu) Play(file string) { menu.game.choose(file) }
 
-// bottomScreen is the game's own bottom screen, when it has one (SetBottomScreen).
-var bottomScreen func(context *ui.Context, menu Menu)
+// gameInterface is the game's own go-ui interface, when it has one (SetInterface).
+var gameInterface func(context *ui.Context, menu Menu)
 
-// SetBottomScreen makes a game draw the Nintendo 3DS's bottom screen itself, with go-ui, in its
-// own look: a menu of its scenes (Menu), a map, its controls. Call it before Run. Elsewhere there
-// is no bottom screen, and it is not called.
-func SetBottomScreen(paint func(context *ui.Context, menu Menu)) { bottomScreen = paint }
+// SetInterface makes a game show an interface of its own, with go-ui, in its own look: a menu of
+// its scenes (Menu), a map, its controls, a login form. On the Nintendo 3DS it is the bottom
+// screen; on the desktop it is painted over a 3D scene's window. Call it before Run.
+func SetInterface(paint func(context *ui.Context, menu Menu)) { gameInterface = paint }
+
+// SetBottomScreen is SetInterface, by the name it had when only the 3DS showed it.
+//
+// Deprecated: use SetInterface.
+func SetBottomScreen(paint func(context *ui.Context, menu Menu)) { SetInterface(paint) }
