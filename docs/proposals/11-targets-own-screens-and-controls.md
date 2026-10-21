@@ -1,6 +1,6 @@
 # 11. Each target's own screens and controls
 
-> Status: proposed · Author's approval: proposal ☐ plan ☐
+> Status: planned · Author's approval: proposal ☑ (2026-10-21, "dale") plan ☐
 
 ## Why
 
@@ -35,13 +35,86 @@ player does, and each target should say *where* and *with which buttons*.
 
 ## Design
 
-To fill once the author approves the proposal. Fullscreen will need Go Renderer and Go UI
-(neither has it yet), on `feature/` branches with the author's permission. Godot's InputMap and
-Unity's Input System will be looked at before choosing the bindings' shape.
+### Targets at run time
+
+The engine knows which target it runs on (a constant per build: `desktop`, `nintendo3ds`,
+`android`, `web`), named as engine.json names them. `project.Target` gains `Web`'s name for the
+settings, though building for the web stays out of this change.
+
+### Actions (R1–R3)
+
+engine.json gains `actions`. Each action lists, per target, the inputs that press it, as words a
+person can read and type:
+
+```json
+"actions": {
+  "menu": {"desktop": ["Tab", "P", "Pad Start"], "nintendo3ds": ["Start"], "android": ["Back"]},
+  "fire": {"desktop": ["Space", "Mouse Left", "Pad A"], "nintendo3ds": ["R", "A"]},
+  "turn": {"desktop": ["A-", "D+", "Left-", "Right+", "Stick X"], "nintendo3ds": ["Circle X", "Left-", "Right+"]}
+}
+```
+
+- A **button** input presses the action: a key, a mouse button, a pad's button, a 3DS's button,
+  Android's back.
+- An **axis** input moves it from -1 to 1: a stick's axis, or a button with `-` or `+` after it.
+- `Input.Down`, `Input.Pressed` and `Input.Released` take an action's name; `Input.Axis(name)`
+  gives its value. The keys a game reads today keep working (R7).
+- The bindings are read once into a table of the engine (`engine/actions.go`), so reading an
+  action each frame is a map lookup and some booleans, with nothing allocated.
+- **Rebinding** (R3): `Input.Rebind(action, inputs)` changes the current target's inputs, and
+  `engine.SaveBindings` keeps them in the user's configuration folder (on a 3DS, on the SD card).
+  The game's own engine.json stays as its author wrote it.
+- **The editor** (R2): Project → Settings gains a Controls table, one row per action, one column
+  per target; a cell is the inputs, typed or caught by pressing them.
+
+### Surfaces (R4, R5)
+
+`engine.SetSurface(name, paint func(context *ui.Context))` names what the game shows. engine.json's
+`surfaces` says, per target, where each goes:
+
+| Place | What it is |
+|---|---|
+| `over` | over the game's view, aligned to an edge or a corner, with a size |
+| `window` | a floating window over the view, opened and closed by an action |
+| `second-screen` | the second screen (a 3DS's), touchable; several share it in a column |
+| `sheet` | a sheet from the bottom (Android), opened and closed by an action |
+| `none` | not shown on that target |
+
+The engine lays each surface out with what Go UI has (`Within`, `Overlay`, `PanelWith`, `Sheet`).
+`SetInterface` becomes the surface `interface`, placed on the second screen on the 3DS and over the
+view elsewhere, as today (R7). `SetSecondScreen`'s 3D scene stays as it is. The editor's Play gains
+a target to preview beside the shapes it has (R5): each target's places for its surfaces.
+
+### Fullscreen (R6)
+
+- **Go Renderer**: `input.State.SetFullscreen` and `Fullscreen`, requested like the captured
+  pointer and applied by the window loop with GLFW (`SetMonitor`, back to the window's last place
+  and size). The browser loop calls the Fullscreen API on the next key or click. The function keys
+  F1 to F12, and a game pad's buttons, join `input.Key` and the state.
+- **Go UI**: a scene's request reaches the window, as its captured pointer does.
+- **go-engine**: `engine.SetFullscreen(bool)` and `engine.Fullscreen()`; engine.json's `window`
+  (`windowed` or `fullscreen`) per target; an action `fullscreen`, bound to F11 and Alt+Enter on
+  the desktop unless the game binds it otherwise.
+
+### Alternatives not taken
+
+- Bindings in code: engine.json lets the editor show them and a player change them without a
+  build.
+- One layout file per target: a table per surface keeps a surface's places side by side.
 
 ## Tasks
 
-To fill with the design.
+- [ ] T1 — Go Renderer: function keys, a pad's buttons in `input.State`, read from GLFW · R1 · tests of the mapping
+- [ ] T2 — the target at run time · engine · R1, R4 · test per build
+- [ ] T3 — actions: engine.json's `actions`, the inputs' words, the table, `Input.Down/Pressed/Released/Axis` by name · engine/actions.go · R1 · tests of each kind of input, and `reading an action allocates nothing`
+- [ ] T4 — rebinding and keeping it · R3 · test `a binding changed while playing is kept and read back`
+- [ ] T5 — the editor's Controls table · editor · R2 · capture; a binding changed reaches the game
+- [ ] T6 — surfaces: `SetSurface`, engine.json's `surfaces`, the five places on the desktop and the 3DS · engine · R4 · captures in the editor and Azahar
+- [ ] T7 — `sheet` on Android, and `SetInterface` as the `interface` surface · R4, R7 · test; the samples unchanged
+- [ ] T8 — the editor previews each target's surfaces · editor · R5 · captures
+- [ ] T9 — fullscreen in Go Renderer (desktop and web) and Go UI · R6 · test of the request; by hand
+- [ ] T10 — `SetFullscreen`, `window` per target, the `fullscreen` action · engine · R6 · tests
+- [ ] T11 — a sample game with actions and surfaces and no per-target file; docs: a guide to actions and surfaces · examples, docs · R1, R4 · captures on the desktop and in Azahar
 
 ## Result
 
