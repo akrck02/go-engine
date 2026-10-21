@@ -1,0 +1,5 @@
+{
+	"name": "Lighthouse",
+	"startScene": "scenes/coast.scene.json",
+	"keepStart": true
+}
