@@ -21,15 +21,19 @@ func DrawOverlay(list *draw2d.List, width, height float32) bool {
 }
 
 // HasInterface tells whether the game shows a go-ui interface of its own (SetInterface).
-func HasInterface() bool { return gameInterface != nil }
+func HasInterface() bool {
+	_, found := surfaceNamed(InterfaceSurface)
+	return found
+}
 
 // ShowInterface builds the game's own interface (SetInterface) for a scene played, offering some
 // scenes (ScenesOf); playing another asks the scene to be replaced (Scene.TakeReplacement).
 func ShowInterface(context *ui.Context, played *Scene, scenes []MenuScene) {
-	if gameInterface == nil {
+	shown, found := surfaceNamed(InterfaceSurface)
+	if !found {
 		return
 	}
-	gameInterface(context, Menu{&runner{played: played, menu: scenes}})
+	shown.paint(context, Menu{&runner{played: played, menu: scenes}})
 }
 
 // ScenesOf are the scenes in a project's files, in the order of their files, as the game's menu

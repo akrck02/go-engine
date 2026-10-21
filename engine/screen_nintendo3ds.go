@@ -27,15 +27,10 @@ func drawOver(played *Scene, _ *input.State, flat *draw2d.List) {
 // flatNeedsScene is true on the console: a 2D scene is drawn over the top screen's scene.
 const flatNeedsScene = true
 
-// interfaceFor is the bottom screen's interface: the game's own (SetInterface) and the surfaces
-// placed there, or the menu of scenes when the settings ask for it.
+// interfaceFor is the bottom screen's interface: the surfaces placed there (the game's interface,
+// SetInterface, among them), or the menu of scenes when the settings ask for it.
 func interfaceFor(game *runner) func(context *ui.Context) {
 	return func(context *ui.Context) {
-		if gameInterface != nil {
-			gameInterface(context, Menu{game})
-			paintSecondScreen(context, Menu{game})
-			return
-		}
 		if paintSecondScreen(context, Menu{game}) {
 			return
 		}

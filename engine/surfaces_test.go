@@ -183,3 +183,48 @@ func TestPaintingSurfacesAllocatesNothingOfItsOwn(test *testing.T) {
 		test.Fatalf("a frame of surfaces allocates %v times, and the same with Go UI alone %v", surfaced, alone)
 	}
 }
+
+func TestTheGamesInterfaceIsTheSurfaceNamedInterface(test *testing.T) {
+	forgetSurfaces()
+	SetInterface(func(context *ui.Context, _ Menu) { context.Caption("interface shown") })
+	if !HasInterface() {
+		test.Fatal("the game has no interface")
+	}
+	UseSurfaces(nil, Nintendo3DSTarget)
+	if place := surfacePlace(InterfaceSurface); place.Place != SecondScreenPlace {
+		test.Fatalf("on the 3DS the interface is %q", place.Place)
+	}
+	places := map[string]map[string]SurfacePlace{InterfaceSurface: {DesktopTarget: {Place: OverPlace, Align: "bottom"}}}
+	UseSurfaces(places, DesktopTarget)
+	window, err := uitest.New(func(context *ui.Context) {
+		paintSurfaces(context, Menu{}, draw2d.Rect{Width: gameWidth, Height: gameHeight}, false)
+	}, uitest.Size(gameWidth, gameHeight))
+	if err != nil {
+		test.Fatal(err)
+	}
+	window.Frame()
+	if shown, found := shownAt(window, InterfaceSurface); !found || shown.Y < gameHeight/2 {
+		test.Fatalf("the interface is at %+v (%v), not at the bottom", shown, found)
+	}
+}
+
+func TestASheetOpensWithItsActionAndClosesWhenThePlayerDismissesIt(test *testing.T) {
+	BindActions(map[string]map[string][]string{"map": {AndroidTarget: {"M"}}}, AndroidTarget)
+	places := map[string]map[string]SurfacePlace{"Map": {AndroidTarget: {Place: SheetPlace, Action: "map"}}}
+	window := showSurfaces(test, places, AndroidTarget, "Map")
+	pressed := input.NewState()
+	pressed.SetKey(input.KeyM, true)
+	frameWith(input.NewState(), ctr.Reading{})
+	frameWith(pressed, ctr.Reading{})
+	toggleSurfaces()
+	window.Frame()
+	shown, found := shownAt(window, "Map")
+	if !found || shown.Y < gameHeight/2 {
+		test.Fatalf("the sheet is at %+v (%v), not at the bottom", shown, found)
+	}
+	window.PressKey(input.KeyEscape)
+	window.Frame()
+	if _, found := shownAt(window, "Map"); found {
+		test.Fatal("the sheet stays open when the player dismisses it")
+	}
+}

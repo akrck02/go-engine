@@ -121,7 +121,7 @@ func Run(files fs.FS) error {
 	useTouchControls(settings.TouchControls)
 	game := &runner{played: played, name: settings.Name, keepStart: settings.KeepStart,
 		screen: draw2d.Rect{Width: windowWidth, Height: windowHeight}}
-	if settings.SceneMenu || gameInterface != nil {
+	if settings.SceneMenu || HasInterface() {
 		game.menu = scenesOf(files)
 	}
 	return game.run(settings.Name)

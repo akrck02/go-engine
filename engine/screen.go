@@ -25,10 +25,7 @@ func interfaceFor(game *runner) func(context *ui.Context) {
 	return func(context *ui.Context) {
 		played := game.played
 		if !played.Is2D() {
-			if gameInterface != nil {
-				gameInterface(context, Menu{game}) // over the 3D scene, and over the game's overlay
-			}
-			paintSurfaces(context, Menu{game}, game.screen, false)
+			paintSurfaces(context, Menu{game}, game.screen, false) // over the 3D scene and the game's overlay
 			return
 		}
 		context.Paint(ui.Layout{Width: ui.Grow(), Height: ui.Grow()}, func(area draw2d.Rect, list *draw2d.List) {

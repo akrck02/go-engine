@@ -68,10 +68,11 @@ func (menu Menu) Playing() *Scene { return menu.game.played }
 // Play plays a scene next, by its file.
 func (menu Menu) Play(file string) { menu.game.choose(file) }
 
-// gameInterface is the game's own go-ui interface, when it has one (SetInterface).
-var gameInterface func(context *ui.Context, menu Menu)
-
 // SetInterface makes a game show an interface of its own, with go-ui, in its own look: a menu of
-// its scenes (Menu), a map, its controls, a login form. On the Nintendo 3DS it is the bottom
-// screen; on the desktop it is painted over a 3D scene's window. Call it before Run.
-func SetInterface(paint func(context *ui.Context, menu Menu)) { gameInterface = paint }
+// its scenes (Menu), a map, its controls, a login form. It is the surface named "interface"
+// (SetSurface): unless engine.json places it elsewhere, on the Nintendo 3DS it is the bottom
+// screen, and elsewhere it is painted over the game's view. nil removes it. Call it before Run.
+func SetInterface(paint func(context *ui.Context, menu Menu)) { setSurface(InterfaceSurface, paint) }
+
+// InterfaceSurface is the name of the game's interface among its surfaces (SetInterface).
+const InterfaceSurface = "interface"

@@ -134,7 +134,7 @@ a target to preview beside the shapes it has (R5): each target's places for its 
 - [x] T5c — touch controls: engine.json's `touchControls`, drawn and read on Android, bound as words · engine · R8 · tests of placing, pressing, dragging a stick, allocating nothing
 - [x] T5d — the Controls workspace redesigned: tabs per device, line drawings, action cards, the panel beside a control, autosave and its own undo, the phone's layout designer · editor · R2, R8 · tests of assigning, renaming, undoing, saving, the layout; captures of the four tabs
 - [x] T6 — surfaces: `SetSurface`, engine.json's `surfaces`, the five places on the desktop and the 3DS · engine · R4 · captures in the editor and Azahar
-- [ ] T7 — `sheet` on Android, and `SetInterface` as the `interface` surface · R4, R7 · test; the samples unchanged
+- [x] T7 — `sheet` on Android, and `SetInterface` as the `interface` surface · R4, R7 · test; the samples unchanged
 - [ ] T8 — the editor previews each target's surfaces · editor · R5 · captures
 - [ ] T9 — fullscreen in Go Renderer (desktop and web) and Go UI · R6 · test of the request; by hand
 - [ ] T10 — `SetFullscreen`, `window` per target, the `fullscreen` action · engine · R6 · tests

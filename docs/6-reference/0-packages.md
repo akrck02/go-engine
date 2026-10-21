@@ -28,4 +28,4 @@ a project is made of. Look names up here; learn them in the [guides](../5-guides
 
 ---
 
-[← Guides](../5-guides/8-the-second-screen.md) · [Troubleshooting →](../7-troubleshooting.md)
+[← Guides](../5-guides/10-surfaces-on-each-screen.md) · [Troubleshooting →](../7-troubleshooting.md)

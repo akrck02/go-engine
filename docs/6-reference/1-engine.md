@@ -163,6 +163,12 @@ const EditorVariable = "GO_ENGINE_EDITOR"
 EditorVariable is set, in the environment, when go-engine starts a game to edit it.
 
 ```go
+const InterfaceSurface = "interface"
+```
+
+InterfaceSurface is the name of the game's interface among its surfaces (SetInterface).
+
+```go
 const Module = "github.com/akrck02/go-engine"
 ```
 
