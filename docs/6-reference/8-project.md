@@ -42,19 +42,26 @@ const LatestEngine = "main"
 LatestEngine is the branch go-engine's latest version is taken from.
 
 ```go
+const ReleaseWorkflowFile = ".github/workflows/release.yml"
+```
+
+ReleaseWorkflowFile is where the workflow goes in the game's folder.
+
+```go
 var (
-	NotAProject        = failure.Define("project.not-a-project", "the folder is not a go-engine project; make one with: go-engine new <folder>")
-	FolderNotEmpty     = failure.Define("project.folder-not-empty", "a new project needs an empty folder")
-	SceneExists        = failure.Define("project.scene-exists", "a scene of that name exists already")
-	ImportFormat       = failure.Define("project.import-format", "only .glb models can be imported for now (export glTF as binary .glb)")
-	ImportFailed       = failure.Define("project.import-failed", "the file could not be copied into the project")
-	CodeEditorNotFound = failure.Define("project.code-editor-not-found", "no code editor found: set codeEditor in engine.json (\"code\", \"zed\", \"nvim\"…) or $VISUAL")
-	TerminalNotFound   = failure.Define("project.terminal-not-found", "the code editor runs in a terminal, and no terminal was found")
-	SettingsNotSaved   = failure.Define("project.settings-not-saved", "engine.json could not be written")
-	ApplicationIDWrong = failure.Define("project.application-id-wrong", "an Android application id is two words or more joined by dots, each starting with a letter, as io.example.game")
-	EngineNotRead      = failure.Define("project.engine-not-read", "the version of go-engine the project requires could not be read from its go.mod")
-	EngineNotUpdated   = failure.Define("project.engine-not-updated", "go-engine could not be updated: check the network, and that the version exists")
-	NoAndroidDevice    = failure.Define("project.no-android-device", "adb sees no Android device: plug a phone in with USB debugging on, or start the emulator")
+	NotAProject                 = failure.Define("project.not-a-project", "the folder is not a go-engine project; make one with: go-engine new <folder>")
+	FolderNotEmpty              = failure.Define("project.folder-not-empty", "a new project needs an empty folder")
+	SceneExists                 = failure.Define("project.scene-exists", "a scene of that name exists already")
+	ImportFormat                = failure.Define("project.import-format", "only .glb models can be imported for now (export glTF as binary .glb)")
+	ImportFailed                = failure.Define("project.import-failed", "the file could not be copied into the project")
+	CodeEditorNotFound          = failure.Define("project.code-editor-not-found", "no code editor found: set codeEditor in engine.json (\"code\", \"zed\", \"nvim\"…) or $VISUAL")
+	TerminalNotFound            = failure.Define("project.terminal-not-found", "the code editor runs in a terminal, and no terminal was found")
+	SettingsNotSaved            = failure.Define("project.settings-not-saved", "engine.json could not be written")
+	ApplicationIDWrong          = failure.Define("project.application-id-wrong", "an Android application id is two words or more joined by dots, each starting with a letter, as io.example.game")
+	EngineNotRead               = failure.Define("project.engine-not-read", "the version of go-engine the project requires could not be read from its go.mod")
+	ReleaseNeedsPublishedEngine = failure.Define("project.release-needs-published-engine", "the game's go.mod uses go-engine from a folder of this computer, which GitHub's machines do not have: update it first (go-engine -update)")
+	EngineNotUpdated            = failure.Define("project.engine-not-updated", "go-engine could not be updated: check the network, and that the version exists")
+	NoAndroidDevice             = failure.Define("project.no-android-device", "adb sees no Android device: plug a phone in with USB debugging on, or start the emulator")
 )
 ```
 
@@ -182,6 +189,7 @@ type Project struct {
 | `func (project *Project) Tidy() error` | Tidy brings the project's go.mod up to date with its code and with the go-engine it builds against, as `go mod tidy` does: an engine of a newer version may need other versions of its libraries. |
 | `func (project *Project) UpdateEngine(version string) (string, error)` | UpdateEngine requires go-engine at a version (a branch as LatestEngine, a tag or a commit) with its replaces, and tidies go.mod; it returns the version required now. |
 | `func (project *Project) UsesOf(asset string) []Use` | UsesOf finds where an asset is used: the nodes of every scene that show it (as a sprite, a model or a tile map's tileset), and the sprites and tilesets cut from it. |
+| `func (project *Project) WriteReleaseWorkflow() (string, error)` | WriteReleaseWorkflow writes the workflow that builds the game for Windows, macOS and Linux on each version tag (v1.0.0), and the notices it attaches. |
 | `func (project *Project) WriteScene(file string, scene *scenefile.Scene) error` | WriteScene writes a scene file of the project. |
 
 ### Use

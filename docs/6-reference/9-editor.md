@@ -251,6 +251,7 @@ type Editor struct {
 | `func (editor *Editor) Undo()` | Undo takes the scene back one step. |
 | `func (editor *Editor) Unnest()` | Unnest hangs the selected node from its grandparent, after its parent, keeping where it is. |
 | `func (editor *Editor) Watch() []WatchLine` | Watch is what the chosen node of the scene played is doing: where it is, its body's velocity and whether it stands on the floor, the animation it plays, and its behaviours' exported fields. |
+| `func (editor *Editor) WriteReleaseWorkflow()` | WriteReleaseWorkflow writes the workflow that builds the game for Windows, macOS and Linux on GitHub at each version tag, and says where it went or why it did not. |
 
 ### MissingBehaviour
 

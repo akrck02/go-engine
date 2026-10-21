@@ -112,7 +112,7 @@ Each version leaves the engine working and can be used by a game at once.
 - [x] T9 — Go Renderer (`feature/motion-controls`): `StartMotionControls`, `Reading.CStick()` and `Reading.Gyroscope` · R8 · test of the C-stick's dead zone; built with TinyGo; on a console by hand
 - [x] T10 — `SetBottomScene`: it plays, and is seen from its main camera · engine/below.go · R7 · test `the bottom scene plays and is seen from its camera`; a look in Azahar is pending
 - [x] T11 — `Input.Stick`, `CStick`, `Gyroscope`, `Touch`, `MouseMovement`; L, R, ZL, ZR and START as `ButtonL`… keys; `SetPointerCaptured`; `keepStart` in engine.json · engine/controls.go, engine/console.go · R8 · tests of each mapping
-- [ ] T12 — the release workflow from Build · project, editor/workspace_build.go · R11 · test of the file written; one run on GitHub
+- [x] T12 — the release workflow from Build ("Release workflow" on This computer's card), refused for a game on a local go-engine · project/release.go, editor · R11 · tests `the release workflow builds for each system`, `a release of a game on a local engine is refused`; the YAML parses; a run on GitHub is pending, in a game's repository
 
 ## Result
 

@@ -115,3 +115,14 @@ func (editor *Editor) builderFor(target BuildTarget) func() (project.Built, erro
 func (editor *Editor) recordBuild(target BuildTarget, result BuildResult) {
 	editor.builds[target] = result
 }
+
+// WriteReleaseWorkflow writes the workflow that builds the game for Windows, macOS and Linux on
+// GitHub at each version tag, and says where it went or why it did not.
+func (editor *Editor) WriteReleaseWorkflow() {
+	workflow, err := editor.Project.WriteReleaseWorkflow()
+	if err != nil {
+		editor.say(err.Error(), true)
+		return
+	}
+	editor.say("Wrote "+workflow+": push a tag such as v1.0.0 and GitHub attaches the programs to its release", false)
+}

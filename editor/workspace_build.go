@@ -134,6 +134,10 @@ func (view *View) playButton(context *ui.Context, target BuildTarget) {
 		if context.IconButton(iconInWindow, "Play") {
 			editor.PlayInWindow()
 		}
+		if context.IconButton(iconRelease, "Release workflow") {
+			editor.WriteReleaseWorkflow()
+		}
+		context.Tooltip("Write a GitHub workflow that builds the game for Windows, macOS and Linux on each version tag (v1.0.0)")
 	case AndroidTarget:
 		if context.IconButton(iconPhone, "Play on device") {
 			view.build.shown = target

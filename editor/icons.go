@@ -30,6 +30,7 @@ const (
 	iconSprite     = "image-play" // a sprite: a node showing one, or its file
 	iconTileset    = "layout-grid"
 	iconModel      = "package"
+	iconRelease    = "rocket"
 	iconSound      = "music"
 	iconFile       = "file"
 	iconReadAgain  = "refresh-cw"

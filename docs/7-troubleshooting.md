@@ -98,6 +98,7 @@ hides the console, set its address in **Project → Settings**.
 | `project.import-format` | only .glb models can be imported for now (export glTF as binary .glb) |
 | `project.no-android-device` | adb sees no Android device: plug a phone in with USB debugging on, or start the emulator |
 | `project.not-a-project` | the folder is not a go-engine project; make one with: go-engine new <folder> |
+| `project.release-needs-published-engine` | the game's go.mod uses go-engine from a folder of this computer, which GitHub's machines do not have: update it first (go-engine -update) |
 | `project.scene-exists` | a scene of that name exists already |
 | `project.settings-not-saved` | engine.json could not be written |
 | `project.terminal-not-found` | the code editor runs in a terminal, and no terminal was found |
