@@ -34,7 +34,8 @@ type View struct {
 
 	emptyWorld *scene.Scene // what is drawn behind the workspaces that cover the window
 
-	playedArea   draw2d.Rect        // where the stage showed a 3D game last frame (stage3d.go)
+	staged       stagedScreens      // where the stage showed a 3D game last frame (stage3d.go)
+	below        window.BelowView   // how the game's bottom scene is shown, kept between frames
 	overlay      draw2d.List        // the 3D game's own 2D, before it is moved onto the stage
 	playedScenes []engine.MenuScene // the scenes the game's interface offers, read once
 	shift        bool               // Shift was held on the last frame: a click joins the choice
@@ -69,6 +70,9 @@ func (view *View) Options(options window.Options) window.Options {
 			return &window.SceneView{World: view.emptyWorld} // the other workspaces cover the window
 		}
 		world, camera := view.viewport.step(view.Editor, state, seconds)
+		if played, playing := view.Editor.PlayingHere(); playing && !played.Is2D() {
+			return view.playedView(world, camera)
+		}
 		return &window.SceneView{World: world, Camera: camera}
 	}
 	return options

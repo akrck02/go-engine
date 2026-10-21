@@ -592,6 +592,9 @@ func (editor *Editor) AdvancePlay(seconds float64, keys *input.State) {
 		editor.stepOnce, seconds = false, oneFrame
 	}
 	played.PlayFrame(seconds, keys)
+	if below, found := engine.BottomScene(); found {
+		below.Update(seconds, keys) // the 3DS's bottom screen plays too, shown with the 3DS's shape
+	}
 	next, replaced, err := played.TakeReplacement()
 	if err != nil {
 		editor.say(err.Error(), true)

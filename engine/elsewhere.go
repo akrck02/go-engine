@@ -32,6 +32,11 @@ func ShowInterface(context *ui.Context, played *Scene, scenes []MenuScene) {
 	gameInterface(context, Menu{&runner{played: played, menu: scenes}})
 }
 
+// BottomScene is the scene the game shows on the 3DS's bottom screen (SetBottomScene), if any: one
+// who plays the game elsewhere moves it on each frame (Scene.Update) and shows it from its main
+// camera.
+func BottomScene() (*Scene, bool) { return bottomScene, bottomScene != nil }
+
 // ScenesOf are the scenes in a project's files, in the order of their files, as the game's menu
 // offers them.
 func ScenesOf(files fs.FS) []MenuScene { return scenesOf(files) }

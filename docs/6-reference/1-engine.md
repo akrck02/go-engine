@@ -19,6 +19,7 @@ A game's main registers its behaviours and runs the project it embeds:
 | `func BeforeBehaviours(hook func(context *Context))` | BeforeBehaviours sets code that runs once a frame, before every behaviour, with the frame's context (its Node is nil); nil removes it. |
 | `func Behaviour[Wanted any](node *Node) (*Wanted, bool)` | Behaviour finds a node's behaviour of a type, while the game runs. |
 | `func BetweenFrames(call func())` | BetweenFrames asks for a call to run once, at the start of the next frame, before anything is drawn: on the 3DS, the system keyboard can take both screens there. |
+| `func BottomScene() (*Scene, bool)` | BottomScene is the scene the game shows on the 3DS's bottom screen (SetBottomScene), if any: one who plays the game elsewhere moves it on each frame (Scene.Update) and shows it from its main camera. |
 | `func CameraAt(world space.Transform, settings scenefile.Camera) models.Camera` | CameraAt is go-renderer's camera for a camera placed at a transform with some settings. |
 | `func DrawOverlay(list *draw2d.List, width, height float32) bool` | DrawOverlay draws the game's 2D over a 3D scene (SetOverlay) into a list, in an area of a width and a height starting at 0, 0; it tells whether the game has any. |
 | `func HasInterface() bool` | HasInterface tells whether the game shows a go-ui interface of its own (SetInterface). |
@@ -346,6 +347,7 @@ type Scene struct {
 | `func Build(files fs.FS, description *scenefile.Scene) (*Scene, error)` | Build makes a scene from its description, finding its models in a project's files. |
 | `func Load(files fs.FS, file string) (*Scene, error)` | Load reads a scene file from a project's files. |
 | `func NewScene(files fs.FS) *Scene` | NewScene is an empty scene, whose models come from a project's files. |
+| `func (owner *Scene) Camera() models.Camera` | Camera is how the scene is seen: from its main camera, or from a little above when it has none. |
 | `func (owner *Scene) CameraBounds(camera *Node) (space.Box, bool)` | CameraBounds is the box a camera's view stays inside while it follows: its own, or the tile maps' together, with no top (an infinite one) unless the camera has a ceiling. |
 | `func (owner *Scene) Describe() *scenefile.Scene` | Describe writes the scene back as its file keeps it. |
 | `func (owner *Scene) Draw2D(list *draw2d.List, area draw2d.Rect, view View2D)` | Draw2D draws a 2D scene into an area of the screen, as a view sees it: the sky's colour, then its sprites and shapes from the furthest to the nearest, lit by its lights (lights.go). |

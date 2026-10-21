@@ -33,9 +33,6 @@ func (game *runner) playBelow(seconds float64, keys *input.State) *window.BelowV
 		return nil
 	}
 	bottomScene.Update(seconds, keys)
-	game.below = window.BelowView{World: bottomScene.World(), Camera: CameraAt(fallbackCamera, defaultCamera)}
-	if camera, found := bottomScene.MainCamera(); found {
-		game.below.Camera = camera.View()
-	}
+	game.below = window.BelowView{World: bottomScene.World(), Camera: bottomScene.Camera()}
 	return &game.below
 }

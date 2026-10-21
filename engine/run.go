@@ -8,6 +8,7 @@ import (
 
 	"github.com/akrck02/go-renderer/draw2d"
 	"github.com/akrck02/go-renderer/input"
+	"github.com/akrck02/go-renderer/models"
 	"github.com/akrck02/go-ui/window"
 
 	"github.com/akrck02/go-engine/failure"
@@ -133,13 +134,9 @@ func (game *runner) step(state *input.State, step float64) *window.SceneView {
 		return nil // the interface paints a 2D scene (interfaceFor): no 3D scene behind it
 	}
 	drawOver(game.played, state, &game.flat)
-	game.view = window.SceneView{World: game.played.World(), Camera: CameraAt(fallbackCamera, defaultCamera)}
-	game.view.Below = below
+	game.view = window.SceneView{World: game.played.World(), Camera: game.played.Camera(), Below: below}
 	if overlayPainter != nil && !game.played.Is2D() {
 		game.view.Drawing = game.paintOverlay(state)
-	}
-	if camera, found := game.played.MainCamera(); found {
-		game.view.Camera = camera.View()
 	}
 	return &game.view
 }
@@ -166,6 +163,14 @@ func (game *runner) replaceIfAsked() {
 	if replaced {
 		game.played = next
 	}
+}
+
+// Camera is how the scene is seen: from its main camera, or from a little above when it has none.
+func (owner *Scene) Camera() models.Camera {
+	if camera, found := owner.MainCamera(); found {
+		return camera.View()
+	}
+	return CameraAt(fallbackCamera, defaultCamera)
 }
 
 // defaultCamera is how a scene with no camera is seen: in perspective, from a little above.

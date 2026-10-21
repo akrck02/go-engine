@@ -201,15 +201,20 @@ func paintConsole(played *engine.Scene, area draw2d.Rect, ink draw2d.Color, list
 // where the shapes differ.
 func paintLetterboxed(played *engine.Scene, area draw2d.Rect, aspect float64, list *draw2d.List) {
 	list.Rectangle(area, 0, draw2d.Color{letterboxColor, letterboxColor, letterboxColor, 1}, draw2d.Color{}, 0)
+	paintPlaying(played, fitted(area, aspect), list)
+}
+
+// fitted is the largest rectangle of a shape (width over height) centred in an area.
+func fitted(area draw2d.Rect, aspect float64) draw2d.Rect {
 	screen := area
 	if float64(area.Width)/float64(max(area.Height, 1)) > aspect {
 		screen.Width = float32(float64(area.Height) * aspect)
 		screen.X += (area.Width - screen.Width) / 2
-	} else {
-		screen.Height = float32(float64(area.Width) / aspect)
-		screen.Y += (area.Height - screen.Height) / 2
+		return screen
 	}
-	paintPlaying(played, screen, list)
+	screen.Height = float32(float64(area.Width) / aspect)
+	screen.Y += (area.Height - screen.Height) / 2
+	return screen
 }
 
 // watchPanel shows what the node chosen is doing while the game plays.
