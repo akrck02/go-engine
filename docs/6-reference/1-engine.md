@@ -244,7 +244,9 @@ type Node struct {
 | `func (node *Node) Light() (*scenefile.Light, bool)` | Light is the node's light, to edit in place; a node that is not one has none. |
 | `func (node *Node) LightRadii() (inner, outer float64)` | LightRadii are a point light's radii in metres, times its node's largest scale (across and up in 2D, which has no depth to scale): a lamp scaled up reaches further. |
 | `func (node *Node) MadeBehaviours() []any` | MadeBehaviours are the node's behaviours as the game runs them, made from its Behaviours: what the editor watches while a scene plays. |
+| `func (node *Node) Mesh() (*scene.Mesh, bool)` | Mesh is the mesh the game's code gave the node, if any. |
 | `func (node *Node) Model() string` | Model is the model the node shows, by its path in the project, or "". |
+| `func (node *Node) Moving() bool` | Moving tells whether the node is marked as moving every frame. |
 | `func (node *Node) NamedStart() string` | NamedStart is the animation the node itself names to start with, or "" for its sprite's own. |
 | `func (node *Node) Parent() *Node` | Parent is the node this one hangs from; nil for the scene's root. |
 | `func (node *Node) Path() string` | Path is the node's names from the root, as "Car/Wheel". |
@@ -254,7 +256,9 @@ type Node struct {
 | `func (node *Node) SetBodySettings(body *scenefile.Body)` | SetBodySettings gives the node a body in its scene's physics, or takes it away (nil). |
 | `func (node *Node) SetCamera(camera *scenefile.Camera)` | SetCamera makes the node a camera, or no longer one with nil. |
 | `func (node *Node) SetLight(light *scenefile.Light)` | SetLight makes the node a light, or not one (nil). |
+| `func (node *Node) SetMesh(mesh *scene.Mesh)` | SetMesh makes the node show a mesh the game's code built (a vehicle from its design), instead of its shape or model; another call replaces it, and nil goes back to the shape or model. |
 | `func (node *Node) SetModel(path string) error` | SetModel makes the node show a model of the project's. |
+| `func (node *Node) SetMoving(moving bool)` | SetMoving says the game moves or turns the node every frame. |
 | `func (node *Node) SetShape(shape, colour string)` | SetShape makes the node a shape of a colour ("" for no shape). |
 | `func (node *Node) SetSheet(sheet *scenefile.SpriteSheet)` | SetSheet cuts the node's sprite into a sheet's frames, or shows it whole again (nil). |
 | `func (node *Node) SetSprite(path string) error` | SetSprite makes the node show a picture of the project's, or a sprite's file, in a 2D scene. |

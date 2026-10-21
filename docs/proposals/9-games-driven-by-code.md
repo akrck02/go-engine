@@ -1,6 +1,6 @@
 # 9. 3D games driven by code
 
-> Status: planned · Author's approval: proposal ☑ (2026-10-21, "Okay") plan ☐
+> Status: building · Author's approval: proposal ☑ (2026-10-21, "Okay") plan ☑ (2026-10-21, "Si")
 
 ## Why
 
@@ -100,7 +100,7 @@ Each version leaves the engine working and can be used by a game at once.
 
 ## Tasks
 
-- [ ] T1 — `Node.SetMesh` and `Node.SetMoving`, kept by the copy Play makes · engine/node.go · R1, R2 · tests `a mesh set from code is drawn, and replacing it frees the old one`, `a moving node stays moving when played`
+- [x] T1 — `Node.SetMesh` and `Node.SetMoving` (set by the game while it plays, so not in scene files) · engine/node.go · R1, R2 · tests `a mesh set from code is drawn, and replacing it frees the old one`, `a moving node is lit on the GPU whatever it shows`
 - [ ] T2 — the camera's near and far, in files, the inspector and code · scenefile, engine/scene.go, editor/inspector.go · R5 · test `a camera's far plane is the one set`
 - [ ] T3 — `BeforeBehaviours` and `BetweenFrames` · engine/run.go, engine/play.go · R9 · tests `the frame's hook runs before every behaviour`, `a call between frames runs once`
 - [ ] T4 — check the 3DS loop yields with a slow frame; a sample with Go Sound in Azahar · R10 · by hand in Azahar
