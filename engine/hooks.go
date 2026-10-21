@@ -47,13 +47,15 @@ func runBetweenFrames() {
 }
 
 // PlayFrame is a frame of the game's main scene: the calls asked for between frames run, the
-// actions are read (opening and closing the surfaces they open), the frame hook runs, then the
+// actions are read (opening and closing the surfaces they open, and the whole screen), the frame
+// hook runs, then the
 // scene moves on (Update).
 func (owner *Scene) PlayFrame(seconds float64, keys *input.State) {
 	runBetweenFrames()
 	owner.beginFrame(seconds, keys)
 	owner.input.updateActions()
 	toggleSurfaces()
+	toggleFullscreenIfAsked()
 	owner.runFrameHook()
 	owner.advance(seconds)
 }

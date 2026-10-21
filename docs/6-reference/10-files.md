@@ -17,13 +17,16 @@ lists each key; the editor sets them all, so you only need it to read a file or 
 | `axes` | list of text | The actions that move an axis (-1 to 1) instead of pressing, even with no inputs yet |
 | `touchControls` | touch controls | The sticks and buttons a phone shows; none keeps the engine's four buttons (below) |
 | `surfaces` | surfaces | Where each of the game's surfaces (`engine.SetSurface`) goes on each target (below) |
+| `window` | `windowed` or `fullscreen`, by target | How the game starts on `desktop` and `web`: in a window (the default) or on the whole screen |
 
 ### `actions`
 
 Each action names, per target, the words of the inputs that do it:
 `"jump": {"desktop": ["Space", "Pad A"], "android": ["Touch A"]}`. A stick's axis
 (`Stick X`, `Touch Stick Y`) moves an action from -1 to 1; a button with `-` or `+` after it
-(`Left-`) moves it one way.
+(`Left-`) moves it one way. A key after `Alt+`, `Control+` or `Shift+` (`Alt+Enter`) presses only
+while both are held. The action `fullscreen` is bound to `F11` and `Alt+Enter` on `desktop` and
+`web` unless the game binds it.
 
 ### `touchControls`
 

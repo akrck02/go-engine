@@ -49,6 +49,9 @@ type Settings struct {
 	// target: "map": {"nintendo3ds": {"place": "second-screen"}, "desktop": {"place": "over",
 	// "align": "top-right"}} (surfaces.go).
 	Surfaces map[string]map[string]SurfacePlace `json:"surfaces,omitempty"`
+	// Window says, per target with windows (desktop, web), whether the game starts "windowed" (the
+	// default) or "fullscreen" (fullscreen.go).
+	Window map[string]string `json:"window,omitempty"`
 }
 
 // SettingsFile is the settings' file in a project.
@@ -108,6 +111,11 @@ func Run(files fs.FS) error {
 	for _, problem := range UseSurfaces(settings.Surfaces, RunningOn()) {
 		slog.Warn("a surface's place is unknown; it goes where surfaces go by default", "error", problem)
 	}
+	whole, err := startsFullscreen(settings, RunningOn())
+	if err != nil {
+		slog.Warn("the game starts in a window", "error", err)
+	}
+	SetFullscreen(whole)
 	played, err := Load(files, settings.StartScene)
 	if played == nil {
 		return err
@@ -181,6 +189,7 @@ func (game *runner) step(state *input.State, step float64) *window.SceneView {
 	state.LockCursor(pointerCaptured)
 	game.played.input.console = game.console.reading
 	game.played.PlayFrame(seconds, keys)
+	followFullscreen(state)
 	quitIfAsked()
 	below := game.playSecondScreen(seconds, keys)
 	game.replaceIfAsked()

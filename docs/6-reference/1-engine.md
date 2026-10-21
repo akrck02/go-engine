@@ -23,6 +23,7 @@ A game's main registers its behaviours and runs the project it embeds:
 | `func CameraAt(world space.Transform, settings scenefile.Camera) models.Camera` | CameraAt is go-renderer's camera for a camera placed at a transform with some settings. |
 | `func CheckInputs(words []string, target string) []error` | CheckInputs tells which of some words a target does not know, each by its code (InputUnknown). |
 | `func DrawOverlay(list *draw2d.List, width, height float32) bool` | DrawOverlay draws the game's 2D over a 3D scene (SetOverlay) into a list, in an area of a width and a height starting at 0, 0; it tells whether the game has any. |
+| `func Fullscreen() bool` | Fullscreen tells whether the game is asked to be on the whole screen. |
 | `func HasInterface() bool` | HasInterface tells whether the game shows a go-ui interface of its own (SetInterface). |
 | `func HeightSeen(settings *scenefile.Camera, aspect float64) float64` | HeightSeen is the metres a 2D camera sees top to bottom on a screen of a shape (its width over its height): the camera's height (10 when it has none), or more on a screen too narrow for the width it must see. |
 | `func PressedInput(state *input.State, target string) (string, bool)` | PressedInput is the word of an input pressed this frame on a target, if one was: a key, a mouse button or a pad's button (a 3DS's buttons and Android's back cannot be pressed from a computer). |
@@ -35,6 +36,7 @@ A game's main registers its behaviours and runs the project it embeds:
 | `func SaveBindings() error` | SaveBindings keeps the actions the player changed, for the next time the game plays here. |
 | `func SecondScreen() (*Scene, bool)` | SecondScreen is the scene the second screen shows (SetSecondScreen), if any: one who plays the game elsewhere than Run moves it on each frame (Scene.Update) and shows it from Scene.Camera. |
 | `func SetEditor(run func() error)` | SetEditor installs the editor (the editor package does, from a project's editor.go). |
+| `func SetFullscreen(on bool)` | SetFullscreen asks for the game on the whole screen, or in its window again. |
 | `func SetInterface(paint func(context *ui.Context, menu Menu))` | SetInterface makes a game show an interface of its own, with go-ui, in its own look: a menu of its scenes (Menu), a map, its controls, a login form. |
 | `func SetOverlay(paint func(list *draw2d.List, width, height float32))` | SetOverlay sets what the game draws over a 3D scene each frame, in the pixels of the screen it is on (the window's, or the 3DS's top screen, 400 × 240): the list is empty when it is called. |
 | `func SetPointerCaptured(captured bool)` | SetPointerCaptured holds and hides the pointer, for a game that turns with the mouse, or lets it go (a pause menu): MouseMovement still reads the mouse. |
@@ -59,6 +61,15 @@ const (
 ```
 
 The keys shoulder buttons, triggers and START are read as (a 3DS's L, R, ZL, ZR and START), and that press them on a keyboard.
+
+```go
+const (
+	Windowed         = "windowed"
+	FullscreenWindow = "fullscreen"
+)
+```
+
+The ways a game's window can start (engine.json's window).
 
 ```go
 const (
@@ -163,6 +174,12 @@ const EditorVariable = "GO_ENGINE_EDITOR"
 EditorVariable is set, in the environment, when go-engine starts a game to edit it.
 
 ```go
+const FullscreenAction = "fullscreen"
+```
+
+FullscreenAction is the action that puts the game on the whole screen and back.
+
+```go
 const InterfaceSurface = "interface"
 ```
 
@@ -206,6 +223,7 @@ var (
 	SceneNotRestartable   = failure.Define("engine.scene-not-restartable", "the scene was not made from a description, so it cannot start again")
 	InputUnknown          = failure.Define("engine.input-unknown", "an action is bound to an input the target does not have: see the words an action can be bound to")
 	BindingsNotSaved      = failure.Define("engine.bindings-not-saved", "the actions the player changed could not be kept on this device")
+	WindowUnknown         = failure.Define("engine.window-unknown", "engine.json's window is neither windowed nor fullscreen")
 	SurfacePlaceUnknown   = failure.Define("engine.surface-place-unknown", "engine.json places a surface somewhere the engine does not know: see the places and alignments a surface can have")
 )
 ```
@@ -449,7 +467,7 @@ type Scene struct {
 | `func (owner *Scene) NewNode(description scenefile.Node) (*Node, error)` | NewNode makes a node of the scene from a description (and its children), not yet in the scene: Add it to a node. |
 | `func (owner *Scene) Physics() *physics.World` | Physics is the scene's physics world while it plays; nil for a 3D scene, or one not started. |
 | `func (owner *Scene) Picture(file string) (*draw2d.Image, error)` | Picture is a picture of the project's, read once: what the editor's Art workspace shows. |
-| `func (owner *Scene) PlayFrame(seconds float64, keys *input.State)` | PlayFrame is a frame of the game's main scene: the calls asked for between frames run, the actions are read (opening and closing the surfaces they open), the frame hook runs, then the scene moves on (Update). |
+| `func (owner *Scene) PlayFrame(seconds float64, keys *input.State)` | PlayFrame is a frame of the game's main scene: the calls asked for between frames run, the actions are read (opening and closing the surfaces they open, and the whole screen), the frame hook runs, then the scene moves on (Update). |
 | `func (owner *Scene) SetAmbient(ambient *scenefile.Ambient)` | SetAmbient sets the scene's ambient light (nil for none): in 2D the light that reaches everything; in 3D how strong its sky light is, from 0 (none) to 2 (twice the default). |
 | `func (owner *Scene) SetMode(mode scenefile.Mode)` | SetMode makes the scene 3D or 2D: its nodes show their shapes and models in 3D, or their sprites and flat shapes in 2D. |
 | `func (owner *Scene) SetSky(colour string)` | SetSky sets the background colour ("" for a daylight sky). |
@@ -501,6 +519,9 @@ type Settings struct {
 	// target: "map": {"nintendo3ds": {"place": "second-screen"}, "desktop": {"place": "over",
 	// "align": "top-right"}} (surfaces.go).
 	Surfaces map[string]map[string]SurfacePlace `json:"surfaces,omitempty"`
+	// Window says, per target with windows (desktop, web), whether the game starts "windowed" (the
+	// default) or "fullscreen" (fullscreen.go).
+	Window map[string]string `json:"window,omitempty"`
 }
 ```
 

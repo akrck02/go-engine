@@ -84,6 +84,7 @@ hides the console, set its address in **Project → Settings**.
 | `engine.sprite-not-found` | the sprite's file does not exist |
 | `engine.surface-place-unknown` | engine.json places a surface somewhere the engine does not know: see the places and alignments a surface can have |
 | `engine.tileset-not-found` | the tileset's file does not exist |
+| `engine.window-unknown` | engine.json's window is neither windowed nor fullscreen |
 | `go-engine.missing-folder` | usage: go-engine new <folder> [name] |
 | `install.android-manager-failed` | Android's sdkmanager could not install the packages |
 | `install.checksum-wrong` | the file downloaded is not the one published (its checksum differs): it was not used |

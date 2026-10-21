@@ -120,13 +120,17 @@ func (keys *Input) held(bound boundInput) bool {
 	if state == nil {
 		return false
 	}
+	// a button pressed this frame holds it, even if let go before the frame (a quick tap)
 	switch bound.kind {
 	case mouseInput:
-		return state.Button(input.MouseButton(bound.code))
+		button := input.MouseButton(bound.code)
+		return state.Button(button) || state.ButtonPressed(button)
 	case padInput:
-		return state.PadDown(input.PadButton(bound.code))
+		button := input.PadButton(bound.code)
+		return state.PadDown(button) || state.PadPressed(button)
 	}
-	return state.Down(input.Key(bound.code))
+	key := input.Key(bound.code)
+	return (state.Down(key) || state.Pressed(key)) && (!bound.chorded || state.Down(bound.alongside) || state.Pressed(bound.alongside))
 }
 
 // stickAxis is one axis of a stick, up and right positive.
