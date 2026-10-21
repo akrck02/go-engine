@@ -136,7 +136,7 @@ a target to preview beside the shapes it has (R5): each target's places for its 
 - [x] T6 — surfaces: `SetSurface`, engine.json's `surfaces`, the five places on the desktop and the 3DS · engine · R4 · captures in the editor and Azahar
 - [x] T7 — `sheet` on Android, and `SetInterface` as the `interface` surface · R4, R7 · test; the samples unchanged
 - [x] T8 — the editor previews each target's surfaces · editor · R5 · captures
-- [ ] T9 — fullscreen in Go Renderer (desktop and web) and Go UI · R6 · test of the request; by hand
+- [x] T9 — fullscreen in Go Renderer (desktop and web) and Go UI · R6 · test of the request; by hand
 - [ ] T10 — `SetFullscreen`, `window` per target, the `fullscreen` action · engine · R6 · tests
 - [ ] T11 — a sample game with actions and surfaces and no per-target file; docs: a guide to actions and surfaces · examples, docs · R1, R4 · captures on the desktop and in Azahar
 
