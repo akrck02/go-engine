@@ -147,7 +147,7 @@ func (view *View) stage(context *ui.Context) {
 		return
 	}
 	if !played.Is2D() {
-		context.Box(ui.Layout{Width: ui.Grow(), Height: ui.Grow()}, nil)
+		view.stage3D(context, played)
 		return
 	}
 	target := view.Editor.Target

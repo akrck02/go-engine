@@ -3,6 +3,7 @@ package editor
 import (
 	"time"
 
+	"github.com/akrck02/go-renderer/draw2d"
 	"github.com/akrck02/go-renderer/input"
 	"github.com/akrck02/go-renderer/scene"
 	ui "github.com/akrck02/go-ui"
@@ -32,7 +33,11 @@ type View struct {
 	DarkByDefault bool
 
 	emptyWorld *scene.Scene // what is drawn behind the workspaces that cover the window
-	shift      bool         // Shift was held on the last frame: a click joins the choice
+
+	playedArea   draw2d.Rect        // where the stage showed a 3D game last frame (stage3d.go)
+	overlay      draw2d.List        // the 3D game's own 2D, before it is moved onto the stage
+	playedScenes []engine.MenuScene // the scenes the game's interface offers, read once
+	shift        bool               // Shift was held on the last frame: a click joins the choice
 
 	art     artView      // the Art workspace's choices
 	project projectView  // the Project workspace's choices

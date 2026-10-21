@@ -45,3 +45,17 @@ func TestTheBottomScenePlaysAndIsSeenFromItsCamera(test *testing.T) {
 		test.Fatal("the bottom scene's behaviours do not run")
 	}
 }
+
+func TestAGameShownElsewhereDrawsItsOverlayAndInterface(test *testing.T) {
+	var list draw2d.List
+	if DrawOverlay(&list, 100, 50) || HasInterface() {
+		test.Fatal("a game without an overlay or an interface says it has one")
+	}
+	SetOverlay(func(list *draw2d.List, width, height float32) {
+		list.Rectangle(draw2d.Rect{Width: width, Height: height}, 0, draw2d.Hex("#000000"), draw2d.Transparent, 0)
+	})
+	defer SetOverlay(nil)
+	if !DrawOverlay(&list, 100, 50) || list.Commands[0].Area.Width != 100 {
+		test.Fatalf("the overlay drew %v", list.Commands)
+	}
+}

@@ -20,6 +20,8 @@ A game's main registers its behaviours and runs the project it embeds:
 | `func Behaviour[Wanted any](node *Node) (*Wanted, bool)` | Behaviour finds a node's behaviour of a type, while the game runs. |
 | `func BetweenFrames(call func())` | BetweenFrames asks for a call to run once, at the start of the next frame, before anything is drawn: on the 3DS, the system keyboard can take both screens there. |
 | `func CameraAt(world space.Transform, settings scenefile.Camera) models.Camera` | CameraAt is go-renderer's camera for a camera placed at a transform with some settings. |
+| `func DrawOverlay(list *draw2d.List, width, height float32) bool` | DrawOverlay draws the game's 2D over a 3D scene (SetOverlay) into a list, in an area of a width and a height starting at 0, 0; it tells whether the game has any. |
+| `func HasInterface() bool` | HasInterface tells whether the game shows a go-ui interface of its own (SetInterface). |
 | `func HeightSeen(settings *scenefile.Camera, aspect float64) float64` | HeightSeen is the metres a 2D camera sees top to bottom on a screen of a shape (its width over its height): the camera's height (10 when it has none), or more on a screen too narrow for the width it must see. |
 | `func Register(behaviours ...any)` | Register makes behaviours known by their type's name: Register(Spin{}) is "Spin". |
 | `func RegisterAs(name string, behaviour any)` | RegisterAs makes a behaviour known by a name of its own. |
@@ -31,6 +33,7 @@ A game's main registers its behaviours and runs the project it embeds:
 | `func SetInterface(paint func(context *ui.Context, menu Menu))` | SetInterface makes a game show an interface of its own, with go-ui, in its own look: a menu of its scenes (Menu), a map, its controls, a login form. |
 | `func SetOverlay(paint func(list *draw2d.List, width, height float32))` | SetOverlay sets what the game draws over a 3D scene each frame, in the pixels of the screen it is on (the window's, or the 3DS's top screen, 400 × 240): the list is empty when it is called. |
 | `func SetPointerCaptured(captured bool)` | SetPointerCaptured holds and hides the pointer, for a game that turns with the mouse, or lets it go (a pause menu): MouseMovement still reads the mouse. |
+| `func ShowInterface(context *ui.Context, played *Scene, scenes []MenuScene)` | ShowInterface builds the game's own interface (SetInterface) for a scene played, offering some scenes (ScenesOf); playing another asks the scene to be replaced (Scene.TakeReplacement). |
 | `func Version() string` | Version says which Go Engine this program was built with: its release and commit, as "v0.0.1 (ba08523)", or "v0.0.1 (77aa001, local)" for a local copy, as the editor's window and the logs show it. |
 
 ### Constants and variables
@@ -232,6 +235,10 @@ type MenuScene struct {
 	File, Name string
 }
 ```
+
+| Function or method | |
+|---|---|
+| `func ScenesOf(files fs.FS) []MenuScene` | ScenesOf are the scenes in a project's files, in the order of their files, as the game's menu offers them. |
 
 ### Node
 
