@@ -138,7 +138,7 @@ a target to preview beside the shapes it has (R5): each target's places for its 
 - [x] T8 — the editor previews each target's surfaces · editor · R5 · captures
 - [x] T9 — fullscreen in Go Renderer (desktop and web) and Go UI · R6 · test of the request; by hand
 - [x] T10 — `SetFullscreen`, `window` per target, the `fullscreen` action · engine · R6 · tests
-- [ ] T11 — a sample game with actions and surfaces and no per-target file; docs: a guide to actions and surfaces · examples, docs · R1, R4 · captures on the desktop and in Azahar
+- [x] T11 — a sample game with actions and surfaces and no per-target file; docs: a guide to actions and surfaces · examples, docs · R1, R4 · captures on the desktop and in Azahar
 
 ## Result
 

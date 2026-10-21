@@ -43,7 +43,11 @@ func interfaceFor(game *runner) func(context *ui.Context) {
 			}
 			drawTouchButtons(list, layout.buttons)
 		})
-		paintSurfaces(context, Menu{game}, game.screen, true) // the scene fills the screen's column
+		// the surfaces keep off the system's bars and cut-outs, as the touch controls do
+		screen := game.screen
+		safe := draw2d.Rect{X: insets.Left, Y: insets.Top,
+			Width: screen.Width - insets.Left - insets.Right, Height: screen.Height - insets.Top - insets.Bottom}
+		paintSurfaces(context, Menu{game}, safe, true)
 		if len(touchPanel.controls) == 0 {
 			// TODO(akrck02): a screen reader reads the engine's four buttons, not a game's own touch controls yet
 			game.console.describeTouchButtons(context)

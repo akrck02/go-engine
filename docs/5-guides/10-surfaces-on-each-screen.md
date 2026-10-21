@@ -74,6 +74,13 @@ to other keys), and the game with `engine.SetFullscreen(true)`; `engine.Fullscre
 A browser lets a page take the whole screen only when it answers a key or a click, so there the
 request waits for the next one. Consoles and phones are always on their whole screen.
 
+## A sample to read
+
+[Night watch](../../examples/watch) plays the same on every device with no file of its own for
+any: the keeper turns the lamp (`turn`) and marks ships in a log (`mark`). The lamp's heading sits
+in a corner; the log is a window on a computer (Tab), the 3DS's second screen, and a sheet on a
+phone (its Log button).
+
 ## Variations
 
 - **Open with the game.** `"open": true` shows a window or a sheet when the game starts.

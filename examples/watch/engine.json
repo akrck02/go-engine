@@ -1,0 +1,30 @@
+{
+	"name": "Night watch",
+	"startScene": "scenes/watch.scene.json",
+	"actions": {
+		"turn": {"desktop": ["Left-", "Right+", "A-", "D+", "Stick X"], "nintendo3ds": ["Left-", "Right+", "Stick X"], "android": ["Touch Lamp X"], "web": ["Left-", "Right+", "A-", "D+"]},
+		"mark": {"desktop": ["Space", "Pad A"], "nintendo3ds": ["A"], "android": ["Touch Mark"], "web": ["Space"]},
+		"log": {"desktop": ["Tab", "Pad Y"], "nintendo3ds": ["X"], "android": ["Touch Log"], "web": ["Tab"]}
+	},
+	"axes": ["turn"],
+	"touchControls": [
+		{"name": "Lamp", "kind": "stick", "x": 0.15, "y": 0.75, "size": 0.3},
+		{"name": "Mark", "kind": "button", "x": 0.88, "y": 0.78, "size": 0.18},
+		{"name": "Log", "kind": "button", "x": 0.88, "y": 0.45, "size": 0.12}
+	],
+	"surfaces": {
+		"Lamp": {
+			"desktop": {"place": "over", "align": "bottom-left"},
+			"web": {"place": "over", "align": "bottom-left"},
+			"nintendo3ds": {"place": "over", "align": "top-left"},
+			"android": {"place": "over", "align": "top-left"}
+		},
+		"Log": {
+			"desktop": {"place": "window", "align": "top-right", "width": 280, "action": "log", "open": true},
+			"web": {"place": "window", "align": "top-right", "width": 280, "action": "log", "open": true},
+			"nintendo3ds": {"place": "second-screen"},
+			"android": {"place": "sheet", "action": "log"}
+		}
+	},
+	"window": {"desktop": "windowed", "web": "windowed"}
+}
