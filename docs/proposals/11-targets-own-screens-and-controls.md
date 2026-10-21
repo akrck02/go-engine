@@ -19,7 +19,7 @@ player does, and each target should say *where* and *with which buttons*.
 
 | Id | Requirement | Check |
 |---|---|---|
-| R1 | A game reads **actions** by name (`Input.Pressed("menu")`, `Input.Down("fire")`, `Input.Axis("turn")`), with no build tags; engine.json binds each action to inputs per target (keys, mouse buttons, a pad's buttons and sticks, a 3DS's buttons, Android's back) | tests of each kind of binding with a made-up input; a sample game with no per-target file |
+| R1 | A game reads **actions** by name (`Input.Action("menu").Pressed`, `Input.Action("turn").Value`), with no build tags; engine.json binds each action to inputs per target (keys, mouse buttons, a pad's buttons and sticks, a 3DS's buttons, Android's back) | tests of each kind of binding with a made-up input; a sample game with no per-target file |
 | R2 | The editor shows and edits the bindings, per target | capture of the bindings in the editor; a binding changed there reaches the game |
 | R3 | A game can let the player rebind an action while it plays, and keep it on the device | test `a binding changed while playing is kept and read back` |
 | R4 | A game paints named **surfaces** (`"main"`, `"panel"`, `"map"`…) with go-ui or draw2d, and each target places them: on a 3DS, some on the second screen and touchable; on a computer, in a corner or as a floating window opened and closed, with the mouse as the pointer; on Android, as a bottom sheet | captures of one sample on each target; the second screen becomes one way a target places a surface |
@@ -57,8 +57,9 @@ person can read and type:
 - A **button** input presses the action: a key, a mouse button, a pad's button, a 3DS's button,
   Android's back.
 - An **axis** input moves it from -1 to 1: a stick's axis, or a button with `-` or `+` after it.
-- `Input.Down`, `Input.Pressed` and `Input.Released` take an action's name; `Input.Axis(name)`
-  gives its value. The keys a game reads today keep working (R7).
+- `Input.Action(name)` gives the action's state this frame: `Down`, `Pressed`, `Released` and its
+  `Value` (-1 to 1; 1 while a button holds it). One call, one value returned: Go has no
+  overloading, so `Input.Down` keeps taking keys, which games read today (R7).
 - The bindings are read once into a table of the engine (`engine/actions.go`), so reading an
   action each frame is a map lookup and some booleans, with nothing allocated.
 - **Rebinding** (R3): `Input.Rebind(action, inputs)` changes the current target's inputs, and
@@ -106,7 +107,7 @@ a target to preview beside the shapes it has (R5): each target's places for its 
 
 - [ ] T1 — Go Renderer: function keys, a pad's buttons in `input.State`, read from GLFW · R1 · tests of the mapping
 - [ ] T2 — the target at run time · engine · R1, R4 · test per build
-- [ ] T3 — actions: engine.json's `actions`, the inputs' words, the table, `Input.Down/Pressed/Released/Axis` by name · engine/actions.go · R1 · tests of each kind of input, and `reading an action allocates nothing`
+- [ ] T3 — actions: engine.json's `actions`, the inputs' words, the table, `Input.Action(name)` · engine/actions.go · R1 · tests of each kind of input, and `reading an action allocates nothing`
 - [ ] T4 — rebinding and keeping it · R3 · test `a binding changed while playing is kept and read back`
 - [ ] T5 — the editor's Controls table · editor · R2 · capture; a binding changed reaches the game
 - [ ] T6 — surfaces: `SetSurface`, engine.json's `surfaces`, the five places on the desktop and the 3DS · engine · R4 · captures in the editor and Azahar
