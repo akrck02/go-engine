@@ -42,6 +42,10 @@ func interfaceFor(game *runner) func(context *ui.Context) {
 			}
 			drawTouchButtons(list, layout.buttons)
 		})
+		if len(touchPanel.controls) == 0 {
+			// TODO(akrck02): a screen reader reads the engine's four buttons, not a game's own touch controls yet
+			game.console.describeTouchButtons(context)
+		}
 	}
 }
 
@@ -49,7 +53,7 @@ func interfaceFor(game *runner) func(context *ui.Context) {
 // buttons'.
 func consoleKeys(console *consoleInput, window *input.State) *input.State {
 	readTouchControls(window.Touches())
-	return touchKeys(&console.keys, window, console.buttons)
+	return touchKeys(&console.keys, window, console.buttons, console.readerHeld())
 }
 
 // readConsole is an empty reading: there is no 3DS here.

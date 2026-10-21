@@ -86,7 +86,7 @@ func (project *Project) buildAndroid() (Built, error) {
 	if err := os.MkdirAll(project.Path("build"), 0o755); err != nil {
 		return Built{}, err // go-ui-apk writes the package but makes no folder
 	}
-	if err := build.Run(project.Folder, androidEnvironment(sdk, ndk, java), build.GoTool(), project.androidArguments()...); err != nil {
+	if err := build.Run(project.Folder, androidEnvironment(sdk, ndk, java, project.EngineFlags()), build.GoTool(), project.androidArguments()...); err != nil {
 		return Built{}, err
 	}
 	noticesFile, err := writeNotices(project.Path("build"), notices.Android)
@@ -100,10 +100,10 @@ func (project *Project) androidArguments() []string {
 }
 
 // androidEnvironment is what go-ui-apk reads: where the SDK, the NDK and the JDK are, go on the
-// path for the builds it starts, and the release tag that leaves the editor out, after the
-// person's own go flags. (A local Go Engine's commit, EngineFlags, cannot go in GOFLAGS: it holds a space.)
-func androidEnvironment(sdk, ndk, java string) []string {
-	flags := strings.TrimSpace(os.Getenv("GOFLAGS") + " -tags=release")
+// path for the builds it starts, and in GOFLAGS, after the person's own go flags, the release tag
+// that leaves the editor out and the engine's flags (a local Go Engine's commit, EngineFlags).
+func androidEnvironment(sdk, ndk, java string, engineFlags []string) []string {
+	flags := strings.TrimSpace(strings.Join(append([]string{os.Getenv("GOFLAGS"), "-tags=release"}, engineFlags...), " "))
 	return []string{"ANDROID_HOME=" + sdk, "ANDROID_NDK_HOME=" + ndk, "JAVA_HOME=" + java, "GOFLAGS=" + flags, build.GoOnPath()}
 }
 

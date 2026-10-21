@@ -231,7 +231,8 @@ func (project *Project) EngineFlags() []string {
 	if changes, err := build.Output(folder, nil, "git", "status", "--porcelain"); err == nil && strings.TrimSpace(changes) != "" {
 		revision += "-modified" // the copy has changes no commit holds
 	}
-	return []string{"-ldflags=-X " + engine.Module + "/engine.localRevision=" + revision}
+	// -X=name=value, without a space, so the flag also fits in GOFLAGS (the Android build)
+	return []string{"-ldflags=-X=" + engine.Module + "/engine.localRevision=" + revision}
 }
 
 // engineListing is how go list says where Go Engine is, and whether it is a local copy: one with

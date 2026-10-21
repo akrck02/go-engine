@@ -18,3 +18,10 @@ func TestFlagsAreReadAfterTheFolderToo(test *testing.T) {
 		test.Fatalf("the arguments are %q and the flags %q", positional, passed)
 	}
 }
+
+func TestTheEditorIsNotGivenTheFlagsOnlyTheCommandReads(test *testing.T) {
+	passed := []string{"-open=true", "-width", "800", "--open", "-select", "Player"}
+	if kept := withoutFlag(passed, "open"); !slices.Equal(kept, []string{"-width", "800", "-select", "Player"}) {
+		test.Fatalf("the editor is given %q", kept)
+	}
+}

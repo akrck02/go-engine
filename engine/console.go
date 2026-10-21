@@ -29,6 +29,8 @@ type consoleInput struct {
 	reading ctr.Reading // the console's controls this frame (readConsole)
 	keys    input.State
 	buttons [4]touchButton // where a touch screen's buttons were last drawn (Android)
+	// readerFrames is, by button, the frames a screen reader's press still holds it for
+	readerFrames [4]int
 }
 
 // keysFrom is the game's keys this frame: the console's buttons held now, and the window's stick.

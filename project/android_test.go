@@ -43,8 +43,17 @@ func TestAnAndroidBuildAsksForThePackage(test *testing.T) {
 	if !strings.HasSuffix(project.androidPackage(), "harbour-lights.apk") || arguments[len(arguments)-1] != "." {
 		test.Errorf("the package is %q, built from %q", project.androidPackage(), arguments[len(arguments)-1])
 	}
-	if !slices.Contains(androidEnvironment("/sdk", "/ndk", "/jdk"), "GOFLAGS=-tags=release") {
+	if !slices.Contains(androidEnvironment("/sdk", "/ndk", "/jdk", nil), "GOFLAGS=-tags=release") {
 		test.Error("an Android build carries the editor: it is not built with the release tag")
+	}
+}
+
+func TestALocalGoEnginesCommitReachesTheAndroidBuild(test *testing.T) {
+	test.Setenv("GOFLAGS", "-mod=mod")
+	commit := "-ldflags=-X=" + engine.Module + "/engine.localRevision=abc1234"
+	environment := androidEnvironment("/sdk", "/ndk", "/jdk", []string{commit})
+	if !slices.Contains(environment, "GOFLAGS=-mod=mod -tags=release "+commit) {
+		test.Errorf("the Android build's environment is %q, without the person's flags, the release tag and the commit", environment)
 	}
 }
 
