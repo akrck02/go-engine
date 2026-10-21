@@ -1,6 +1,6 @@
 # 10. Names for any device
 
-> Status: planned · Author's approval: proposal ☑ (2026-10-21, "Si") plan ☐
+> Status: building · Author's approval: proposal ☑ (2026-10-21, "Si") plan ☑ (2026-10-21, "Si")
 
 ## Why
 
@@ -78,8 +78,8 @@ with it; Go Sound defines `ErrOutputUnavailable` in `sound.go`, and the 3DS's ou
 
 ## Tasks
 
-- [ ] T1 — Go Renderer: `RightStickX`/`RightStickY`, the desktop's game pad into both sticks, the C-stick into the right one · R1 · tests of the dead zone and the mapping with a made-up pad state
-- [ ] T2 — `Input.RightStick` from the right stick · engine/controls.go · R1 · test with a made-up state
+- [x] T1 — Go Renderer: `RightStickX`/`RightStickY`, the desktop's game pad into both sticks, the C-stick into the right one · R1 · tests of the dead zone and the mapping with a made-up pad state
+- [x] T2 — `Input.RightStick` from the right stick · engine/controls.go · R1 · test with a made-up state
 - [ ] T3 — `project.Target` with `Build`, `SendTo`, `PlayOn`, `StopOn`; the old functions made private · project · R2 · tests per target; `a target that cannot be sent to says so by its code`
 - [ ] T4 — the editor on `project.Target`: `Nintendo3DS`, `SendToDevice`, `Nintendo3DSScreens` · editor · R2, R5 · the editor's tests
 - [ ] T5 — `applicationId`, `deviceAddress`, `nintendo3dsEmulator`, the old names still read · engine/run.go, internal/build/tools.go · R3, R5 · tests `an old androidId is read as the application id`, and the same for the others

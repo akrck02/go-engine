@@ -24,8 +24,9 @@ func TestTheConsolesSticksGyroscopeAndTouchAreReadWhole(test *testing.T) {
 	reading := ctr.Reading{CStickX: 146, CStickY: 0, Gyroscope: ctr.Gyroscope{Yaw: 30},
 		Held: ctr.ButtonTouch, TouchX: 160, TouchY: 120}
 	keys := Input{state: input.NewState(), console: reading}
-	if x, y := keys.RightStick(); x != 1 || y != 0 {
-		test.Errorf("the C-stick at its right edge reads %v, %v", x, y)
+	keys.state.RightStickX, keys.state.RightStickY = 1, -0.5
+	if x, y := keys.RightStick(); x != 1 || y != -0.5 {
+		test.Errorf("the right stick right and down reads %v, %v", x, y)
 	}
 	if keys.Gyroscope().Yaw != 30 {
 		test.Errorf("the gyroscope reads %+v", keys.Gyroscope())
@@ -51,5 +52,15 @@ func TestTheMouseMovesAndThePointerIsCapturedWhenAsked(test *testing.T) {
 	}
 	if x, y := game.played.input.MouseMovement(); x != 4 || y != -2 {
 		test.Fatalf("the mouse moved %v, %v", x, y)
+	}
+}
+
+func TestTheConsolesKeysCarryBothSticks(test *testing.T) {
+	var console consoleInput
+	window := input.NewState()
+	window.StickX, window.RightStickY = 0.5, 1
+	keys := console.keysFrom(window, 0)
+	if keys.StickX != 0.5 || keys.RightStickY != 1 {
+		test.Fatalf("the game's keys have the sticks at %v and %v", keys.StickX, keys.RightStickY)
 	}
 }

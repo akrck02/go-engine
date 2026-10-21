@@ -29,9 +29,14 @@ func (keys *Input) Stick() (x, y float64) {
 	return keys.state.StickX, keys.state.StickY
 }
 
-// RightStick is the second stick (a New 3DS's C-stick) from -1 to 1 on each axis, up positive; 0
-// without one.
-func (keys *Input) RightStick() (x, y float64) { return keys.console.CStick() }
+// RightStick is the second stick (a New 3DS's C-stick, a game pad's right stick) from -1 to 1 on
+// each axis, up positive; 0 without one.
+func (keys *Input) RightStick() (x, y float64) {
+	if keys.state == nil {
+		return 0, 0
+	}
+	return keys.state.RightStickX, keys.state.RightStickY
+}
 
 // Turn is how fast a device turns, in degrees a second: about the axis across its screen (Pitch),
 // up through it (Yaw) and out of it (Roll).

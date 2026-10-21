@@ -38,5 +38,6 @@ func (console *consoleInput) keysFrom(window *input.State, held ctr.Buttons) *in
 		console.keys.SetKey(mapping.key, held&mapping.button != 0)
 	}
 	console.keys.StickX, console.keys.StickY = window.StickX, window.StickY
+	console.keys.RightStickX, console.keys.RightStickY = window.RightStickX, window.RightStickY
 	return &console.keys
 }
