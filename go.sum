@@ -10,6 +10,8 @@ github.com/akrck02/go-ui v0.1.2-0.20261021074602-8ea5e1cbc5b1 h1:rSgZxaQzdPECIfZ
 github.com/akrck02/go-ui v0.1.2-0.20261021074602-8ea5e1cbc5b1/go.mod h1:bvjoFNMv3XgS8nNtuRt+ZjPGeHqPBxci8K24vrcfbPg=
 github.com/akrck02/go-ui v0.1.2-0.20261021075306-509ada4e7065 h1:tIp1SBfickm0fli6WdmF4Di7viTMQe/7O7jqrixEiCI=
 github.com/akrck02/go-ui v0.1.2-0.20261021075306-509ada4e7065/go.mod h1:bvjoFNMv3XgS8nNtuRt+ZjPGeHqPBxci8K24vrcfbPg=
+github.com/akrck02/go-ui v0.1.2-0.20261021075514-e70c949229b2 h1:UjpamWFSUsyZGUJvhoCYsWEF+dw3mkU/PlSv/a3cQeo=
+github.com/akrck02/go-ui v0.1.2-0.20261021075514-e70c949229b2/go.mod h1:bvjoFNMv3XgS8nNtuRt+ZjPGeHqPBxci8K24vrcfbPg=
 github.com/go-gl/gl v0.0.0-20260331235117-4566fea9a276 h1:IO5P06Pcj9K04d+l4nrf3c2U56+dAotIFG6u4P1wAHI=
 github.com/go-gl/gl v0.0.0-20260331235117-4566fea9a276/go.mod h1:9YTyiznxEY1fVinfM7RvRcjRHbw2xLBJ3AAGIT0I4Nw=
 github.com/go-gl/glfw/v3.4/glfw v0.1.0-pre.1 h1:nIVzcwqIaO1mK8LFr0fGkKpgQD4wJDDHRyv4t5k40Ps=
