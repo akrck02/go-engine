@@ -67,6 +67,7 @@ hides the console, set its address in **Project → Settings**.
 | `editor.unsaved-changes` | the scene has changes not saved: save it first (Ctrl+S) |
 | `engine.behaviour-fields` | the scene's fields do not fit the behaviour's |
 | `engine.behaviour-unregistered` | no behaviour is registered by that name (engine.Register in the game's main) |
+| `engine.input-unknown` | an action is bound to an input the target does not have: see the words an action can be bound to |
 | `engine.model-format` | only .glb models are read for now |
 | `engine.model-not-found` | the model's file does not exist |
 | `engine.model-unreadable` | the model's file is not a .glb go-renderer reads |

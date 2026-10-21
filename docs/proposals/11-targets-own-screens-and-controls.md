@@ -1,6 +1,6 @@
 # 11. Each target's own screens and controls
 
-> Status: planned · Author's approval: proposal ☑ (2026-10-21, "dale") plan ☐
+> Status: building · Author's approval: proposal ☑ (2026-10-21, "dale") plan ☑ (2026-10-21, "si")
 
 ## Why
 
@@ -105,9 +105,9 @@ a target to preview beside the shapes it has (R5): each target's places for its 
 
 ## Tasks
 
-- [ ] T1 — Go Renderer: function keys, a pad's buttons in `input.State`, read from GLFW · R1 · tests of the mapping
-- [ ] T2 — the target at run time · engine · R1, R4 · test per build
-- [ ] T3 — actions: engine.json's `actions`, the inputs' words, the table, `Input.Action(name)` · engine/actions.go · R1 · tests of each kind of input, and `reading an action allocates nothing`
+- [x] T1 — Go Renderer: function keys, a pad's buttons in `input.State`, read from GLFW · R1 · tests of the mapping
+- [x] T2 — the target at run time · engine · R1, R4 · test per build
+- [x] T3 — actions: engine.json's `actions`, the inputs' words, the table, `Input.Action(name)` · engine/actions.go · R1 · tests of each kind of input, and `reading an action allocates nothing`
 - [ ] T4 — rebinding and keeping it · R3 · test `a binding changed while playing is kept and read back`
 - [ ] T5 — the editor's Controls table · editor · R2 · capture; a binding changed reaches the game
 - [ ] T6 — surfaces: `SetSurface`, engine.json's `surfaces`, the five places on the desktop and the 3DS · engine · R4 · captures in the editor and Azahar

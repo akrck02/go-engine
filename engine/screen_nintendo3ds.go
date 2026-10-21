@@ -71,3 +71,6 @@ func startConsole() { ctr.StartMotionControls() }
 
 // stopConsole stops them when the game ends: the gyroscope uses power.
 func stopConsole() { ctr.StopMotionControls() }
+
+// runningTarget is the target this build runs on.
+const runningTarget = Nintendo3DSTarget

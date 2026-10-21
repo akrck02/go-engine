@@ -35,6 +35,9 @@ type Settings struct {
 	// KeepStart gives a device's start button to the game (a pause, read as ButtonStart) instead of
 	// ending it, where the start button ends games (a 3DS's START; its HOME menu still ends it).
 	KeepStart bool `json:"keepStart,omitempty"`
+	// Actions are what the player does, by name, each bound to inputs per target: "fire":
+	// {"desktop": ["Space", "Pad A"], "nintendo3ds": ["A"]} (Input.Action, inputwords.go).
+	Actions map[string]map[string][]string `json:"actions,omitempty"`
 }
 
 // SettingsFile is the settings' file in a project.
@@ -88,6 +91,9 @@ func Run(files fs.FS) error {
 		return err
 	}
 	slog.Info("Go Engine", "version", Version(), "game", settings.Name)
+	for _, problem := range BindActions(settings.Actions, RunningOn()) {
+		slog.Warn("an action's input is unknown here; the rest are bound", "error", problem)
+	}
 	played, err := Load(files, settings.StartScene)
 	if played == nil {
 		return err

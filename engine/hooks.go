@@ -51,6 +51,7 @@ func runBetweenFrames() {
 func (owner *Scene) PlayFrame(seconds float64, keys *input.State) {
 	runBetweenFrames()
 	owner.beginFrame(seconds, keys)
+	owner.input.updateActions()
 	owner.runFrameHook()
 	owner.advance(seconds)
 }

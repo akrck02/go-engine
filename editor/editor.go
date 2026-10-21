@@ -549,6 +549,11 @@ func (editor *Editor) PlayHere() {
 		editor.say(err.Error(), true)
 		return
 	}
+	// the game is played here with this computer's keyboard, mouse and pad, whatever screen's shape
+	// it is shown at: its desktop bindings
+	for _, problem := range engine.BindActions(editor.Project.Settings.Actions, engine.DesktopTarget) {
+		editor.say(problem.Error(), true)
+	}
 	if editor.unlisten == nil {
 		editor.unlisten = editor.listenToLog()
 	}

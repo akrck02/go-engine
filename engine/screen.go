@@ -46,3 +46,6 @@ func startConsole() {}
 
 // stopConsole does nothing: there is no 3DS here.
 func stopConsole() {}
+
+// runningTarget is the target this build runs on.
+const runningTarget = DesktopTarget

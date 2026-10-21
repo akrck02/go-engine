@@ -64,3 +64,9 @@ func TestThe3DSsKeysCarryBothSticks(test *testing.T) {
 		test.Fatalf("the game's keys have the sticks at %v and %v", keys.StickX, keys.RightStickY)
 	}
 }
+
+func TestTheDesktopBuildRunsOnTheDesktop(test *testing.T) {
+	if RunningOn() != DesktopTarget {
+		test.Fatalf("the tests' build runs on %q", RunningOn())
+	}
+}

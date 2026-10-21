@@ -19,6 +19,7 @@ A game's main registers its behaviours and runs the project it embeds:
 | `func BeforeBehaviours(hook func(context *Context))` | BeforeBehaviours sets code that runs once a frame, before every behaviour, with the frame's context (its Node is nil); nil removes it. |
 | `func Behaviour[Wanted any](node *Node) (*Wanted, bool)` | Behaviour finds a node's behaviour of a type, while the game runs. |
 | `func BetweenFrames(call func())` | BetweenFrames asks for a call to run once, at the start of the next frame, before anything is drawn: on the 3DS, the system keyboard can take both screens there. |
+| `func BindActions(bindings map[string]map[string][]string, target string) []error` | BindActions reads the actions' bindings (engine.json's actions) for a target, replacing those read before. |
 | `func CameraAt(world space.Transform, settings scenefile.Camera) models.Camera` | CameraAt is go-renderer's camera for a camera placed at a transform with some settings. |
 | `func DrawOverlay(list *draw2d.List, width, height float32) bool` | DrawOverlay draws the game's 2D over a 3D scene (SetOverlay) into a list, in an area of a width and a height starting at 0, 0; it tells whether the game has any. |
 | `func HasInterface() bool` | HasInterface tells whether the game shows a go-ui interface of its own (SetInterface). |
@@ -28,6 +29,7 @@ A game's main registers its behaviours and runs the project it embeds:
 | `func RegisterAs(name string, behaviour any)` | RegisterAs makes a behaviour known by a name of its own. |
 | `func Registered() []string` | Registered are the names of the behaviours registered, in order. |
 | `func Run(files fs.FS) error` | Run plays a project, from its files (embedded in the game, or a folder), until its window is closed: on the desktop in a window, on the Nintendo 3DS on the top screen. |
+| `func RunningOn() string` | RunningOn is the name of the target the game runs on now. |
 | `func SecondScreen() (*Scene, bool)` | SecondScreen is the scene the second screen shows (SetSecondScreen), if any: one who plays the game elsewhere than Run moves it on each frame (Scene.Update) and shows it from Scene.Camera. |
 | `func SetEditor(run func() error)` | SetEditor installs the editor (the editor package does, from a project's editor.go). |
 | `func SetInterface(paint func(context *ui.Context, menu Menu))` | SetInterface makes a game show an interface of its own, with go-ui, in its own look: a menu of its scenes (Menu), a map, its controls, a login form. |
@@ -107,6 +109,17 @@ const (
 A camera's distances when its settings leave them at 0, in metres.
 
 ```go
+const (
+	DesktopTarget     = "desktop"
+	Nintendo3DSTarget = "nintendo3ds"
+	AndroidTarget     = "android"
+	WebTarget         = "web"
+)
+```
+
+The targets' names in engine.json.
+
+```go
 const DefaultGravity = 9.81
 ```
 
@@ -154,10 +167,23 @@ var (
 	SpriteNotFound        = failure.Define("engine.sprite-not-found", "the sprite's file does not exist")
 	TilesetNotFound       = failure.Define("engine.tileset-not-found", "the tileset's file does not exist")
 	SceneNotRestartable   = failure.Define("engine.scene-not-restartable", "the scene was not made from a description, so it cannot start again")
+	InputUnknown          = failure.Define("engine.input-unknown", "an action is bound to an input the target does not have: see the words an action can be bound to")
 )
 ```
 
 Error codes of the engine package.
+
+### ActionState
+
+ActionState is an action this frame: held, pressed or let go, and its value
+from -1 to 1 (an axis's, or 1 while a button holds it).
+
+```go
+type ActionState struct {
+	Down, Pressed, Released bool
+	Value                   float64
+}
+```
 
 ### Context
 
@@ -191,6 +217,7 @@ type Input struct {
 
 | Function or method | |
 |---|---|
+| `func (keys *Input) Action(name string) ActionState` | Action is an action's state this frame; an action not bound is never held. |
 | `func (keys *Input) Axis(negative, positive Key) float64` | Axis is -1 while the first key is held, 1 while the second is, 0 with neither or both. |
 | `func (keys *Input) Down(key Key) bool` | Down tells whether a key is held; Pressed whether it went down this frame. |
 | `func (keys *Input) Gyroscope() Turn` | Gyroscope is how fast the device turns (a 3DS's gyroscope); still without one, or in an emulator. |
@@ -402,6 +429,9 @@ type Settings struct {
 	// KeepStart gives a device's start button to the game (a pause, read as ButtonStart) instead of
 	// ending it, where the start button ends games (a 3DS's START; its HOME menu still ends it).
 	KeepStart bool `json:"keepStart,omitempty"`
+	// Actions are what the player does, by name, each bound to inputs per target: "fire":
+	// {"desktop": ["Space", "Pad A"], "nintendo3ds": ["A"]} (Input.Action, inputwords.go).
+	Actions map[string]map[string][]string `json:"actions,omitempty"`
 }
 ```
 
