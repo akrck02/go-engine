@@ -26,6 +26,7 @@ draws its window with go-ui and viewport.go its 3D view.
 var (
 	RestartFailed  = failure.Define("editor.restart-failed", "the editor could not start again with the project's new code")
 	ToolsInUse     = failure.Define("editor.tools-in-use", "the tools cannot change while the game builds or plays: wait for it to end, or stop it")
+	NoLicence      = failure.Define("editor.no-licence", "the tool has no licence to accept before it is installed")
 	FramesWrong    = failure.Define("editor.frames-wrong", "an animation's frames are not numbers and runs of the sheet's frames, as 0-3, 6")
 	ArtNotFound    = failure.Define("editor.art-not-found", "the sprite or tileset is not a file of the project's")
 	ArtNotSaved    = failure.Define("editor.art-not-saved", "the sprite or tileset could not be written")
@@ -110,7 +111,7 @@ type Editor struct {
 | Function or method | |
 |---|---|
 | `func Open(opened *project.Project) (*Editor, error)` | Open opens a project at its start scene. |
-| `func (editor *Editor) AcceptAndroidLicence()` | AcceptAndroidLicence installs Android's SDK, with the NDK and what a game's build needs, the licence the person read (AndroidLicence) accepted, and sets the SDK's place. |
+| `func (editor *Editor) AcceptLicence()` | AcceptLicence installs the tool whose licence the person read (Licence), with that licence accepted, and sets its place. |
 | `func (editor *Editor) Add(kind string) *engine.Node` | Add adds a node of a kind ("Cube", "Camera"…) under the selected node's parent, after it (or at the end of the scene), and selects it. |
 | `func (editor *Editor) AddAnimation() int` | AddAnimation adds an animation of the first frame to the sheet being edited, with a name of its own, and tells where it is in the sheet's list (-1 without a sheet). |
 | `func (editor *Editor) AddFrame(index, frame int)` | AddFrame puts a frame of the sheet at the end of an animation: clicking frames on the picture makes an animation of them, in the order clicked. |
@@ -118,7 +119,6 @@ type Editor struct {
 | `func (editor *Editor) AddSprite(picture string) *engine.Node` | AddSprite adds a node showing one of the project's pictures, in a 2D scene, and selects it. |
 | `func (editor *Editor) AdvancePlay(seconds float64, keys *input.State)` | AdvancePlay moves the scene played in the view on a frame, and goes on to the scene the game asked for (a level started again, the next one); one that cannot be read is reported and the view stays where it is. |
 | `func (editor *Editor) AllChosen() []*engine.Node` | AllChosen are the nodes chosen, the inspector's first. |
-| `func (editor *Editor) AndroidLicence() (string, bool)` | AndroidLicence is Android's licence while it waits for the person to accept it or not. |
 | `func (editor *Editor) ArtOpen() (file string, isSprite, isTileset bool)` | ArtOpen is the file open in Art, and whether it is a sprite or a tileset. |
 | `func (editor *Editor) ArtSaved() bool` | ArtSaved tells whether the file open in Art has no changes left to save. |
 | `func (editor *Editor) AttachBehaviour(name string)` | AttachBehaviour gives the selected node a behaviour of the project's, its fields empty. |
@@ -132,7 +132,7 @@ type Editor struct {
 | `func (editor *Editor) CloseArt() error` | CloseArt closes the file open in Art, which must have no changes left to save. |
 | `func (editor *Editor) CloseNotice(index int)` | CloseNotice lets go of a notice, by its place among Notices. |
 | `func (editor *Editor) CodeChanged() bool` | CodeChanged tells whether the project's code changed since the game the editor runs in was built: Reload brings the changes in. |
-| `func (editor *Editor) DeclineAndroidLicence()` | DeclineAndroidLicence leaves the SDK uninstalled. |
+| `func (editor *Editor) DeclineLicence()` | DeclineLicence leaves the tool whose licence waits uninstalled. |
 | `func (editor *Editor) Delete()` | Delete removes the nodes chosen and what hangs from them; the node after the inspector's is chosen next. |
 | `func (editor *Editor) DetachBehaviour(index int)` | DetachBehaviour takes a behaviour off the selected node. |
 | `func (editor *Editor) Duplicate()` | Duplicate copies the nodes chosen, and what hangs from them, each beside its original; the copies are chosen. |
@@ -150,6 +150,7 @@ type Editor struct {
 | `func (editor *Editor) KindsHere() []string` | KindsHere are the kinds of node the scene shown takes. |
 | `func (editor *Editor) LastBuild(target project.Target) (BuildResult, bool)` | LastBuild is a target's last build in this session. |
 | `func (editor *Editor) LeavePlay()` | LeavePlay goes back from Play to the workspace it was entered from. |
+| `func (editor *Editor) Licence() (PendingLicence, bool)` | Licence is the licence waiting for the person to accept it or not, if one is. |
 | `func (editor *Editor) LightChanged()` | LightChanged keeps a change to a light or the ambient, and shows it at once. |
 | `func (editor *Editor) LookForTools(tools build.Tools)` | LookForTools looks for every tool where some places say (the ones typed, before saving them). |
 | `func (editor *Editor) MakeSprite(picture string, columns, rows int) (string, error)` | MakeSprite makes a picture of the project a sprite of columns and rows of frames, in a file beside it ("lamp.png" makes "lamp.sprite.json"), and opens it; a sprite already made is opened. |
@@ -174,8 +175,8 @@ type Editor struct {
 | `func (editor *Editor) PlayOn(target project.Target)` | PlayInWindow saves the scene, builds the game and runs it in a window of its own, in the PlayOn builds the game for a target and plays it there (project.Project.PlayOn): in a window, on the device, or sent to the 3DS. |
 | `func (editor *Editor) PlayingHere() (*engine.Scene, bool)` | PlayingHere is the scene played in the view, while it is. |
 | `func (editor *Editor) PlayingOn() (project.Target, bool)` | PlayingOn tells where the game plays now, when it does. |
-| `func (editor *Editor) ReadAndroidLicence()` | ReadAndroidLicence reads Android's licence in the background, for the person to read and accept before the SDK is installed (AndroidLicence). |
 | `func (editor *Editor) ReadBehaviours()` | ReadBehaviours reads the project's code again for its behaviours: after it was edited. |
+| `func (editor *Editor) ReadLicence(tool string)` | ReadLicence reads a tool's licence in the background, for the person to read and accept before the tool is installed (Licence). |
 | `func (editor *Editor) Redo()` | Redo takes the scene forward one step, after an undo. |
 | `func (editor *Editor) Reload()` | Reload saves the scene, builds the game again with the project's code as it is now, and starts the editor again in it, on the same scene and node. |
 | `func (editor *Editor) RemoveAnimation(index int)` | RemoveAnimation takes an animation from the sheet being edited; if it was the one the scene starts with, the first one left starts it. |
@@ -241,6 +242,17 @@ type Notice struct {
 	Text   string
 	Failed bool
 	At     time.Time
+}
+```
+
+### PendingLicence
+
+PendingLicence is a tool's licence, read and waiting for the person to
+accept it or not.
+
+```go
+type PendingLicence struct {
+	Tool, Text string
 }
 ```
 

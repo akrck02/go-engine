@@ -29,11 +29,11 @@ type Settings struct {
 	// DeviceAddress is the address on the network of the device the game is sent to (a 3DS's);
 	// empty looks for it.
 	DeviceAddress string `json:"deviceAddress,omitempty"`
-	// SceneMenu lists the game's scenes on the Nintendo 3DS's bottom screen, to play any of them
+	// SceneMenu lists the game's scenes on a device's second screen (a 3DS's), to play any of them
 	// with a touch: a level select.
 	SceneMenu bool `json:"sceneMenu,omitempty"`
-	// KeepStart gives the 3DS's START button to the game (a pause, read as ButtonStart) instead of
-	// ending it; the HOME menu still ends it.
+	// KeepStart gives a device's start button to the game (a pause, read as ButtonStart) instead of
+	// ending it, where the start button ends games (a 3DS's START; its HOME menu still ends it).
 	KeepStart bool `json:"keepStart,omitempty"`
 }
 

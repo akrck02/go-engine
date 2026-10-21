@@ -10,9 +10,10 @@ import (
 	"github.com/akrck02/go-engine/scenefile"
 )
 
-// A game whose settings ask for it (Settings.SceneMenu) lists its scenes on the Nintendo 3DS's
-// bottom screen, to play any of them with a touch: a level select, handy while a game is tried. A
-// game draws that screen its own way with SetBottomScreen, given the same scenes (Menu).
+// A game whose settings ask for it (Settings.SceneMenu) lists its scenes on the second screen of a
+// device that has one (a 3DS's), to play any of them with a touch: a level select, handy while a
+// game is tried. A game draws that screen its own way with SetInterface, given the same scenes
+// (Menu).
 
 // scenesFolder is where a project keeps its scenes, and sceneSuffix what their files end with.
 const (
@@ -75,7 +76,3 @@ var gameInterface func(context *ui.Context, menu Menu)
 // screen; on the desktop it is painted over a 3D scene's window. Call it before Run.
 func SetInterface(paint func(context *ui.Context, menu Menu)) { gameInterface = paint }
 
-// SetBottomScreen is SetInterface, by the name it had when only the 3DS showed it.
-//
-// Deprecated: use SetInterface.
-func SetBottomScreen(paint func(context *ui.Context, menu Menu)) { SetInterface(paint) }

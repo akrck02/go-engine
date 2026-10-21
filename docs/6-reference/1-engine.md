@@ -28,7 +28,6 @@ A game's main registers its behaviours and runs the project it embeds:
 | `func Registered() []string` | Registered are the names of the behaviours registered, in order. |
 | `func Run(files fs.FS) error` | Run plays a project, from its files (embedded in the game, or a folder), until its window is closed: on the desktop in a window, on the Nintendo 3DS on the top screen. |
 | `func SecondScreen() (*Scene, bool)` | SecondScreen is the scene the second screen shows (SetSecondScreen), if any: one who plays the game elsewhere than Run moves it on each frame (Scene.Update) and shows it from Scene.Camera. |
-| `func SetBottomScreen(paint func(context *ui.Context, menu Menu))` | SetBottomScreen is SetInterface, by the name it had when only the 3DS showed it. |
 | `func SetEditor(run func() error)` | SetEditor installs the editor (the editor package does, from a project's editor.go). |
 | `func SetInterface(paint func(context *ui.Context, menu Menu))` | SetInterface makes a game show an interface of its own, with go-ui, in its own look: a menu of its scenes (Menu), a map, its controls, a login form. |
 | `func SetOverlay(paint func(list *draw2d.List, width, height float32))` | SetOverlay sets what the game draws over a 3D scene each frame, in the pixels of the screen it is on (the window's, or the 3DS's top screen, 400 × 240): the list is empty when it is called. |
@@ -394,11 +393,11 @@ type Settings struct {
 	// DeviceAddress is the address on the network of the device the game is sent to (a 3DS's);
 	// empty looks for it.
 	DeviceAddress string `json:"deviceAddress,omitempty"`
-	// SceneMenu lists the game's scenes on the Nintendo 3DS's bottom screen, to play any of them
+	// SceneMenu lists the game's scenes on a device's second screen (a 3DS's), to play any of them
 	// with a touch: a level select.
 	SceneMenu bool `json:"sceneMenu,omitempty"`
-	// KeepStart gives the 3DS's START button to the game (a pause, read as ButtonStart) instead of
-	// ending it; the HOME menu still ends it.
+	// KeepStart gives a device's start button to the game (a pause, read as ButtonStart) instead of
+	// ending it, where the start button ends games (a 3DS's START; its HOME menu still ends it).
 	KeepStart bool `json:"keepStart,omitempty"`
 }
 ```
