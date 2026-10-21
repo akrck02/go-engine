@@ -135,12 +135,18 @@ screens and the Build cards were captured.</p>
 <p><strong>Not done.</strong></p>
 
 <ul>
-<li>The touch buttons are painted, with nothing for TalkBack to read. A blind player cannot find
-them yet.</li>
-<li>A local Go Engine&rsquo;s commit does not reach the <code>.apk</code>: it cannot go in <code>GOFLAGS</code>.</li>
 <li>Choosing among several devices, and signing for a store, were out of scope.</li>
 <li>Sending to a real 3DS was not tried here, with no console on the network.</li>
 </ul>
+
+<p><strong>Fixed later.</strong> A local Go Engine&rsquo;s commit did not reach the <code>.apk</code>, since its flag held a space
+and <code>GOFLAGS</code> splits on spaces. It is now written <code>-X=name=value</code>, and goes in <code>GOFLAGS</code> after
+the release tag (test <code>a local Go Engine's commit reaches the Android build</code>).</p>
+
+<p>The touch buttons were painted, with nothing for TalkBack to read. While a screen reader is on,
+each is now also a control named <em>Left</em>, <em>Right</em>, <em>B</em> or <em>A</em>. A double tap holds its key for a
+fifth of a second (test <code>a screen reader reads and presses the touch buttons</code>). On the emulator,
+Android lists the four buttons where they are drawn.</p>
 
 <p><strong>Fixed in go-renderer.</strong> Pictures drew nothing on Android. go-renderer&rsquo;s GL ES shaders for sharp
 pictures (feature/3ds 3b08cd9) declared a uniform with different precisions in two stages, so the
