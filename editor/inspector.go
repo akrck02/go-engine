@@ -381,6 +381,7 @@ func (view *View) cameraInspector(context *ui.Context, node *engine.Node, settin
 	} else {
 		view.heightSeenField(context, settings)
 	}
+	view.distancesField(context, settings)
 	if settings.Projection == scenefile.Isometric {
 		note(context, "An isometric camera always looks from the classic angle, 45° round and 35.26° down; its rotation is not used, only its position and the height it sees.")
 	}
@@ -418,6 +419,49 @@ func (view *View) fieldOfViewField(context *ui.Context, settings *scenefile.Came
 	if numberField(context, "Field of view", &settings.FieldOfView, numberLimits{10, 150, 1}, "%.0f°") {
 		view.Editor.Changed()
 	}
+}
+
+// distancesField sets how near and how far a 3D camera sees (an orthographic one, only how far): a
+// far plane further away shows more of a large world, at the cost of depth precision close by.
+// Unset distances are shown as the engine's, and stay unset until changed.
+func (view *View) distancesField(context *ui.Context, settings *scenefile.Camera) {
+	near, far := orEngines(settings.Near, engine.DefaultNear), orEngines(settings.Far, engine.DefaultFar)
+	changed := false
+	if settings.Projection == scenefile.Perspective {
+		context.Caption("Sees from (metres)")
+		changed = numberField(context, "Near", &near, numberLimits{nearest, float32(far / 2), nearest}, "%.2f m")
+	}
+	context.Caption("Sees to (metres)")
+	changed = numberField(context, "Far", &far, numberLimits{float32(max(near*2, 1)), farthest, 100}, "%.0f m") || changed
+	focus := orEngines(settings.Focus, engine.DefaultFocus)
+	if settings.Projection == scenefile.Perspective {
+		context.Caption("Looks at (metres): where a 3D screen puts its surface")
+		if numberField(context, "Focus", &focus, numberLimits{float32(near), float32(far), 1}, "%.0f m") {
+			settings.Focus, changed = focus, true
+		}
+	}
+	if !changed {
+		return
+	}
+	if settings.Projection == scenefile.Perspective {
+		settings.Near = near
+	}
+	settings.Far = far
+	view.Editor.Changed()
+}
+
+// How near and how far a camera can be set to see, in metres.
+const (
+	nearest  = 0.01
+	farthest = 100000
+)
+
+// orEngines is a camera's distance, or the engine's when the file leaves it unset.
+func orEngines(distance, engines float64) float64 {
+	if distance <= 0 {
+		return engines
+	}
+	return distance
 }
 
 // heightSeenField sets how many metres an orthographic camera sees, top to bottom.

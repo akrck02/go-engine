@@ -59,8 +59,8 @@ type Editor struct {
 	usedAt      time.Time
 	buildOutput outputTail // what rebuilding the code said when it failed
 
-	builds   map[BuildTarget]BuildResult                   // each target's last build
-	builders map[BuildTarget]func() (project.Built, error) // how a target is built, when a test says
+	builds   map[project.Target]BuildResult                   // each target's last build
+	builders map[project.Target]func() (project.Built, error) // how a target is built, when a test says
 
 	behaviours []project.Behaviour // what the project's code defines, read again on demand
 
@@ -72,16 +72,16 @@ type Editor struct {
 	codeCheckedAt time.Time
 	codeChanged   bool
 
-	running        bool        // building or playing the game
-	playing        *exec.Cmd   // the game, while it plays
-	playedOn       BuildTarget // where it plays
-	stopping       bool        // Stop was asked: the game's end is no failure
-	output         *outputTail
-	toolsFound     []ToolFound // the build tools and where they were found, looked for when needed
-	toolsKept      int         // how many times the tools were kept by an install: the view fills its fields again
-	installing     *installing // the tool being installed, while one is
-	androidLicence string      // Android's licence, while it waits to be accepted
-	events         chan func(editor *Editor)
+	running    bool           // building or playing the game
+	playing    *exec.Cmd      // the game, while it plays
+	playedOn   project.Target // where it plays
+	stopping   bool           // Stop was asked: the game's end is no failure
+	output     *outputTail
+	toolsFound []ToolFound    // the build tools and where they were found, looked for when needed
+	toolsKept  int            // how many times the tools were kept by an install: the view fills its fields again
+	installing *installing    // the tool being installed, while one is
+	licence    PendingLicence // a tool's licence, while it waits to be accepted
+	events     chan func(editor *Editor)
 	// Wake asks the window for a frame, when background work has something to show.
 	Wake func()
 }
@@ -89,7 +89,7 @@ type Editor struct {
 // Open opens a project at its start scene.
 func Open(opened *project.Project) (*Editor, error) {
 	editor := &Editor{Project: opened, events: make(chan func(editor *Editor), 16), workspace: LevelWorkspace, before: LevelWorkspace, Saved: true,
-		builds: map[BuildTarget]BuildResult{}, builders: map[BuildTarget]func() (project.Built, error){}}
+		builds: map[project.Target]BuildResult{}, builders: map[project.Target]func() (project.Built, error){}}
 	if err := editor.OpenScene(opened.Settings.StartScene); err != nil {
 		return nil, err
 	}
@@ -549,6 +549,11 @@ func (editor *Editor) PlayHere() {
 		editor.say(err.Error(), true)
 		return
 	}
+	// the game is played here with this computer's keyboard, mouse and pad, whatever screen's shape
+	// it is shown at: its desktop bindings
+	for _, problem := range engine.BindActions(editor.Project.Settings.Actions, engine.DesktopTarget) {
+		editor.say(problem.Error(), true)
+	}
 	if editor.unlisten == nil {
 		editor.unlisten = editor.listenToLog()
 	}
@@ -591,7 +596,14 @@ func (editor *Editor) AdvancePlay(seconds float64, keys *input.State) {
 	if editor.stepOnce {
 		editor.stepOnce, seconds = false, oneFrame
 	}
-	played.Update(seconds, keys)
+	played.PlayFrame(seconds, keys)
+	if engine.TakeQuit() {
+		editor.StopHere() // the game asked to quit: it stops, the editor stays
+		return
+	}
+	if below, found := engine.SecondScreen(); found {
+		below.Update(seconds, keys) // the second screen's scene plays too, shown with the 3DS's shape
+	}
 	next, replaced, err := played.TakeReplacement()
 	if err != nil {
 		editor.say(err.Error(), true)
@@ -607,42 +619,28 @@ func (editor *Editor) PlayingHere() (*engine.Scene, bool) {
 	return editor.playingHere, editor.playingHere != nil
 }
 
-// PlayInWindow saves the scene, builds the game and runs it in a window of its own, in the
-// background: what happens arrives through Events. Stop ends it.
-func (editor *Editor) PlayInWindow() {
-	editor.playWith(ComputerTarget, editor.Project.PlayCommand, nil)
+// PlayOn builds the game for a target and plays it there (project.Project.PlayOn): in a window, on
+// the device, or sent to the 3DS. What it prints is shown; stopping it stops the game where it
+// plays.
+func (editor *Editor) PlayOn(target project.Target) {
+	editor.playWith(target, func() (*exec.Cmd, error) { return editor.Project.PlayOn(target) },
+		func() error { return editor.Project.StopOn(target) })
 }
 
-// PlayOnDevice builds the game for Android and plays it on the device adb sees, its log shown as
-// a window's output is; stopping it stops the game on the device.
-func (editor *Editor) PlayOnDevice() {
-	editor.playWith(AndroidTarget, editor.Project.PlayOnAndroid, editor.Project.StopOnAndroid)
-}
-
-// PlayInEmulator builds the game for the 3DS and opens it in an emulator; Stop closes it.
-func (editor *Editor) PlayInEmulator() {
-	editor.playWith(ConsoleTarget, editor.Project.EmulatorCommand, nil)
-}
-
-// SendToConsole builds the game for the 3DS and sends it to the console's Homebrew Launcher, in
-// the background.
-func (editor *Editor) SendToConsole() {
-	editor.Run("Sending the game to the 3DS…", func() (string, error) {
-		if err := editor.Project.SendTo3DS(); err != nil {
-			return "", err
-		}
-		return "Sent the game to the 3DS", nil
-	})
+// PlayInEmulator builds the game for a target and opens it in the target's emulator; Stop closes
+// it.
+func (editor *Editor) PlayInEmulator(target project.Target) {
+	editor.playWith(target, func() (*exec.Cmd, error) { return editor.Project.PlayInEmulator(target) }, nil)
 }
 
 // PlayingOn tells where the game plays now, when it does.
-func (editor *Editor) PlayingOn() (BuildTarget, bool) {
+func (editor *Editor) PlayingOn() (project.Target, bool) {
 	return editor.playedOn, editor.playing != nil
 }
 
 // playWith builds the game for a target and runs the command that plays it (or reads its log),
 // showing what it prints; stopped, when there is one, ends the game where the command cannot.
-func (editor *Editor) playWith(target BuildTarget, prepare func() (*exec.Cmd, error), stopped func() error) {
+func (editor *Editor) playWith(target project.Target, prepare func() (*exec.Cmd, error), stopped func() error) {
 	if editor.running {
 		return
 	}
@@ -651,19 +649,26 @@ func (editor *Editor) playWith(target BuildTarget, prepare func() (*exec.Cmd, er
 	}
 	editor.running, editor.playedOn = true, target
 	editor.output = &outputTail{}
-	editor.say("Building the game for "+target.Name()+"…", false)
+	editor.say("Building the game for "+targetName(target)+"…", false)
 	go func() {
 		command, err := prepare()
 		if err != nil {
 			editor.send(func(editor *Editor) { editor.running = false; editor.say("Could not play: "+err.Error(), true) })
 			return
 		}
+		if command == nil {
+			editor.send(func(editor *Editor) {
+				editor.running = false
+				editor.say("Sent the game to "+targetName(target), false)
+			})
+			return // the game plays there, with nothing left here to watch
+		}
 		command.Stdout, command.Stderr = editor.output, editor.output
 		if err := command.Start(); err != nil {
 			editor.send(func(editor *Editor) { editor.running = false; editor.say(err.Error(), true) })
 			return
 		}
-		editor.send(func(editor *Editor) { editor.playing = command; editor.say("Playing on "+target.Name(), false) })
+		editor.send(func(editor *Editor) { editor.playing = command; editor.say("Playing on "+targetName(target), false) })
 		err = command.Wait()
 		if stopped != nil {
 			if stopErr := stopped(); stopErr != nil {

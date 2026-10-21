@@ -10,9 +10,10 @@ import (
 	"github.com/akrck02/go-engine/scenefile"
 )
 
-// A game whose settings ask for it (Settings.SceneMenu) lists its scenes on the Nintendo 3DS's
-// bottom screen, to play any of them with a touch: a level select, handy while a game is tried. A
-// game draws that screen its own way with SetBottomScreen, given the same scenes (Menu).
+// A game whose settings ask for it (Settings.SceneMenu) lists its scenes on the second screen of a
+// device that has one (a 3DS's), to play any of them with a touch: a level select, handy while a
+// game is tried. A game draws that screen its own way with SetInterface, given the same scenes
+// (Menu).
 
 // scenesFolder is where a project keeps its scenes, and sceneSuffix what their files end with.
 const (
@@ -67,10 +68,10 @@ func (menu Menu) Playing() *Scene { return menu.game.played }
 // Play plays a scene next, by its file.
 func (menu Menu) Play(file string) { menu.game.choose(file) }
 
-// bottomScreen is the game's own bottom screen, when it has one (SetBottomScreen).
-var bottomScreen func(context *ui.Context, menu Menu)
+// gameInterface is the game's own go-ui interface, when it has one (SetInterface).
+var gameInterface func(context *ui.Context, menu Menu)
 
-// SetBottomScreen makes a game draw the Nintendo 3DS's bottom screen itself, with go-ui, in its
-// own look: a menu of its scenes (Menu), a map, its controls. Call it before Run. Elsewhere there
-// is no bottom screen, and it is not called.
-func SetBottomScreen(paint func(context *ui.Context, menu Menu)) { bottomScreen = paint }
+// SetInterface makes a game show an interface of its own, with go-ui, in its own look: a menu of
+// its scenes (Menu), a map, its controls, a login form. On the Nintendo 3DS it is the bottom
+// screen; on the desktop it is painted over a 3D scene's window. Call it before Run.
+func SetInterface(paint func(context *ui.Context, menu Menu)) { gameInterface = paint }

@@ -25,7 +25,7 @@ func TestAnApplicationIDIsMadeFromTheGamesName(test *testing.T) {
 			test.Errorf("%q gives the id %q, not %q", each.name, made, each.wanted)
 		}
 	}
-	project := &Project{Settings: engine.Settings{Name: "Harbour Lights", AndroidID: "org.example.harbour"}}
+	project := &Project{Settings: engine.Settings{Name: "Harbour Lights", ApplicationID: "org.example.harbour"}}
 	if kept := project.ApplicationID(); kept != "org.example.harbour" {
 		test.Errorf("the id the settings keep is not used: %q", kept)
 	}
@@ -35,13 +35,13 @@ func TestAnAndroidBuildAsksForThePackage(test *testing.T) {
 	project := &Project{Folder: "/games/harbour", Settings: engine.Settings{Name: "Harbour Lights"}}
 	arguments := project.androidArguments()
 	joined := strings.Join(arguments, " ")
-	for _, wanted := range []string{"tool go-ui-apk", "-name Harbour Lights", "-id io.goengine.harbourlights", "-abi arm64,x86_64", "-o " + project.AndroidPackage()} {
+	for _, wanted := range []string{"tool go-ui-apk", "-name Harbour Lights", "-id io.goengine.harbourlights", "-abi arm64,x86_64", "-o " + project.androidPackage()} {
 		if !strings.Contains(joined, wanted) {
 			test.Errorf("the Android build is asked for with %q, without %q", joined, wanted)
 		}
 	}
-	if !strings.HasSuffix(project.AndroidPackage(), "harbour-lights.apk") || arguments[len(arguments)-1] != "." {
-		test.Errorf("the package is %q, built from %q", project.AndroidPackage(), arguments[len(arguments)-1])
+	if !strings.HasSuffix(project.androidPackage(), "harbour-lights.apk") || arguments[len(arguments)-1] != "." {
+		test.Errorf("the package is %q, built from %q", project.androidPackage(), arguments[len(arguments)-1])
 	}
 	if !slices.Contains(androidEnvironment("/sdk", "/ndk", "/jdk"), "GOFLAGS=-tags=release") {
 		test.Error("an Android build carries the editor: it is not built with the release tag")
@@ -88,11 +88,11 @@ func TestAnApplicationIDOfTheWrongFormIsNotSaved(test *testing.T) {
 	if err != nil {
 		test.Fatal(err)
 	}
-	created.Settings.AndroidID = "my game"
+	created.Settings.ApplicationID = "my game"
 	if err := created.SaveSettings(); !errors.Is(err, ApplicationIDWrong) {
 		test.Fatalf("an id with a space is saved: %v", err)
 	}
-	created.Settings.AndroidID = "org.example.game"
+	created.Settings.ApplicationID = "org.example.game"
 	if err := created.SaveSettings(); err != nil {
 		test.Fatalf("a good id is not saved: %v", err)
 	}
@@ -115,7 +115,7 @@ func TestPlayingOnADeviceInstallsStartsAndReadsTheLog(test *testing.T) {
 	if err != nil {
 		test.Fatal(err)
 	}
-	logcat, err := project.playOnAndroid(adb, serial, "/games/harbour.apk")
+	logcat, err := project.startOnAndroid(adb, serial, "/games/harbour.apk")
 	if err != nil {
 		test.Fatal(err)
 	}

@@ -1,6 +1,7 @@
 package editor
 
 import (
+	"github.com/akrck02/go-renderer/input"
 	"path/filepath"
 	"testing"
 
@@ -202,5 +203,15 @@ func TestPlayingInTheViewFollowsTheGamesSceneChanges(test *testing.T) {
 	again, playing := editor.PlayingHere()
 	if !playing || again == first {
 		test.Fatal("the view did not go on to the restarted scene")
+	}
+}
+
+func TestAGameThatQuitsInTheViewStopsAndTheEditorStays(test *testing.T) {
+	editor := open(test)
+	editor.PlayHere()
+	engine.Quit()
+	editor.AdvancePlay(0.1, input.NewState())
+	if _, playing := editor.PlayingHere(); playing {
+		test.Fatal("a game that asked to quit still plays in the view")
 	}
 }

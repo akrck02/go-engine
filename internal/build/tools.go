@@ -15,12 +15,30 @@ import (
 // then where they are usually installed (places.go). They belong to the computer, not to a project, and are kept in the
 // user's configuration folder.
 type Tools struct {
-	TinyGo          string `json:"tinygo,omitempty"`          // the tinygo program, with the nintendo3ds target
-	DevkitPro       string `json:"devkitpro,omitempty"`       // devkitPro's folder, which has tools/bin/3dslink
-	ConsoleEmulator string `json:"consoleEmulator,omitempty"` // a 3DS emulator's program (Azahar, Citra)
-	AndroidSDK      string `json:"androidSdk,omitempty"`      // the Android SDK's folder, which has platform-tools/adb
-	AndroidNDK      string `json:"androidNdk,omitempty"`      // the Android NDK's folder (one version of it)
-	Java            string `json:"java,omitempty"`            // a JDK's folder, what $JAVA_HOME names
+	TinyGo              string `json:"tinygo,omitempty"`              // the tinygo program, with the nintendo3ds target
+	DevkitPro           string `json:"devkitpro,omitempty"`           // devkitPro's folder, which has tools/bin/3dslink
+	Nintendo3DSEmulator string `json:"nintendo3dsEmulator,omitempty"` // a 3DS emulator's program (Azahar, Citra)
+	AndroidSDK          string `json:"androidSdk,omitempty"`          // the Android SDK's folder, which has platform-tools/adb
+	AndroidNDK          string `json:"androidNdk,omitempty"`          // the Android NDK's folder (one version of it)
+	Java                string `json:"java,omitempty"`                // a JDK's folder, what $JAVA_HOME names
+}
+
+// UnmarshalJSON reads the tools' places, taking the 3DS emulator's old name (consoleEmulator) when
+// the new one is missing.
+func (tools *Tools) UnmarshalJSON(data []byte) error {
+	type plain Tools // without this method, so that decoding it does not call it again
+	var file struct {
+		plain
+		OldEmulator string `json:"consoleEmulator"`
+	}
+	if err := json.Unmarshal(data, &file); err != nil {
+		return err
+	}
+	*tools = Tools(file.plain)
+	if tools.Nintendo3DSEmulator == "" {
+		tools.Nintendo3DSEmulator = file.OldEmulator
+	}
+	return nil
 }
 
 // toolsFile is where the tools' places are kept, in the user's configuration folder.

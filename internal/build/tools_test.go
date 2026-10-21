@@ -1,6 +1,7 @@
 package build
 
 import (
+	"encoding/json"
 	"errors"
 	"os"
 	"path/filepath"
@@ -49,7 +50,7 @@ func TestMissingToolsAreSaidByTheirCodes(test *testing.T) {
 		{"the Android NDK", func() (string, error) { return tools.FindAndroidNDK(empty) }, AndroidNDKNotFound},
 		{"adb", tools.FindADB, ADBNotFound},
 		{"3dslink", tools.FindThreeDSLink, ThreeDSLinkNotFound},
-		{"a 3DS emulator", tools.FindConsoleEmulator, ConsoleEmulatorNotFound},
+		{"a 3DS emulator", tools.FindNintendo3DSEmulator, Nintendo3DSEmulatorNotFound},
 		{"a JDK", tools.FindJava, JavaNotFound},
 	}
 	for _, each := range cases {
@@ -83,8 +84,8 @@ func TestAToolSetInTheEditorIsUsedFirst(test *testing.T) {
 
 func TestAToolSetWhereNothingIsIsSaidByItsCode(test *testing.T) {
 	withNoTools(test)
-	tools := Tools{TinyGo: "/nowhere/tinygo", AndroidSDK: "/nowhere/sdk", AndroidNDK: "/nowhere/ndk", DevkitPro: "/nowhere/devkitpro", ConsoleEmulator: "/nowhere/azahar", Java: "/nowhere/jdk"}
-	finders := []func() (string, error){tools.FindTinyGo, tools.FindAndroidSDK, tools.FindThreeDSLink, tools.FindConsoleEmulator, tools.FindADB, tools.FindJava,
+	tools := Tools{TinyGo: "/nowhere/tinygo", AndroidSDK: "/nowhere/sdk", AndroidNDK: "/nowhere/ndk", DevkitPro: "/nowhere/devkitpro", Nintendo3DSEmulator: "/nowhere/azahar", Java: "/nowhere/jdk"}
+	finders := []func() (string, error){tools.FindTinyGo, tools.FindAndroidSDK, tools.FindThreeDSLink, tools.FindNintendo3DSEmulator, tools.FindADB, tools.FindJava,
 		func() (string, error) { return tools.FindAndroidNDK("/nowhere/sdk") }}
 	for _, find := range finders {
 		if _, err := find(); !errors.Is(err, ToolPlaceWrong) {
@@ -99,9 +100,9 @@ func TestAToolSetWhereTheWrongThingIsIsSaidByItsCode(test *testing.T) {
 	if err := os.WriteFile(program, nil, 0o755); err != nil {
 		test.Fatal(err)
 	}
-	tools := Tools{TinyGo: folder, ConsoleEmulator: folder, AndroidSDK: program, AndroidNDK: program, DevkitPro: folder}
+	tools := Tools{TinyGo: folder, Nintendo3DSEmulator: folder, AndroidSDK: program, AndroidNDK: program, DevkitPro: folder}
 	finders := map[string]func() (string, error){
-		"a folder as TinyGo": tools.FindTinyGo, "a folder as the emulator": tools.FindConsoleEmulator,
+		"a folder as TinyGo": tools.FindTinyGo, "a folder as the emulator": tools.FindNintendo3DSEmulator,
 		"a program as the SDK": tools.FindAndroidSDK, "a program as the NDK": func() (string, error) { return tools.FindAndroidNDK("") },
 		"a devkitPro with no 3dslink": tools.FindThreeDSLink, "an SDK with no adb": Tools{AndroidSDK: folder}.FindADB,
 	}
@@ -131,5 +132,12 @@ func TestTheToolsPlacesAreKeptBetweenSessions(test *testing.T) {
 func useConfigurationFolder(test *testing.T, folder string) {
 	for _, variable := range []string{"XDG_CONFIG_HOME", "HOME", "APPDATA", "LOCALAPPDATA"} {
 		test.Setenv(variable, folder)
+	}
+}
+
+func TestTheOldNameOfThe3DSEmulatorIsStillRead(test *testing.T) {
+	var tools Tools
+	if err := json.Unmarshal([]byte(`{"consoleEmulator": "/opt/azahar"}`), &tools); err != nil || tools.Nintendo3DSEmulator != "/opt/azahar" {
+		test.Fatalf("an old tools.json reads as %+v, %v", tools, err)
 	}
 }

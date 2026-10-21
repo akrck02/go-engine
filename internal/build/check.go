@@ -17,10 +17,10 @@ import (
 func CheckTinyGo(program string) error {
 	root, err := Output("", []string{GoOnPath()}, program, "env", "TINYGOROOT") // TinyGo asks go where Go's root is
 	if err != nil {
-		return failure.Wrap(TinyGoWithoutConsole, program, err)
+		return failure.Wrap(TinyGoWithout3DS, program, err)
 	}
 	if !FileExists(filepath.Join(strings.TrimSpace(root), "targets", "nintendo3ds.json")) {
-		return failure.Wrap(TinyGoWithoutConsole, program, nil)
+		return failure.Wrap(TinyGoWithout3DS, program, nil)
 	}
 	return nil
 }

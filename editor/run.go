@@ -63,7 +63,7 @@ func RunHere() error {
 		edited.ShowWorkspace(PlayWorkspace)
 	}
 	if *console {
-		edited.Target = ConsoleScreen
+		edited.Target = Nintendo3DSScreens
 	}
 	if workspace, found := WorkspaceNamed(*shown); found {
 		edited.ShowWorkspace(workspace)

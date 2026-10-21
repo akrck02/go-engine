@@ -38,11 +38,11 @@ const applicationIDPrefix = "io.goengine."
 // with a letter.
 var applicationIDForm = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z][A-Za-z0-9_]*)+$`)
 
-// ApplicationID is the game's name on Android, as io.example.game: the settings' AndroidID, or one
-// made from the game's name.
+// ApplicationID is the game's application id, as io.example.game, which each target turns into
+// what it needs (Android's package name): the settings' ApplicationID, or one made from its name.
 func (project *Project) ApplicationID() string {
-	if project.Settings.AndroidID != "" {
-		return project.Settings.AndroidID
+	if project.Settings.ApplicationID != "" {
+		return project.Settings.ApplicationID
 	}
 	var word strings.Builder
 	for _, letter := range strings.ToLower(project.Settings.Name) {
@@ -57,14 +57,14 @@ func (project *Project) ApplicationID() string {
 	return applicationIDPrefix + name
 }
 
-// AndroidPackage is where the Android package goes.
-func (project *Project) AndroidPackage() string {
+// androidPackage is where the Android package goes.
+func (project *Project) androidPackage() string {
 	return project.Path(path.Join("build", build.FileName(project.Settings.Name)+".apk"))
 }
 
-// BuildAndroid builds the game for Android into build/, a package signed for trying (not for a
+// buildAndroid builds the game for Android into build/, a package signed for trying (not for a
 // store), without the editor.
-func (project *Project) BuildAndroid() (Built, error) {
+func (project *Project) buildAndroid() (Built, error) {
 	sdk, err := project.Tools.FindAndroidSDK()
 	if err != nil {
 		return Built{}, err
@@ -90,13 +90,13 @@ func (project *Project) BuildAndroid() (Built, error) {
 		return Built{}, err
 	}
 	noticesFile, err := writeNotices(project.Path("build"), notices.Android)
-	return Built{Program: project.AndroidPackage(), Notices: noticesFile}, err
+	return Built{Program: project.androidPackage(), Notices: noticesFile}, err
 }
 
 // androidArguments are the go command's to build the package.
 func (project *Project) androidArguments() []string {
 	return []string{"tool", "go-ui-apk", "-name", project.Settings.Name, "-id", project.ApplicationID(),
-		"-abi", androidProcessors, "-o", project.AndroidPackage(), "."}
+		"-abi", androidProcessors, "-o", project.androidPackage(), "."}
 }
 
 // androidEnvironment is what go-ui-apk reads: where the SDK, the NDK and the JDK are, go on the
@@ -178,10 +178,10 @@ func (module moduleFile) replacesStaleUI() bool {
 	return false
 }
 
-// PlayOnAndroid builds the game for Android, installs it on the first device adb sees (a phone
+// playOnAndroid builds the game for Android, installs it on the first device adb sees (a phone
 // plugged in, or the emulator) and starts it. It returns the command that shows its log, not
-// started, which ends when the game does: the editor shows what it says. StopOnAndroid stops it.
-func (project *Project) PlayOnAndroid() (*exec.Cmd, error) {
+// started, which ends when the game does: the editor shows what it says. stopOnAndroid stops it.
+func (project *Project) playOnAndroid() (*exec.Cmd, error) {
 	adb, err := project.Tools.FindADB()
 	if err != nil {
 		return nil, err
@@ -190,15 +190,15 @@ func (project *Project) PlayOnAndroid() (*exec.Cmd, error) {
 	if err != nil {
 		return nil, err // before building: a build takes long, and finding no device does not
 	}
-	built, err := project.BuildAndroid()
+	built, err := project.buildAndroid()
 	if err != nil {
 		return nil, err
 	}
-	return project.playOnAndroid(adb, serial, built.Program)
+	return project.startOnAndroid(adb, serial, built.Program)
 }
 
-// playOnAndroid installs a package on a device and starts it.
-func (project *Project) playOnAndroid(adb, serial, androidPackage string) (*exec.Cmd, error) {
+// startOnAndroid installs a package on a device and starts it.
+func (project *Project) startOnAndroid(adb, serial, androidPackage string) (*exec.Cmd, error) {
 	identifier := project.ApplicationID()
 	steps := [][]string{
 		{"install", "-r", androidPackage},
@@ -223,8 +223,8 @@ func androidLogScript(identifier string) string {
 		"while [ -d /proc/$process ]; do sleep 1; done; kill $log"
 }
 
-// StopOnAndroid stops the game on the first device adb sees.
-func (project *Project) StopOnAndroid() error {
+// stopOnAndroid stops the game on the first device adb sees.
+func (project *Project) stopOnAndroid() error {
 	adb, err := project.Tools.FindADB()
 	if err != nil {
 		return err

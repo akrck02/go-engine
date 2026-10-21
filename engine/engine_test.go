@@ -2,6 +2,7 @@ package engine
 
 import (
 	"bytes"
+	"encoding/json"
 	"image"
 	"image/png"
 	"math"
@@ -153,7 +154,7 @@ func TestTheMainCameraLooksWhereItsNodeLooks(test *testing.T) {
 	}
 	view := camera.View()
 	direction := space.NewVector(float64(view.Target[0]-view.Position[0]), float64(view.Target[1]-view.Position[1]), float64(view.Target[2]-view.Position[2]))
-	if !direction.Near(space.NewVector(0, -math.Sin(space.Radians(20)), -math.Cos(space.Radians(20))), 1e-6) {
+	if !direction.Normalized().Near(space.NewVector(0, -math.Sin(space.Radians(20)), -math.Cos(space.Radians(20))), 1e-6) {
 		test.Fatalf("the camera looks along %v", direction)
 	}
 	camera.SetCamera(&scenefile.Camera{Projection: scenefile.Isometric, Height: 12})
@@ -266,5 +267,18 @@ func TestA2DScenesBodiesSheetsAndTilesSurviveBeingRewritten(test *testing.T) {
 	again := built.Describe().Nodes[0]
 	if again.Body == nil || again.Body.Gravity() != 0.5 || again.Sheet == nil || again.Sheet.Animations[0].Name != "walk" || again.Tiles == nil {
 		test.Fatalf("the 2D parts were lost: %+v", again)
+	}
+}
+
+func TestOldSettingsNamesAreStillRead(test *testing.T) {
+	files := fstest.MapFS{"engine.json": {Data: []byte(`{"name": "Old", "startScene": "scenes/main.scene.json",
+		"androidId": "org.example.old", "consoleAddress": "192.168.1.20"}`)}}
+	settings, err := ReadSettings(files)
+	if err != nil || settings.ApplicationID != "org.example.old" || settings.DeviceAddress != "192.168.1.20" {
+		test.Fatalf("an old engine.json reads as %+v, %v", settings, err)
+	}
+	saved, _ := json.Marshal(settings)
+	if strings.Contains(string(saved), "androidId") || !strings.Contains(string(saved), "applicationId") {
+		test.Fatalf("settings are saved as %s", saved)
 	}
 }

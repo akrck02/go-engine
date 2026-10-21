@@ -3,6 +3,7 @@ package editor
 import (
 	"time"
 
+	"github.com/akrck02/go-renderer/draw2d"
 	"github.com/akrck02/go-renderer/input"
 	"github.com/akrck02/go-renderer/scene"
 	ui "github.com/akrck02/go-ui"
@@ -32,13 +33,19 @@ type View struct {
 	DarkByDefault bool
 
 	emptyWorld *scene.Scene // what is drawn behind the workspaces that cover the window
-	shift      bool         // Shift was held on the last frame: a click joins the choice
 
-	art     artView      // the Art workspace's choices
-	project projectView  // the Project workspace's choices
-	code    codeView     // the Code workspace's choices
-	build   buildView    // the Build workspace's choices
-	picking *filePicking // the file asked for, while the file picker is shown
+	staged       stagedScreens      // where the stage showed a 3D game last frame (stage3d.go)
+	below        window.BelowView   // how the game's bottom scene is shown, kept between frames
+	overlay      draw2d.List        // the 3D game's own 2D, before it is moved onto the stage
+	playedScenes []engine.MenuScene // the scenes the game's interface offers, read once
+	shift        bool               // Shift was held on the last frame: a click joins the choice
+
+	art      artView      // the Art workspace's choices
+	project  projectView  // the Project workspace's choices
+	code     codeView     // the Code workspace's choices
+	build    buildView    // the Build workspace's choices
+	controls controlsView // the Controls workspace's actions as edited
+	picking  *filePicking // the file asked for, while the file picker is shown
 
 	assetTree    project.AssetEntry
 	assetsReadAt time.Time
@@ -64,6 +71,9 @@ func (view *View) Options(options window.Options) window.Options {
 			return &window.SceneView{World: view.emptyWorld} // the other workspaces cover the window
 		}
 		world, camera := view.viewport.step(view.Editor, state, seconds)
+		if played, playing := view.Editor.PlayingHere(); playing && !played.Is2D() {
+			return view.playedView(world, camera)
+		}
 		return &window.SceneView{World: world, Camera: camera}
 	}
 	return options
@@ -71,6 +81,9 @@ func (view *View) Options(options window.Options) window.Options {
 
 func (view *View) keys(state *input.State) {
 	editor := view.Editor
+	if view.catchInput(state) {
+		return // the next input pressed is an action's, not the editor's
+	}
 	if view.workspaceKeys(state) || editor.ShownWorkspace() == PlayWorkspace {
 		return // while playing, the game has the other keys
 	}
@@ -79,6 +92,9 @@ func (view *View) keys(state *input.State) {
 	}
 	if editor.ShownWorkspace() == LevelWorkspace {
 		view.levelKeys(state)
+	}
+	if editor.ShownWorkspace() == ControlsWorkspace && state.Pressed(input.KeyEscape) {
+		view.controls.chosen = noControl // Escape closes the chosen control's panel
 	}
 }
 
@@ -89,9 +105,9 @@ func (view *View) controlKeys(state *input.State) bool {
 	case state.Pressed(input.KeyS):
 		editor.Save()
 	case state.Pressed(input.KeyZ) && state.Down(input.KeyShift), state.Pressed(input.KeyY):
-		editor.Redo()
+		view.redo()
 	case state.Pressed(input.KeyZ):
-		editor.Undo()
+		view.undo()
 	default:
 		return false
 	}

@@ -46,11 +46,11 @@ const (
 
 // buildView is what the Build workspace remembers between frames.
 type buildView struct {
-	tab         buildTab    // the tab shown
-	shown       BuildTarget // the target whose log is shown
-	tools       build.Tools // the tools' places as typed, kept when saved
-	toolsFilled bool        // tools was filled with the places kept, to be typed over
-	toolsKept   int         // the editor's toolsKept when tools was filled: an install keeps new ones
+	tab         buildTab       // the tab shown
+	shown       project.Target // the target whose log is shown
+	tools       build.Tools    // the tools' places as typed, kept when saved
+	toolsFilled bool           // tools was filled with the places kept, to be typed over
+	toolsKept   int            // the editor's toolsKept when tools was filled: an install keeps new ones
 }
 
 func (view *View) buildWorkspace(context *ui.Context) {
@@ -85,26 +85,26 @@ func (view *View) buildTabs(context *ui.Context) {
 // targetCards are a card for each place the game runs.
 func (view *View) targetCards(context *ui.Context) {
 	context.Box(ui.Layout{Width: ui.Grow(), Gap: targetCardGap, Wrap: true}, func() {
-		for _, target := range BuildTargets {
+		for _, target := range project.Targets {
 			view.targetCard(context, target)
 		}
 	})
 }
 
 // targetCard is a target with its last build, the button that builds it, and what else it can do.
-func (view *View) targetCard(context *ui.Context, target BuildTarget) {
+func (view *View) targetCard(context *ui.Context, target project.Target) {
 	look := ui.Look{Fill: context.Theme.Background, Radius: 10, Border: context.Theme.Line, BorderWidth: 1}
 	if view.build.shown == target {
 		look.Border, look.BorderWidth = context.Theme.Primary, 2
 	}
-	context.Push(target.Name())
+	context.Push(targetName(target))
 	defer context.Pop()
 	context.Frame(ui.Layout{Direction: ui.Vertical, Width: ui.Fixed(targetCardWidth), Padding: ui.Pad(14), Gap: 6}, look, func() {
 		context.Row(func() {
-			context.IconSized(target.Icon(), cardIconSize, context.Theme.Primary)
-			context.Heading(target.Name())
+			context.IconSized(targetIcon(target), cardIconSize, context.Theme.Primary)
+			context.Heading(targetName(target))
 		})
-		context.Caption(target.Makes())
+		context.Caption(targetMakes(target))
 		view.buildState(context, target)
 		context.Row(func() {
 			if context.PrimaryIconButton(iconBuild, "Build") {
@@ -121,7 +121,7 @@ func (view *View) targetCard(context *ui.Context, target BuildTarget) {
 
 // playButton plays the game where the target is, or stops it there: this computer in a window,
 // the 3DS sent to the console or in an emulator, Android on the device adb sees.
-func (view *View) playButton(context *ui.Context, target BuildTarget) {
+func (view *View) playButton(context *ui.Context, target project.Target) {
 	editor := view.Editor
 	if playedOn, playing := editor.PlayingOn(); playing && playedOn == target {
 		if context.IconButton(iconStop, "Stop") {
@@ -130,32 +130,36 @@ func (view *View) playButton(context *ui.Context, target BuildTarget) {
 		return
 	}
 	switch target {
-	case ComputerTarget:
+	case project.Desktop:
 		if context.IconButton(iconInWindow, "Play") {
-			editor.PlayInWindow()
+			editor.PlayOn(project.Desktop)
 		}
-	case AndroidTarget:
+		if context.IconButton(iconRelease, "Release workflow") {
+			editor.WriteReleaseWorkflow()
+		}
+		context.Tooltip("Write a GitHub workflow that builds the game for Windows, macOS and Linux on each version tag (v1.0.0)")
+	case project.Android:
 		if context.IconButton(iconPhone, "Play on device") {
 			view.build.shown = target
-			editor.PlayOnDevice()
+			editor.PlayOn(project.Android)
 		}
 		context.Tooltip("Build, install and start the game on the phone or emulator adb sees, with its log here")
-	case ConsoleTarget:
+	case project.Nintendo3DS:
 		if context.IconButton(iconSend, "Send") {
 			view.build.shown = target
-			editor.SendToConsole()
+			editor.PlayOn(project.Nintendo3DS)
 		}
 		context.Tooltip("Build and send the game to the 3DS: open the Homebrew Launcher and press Y first")
 		if context.IconButton(iconInWindow, "Emulator") {
 			view.build.shown = target
-			editor.PlayInEmulator()
+			editor.PlayInEmulator(project.Nintendo3DS)
 		}
 		context.Tooltip("Build the game and open it in a 3DS emulator (Azahar or Citra)")
 	}
 }
 
 // buildState says how the target's last build went.
-func (view *View) buildState(context *ui.Context, target BuildTarget) {
+func (view *View) buildState(context *ui.Context, target project.Target) {
 	result, found := view.Editor.LastBuild(target)
 	switch {
 	case !found:
@@ -174,7 +178,7 @@ func (view *View) buildLog(context *ui.Context) {
 	target := view.build.shown
 	context.Row(func() {
 		context.IconSized(iconLog, 16, context.Theme.Primary)
-		context.Text(target.Name()+" · log", ui.TextStyle{Weight: draw2d.Bold})
+		context.Text(targetName(target)+" · log", ui.TextStyle{Weight: draw2d.Bold})
 	})
 	result, found := view.Editor.LastBuild(target)
 	if !found && view.playOutput(target) == nil {
@@ -190,7 +194,7 @@ func (view *View) buildLog(context *ui.Context) {
 }
 
 // playOutput is what the game said, when it plays or last played on a target.
-func (view *View) playOutput(target BuildTarget) []string {
+func (view *View) playOutput(target project.Target) []string {
 	editor := view.Editor
 	if editor.output == nil || editor.playedOn != target {
 		return nil
@@ -307,8 +311,8 @@ var toolInstalls = map[string]func(view *View){
 	"TinyGo":       func(view *View) { view.Editor.InstallTinyGo() },
 	"devkitPro":    (*View).installDevkitPro,
 	"3DS emulator": func(view *View) { view.Editor.InstallEmulator() },
-	"Android SDK":  func(view *View) { view.Editor.ReadAndroidLicence() },
-	"Android NDK":  func(view *View) { view.Editor.ReadAndroidLicence() }, // installed with the SDK
+	"Android SDK":  func(view *View) { view.Editor.ReadLicence("Android SDK") },
+	"Android NDK":  func(view *View) { view.Editor.ReadLicence("Android SDK") }, // installed with the SDK
 	"JDK":          (*View).installJava,
 }
 
@@ -318,33 +322,33 @@ const (
 	licenceHeight = 420
 )
 
-// licenceSheet shows Android's licence while it waits: accepting it installs the SDK.
+// licenceSheet shows a tool's licence while it waits: accepting it installs the tool.
 func (view *View) licenceSheet(context *ui.Context) {
 	editor := view.Editor
-	licence, waiting := editor.AndroidLicence()
+	licence, waiting := editor.Licence()
 	if !waiting {
 		return
 	}
 	accepted := false
-	if context.Sheet("Android SDK licence", ui.SheetOptions{Width: ui.Fixed(licenceWidth)}, func() {
-		note(context, "Installing the Android SDK, its NDK and the packages a game's build needs means accepting Google's licence:")
+	if context.Sheet(licence.Tool+" licence", ui.SheetOptions{Width: ui.Fixed(licenceWidth)}, func() {
+		note(context, "Installing "+licence.Tool+" means accepting its licence:")
 		inside := ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Height: ui.Fixed(licenceHeight), Gap: 8}
 		context.ScrollArea("Licence", inside, func() {
-			for _, paragraph := range strings.Split(licence, "\n\n") {
+			for _, paragraph := range strings.Split(licence.Text, "\n\n") {
 				wrapped(context, paragraph, ui.TextStyle{Color: context.Theme.InkSoft, Size: context.Theme.SmallTextSize})
 			}
 		})
 		context.Row(func() {
 			if context.Button("Decline") {
-				editor.DeclineAndroidLicence()
+				editor.DeclineLicence()
 			}
 			accepted = context.PrimaryButton("Accept and install")
 		})
 	}) {
-		editor.DeclineAndroidLicence()
+		editor.DeclineLicence()
 	}
 	if accepted {
-		editor.AcceptAndroidLicence()
+		editor.AcceptLicence()
 	}
 }
 

@@ -312,14 +312,14 @@ func (node *Node) View() models.Camera {
 // CameraAt is go-renderer's camera for a camera placed at a transform with some settings.
 func CameraAt(world space.Transform, settings scenefile.Camera) models.Camera {
 	position := world.Position
-	target := position.Add(world.Forward())
+	target := position.Add(world.Forward().Scale(orDefault(settings.Focus, DefaultFocus)))
 	up := world.Up()
 	view := models.Camera{
 		Position: graphics.Vec4{float32(position.X), float32(position.Y), float32(position.Z), 1},
 		Target:   graphics.Vec4{float32(target.X), float32(target.Y), float32(target.Z), 1},
 		Up:       graphics.Vec4{float32(up.X), float32(up.Y), float32(up.Z), 0},
-		Near:     0.05,
-		Far:      2000,
+		Near:     float32(orDefault(settings.Near, DefaultNear)),
+		Far:      float32(orDefault(settings.Far, DefaultFar)),
 	}
 	switch settings.Projection {
 	case scenefile.Orthographic, scenefile.Isometric:
@@ -336,6 +336,21 @@ func CameraAt(world space.Transform, settings scenefile.Camera) models.Camera {
 		view.FieldOfView = space.Radians(fieldOfView)
 	}
 	return view
+}
+
+// A camera's distances when its settings leave them at 0, in metres.
+const (
+	DefaultNear  = 0.05
+	DefaultFar   = 2000
+	DefaultFocus = 10 // a room's depth: most scenes look at things about this far
+)
+
+// orDefault is a value, or another when the value is not set (0 or less).
+func orDefault(value, otherwise float64) float64 {
+	if value <= 0 {
+		return otherwise
+	}
+	return value
 }
 
 // assets reads a project's models, once each.

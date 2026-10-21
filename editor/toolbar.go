@@ -63,16 +63,16 @@ func (view *View) saveButton(context *ui.Context) {
 	context.Tooltip("Save the scene (Ctrl+S)")
 }
 
-// historyButtons undo and redo the scene's changes.
+// historyButtons undo and redo the changes of the workspace shown: the controls' in Controls, the
+// scene's elsewhere.
 func (view *View) historyButtons(context *ui.Context) {
-	editor := view.Editor
-	if context.FlatIconButton(iconUndo, "") && editor.CanUndo() {
-		editor.Undo()
+	if context.FlatIconButton(iconUndo, "") {
+		view.undo()
 		view.shownFor = nil
 	}
 	context.Tooltip("Undo (Ctrl+Z)")
-	if context.FlatIconButton(iconRedo, "") && editor.CanRedo() {
-		editor.Redo()
+	if context.FlatIconButton(iconRedo, "") {
+		view.redo()
 		view.shownFor = nil
 	}
 	context.Tooltip("Redo (Ctrl+Shift+Z)")

@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"github.com/akrck02/go-renderer/ctr"
 	"github.com/akrck02/go-renderer/input"
 
 	"github.com/akrck02/go-engine/space"
@@ -47,10 +48,20 @@ func (owner *Scene) Start() []error {
 // behaviour updates, the bodies of a 2D scene move, the tweens move, and what go-renderer draws
 // follows. A frame allocates nothing it can avoid.
 func (owner *Scene) Update(seconds float64, keys *input.State) {
+	owner.beginFrame(seconds, keys)
+	owner.advance(seconds)
+}
+
+// beginFrame moves the scene's clock on and sets the frame's context.
+func (owner *Scene) beginFrame(seconds float64, keys *input.State) {
 	owner.Start()
 	owner.clock += seconds
 	owner.input.state = keys
 	owner.context = Context{Scene: owner, Delta: seconds, Time: owner.clock, Input: &owner.input}
+}
+
+// advance runs the frame's behaviours, physics and animations, and syncs what is drawn.
+func (owner *Scene) advance(seconds float64) {
 	owner.startPending()
 	owner.updateBehaviours()
 	owner.stepPhysics(seconds)
@@ -97,7 +108,10 @@ func (owner *Scene) collectBehaving(nodes []*Node, node *Node) []*Node {
 }
 
 // Input is the keyboard, the mouse and the controls, as the game reads them.
-type Input struct{ state *input.State }
+type Input struct {
+	state   *input.State
+	console ctr.Reading // the 3DS's controls this frame; empty elsewhere (controls.go)
+}
 
 // Down tells whether a key is held; Pressed whether it went down this frame.
 func (keys *Input) Down(key Key) bool    { return keys.state != nil && keys.state.Down(key) }
@@ -122,7 +136,7 @@ func (keys *Input) Move() space.Vector {
 	forward := keys.Axis(KeyDown, KeyUp) + keys.Axis(KeyS, KeyW)
 	if keys.state != nil {
 		x += keys.state.StickX
-		forward -= keys.state.StickY
+		forward += keys.state.StickY // up on the stick is forward
 	}
 	direction := space.NewVector(x, 0, -forward)
 	if direction.Length() > 1 {

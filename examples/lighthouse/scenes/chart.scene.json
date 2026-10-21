@@ -1,0 +1,11 @@
+{
+	"name": "Chart",
+	"sky": "#e9e2cf",
+	"nodes": [
+		{"name": "Island", "shape": "cylinder", "colour": "#7a8a5a", "position": [0, 0, 0], "rotation": [0, 0, 0], "scale": [6, 0.5, 6]},
+		{"name": "Lamp", "position": [0, 1, 0], "rotation": [0, 0, 0], "scale": [0.2, 0.2, 0.2],
+			"behaviours": [{"name": "Beam", "fields": {"degreesPerSecond": 40, "length": 40}}]},
+		{"name": "Above", "position": [0, 16, 0.01], "rotation": [-89, 0, 0], "scale": [1, 1, 1],
+			"camera": {"projection": "orthographic", "main": true, "height": 16}}
+	]
+}

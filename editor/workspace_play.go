@@ -1,6 +1,7 @@
 package editor
 
 import (
+	"github.com/akrck02/go-engine/project"
 	"github.com/akrck02/go-renderer/draw2d"
 	ui "github.com/akrck02/go-ui"
 
@@ -124,7 +125,7 @@ func (view *View) targetTabs(context *ui.Context) {
 // windowButton plays the game in a window of its own, or closes it.
 func (view *View) windowButton(context *ui.Context) {
 	editor := view.Editor
-	if target, playing := editor.PlayingOn(); playing && target == ComputerTarget {
+	if target, playing := editor.PlayingOn(); playing && target == project.Desktop {
 		if context.IconButton(iconClose, "Close window") {
 			editor.Stop()
 		}
@@ -132,7 +133,7 @@ func (view *View) windowButton(context *ui.Context) {
 		return
 	}
 	if context.IconButton(iconInWindow, "In a window") {
-		editor.PlayInWindow()
+		editor.PlayOn(project.Desktop)
 	}
 	context.Tooltip("Build the game and play it in a window of its own")
 }
@@ -147,13 +148,13 @@ func (view *View) stage(context *ui.Context) {
 		return
 	}
 	if !played.Is2D() {
-		context.Box(ui.Layout{Width: ui.Grow(), Height: ui.Grow()}, nil)
+		view.stage3D(context, played)
 		return
 	}
 	target := view.Editor.Target
 	ink := context.Theme.InkSoft
 	context.Paint(ui.Layout{Width: ui.Grow(), Height: ui.Grow()}, func(area draw2d.Rect, list *draw2d.List) {
-		if target == ConsoleScreen {
+		if target == Nintendo3DSScreens {
 			paintConsole(played, area, ink, list)
 			return
 		}
@@ -201,15 +202,20 @@ func paintConsole(played *engine.Scene, area draw2d.Rect, ink draw2d.Color, list
 // where the shapes differ.
 func paintLetterboxed(played *engine.Scene, area draw2d.Rect, aspect float64, list *draw2d.List) {
 	list.Rectangle(area, 0, draw2d.Color{letterboxColor, letterboxColor, letterboxColor, 1}, draw2d.Color{}, 0)
+	paintPlaying(played, fitted(area, aspect), list)
+}
+
+// fitted is the largest rectangle of a shape (width over height) centred in an area.
+func fitted(area draw2d.Rect, aspect float64) draw2d.Rect {
 	screen := area
 	if float64(area.Width)/float64(max(area.Height, 1)) > aspect {
 		screen.Width = float32(float64(area.Height) * aspect)
 		screen.X += (area.Width - screen.Width) / 2
-	} else {
-		screen.Height = float32(float64(area.Width) / aspect)
-		screen.Y += (area.Height - screen.Height) / 2
+		return screen
 	}
-	paintPlaying(played, screen, list)
+	screen.Height = float32(float64(area.Width) / aspect)
+	screen.Y += (area.Height - screen.Height) / 2
+	return screen
 }
 
 // watchPanel shows what the node chosen is doing while the game plays.

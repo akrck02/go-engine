@@ -8,9 +8,9 @@ import (
 	"github.com/akrck02/go-engine/scenefile"
 )
 
-// The editor is six workspaces, one job each, as the pages of an editing suite: gathering the
-// project's material, drawing it, building levels with it, writing the code, trying the game and
-// shipping it. A bar along the bottom changes between them (or the keys 1 to 6); all of them see
+// The editor is seven workspaces, one job each, as the pages of an editing suite: gathering the
+// project's material, drawing it, building levels with it, writing the code, choosing its controls,
+// trying the game and shipping it. A bar along the bottom changes between them (or the keys 1 to 7); all of them see
 // the same scene and the same chosen node.
 
 // Workspace is one of the editor's screens.
@@ -25,6 +25,8 @@ const (
 	LevelWorkspace
 	// CodeWorkspace shows the behaviours the project's Go code defines.
 	CodeWorkspace
+	// ControlsWorkspace binds the game's actions to each target's inputs.
+	ControlsWorkspace
 	// PlayWorkspace plays the scene, to try it.
 	PlayWorkspace
 	// BuildWorkspace makes the game for each place it runs.
@@ -32,7 +34,7 @@ const (
 )
 
 // Workspaces are the workspaces in the order of the bar.
-var Workspaces = []Workspace{ProjectWorkspace, ArtWorkspace, LevelWorkspace, CodeWorkspace, PlayWorkspace, BuildWorkspace}
+var Workspaces = []Workspace{ProjectWorkspace, ArtWorkspace, LevelWorkspace, CodeWorkspace, ControlsWorkspace, PlayWorkspace, BuildWorkspace}
 
 // workspaceParts are each workspace's word, icon and key, in the order of Workspaces.
 var workspaceParts = []struct {
@@ -40,7 +42,8 @@ var workspaceParts = []struct {
 	key        input.Key
 }{
 	{"Project", iconProject, input.Key1}, {"Art", iconArt, input.Key2}, {"Level", iconScene, input.Key3},
-	{"Code", iconCode, input.Key4}, {"Play", iconPlay, input.Key5}, {"Build", iconBuild, input.Key6},
+	{"Code", iconCode, input.Key4}, {"Controls", iconControls, input.Key5}, {"Play", iconPlay, input.Key6},
+	{"Build", iconBuild, input.Key7},
 }
 
 // Name is the workspace's word on the bar.

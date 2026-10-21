@@ -161,7 +161,7 @@ func (project *Project) Import(source string) (string, error) {
 // SaveSettings writes the project's settings, when its Android application id has the form one
 // has.
 func (project *Project) SaveSettings() error {
-	if asked := project.Settings.AndroidID; asked != "" && !applicationIDForm.MatchString(asked) {
+	if asked := project.Settings.ApplicationID; asked != "" && !applicationIDForm.MatchString(asked) {
 		return failure.Wrap(ApplicationIDWrong, asked, nil)
 	}
 	data, err := json.MarshalIndent(project.Settings, "", "\t")
@@ -174,11 +174,11 @@ func (project *Project) SaveSettings() error {
 	return nil
 }
 
-// PlayCommand builds the game for this computer, as BuildDesktop does, and returns the command
+// playCommand builds the game for this computer, as buildDesktop does, and returns the command
 // that runs it from the project's folder, not started: the editor shows its output and can stop
 // it (a program started through go run would outlive its stopping).
-func (project *Project) PlayCommand() (*exec.Cmd, error) {
-	built, err := project.BuildDesktop()
+func (project *Project) playCommand() (*exec.Cmd, error) {
+	built, err := project.buildDesktop()
 	if err != nil {
 		return nil, err
 	}
@@ -262,8 +262,8 @@ func (project *Project) CodeChangedSince(built time.Time) bool {
 // Built is what a build made: the program, and the notices of what it carries.
 type Built struct{ Program, Notices string }
 
-// BuildDesktop builds the game for this computer into build/.
-func (project *Project) BuildDesktop() (Built, error) {
+// buildDesktop builds the game for this computer into build/.
+func (project *Project) buildDesktop() (Built, error) {
 	output := project.Path(path.Join("build", build.FileName(project.Settings.Name)+build.ExecutableSuffix()))
 	if err := project.Tidy(); err != nil {
 		return Built{}, err
@@ -275,8 +275,8 @@ func (project *Project) BuildDesktop() (Built, error) {
 	return Built{Program: output, Notices: noticesFile}, err
 }
 
-// Build3DS builds the game for the Nintendo 3DS into build/, with TinyGo.
-func (project *Project) Build3DS() (Built, error) {
+// build3DS builds the game for the Nintendo 3DS into build/, with TinyGo.
+func (project *Project) build3DS() (Built, error) {
 	tinygo, err := project.Tools.FindTinyGo()
 	if err != nil {
 		return Built{}, err

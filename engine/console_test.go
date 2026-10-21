@@ -15,7 +15,7 @@ func windowCopy() *input.State {
 	return copied
 }
 
-func TestAConsoleButtonIsPressedOnceWhileItIsHeld(test *testing.T) {
+func TestA3DSButtonIsPressedOnceWhileItIsHeld(test *testing.T) {
 	var console consoleInput
 	keys := console.keysFrom(windowCopy(), ctr.ButtonUp|ctr.ButtonA)
 	if !keys.Pressed(input.KeyUp) || !keys.Pressed(input.KeySpace) || keys.StickX != 0.5 {
