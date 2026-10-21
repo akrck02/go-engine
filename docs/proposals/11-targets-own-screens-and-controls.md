@@ -97,7 +97,11 @@ person can read and type:
 | `sheet` | a sheet from the bottom (Android), opened and closed by an action |
 | `none` | not shown on that target |
 
-The engine lays each surface out with what Go UI has (`Within`, `Overlay`, `PanelWith`, `Sheet`).
+The engine lays each surface out with what Go UI has (`Within`, `Overlay`, `PanelWith`, `Modal`
+for the sheet). A 3DS's top screen has no interface of its own: the engine paints the surfaces
+placed there with a Go UI context of their own, given no pointer, over the scene. A place a
+target lacks is the nearest it has: a second screen elsewhere is `over`, a sheet on a 3DS a
+`window`.
 `SetInterface` becomes the surface `interface`, placed on the second screen on the 3DS and over the
 view elsewhere, as today (R7). `SetSecondScreen`'s 3D scene stays as it is. The editor's Play gains
 a target to preview beside the shapes it has (R5): each target's places for its surfaces.
@@ -129,7 +133,7 @@ a target to preview beside the shapes it has (R5): each target's places for its 
 - [x] T5b — strokes in Go Renderer's draw2d · go-renderer feature/strokes · R2 · tests of covering a line, keeping the mask, allocating nothing
 - [x] T5c — touch controls: engine.json's `touchControls`, drawn and read on Android, bound as words · engine · R8 · tests of placing, pressing, dragging a stick, allocating nothing
 - [x] T5d — the Controls workspace redesigned: tabs per device, line drawings, action cards, the panel beside a control, autosave and its own undo, the phone's layout designer · editor · R2, R8 · tests of assigning, renaming, undoing, saving, the layout; captures of the four tabs
-- [ ] T6 — surfaces: `SetSurface`, engine.json's `surfaces`, the five places on the desktop and the 3DS · engine · R4 · captures in the editor and Azahar
+- [x] T6 — surfaces: `SetSurface`, engine.json's `surfaces`, the five places on the desktop and the 3DS · engine · R4 · captures in the editor and Azahar
 - [ ] T7 — `sheet` on Android, and `SetInterface` as the `interface` surface · R4, R7 · test; the samples unchanged
 - [ ] T8 — the editor previews each target's surfaces · editor · R5 · captures
 - [ ] T9 — fullscreen in Go Renderer (desktop and web) and Go UI · R6 · test of the request; by hand

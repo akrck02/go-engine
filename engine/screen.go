@@ -19,7 +19,8 @@ const flatNeedsScene = false
 // drawOver draws nothing over the scene on the desktop: the interface does it (interfaceFor).
 func drawOver(*Scene, *input.State, *draw2d.List) {}
 
-// interfaceFor is what the window's interface shows: a 2D scene, filling it.
+// interfaceFor is what the window's interface shows: a 2D scene, filling it, and the game's
+// surfaces over it.
 func interfaceFor(game *runner) func(context *ui.Context) {
 	return func(context *ui.Context) {
 		played := game.played
@@ -27,13 +28,21 @@ func interfaceFor(game *runner) func(context *ui.Context) {
 			if gameInterface != nil {
 				gameInterface(context, Menu{game}) // over the 3D scene, and over the game's overlay
 			}
+			paintSurfaces(context, Menu{game}, game.screen, false)
 			return
 		}
 		context.Paint(ui.Layout{Width: ui.Grow(), Height: ui.Grow()}, func(area draw2d.Rect, list *draw2d.List) {
 			played.Draw2D(list, area, played.View2D())
 		})
+		paintSurfaces(context, Menu{game}, game.screen, true) // the scene fills the screen's column
 	}
 }
+
+// mainScreen is nothing on the desktop: the window's interface paints the surfaces.
+type mainScreen struct{}
+
+// paintOnMainScreen does nothing on the desktop: the window's interface paints the surfaces.
+func (game *runner) paintOnMainScreen() {}
 
 // consoleKeys is the window's own keys on the desktop, where the keyboard is the game's.
 func consoleKeys(_ *consoleInput, window *input.State) *input.State { return window }

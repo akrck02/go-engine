@@ -9,6 +9,7 @@ import (
 	"github.com/akrck02/go-renderer/draw2d"
 	"github.com/akrck02/go-renderer/input"
 	"github.com/akrck02/go-renderer/models"
+	ui "github.com/akrck02/go-ui"
 	"github.com/akrck02/go-ui/window"
 
 	"github.com/akrck02/go-engine/failure"
@@ -44,6 +45,10 @@ type Settings struct {
 	// TouchControls are the sticks and buttons drawn on a touch screen (a phone's), as the editor
 	// places them; none keeps the engine's four touch buttons (touchcontrols.go).
 	TouchControls []TouchControl `json:"touchControls,omitempty"`
+	// Surfaces place the game's surfaces (SetSurface) on each target, by surface and then by
+	// target: "map": {"nintendo3ds": {"place": "second-screen"}, "desktop": {"place": "over",
+	// "align": "top-right"}} (surfaces.go).
+	Surfaces map[string]map[string]SurfacePlace `json:"surfaces,omitempty"`
 }
 
 // SettingsFile is the settings' file in a project.
@@ -100,6 +105,9 @@ func Run(files fs.FS) error {
 	for _, problem := range bindGame(settings, RunningOn()) {
 		slog.Warn("an action's input is unknown here; the rest are bound", "error", problem)
 	}
+	for _, problem := range UseSurfaces(settings.Surfaces, RunningOn()) {
+		slog.Warn("a surface's place is unknown; it goes where surfaces go by default", "error", problem)
+	}
 	played, err := Load(files, settings.StartScene)
 	if played == nil {
 		return err
@@ -111,7 +119,8 @@ func Run(files fs.FS) error {
 		slog.Warn("a behaviour could not be made", "error", problem)
 	}
 	useTouchControls(settings.TouchControls)
-	game := &runner{played: played, name: settings.Name, keepStart: settings.KeepStart}
+	game := &runner{played: played, name: settings.Name, keepStart: settings.KeepStart,
+		screen: draw2d.Rect{Width: windowWidth, Height: windowHeight}}
 	if settings.SceneMenu || gameInterface != nil {
 		game.menu = scenesOf(files)
 	}
@@ -140,6 +149,9 @@ type runner struct {
 	below   window.BelowView // how the bottom screen's scene is seen this frame (SetSecondScreen)
 	console consoleInput     // the console's buttons, as keys
 	view    window.SceneView // what the window shows this frame
+	screen  draw2d.Rect      // the main screen's size, from the window's last frame
+	context *ui.Context      // the window's interface
+	top     mainScreen       // the surfaces on a main screen with no interface of its own (screen_nintendo3ds.go)
 	name    string           // the game's
 	menu    []MenuScene      // the scenes the bottom screen offers, when it offers them
 	// keepStart gives the 3DS's START to the game instead of ending it (Settings.KeepStart)
@@ -150,14 +162,20 @@ type runner struct {
 func (game *runner) run(title string) error {
 	options := window.Options{Title: title, Width: windowWidth, Height: windowHeight, Continuous: true, KeepStart: game.keepStart}
 	options.Scene = game.step
+	context, err := ui.New()
+	if err != nil {
+		return err
+	}
+	game.context = context
 	startConsole()
 	defer stopConsole()
-	return window.Run(options, interfaceFor(game))
+	return window.RunWith(context, options, interfaceFor(game))
 }
 
 // step moves the game on a frame and gives the window what to show.
 func (game *runner) step(state *input.State, step float64) *window.SceneView {
 	seconds := game.secondsSince(state, step)
+	game.screen = draw2d.Rect{Width: float32(state.WindowWidth), Height: float32(state.WindowHeight)}
 	game.console.reading = readConsole()
 	keys := consoleKeys(&game.console, state)
 	state.LockCursor(pointerCaptured)
@@ -174,6 +192,7 @@ func (game *runner) step(state *input.State, step float64) *window.SceneView {
 	if overlayPainter != nil && !game.played.Is2D() {
 		game.view.Drawing = game.paintOverlay(state)
 	}
+	game.paintOnMainScreen()
 	return &game.view
 }
 

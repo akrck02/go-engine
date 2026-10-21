@@ -16,7 +16,8 @@ const flatNeedsScene = false
 // drawOver draws nothing over the scene: the interface does it (interfaceFor).
 func drawOver(*Scene, *input.State, *draw2d.List) {}
 
-// interfaceFor is what the window's interface shows: a 2D scene and the touch buttons.
+// interfaceFor is what the window's interface shows: a 2D scene, the touch buttons, and the game's
+// surfaces over them.
 func interfaceFor(game *runner) func(context *ui.Context) {
 	return func(context *ui.Context) {
 		insets := context.Insets()
@@ -42,12 +43,19 @@ func interfaceFor(game *runner) func(context *ui.Context) {
 			}
 			drawTouchButtons(list, layout.buttons)
 		})
+		paintSurfaces(context, Menu{game}, game.screen, true) // the scene fills the screen's column
 		if len(touchPanel.controls) == 0 {
 			// TODO(akrck02): a screen reader reads the engine's four buttons, not a game's own touch controls yet
 			game.console.describeTouchButtons(context)
 		}
 	}
 }
+
+// mainScreen is nothing on Android: the window's interface paints the surfaces.
+type mainScreen struct{}
+
+// paintOnMainScreen does nothing on Android: the window's interface paints the surfaces.
+func (game *runner) paintOnMainScreen() {}
 
 // consoleKeys is the game's keys on Android: a keyboard's, if one is plugged in, and the touch
 // buttons'.

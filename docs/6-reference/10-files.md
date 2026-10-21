@@ -16,6 +16,7 @@ lists each key; the editor sets them all, so you only need it to read a file or 
 | `actions` | actions | What the player does, by name, and its inputs on each target (below) |
 | `axes` | list of text | The actions that move an axis (-1 to 1) instead of pressing, even with no inputs yet |
 | `touchControls` | touch controls | The sticks and buttons a phone shows; none keeps the engine's four buttons (below) |
+| `surfaces` | surfaces | Where each of the game's surfaces (`engine.SetSurface`) goes on each target (below) |
 
 ### `actions`
 
@@ -32,6 +33,21 @@ Each action names, per target, the words of the inputs that do it:
 | `kind` | `button` or `stick` | |
 | `x`, `y` | number | Where its centre is, from 0 to 1 across and down the screen |
 | `size` | number | Its width, as a share of the screen's shorter side |
+
+### `surfaces`
+
+Each surface names, per target, its place:
+`"map": {"nintendo3ds": {"place": "second-screen"}, "desktop": {"place": "window", "action": "map"}}`.
+A surface not named, or a target not named for it, goes on the second screen of a 3DS and over the
+view elsewhere, as a game's interface always did.
+
+| Key | Type | What it is |
+|---|---|---|
+| `place` | `over`, `window`, `second-screen`, `sheet` or `none` | Over the view; a floating window; the 3DS's second screen, in a column with the rest there; a sheet from the bottom; not shown. A second screen elsewhere than a 3DS is `over`, a sheet on a 3DS is a `window` |
+| `align` | `top-left`, `top`, `top-right`, `left`, `center`, `right`, `bottom-left`, `bottom`, `bottom-right` | Where an `over` or `window` surface sits; empty lays `over` on the whole view |
+| `width`, `height` | number | Its size in pixels; 0 is its content's |
+| `action` | text | The action that opens and closes a `window` or a `sheet` |
+| `open` | yes/no | A `window` or a `sheet` shown when the game starts |
 
 ## A scene: `scenes/*.scene.json`
 

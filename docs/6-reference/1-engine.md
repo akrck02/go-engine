@@ -39,9 +39,11 @@ A game's main registers its behaviours and runs the project it embeds:
 | `func SetOverlay(paint func(list *draw2d.List, width, height float32))` | SetOverlay sets what the game draws over a 3D scene each frame, in the pixels of the screen it is on (the window's, or the 3DS's top screen, 400 × 240): the list is empty when it is called. |
 | `func SetPointerCaptured(captured bool)` | SetPointerCaptured holds and hides the pointer, for a game that turns with the mouse, or lets it go (a pause menu): MouseMovement still reads the mouse. |
 | `func SetSecondScreen(shown *Scene)` | SetSecondScreen shows a scene on the second screen, under the game's interface (SetInterface), seen from its main camera; nil leaves the screen to the interface. |
+| `func SetSurface(name string, paint func(context *ui.Context))` | SetSurface makes a game show a surface of its own, by name, painted with Go UI every frame; engine.json's surfaces say where it goes on each target. |
 | `func ShowInterface(context *ui.Context, played *Scene, scenes []MenuScene)` | ShowInterface builds the game's own interface (SetInterface) for a scene played, offering some scenes (ScenesOf); playing another asks the scene to be replaced (Scene.TakeReplacement). |
 | `func TakeQuit() bool` | TakeQuit tells whether the game asked to quit since the last time, and forgets it: one who plays the game elsewhere than Run (the editor's Play) stops it then. |
 | `func TouchWords(control TouchControl) []string` | TouchWords are the words a touch control is bound with: a button's name, a stick's two axes. |
+| `func UseSurfaces(places map[string]map[string]SurfacePlace, target string) []error` | UseSurfaces places the game's surfaces on a target, as engine.json's surfaces say (by surface, then by target); Run does it, and the editor for the target it previews. |
 | `func Version() string` | Version says which Go Engine this program was built with: its release and commit, as "v0.0.1 (ba08523)", or "v0.0.1 (77aa001, local)" for a local copy, as the editor's window and the logs show it. |
 
 ### Constants and variables
@@ -127,6 +129,18 @@ A camera's distances when its settings leave them at 0, in metres.
 
 ```go
 const (
+	OverPlace         = "over"          // over the game's view, aligned to an edge or a corner
+	WindowPlace       = "window"        // a floating window over the view, opened and closed by an action
+	SecondScreenPlace = "second-screen" // the second screen (a 3DS's), touchable, in a column with the rest there
+	SheetPlace        = "sheet"         // a sheet from the bottom (a phone's), opened and closed by an action
+	NoPlace           = "none"          // not shown on that target
+)
+```
+
+The places a surface can go.
+
+```go
+const (
 	DesktopTarget     = "desktop"
 	Nintendo3DSTarget = "nintendo3ds"
 	AndroidTarget     = "android"
@@ -186,6 +200,7 @@ var (
 	SceneNotRestartable   = failure.Define("engine.scene-not-restartable", "the scene was not made from a description, so it cannot start again")
 	InputUnknown          = failure.Define("engine.input-unknown", "an action is bound to an input the target does not have: see the words an action can be bound to")
 	BindingsNotSaved      = failure.Define("engine.bindings-not-saved", "the actions the player changed could not be kept on this device")
+	SurfacePlaceUnknown   = failure.Define("engine.surface-place-unknown", "engine.json places a surface somewhere the engine does not know: see the places and alignments a surface can have")
 )
 ```
 
@@ -428,7 +443,7 @@ type Scene struct {
 | `func (owner *Scene) NewNode(description scenefile.Node) (*Node, error)` | NewNode makes a node of the scene from a description (and its children), not yet in the scene: Add it to a node. |
 | `func (owner *Scene) Physics() *physics.World` | Physics is the scene's physics world while it plays; nil for a 3D scene, or one not started. |
 | `func (owner *Scene) Picture(file string) (*draw2d.Image, error)` | Picture is a picture of the project's, read once: what the editor's Art workspace shows. |
-| `func (owner *Scene) PlayFrame(seconds float64, keys *input.State)` | PlayFrame is a frame of the game's main scene: the calls asked for between frames and the frame hook run, then the scene moves on (Update). |
+| `func (owner *Scene) PlayFrame(seconds float64, keys *input.State)` | PlayFrame is a frame of the game's main scene: the calls asked for between frames run, the actions are read (opening and closing the surfaces they open), the frame hook runs, then the scene moves on (Update). |
 | `func (owner *Scene) SetAmbient(ambient *scenefile.Ambient)` | SetAmbient sets the scene's ambient light (nil for none): in 2D the light that reaches everything; in 3D how strong its sky light is, from 0 (none) to 2 (twice the default). |
 | `func (owner *Scene) SetMode(mode scenefile.Mode)` | SetMode makes the scene 3D or 2D: its nodes show their shapes and models in 3D, or their sprites and flat shapes in 2D. |
 | `func (owner *Scene) SetSky(colour string)` | SetSky sets the background colour ("" for a daylight sky). |
@@ -476,6 +491,10 @@ type Settings struct {
 	// TouchControls are the sticks and buttons drawn on a touch screen (a phone's), as the editor
 	// places them; none keeps the engine's four touch buttons (touchcontrols.go).
 	TouchControls []TouchControl `json:"touchControls,omitempty"`
+	// Surfaces place the game's surfaces (SetSurface) on each target, by surface and then by
+	// target: "map": {"nintendo3ds": {"place": "second-screen"}, "desktop": {"place": "over",
+	// "align": "top-right"}} (surfaces.go).
+	Surfaces map[string]map[string]SurfacePlace `json:"surfaces,omitempty"`
 }
 ```
 
@@ -503,6 +522,26 @@ Start, when the behaviour has it, runs once before the first Update.
 
 ```go
 type Starter interface{ Start(context *Context) }
+```
+
+### SurfacePlace
+
+SurfacePlace is where a surface goes on one target, as engine.json says.
+
+```go
+type SurfacePlace struct {
+	Place string `json:"place"`
+	// Align is where an over or window surface sits in the view: top-left, top, top-right, left,
+	// center, right, bottom-left, bottom or bottom-right. Empty lays an over surface out on the
+	// whole view, as a game's interface is, and a window in the top left corner.
+	Align string `json:"align,omitempty"`
+	// Width and Height are its size in pixels; 0 is its content's.
+	Width  float32 `json:"width,omitempty"`
+	Height float32 `json:"height,omitempty"`
+	// Action opens and closes a window or a sheet; Open shows it when the game starts.
+	Action string `json:"action,omitempty"`
+	Open   bool   `json:"open,omitempty"`
+}
 ```
 
 ### TouchControl
