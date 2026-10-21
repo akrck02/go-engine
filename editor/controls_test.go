@@ -265,3 +265,20 @@ func TestNamesOnTheSameEdgeAreNotWrittenOverOneAnother(test *testing.T) {
 		test.Fatalf("a name on the other edge moved to %v", tags[2].y)
 	}
 }
+
+func TestAnAxisWithNoInputsIsStillAnAxisWhenTheProjectOpensAgain(test *testing.T) {
+	editor := open(test)
+	view := NewView(editor)
+	view.controls.load(editor.Project.Settings)
+	view.controls.addAction("turn", true)
+	view.saveControls()
+	settings, err := engine.ReadSettings(os.DirFS(editor.Project.Folder))
+	if err != nil {
+		test.Fatal(err)
+	}
+	var reopened controlsView
+	reopened.load(settings)
+	if !reopened.axes["turn"] {
+		test.Fatal("an axis with no inputs comes back as a press")
+	}
+}

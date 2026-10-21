@@ -14,6 +14,7 @@ lists each key; the editor sets them all, so you only need it to read a file or 
 | `consoleAddress` | text | The 3DS's address to send the game to; empty looks for it on the network |
 | `sceneMenu` | yes/no | Lists the scenes on the 3DS's bottom screen |
 | `actions` | actions | What the player does, by name, and its inputs on each target (below) |
+| `axes` | list of text | The actions that move an axis (-1 to 1) instead of pressing, even with no inputs yet |
 | `touchControls` | touch controls | The sticks and buttons a phone shows; none keeps the engine's four buttons (below) |
 
 ### `actions`

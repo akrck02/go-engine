@@ -38,6 +38,9 @@ type Settings struct {
 	// Actions are what the player does, by name, each bound to inputs per target: "fire":
 	// {"desktop": ["Space", "Pad A"], "nintendo3ds": ["A"]} (Input.Action, inputwords.go).
 	Actions map[string]map[string][]string `json:"actions,omitempty"`
+	// Axes are the actions that move an axis (-1 to 1) instead of pressing, by name: an action
+	// with no inputs yet says so here, as its inputs cannot.
+	Axes []string `json:"axes,omitempty"`
 	// TouchControls are the sticks and buttons drawn on a touch screen (a phone's), as the editor
 	// places them; none keeps the engine's four touch buttons (touchcontrols.go).
 	TouchControls []TouchControl `json:"touchControls,omitempty"`
