@@ -58,7 +58,8 @@ elsewhere on a target, and a game can show more surfaces beside it with `engine.
 - **The same scene on a computer.** A computer has no second screen, so that scene plays but is
   not shown. `engine.PlaceSecondScreen(&area)` shows it in an area of the window, in window pixels,
   under the game's own drawing: a radar in a corner. Call it again when the window's size changes;
-  `nil` hides it, and a 3DS ignores it.
+  `nil` hides it, and a 3DS ignores it. `engine.PlaceSecondScreenOver(&area)` draws it with no sky
+  of its own, floating over the game's view.
 - **Its own pictures.** Read a picture once (`draw2d.DecodeImage`) and paint it with
   `context.Paint`; the [Io World](https://github.com/akrck02/io-world/tree/main/IoWorldGo) game draws
   its menu of levels from its own bricks this way.

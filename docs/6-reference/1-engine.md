@@ -26,7 +26,8 @@ A game's main registers its behaviours and runs the project it embeds:
 | `func Fullscreen() bool` | Fullscreen tells whether the game is asked to be on the whole screen. |
 | `func HasInterface() bool` | HasInterface tells whether the game shows a go-ui interface of its own (SetInterface). |
 | `func HeightSeen(settings *scenefile.Camera, aspect float64) float64` | HeightSeen is the metres a 2D camera sees top to bottom on a screen of a shape (its width over its height): the camera's height (10 when it has none), or more on a screen too narrow for the width it must see. |
-| `func PlaceSecondScreen(area *draw2d.Rect)` | PlaceSecondScreen shows the second screen's scene in an area of the window, in window pixels, on a device that has no second screen: a radar in a corner of a computer's window, the same scene a 3DS shows below. |
+| `func PlaceSecondScreen(area *draw2d.Rect)` | PlaceSecondScreen shows the second screen's scene in an area of the window, in window pixels, on a device that has no second screen, with its own sky behind it: a map in a corner of a computer's window, the same scene a 3DS shows below. |
+| `func PlaceSecondScreenOver(area *draw2d.Rect)` | PlaceSecondScreenOver is PlaceSecondScreen with no background: the scene floats over the game's view in its area, as a radar does. |
 | `func PressedInput(state *input.State, target string) (string, bool)` | PressedInput is the word of an input pressed this frame on a target, if one was: a key, a mouse button or a pad's button (a 3DS's buttons and Android's back cannot be pressed from a computer). |
 | `func Quit()` | Quit ends the game once the frame being played ends. |
 | `func Register(behaviours ...any)` | Register makes behaviours known by their type's name: Register(Spin{}) is "Spin". |
@@ -35,13 +36,11 @@ A game's main registers its behaviours and runs the project it embeds:
 | `func Run(files fs.FS) error` | Run plays a project, from its files (embedded in the game, or a folder), until its window is closed: on the desktop in a window, on the Nintendo 3DS on the top screen. |
 | `func RunningOn() string` | RunningOn is the name of the target the game runs on now. |
 | `func SaveBindings() error` | SaveBindings keeps the actions the player changed, for the next time the game plays here. |
-| `func SecondScreen() (*Scene, bool)` | SecondScreen is the scene the second screen shows (SetSecondScreen), if any: one who plays the game elsewhere than Run moves it on each frame (Scene.Update) and shows it from Scene.Camera. |
 | `func SetEditor(run func() error)` | SetEditor installs the editor (the editor package does, from a project's editor.go). |
 | `func SetFullscreen(on bool)` | SetFullscreen asks for the game on the whole screen, or in its window again. |
 | `func SetInterface(paint func(context *ui.Context, menu Menu))` | SetInterface makes a game show an interface of its own, with go-ui, in its own look: a menu of its scenes (Menu), a map, its controls, a login form. |
 | `func SetOverlay(paint func(list *draw2d.List, width, height float32))` | SetOverlay sets what the game draws over a 3D scene each frame, in the pixels of the screen it is on (the window's, or the 3DS's top screen, 400 × 240): the list is empty when it is called. |
 | `func SetPointerCaptured(captured bool)` | SetPointerCaptured holds and hides the pointer, for a game that turns with the mouse, or lets it go (a pause menu): MouseMovement still reads the mouse. |
-| `func SetSecondScreen(shown *Scene)` | SetSecondScreen shows a scene on the second screen, under the game's interface (SetInterface), seen from its main camera; nil leaves the screen to the interface. |
 | `func SetSurface(name string, paint func(context *ui.Context))` | SetSurface makes a game show a surface of its own, by name, painted with Go UI every frame; engine.json's surfaces say where it goes on each target. |
 | `func ShowSurfaces(context *ui.Context, played *Scene, scenes []MenuScene, main, second draw2d.Rect)` | ShowSurfaces builds the game's surfaces (SetSurface, SetInterface) for a scene played, offering some scenes (ScenesOf), where the target UseSurfaces chose places them: those on the main screen in an area of the window, those on the second screen in another (an empty one shows none). |
 | `func TakeQuit() bool` | TakeQuit tells whether the game asked to quit since the last time, and forgets it: one who plays the game elsewhere than Run (the editor's Play) stops it then. |
