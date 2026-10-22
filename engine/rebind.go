@@ -33,18 +33,9 @@ func (keys *Input) Rebind(name string, words []string) []error {
 
 // bindOne binds one action to some words on a target, adding it if it was not bound.
 func bindOne(name string, words []string, target string) []error {
-	var bound boundAction
-	var problems []error
-	for _, word := range words {
-		input, err := readWord(word, target)
-		if err != nil {
-			problems = append(problems, err)
-			continue
-		}
-		bound.inputs = append(bound.inputs, input)
-	}
+	bound, problems := readWords(words, target)
 	if index, found := actionTable.index[name]; found {
-		actionTable.actions[index].inputs = bound.inputs
+		actionTable.actions[index].inputs, actionTable.actions[index].words = bound.inputs, bound.words
 		return problems
 	}
 	actionTable.index[name] = len(actionTable.actions)

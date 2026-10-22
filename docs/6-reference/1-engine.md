@@ -26,6 +26,8 @@ A game's main registers its behaviours and runs the project it embeds:
 | `func Fullscreen() bool` | Fullscreen tells whether the game is asked to be on the whole screen. |
 | `func HasInterface() bool` | HasInterface tells whether the game shows a go-ui interface of its own (SetInterface). |
 | `func HeightSeen(settings *scenefile.Camera, aspect float64) float64` | HeightSeen is the metres a 2D camera sees top to bottom on a screen of a shape (its width over its height): the camera's height (10 when it has none), or more on a screen too narrow for the width it must see. |
+| `func HintOf(words []string, target string, kind InputKind, layout input.PadLayout) string` | HintOf is the hint of an action bound to some words on a target, for a player using a kind of input with a pad of some layout: as ActionHint, for an editor showing a device that is not played. |
+| `func InputLabel(word string, layout input.PadLayout) string` | InputLabel is what a key cap or a button says for a word of engine.json, on a pad of some layout: "Escape" is "Esc", "Pad A" is "✕" on a PlayStation pad, "Touch Jump" is "Jump". |
 | `func PlaceSecondScreen(area *draw2d.Rect)` | PlaceSecondScreen shows the second screen's scene in an area of the window, in window pixels, on a device that has no second screen, with its own sky behind it: a map in a corner of a computer's window, the same scene a 3DS shows below. |
 | `func PlaceSecondScreenOver(area *draw2d.Rect)` | PlaceSecondScreenOver is PlaceSecondScreen with no background: the scene floats over the game's view in its area, as a radar does. |
 | `func PressedInput(state *input.State, target string) (string, bool)` | PressedInput is the word of an input pressed this frame on a target, if one was: a key, a mouse button or a pad's button (a 3DS's buttons and Android's back cannot be pressed from a computer). |
@@ -36,11 +38,13 @@ A game's main registers its behaviours and runs the project it embeds:
 | `func Run(files fs.FS) error` | Run plays a project, from its files (embedded in the game, or a folder), until its window is closed: on the desktop in a window, on the Nintendo 3DS on the top screen. |
 | `func RunningOn() string` | RunningOn is the name of the target the game runs on now. |
 | `func SaveBindings() error` | SaveBindings keeps the actions the player changed, for the next time the game plays here. |
+| `func SecondScreen() (*Scene, bool)` | SecondScreen is the scene the second screen shows (SetSecondScreen), if any: one who plays the game elsewhere than Run moves it on each frame (Scene.Update) and shows it from Scene.Camera. |
 | `func SetEditor(run func() error)` | SetEditor installs the editor (the editor package does, from a project's editor.go). |
 | `func SetFullscreen(on bool)` | SetFullscreen asks for the game on the whole screen, or in its window again. |
 | `func SetInterface(paint func(context *ui.Context, menu Menu))` | SetInterface makes a game show an interface of its own, with go-ui, in its own look: a menu of its scenes (Menu), a map, its controls, a login form. |
 | `func SetOverlay(paint func(list *draw2d.List, width, height float32))` | SetOverlay sets what the game draws over a 3D scene each frame, in the pixels of the screen it is on (the window's, or the 3DS's top screen, 400 × 240): the list is empty when it is called. |
 | `func SetPointerCaptured(captured bool)` | SetPointerCaptured holds and hides the pointer, for a game that turns with the mouse, or lets it go (a pause menu): MouseMovement still reads the mouse. |
+| `func SetSecondScreen(shown *Scene)` | SetSecondScreen shows a scene on the second screen, under the game's interface (SetInterface), seen from its main camera; nil leaves the screen to the interface. |
 | `func SetSurface(name string, paint func(context *ui.Context))` | SetSurface makes a game show a surface of its own, by name, painted with Go UI every frame; engine.json's surfaces say where it goes on each target. |
 | `func ShowSurfaces(context *ui.Context, played *Scene, scenes []MenuScene, main, second draw2d.Rect)` | ShowSurfaces builds the game's surfaces (SetSurface, SetInterface) for a scene played, offering some scenes (ScenesOf), where the target UseSurfaces chose places them: those on the main screen in an area of the window, those on the second screen in another (an empty one shows none). |
 | `func TakeQuit() bool` | TakeQuit tells whether the game asked to quit since the last time, and forgets it: one who plays the game elsewhere than Run (the editor's Play) stops it then. |
@@ -281,9 +285,12 @@ type Input struct {
 | Function or method | |
 |---|---|
 | `func (keys *Input) Action(name string) ActionState` | Action is an action's state this frame; an action not bound is never held. |
+| `func (keys *Input) ActionHint(name string) string` | ActionHint is what to show a player for an action: the label (InputLabel) of its first input of the kind they used last ("Tab" at the keyboard, "Start" with a pad), or of its first input when none is of that kind; "" for an action not bound. |
+| `func (keys *Input) ActionWords(name string) []string` | ActionWords are the words an action is bound to on the target played, as engine.json's ("Tab", "Pad Start"), rebinding included; none for an action not bound. |
 | `func (keys *Input) Axis(negative, positive Key) float64` | Axis is -1 while the first key is held, 1 while the second is, 0 with neither or both. |
 | `func (keys *Input) Down(key Key) bool` | Down tells whether a key is held; Pressed whether it went down this frame. |
 | `func (keys *Input) Gyroscope() Turn` | Gyroscope is how fast the device turns (a 3DS's gyroscope); still without one, or in an emulator. |
+| `func (keys *Input) LastInputKind() InputKind` | LastInputKind is the kind of the last input the player pressed or moved: it changes only when another kind is used, not when the player stops. |
 | `func (keys *Input) MouseMovement() (x, y float64)` | MouseMovement is how far the mouse moved since the last frame, in window pixels: it keeps counting while the pointer is captured (SetPointerCaptured). |
 | `func (keys *Input) Move() space.Vector` | Move is the direction the arrows (or WASD, or a 3DS's cross and circle pad) point, on the ground: right is +X, up is Forward (-Z). |
 | `func (keys *Input) Pointer() (x, y float64, pressed bool)` | Pointer is where the mouse (or a finger) is, in window pixels, and whether it is pressed. |
@@ -306,6 +313,30 @@ type InputChoice struct{ Word, Group string }
 | Function or method | |
 |---|---|
 | `func InputChoices(target string) []InputChoice` | InputChoices are the words a target knows, group by group, each group in a reading order. |
+
+### InputKind
+
+InputKind is a kind of device a player uses: a hint names the inputs of the
+one in their hands.
+
+```go
+type InputKind int
+```
+
+```go
+const (
+	// NoInputYet is before the player used anything: a hint names an action's first input.
+	NoInputYet InputKind = iota
+	// KeyboardAndMouse is a computer's keys and mouse buttons.
+	KeyboardAndMouse
+	// GamePad is a pad's buttons and sticks, on a computer or in a browser.
+	GamePad
+	// TouchScreen is a phone's screen and its touch controls (and Android's back).
+	TouchScreen
+	// ConsoleButtons is a console's own buttons and sticks (a 3DS's).
+	ConsoleButtons
+)
+```
 
 ### Key
 

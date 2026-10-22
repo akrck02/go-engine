@@ -46,14 +46,15 @@ type controlsView struct {
 type deviceTab struct {
 	label, icon string
 	targets     []string
+	kind        engine.InputKind // what a player of the device holds, for the actions' hints
 }
 
 // deviceTabs are the devices, in the order the tabs show them.
 var deviceTabs = []deviceTab{
-	{"Gamepad", iconGamepad, []string{engine.DesktopTarget, engine.WebTarget}},
-	{"Keyboard and mouse", iconKeyboard, []string{engine.DesktopTarget, engine.WebTarget}},
-	{"Nintendo 3DS", iconConsole, []string{engine.Nintendo3DSTarget}},
-	{"Mobile", iconPhone, []string{engine.AndroidTarget}},
+	{"Gamepad", iconGamepad, []string{engine.DesktopTarget, engine.WebTarget}, engine.GamePad},
+	{"Keyboard and mouse", iconKeyboard, []string{engine.DesktopTarget, engine.WebTarget}, engine.KeyboardAndMouse},
+	{"Nintendo 3DS", iconConsole, []string{engine.Nintendo3DSTarget}, engine.ConsoleButtons},
+	{"Mobile", iconPhone, []string{engine.AndroidTarget}, engine.TouchScreen},
 }
 
 // mobileTab is the phone's tab, the only one with a layout to design.
@@ -104,6 +105,13 @@ func (controls *controlsView) names() []string {
 
 // shownTab is the device shown.
 func (controls *controlsView) shownTab() deviceTab { return deviceTabs[controls.tab] }
+
+// hintOf is what a player of the device shown reads for an action, with an Xbox pad's names (the
+// layout most pads copy); "" when the device has no input for it.
+func (controls *controlsView) hintOf(name string) string {
+	tab := controls.shownTab()
+	return engine.HintOf(controls.actions[name][tab.targets[0]], tab.targets[0], tab.kind, input.XboxLayout)
+}
 
 // drawingShown is the device shown, drawn. Each drawing is made once and kept, so its outline is
 // drawn into a picture once; the phone's touch controls are placed on it each time.
