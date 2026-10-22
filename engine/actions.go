@@ -82,8 +82,9 @@ func (keys *Input) Action(name string) ActionState {
 	return actionTable.actions[index].state
 }
 
-// updateActions works every action's state out for this frame.
+// updateActions works every action's state out for this frame, and notes the kind of input used.
 func (keys *Input) updateActions() {
+	keys.noteInputKind()
 	for index := range actionTable.actions {
 		action := &actionTable.actions[index]
 		wasDown := action.state.Down

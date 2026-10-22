@@ -288,6 +288,7 @@ type Input struct {
 | `func (keys *Input) Axis(negative, positive Key) float64` | Axis is -1 while the first key is held, 1 while the second is, 0 with neither or both. |
 | `func (keys *Input) Down(key Key) bool` | Down tells whether a key is held; Pressed whether it went down this frame. |
 | `func (keys *Input) Gyroscope() Turn` | Gyroscope is how fast the device turns (a 3DS's gyroscope); still without one, or in an emulator. |
+| `func (keys *Input) LastInputKind() InputKind` | LastInputKind is the kind of the last input the player pressed or moved: it changes only when another kind is used, not when the player stops. |
 | `func (keys *Input) MouseMovement() (x, y float64)` | MouseMovement is how far the mouse moved since the last frame, in window pixels: it keeps counting while the pointer is captured (SetPointerCaptured). |
 | `func (keys *Input) Move() space.Vector` | Move is the direction the arrows (or WASD, or a 3DS's cross and circle pad) point, on the ground: right is +X, up is Forward (-Z). |
 | `func (keys *Input) Pointer() (x, y float64, pressed bool)` | Pointer is where the mouse (or a finger) is, in window pixels, and whether it is pressed. |
@@ -310,6 +311,26 @@ type InputChoice struct{ Word, Group string }
 | Function or method | |
 |---|---|
 | `func InputChoices(target string) []InputChoice` | InputChoices are the words a target knows, group by group, each group in a reading order. |
+
+### InputKind
+
+InputKind is a kind of device a player uses: a hint names the inputs of the
+one in their hands.
+
+```go
+type InputKind int
+```
+
+```go
+const (
+	// NoInputYet is before the player used anything: a hint names an action's first input.
+	NoInputYet InputKind = iota
+	KeyboardAndMouse
+	GamePad
+	TouchScreen
+	ConsoleButtons // a console's own buttons and sticks (a 3DS's)
+)
+```
 
 ### Key
 

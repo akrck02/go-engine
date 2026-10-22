@@ -111,6 +111,8 @@ func (owner *Scene) collectBehaving(nodes []*Node, node *Node) []*Node {
 type Input struct {
 	state   *input.State
 	console ctr.Reading // the 3DS's controls this frame; empty elsewhere (controls.go)
+	// lastKind is the kind of input the player used last (hints.go)
+	lastKind InputKind
 }
 
 // Down tells whether a key is held; Pressed whether it went down this frame.

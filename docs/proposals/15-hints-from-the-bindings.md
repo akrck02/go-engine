@@ -80,7 +80,7 @@ vary by driver, while the vendor in the GUID does not. Pictures of the buttons: 
 - [x] T1 — Go Renderer: `input.PadLayout`, `State.PadLayout()`, set from the pad's vendor on the desktop and in the browser · `input`, `windowloop`, `browser` · R2 · table test of vendors to layouts
 - [x] T2 — an action's words kept with it, through binding and rebinding; `Input.ActionWords` · `engine/actions.go`, `engine/rebind.go`, `engine/hints.go` · R1, R5 · tests: bound, rebound, unbound; no allocation
 - [x] T3 — `InputLabel` for every kind of word and each pad layout · `engine/inputlabels.go` · R2, R5 · table test
-- [ ] T4 — the last kind of input used, `Input.LastInputKind` · `engine/actions.go` · R3 · test: a key, a pad's button, a touch
+- [x] T4 — the last kind of input used, `Input.LastInputKind` · `engine/hints.go` · R3 · test: a key, a pad's button, a touch
 - [ ] T5 — `Input.ActionHint` · R4, R5 · tests on a computer with keyboard and pad, and on the 3DS; no allocation
 - [ ] T6 — the hint on each action's card in Controls; a *Hints* section in the actions guide · `editor`, `docs` · R6 · capture; the guide's code compiled in a test
 

@@ -59,6 +59,11 @@ A word is what an author writes; a player reads what the key cap or the button s
 The layout is the pad's, as Go Renderer tells it from the pad's maker
 (`context.Input.State().PadLayout()`); a pad it cannot tell is read as an Xbox pad.
 
+A computer may have a keyboard and a pad at once: the hint should name the one in the player's
+hands. `context.Input.LastInputKind()` is the kind of the last input pressed or moved:
+`KeyboardAndMouse`, `GamePad`, `TouchScreen` or `ConsoleButtons` (a 3DS's), and `NoInputYet`
+before the first. It changes when the player picks up another device, not when they stop.
+
 ## Design a phone's controls
 
 A phone has no buttons of its own, so the game draws them. Until you design some, it shows the
