@@ -4,8 +4,8 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/akrck02/go-renderer/ctr"
 	"github.com/akrck02/go-renderer/input"
+	"github.com/akrck02/go-renderer/nintendo3ds"
 )
 
 func TestAnActionGivesTheWordsItIsBoundToOnTheTargetPlayed(test *testing.T) {
@@ -60,11 +60,11 @@ func TestTheLastKindOfInputUsedFollowsThePlayersHands(test *testing.T) {
 		press func(state *input.State)
 		want  InputKind
 	}{
-		{func(state *input.State) { state.SetKey(input.KeyTab, true) }, KeyboardAndMouse},
-		{func(state *input.State) { state.SetPadButton(input.PadStart, true) }, GamePad},
-		{func(state *input.State) { state.SetTouch(1, 10, 10) }, TouchScreen},
-		{func(state *input.State) { state.RightStickX = 0.8 }, GamePad},
-		{func(state *input.State) { state.SetButton(input.MouseLeft, true) }, KeyboardAndMouse},
+		{func(state *input.State) { state.Feed().SetKey(input.KeyTab, true) }, KeyboardAndMouse},
+		{func(state *input.State) { state.Feed().SetPadButton(input.PadStart, true) }, GamePad},
+		{func(state *input.State) { state.Feed().SetTouch(1, 10, 10) }, TouchScreen},
+		{func(state *input.State) { state.Feed().SetRightStick(0.8, 0) }, GamePad},
+		{func(state *input.State) { state.Feed().SetButton(input.MouseLeft, true) }, KeyboardAndMouse},
 	}
 	for _, step := range steps {
 		keys.state = input.NewState()
@@ -83,7 +83,7 @@ func TestTheLastKindOfInputUsedFollowsThePlayersHands(test *testing.T) {
 
 func TestA3DSsButtonsAreAConsolesOwn(test *testing.T) {
 	BindActions(gameActions, Nintendo3DSTarget)
-	keys := &Input{state: input.NewState(), console: ctr.Reading{Held: ctr.ButtonStart}}
+	keys := &Input{state: input.NewState(), console: nintendo3ds.Reading{Held: nintendo3ds.ButtonStart}}
 	keys.updateActions()
 	if kind := keys.LastInputKind(); kind != ConsoleButtons {
 		test.Fatalf("a 3DS's Start gives %v", kind)
@@ -103,17 +103,17 @@ func TestAHintNamesTheInputOfTheDeviceInThePlayersHands(test *testing.T) {
 	if hint := keys.ActionHint("menu"); hint != "Tab" {
 		test.Fatalf("before any input menu's hint is %q", hint)
 	}
-	keys.state.SetPadButton(input.PadA, true)
+	keys.state.Feed().SetPadButton(input.PadA, true)
 	keys.updateActions()
 	if hint := keys.ActionHint("menu"); hint != "Start" {
 		test.Fatalf("with a pad menu's hint is %q", hint)
 	}
-	keys.state.SetPadLayout(input.PlayStationLayout)
+	keys.state.Feed().SetPadLayout(input.PlayStationLayout)
 	if hint := keys.ActionHint("menu"); hint != "Options" {
 		test.Fatalf("with a PlayStation pad menu's hint is %q", hint)
 	}
 	keys.state = input.NewState()
-	keys.state.SetKey(input.KeyEscape, true)
+	keys.state.Feed().SetKey(input.KeyEscape, true)
 	keys.updateActions()
 	if hint := keys.ActionHint("climb"); hint != "W" {
 		test.Fatalf("at the keyboard climb's hint is %q", hint)
@@ -125,7 +125,7 @@ func TestAHintNamesTheInputOfTheDeviceInThePlayersHands(test *testing.T) {
 
 func TestAHintOnThe3DSNamesItsOwnButton(test *testing.T) {
 	BindActions(hintActions, Nintendo3DSTarget)
-	keys := &Input{state: input.NewState(), console: ctr.Reading{Held: ctr.ButtonA}}
+	keys := &Input{state: input.NewState(), console: nintendo3ds.Reading{Held: nintendo3ds.ButtonA}}
 	keys.updateActions()
 	if hint := keys.ActionHint("menu"); hint != "Start" {
 		test.Fatalf("menu's hint on a 3DS is %q", hint)
@@ -135,7 +135,7 @@ func TestAHintOnThe3DSNamesItsOwnButton(test *testing.T) {
 func TestAHintWhenNoInputOfTheKindIsBoundIsTheFirst(test *testing.T) {
 	BindActions(hintActions, DesktopTarget)
 	keys := &Input{state: input.NewState()}
-	keys.state.SetTouch(1, 10, 10)
+	keys.state.Feed().SetTouch(1, 10, 10)
 	keys.updateActions()
 	if hint := keys.ActionHint("menu"); hint != "Tab" {
 		test.Fatalf("with a touch, menu's hint is %q", hint)
@@ -145,7 +145,7 @@ func TestAHintWhenNoInputOfTheKindIsBoundIsTheFirst(test *testing.T) {
 func TestReadingAHintAllocatesNothing(test *testing.T) {
 	BindActions(hintActions, DesktopTarget)
 	keys := &Input{state: input.NewState()}
-	keys.state.SetPadButton(input.PadA, true)
+	keys.state.Feed().SetPadButton(input.PadA, true)
 	allocations := testing.AllocsPerRun(100, func() {
 		keys.updateActions()
 		_ = keys.ActionHint("menu")

@@ -4,8 +4,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/akrck02/go-renderer/ctr"
 	"github.com/akrck02/go-renderer/input"
+	"github.com/akrck02/go-renderer/nintendo3ds"
 )
 
 // gameActions are a made-up game's bindings.
@@ -16,7 +16,7 @@ var gameActions = map[string]map[string][]string{
 }
 
 // frameWith works the actions out for one frame of an input.
-func frameWith(state *input.State, console ctr.Reading) *Input {
+func frameWith(state *input.State, console nintendo3ds.Reading) *Input {
 	keys := &Input{state: state, console: console}
 	keys.updateActions()
 	return keys
@@ -27,19 +27,19 @@ func TestAnActionIsPressedHeldAndLetGoByAnyOfItsInputs(test *testing.T) {
 		test.Fatal(problems)
 	}
 	for _, press := range []func(state *input.State){
-		func(state *input.State) { state.SetKey(input.KeySpace, true) },
-		func(state *input.State) { state.SetButton(input.MouseLeft, true) },
-		func(state *input.State) { state.SetPadButton(input.PadA, true) },
+		func(state *input.State) { state.Feed().SetKey(input.KeySpace, true) },
+		func(state *input.State) { state.Feed().SetButton(input.MouseLeft, true) },
+		func(state *input.State) { state.Feed().SetPadButton(input.PadA, true) },
 	} {
 		state := input.NewState()
 		press(state)
-		if fire := frameWith(state, ctr.Reading{}).Action("fire"); !fire.Pressed || !fire.Down || fire.Value != 1 {
+		if fire := frameWith(state, nintendo3ds.Reading{}).Action("fire"); !fire.Pressed || !fire.Down || fire.Value != 1 {
 			test.Fatalf("fire is %+v", fire)
 		}
-		if fire := frameWith(state, ctr.Reading{}).Action("fire"); fire.Pressed || !fire.Down {
+		if fire := frameWith(state, nintendo3ds.Reading{}).Action("fire"); fire.Pressed || !fire.Down {
 			test.Fatalf("fire held is %+v", fire)
 		}
-		if fire := frameWith(input.NewState(), ctr.Reading{}).Action("fire"); !fire.Released || fire.Down {
+		if fire := frameWith(input.NewState(), nintendo3ds.Reading{}).Action("fire"); !fire.Released || fire.Down {
 			test.Fatalf("fire let go is %+v", fire)
 		}
 	}
@@ -48,13 +48,13 @@ func TestAnActionIsPressedHeldAndLetGoByAnyOfItsInputs(test *testing.T) {
 func TestAnAxisActionAddsItsButtonsAndSticks(test *testing.T) {
 	BindActions(gameActions, DesktopTarget)
 	state := input.NewState()
-	state.SetKey(input.KeyA, true)
-	if turn := frameWith(state, ctr.Reading{}).Action("turn"); turn.Value != -1 || !turn.Down {
+	state.Feed().SetKey(input.KeyA, true)
+	if turn := frameWith(state, nintendo3ds.Reading{}).Action("turn"); turn.Value != -1 || !turn.Down {
 		test.Fatalf("A held turns %+v", turn)
 	}
 	stick := input.NewState()
-	stick.StickX = 0.3
-	if turn := frameWith(stick, ctr.Reading{}).Action("turn"); turn.Value != 0.3 || turn.Down {
+	stick.Feed().SetStick(0.3, 0)
+	if turn := frameWith(stick, nintendo3ds.Reading{}).Action("turn"); turn.Value != 0.3 || turn.Down {
 		test.Fatalf("the stick a little right turns %+v", turn)
 	}
 }
@@ -63,11 +63,11 @@ func TestA3DSReadsItsOwnButtons(test *testing.T) {
 	if problems := BindActions(gameActions, Nintendo3DSTarget); len(problems) != 0 {
 		test.Fatal(problems)
 	}
-	frameWith(input.NewState(), ctr.Reading{})
-	if fire := frameWith(input.NewState(), ctr.Reading{Held: ctr.ButtonR}).Action("fire"); !fire.Pressed {
+	frameWith(input.NewState(), nintendo3ds.Reading{})
+	if fire := frameWith(input.NewState(), nintendo3ds.Reading{Held: nintendo3ds.ButtonR}).Action("fire"); !fire.Pressed {
 		test.Fatalf("R on a 3DS fires %+v", fire)
 	}
-	if turn := frameWith(input.NewState(), ctr.Reading{Held: ctr.ButtonRight}).Action("turn"); turn.Value != 1 {
+	if turn := frameWith(input.NewState(), nintendo3ds.Reading{Held: nintendo3ds.ButtonRight}).Action("turn"); turn.Value != 1 {
 		test.Fatalf("the cross right on a 3DS turns %+v", turn)
 	}
 }
@@ -109,14 +109,14 @@ func TestABindingChangedWhilePlayingIsKeptAndReadBack(test *testing.T) {
 	}
 	bindGame(settings, DesktopTarget) // the next time the game plays
 	state := input.NewState()
-	state.SetKey(input.KeyEnter, true)
-	if fire := frameWith(state, ctr.Reading{}).Action("fire"); !fire.Pressed {
+	state.Feed().SetKey(input.KeyEnter, true)
+	if fire := frameWith(state, nintendo3ds.Reading{}).Action("fire"); !fire.Pressed {
 		test.Fatalf("Enter, rebound to fire and kept, fires %+v", fire)
 	}
 	space := input.NewState()
-	space.SetKey(input.KeySpace, true)
-	frameWith(input.NewState(), ctr.Reading{})
-	if fire := frameWith(space, ctr.Reading{}).Action("fire"); fire.Down {
+	space.Feed().SetKey(input.KeySpace, true)
+	frameWith(input.NewState(), nintendo3ds.Reading{})
+	if fire := frameWith(space, nintendo3ds.Reading{}).Action("fire"); fire.Down {
 		test.Fatal("Space still fires after fire was rebound to Enter")
 	}
 }
@@ -133,12 +133,12 @@ func TestEveryInputChoiceIsAWordItsTargetKnows(test *testing.T) {
 
 func TestAKeyPressedIsCaughtAsItsWord(test *testing.T) {
 	state := input.NewState()
-	state.SetPadButton(input.PadStart, true)
+	state.Feed().SetPadButton(input.PadStart, true)
 	if word, found := PressedInput(state, DesktopTarget); !found || word != "Pad Start" {
 		test.Fatalf("the pad's Start is caught as %q, %v", word, found)
 	}
-	state.EndFrame()
-	state.SetKey(input.KeyF11, true)
+	state.Feed().EndFrame()
+	state.Feed().SetKey(input.KeyF11, true)
 	if word, _ := PressedInput(state, DesktopTarget); word != "F11" {
 		test.Fatalf("F11 is caught as %q", word)
 	}
@@ -147,23 +147,23 @@ func TestAKeyPressedIsCaughtAsItsWord(test *testing.T) {
 func TestAKeyWithAModifierPressesOnlyWithBothHeld(test *testing.T) {
 	BindActions(map[string]map[string][]string{"save": {DesktopTarget: {"Control+S"}}}, DesktopTarget)
 	state := input.NewState()
-	state.SetKey(input.KeyS, true)
-	if frameWith(state, ctr.Reading{}).Action("save").Down {
+	state.Feed().SetKey(input.KeyS, true)
+	if frameWith(state, nintendo3ds.Reading{}).Action("save").Down {
 		test.Fatal("S alone saves")
 	}
-	state.SetKey(input.KeyControl, true)
-	if !frameWith(state, ctr.Reading{}).Action("save").Pressed {
+	state.Feed().SetKey(input.KeyControl, true)
+	if !frameWith(state, nintendo3ds.Reading{}).Action("save").Pressed {
 		test.Fatal("Control and S do not save")
 	}
 }
 
 func TestAKeyTappedBetweenTwoFramesStillPressesItsAction(test *testing.T) {
 	BindActions(gameActions, DesktopTarget)
-	frameWith(input.NewState(), ctr.Reading{})
+	frameWith(input.NewState(), nintendo3ds.Reading{})
 	state := input.NewState()
-	state.SetKey(input.KeySpace, true)
-	state.SetKey(input.KeySpace, false) // let go before the frame: a quick tap
-	if fire := frameWith(state, ctr.Reading{}).Action("fire"); !fire.Pressed {
+	state.Feed().SetKey(input.KeySpace, true)
+	state.Feed().SetKey(input.KeySpace, false) // let go before the frame: a quick tap
+	if fire := frameWith(state, nintendo3ds.Reading{}).Action("fire"); !fire.Pressed {
 		test.Fatalf("a tap is %+v", fire)
 	}
 }

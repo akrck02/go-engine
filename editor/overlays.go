@@ -74,7 +74,7 @@ func (flat *flatView) drawLightReach(node *engine.Node) {
 	pixelsPerMetre := float64(flat.area.Width) / flat.view.MetresAcross(flat.area)
 	for _, radius := range [2]float64{inner, outer} {
 		pixels := float32(radius * pixelsPerMetre)
-		circle := draw2d.Rect{X: x - pixels, Y: y - pixels, Width: 2 * pixels, Height: 2 * pixels}
+		circle := draw2d.Rectangle{X: x - pixels, Y: y - pixels, Width: 2 * pixels, Height: 2 * pixels}
 		flat.drawing.Rectangle(circle, pixels, draw2d.Transparent, colour, 1)
 	}
 }
@@ -84,7 +84,7 @@ func lightMarkColour(colour string) draw2d.Color {
 	if colour == "" {
 		colour = "#ffffff"
 	}
-	mark := draw2d.Hex(colour)
+	mark := draw2d.MustHex(colour)
 	mark[3] = lightMarkAlpha
 	return mark
 }
@@ -120,7 +120,7 @@ func (flat *flatView) drawBody(node *engine.Node) {
 const pullArrowSize = 28
 
 // drawPull draws, in the middle of a gravity zone, an arrow the way it pulls.
-func (flat *flatView) drawPull(rect draw2d.Rect, pull *[2]float64) {
+func (flat *flatView) drawPull(rect draw2d.Rectangle, pull *[2]float64) {
 	if pull == nil || (pull[0] == 0 && pull[1] == 0) {
 		return
 	}
@@ -208,17 +208,17 @@ func (flat *flatView) drawCameraBounds(scene *engine.Scene, node *engine.Node) {
 	left, upper := flat.view.ToScreen(flat.area, space.NewVector(bounds.Minimum.X, top, 0))
 	right, lower := flat.view.ToScreen(flat.area, space.NewVector(bounds.Maximum.X, bounds.Minimum.Y, 0))
 	const width = 2
-	flat.drawing.Rectangle(draw2d.Rect{X: left, Y: lower - width/2, Width: right - left, Height: width}, 0, boundsLine, draw2d.Color{}, 0)
-	flat.drawing.Rectangle(draw2d.Rect{X: left - width/2, Y: upper, Width: width, Height: lower - upper}, 0, boundsLine, draw2d.Color{}, 0)
-	flat.drawing.Rectangle(draw2d.Rect{X: right - width/2, Y: upper, Width: width, Height: lower - upper}, 0, boundsLine, draw2d.Color{}, 0)
+	flat.drawing.Rectangle(draw2d.Rectangle{X: left, Y: lower - width/2, Width: right - left, Height: width}, 0, boundsLine, draw2d.Color{}, 0)
+	flat.drawing.Rectangle(draw2d.Rectangle{X: left - width/2, Y: upper, Width: width, Height: lower - upper}, 0, boundsLine, draw2d.Color{}, 0)
+	flat.drawing.Rectangle(draw2d.Rectangle{X: right - width/2, Y: upper, Width: width, Height: lower - upper}, 0, boundsLine, draw2d.Color{}, 0)
 	if !open {
-		flat.drawing.Rectangle(draw2d.Rect{X: left, Y: upper - width/2, Width: right - left, Height: width}, 0, boundsLine, draw2d.Color{}, 0)
+		flat.drawing.Rectangle(draw2d.Rectangle{X: left, Y: upper - width/2, Width: right - left, Height: width}, 0, boundsLine, draw2d.Color{}, 0)
 	}
 }
 
 // screenRect is where a box of the world falls in the view.
-func (flat *flatView) screenRect(box space.Box) draw2d.Rect {
+func (flat *flatView) screenRect(box space.Box) draw2d.Rectangle {
 	left, top := flat.view.ToScreen(flat.area, space.NewVector(box.Minimum.X, box.Maximum.Y, 0))
 	right, bottom := flat.view.ToScreen(flat.area, space.NewVector(box.Maximum.X, box.Minimum.Y, 0))
-	return draw2d.Rect{X: left, Y: top, Width: right - left, Height: bottom - top}
+	return draw2d.Rectangle{X: left, Y: top, Width: right - left, Height: bottom - top}
 }

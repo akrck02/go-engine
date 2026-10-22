@@ -12,7 +12,7 @@ func TestTheGamesOverlayIsDrawnOverA3DSceneAtTheScreensSize(test *testing.T) {
 	var seenWidth, seenHeight float32
 	SetOverlay(func(list *draw2d.List, width, height float32) {
 		seenWidth, seenHeight = width, height
-		list.Rectangle(draw2d.Rect{Width: width, Height: 8}, 0, draw2d.Hex("#00ff00"), draw2d.Transparent, 0)
+		list.Rectangle(draw2d.Rectangle{Width: width, Height: 8}, 0, draw2d.MustHex("#00ff00"), draw2d.Transparent, 0)
 	})
 	defer SetOverlay(nil)
 	state := input.NewState()
@@ -52,7 +52,7 @@ func TestAGameShownElsewhereDrawsItsOverlayAndInterface(test *testing.T) {
 		test.Fatal("a game without an overlay or an interface says it has one")
 	}
 	SetOverlay(func(list *draw2d.List, width, height float32) {
-		list.Rectangle(draw2d.Rect{Width: width, Height: height}, 0, draw2d.Hex("#000000"), draw2d.Transparent, 0)
+		list.Rectangle(draw2d.Rectangle{Width: width, Height: height}, 0, draw2d.MustHex("#000000"), draw2d.Transparent, 0)
 	})
 	defer SetOverlay(nil)
 	if !DrawOverlay(&list, 100, 50) || list.Commands[0].Area.Width != 100 {
@@ -64,7 +64,7 @@ func TestTheSecondScreensSceneIsPlacedInACornerOfTheWindow(test *testing.T) {
 	game := &runner{played: load(test)}
 	SetSecondScreen(load(test))
 	defer SetSecondScreen(nil)
-	corner := draw2d.Rect{X: 980, Y: 520, Width: 280, Height: 180}
+	corner := draw2d.Rectangle{X: 980, Y: 520, Width: 280, Height: 180}
 	PlaceSecondScreen(&corner)
 	defer PlaceSecondScreen(nil)
 	view := game.step(input.NewState(), 1.0/60)

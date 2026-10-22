@@ -40,9 +40,9 @@ const (
 
 // drawTitle is the game's own 2D over the scene: a band with the sample's name.
 func drawTitle(list *draw2d.List, width, height float32) {
-	band := draw2d.Rect{X: titleMargin, Y: titleMargin, Width: width - 2*titleMargin, Height: titleSize + titleMargin}
+	band := draw2d.Rectangle{X: titleMargin, Y: titleMargin, Width: width - 2*titleMargin, Height: titleSize + titleMargin}
 	list.Rectangle(band, 6, draw2d.Color{0, 0, 0, 0.45}, draw2d.Transparent, 0)
-	list.Text("Lighthouse · the beam turns", band.X+titleMargin, band.Y+titleSize+2, titleSize, draw2d.Medium, draw2d.Hex("#f5ead0"))
+	list.Text("Lighthouse · the beam turns", band.X+titleMargin, band.Y+titleSize+2, titleSize, draw2d.Medium, draw2d.MustHex("#f5ead0"))
 }
 
 // chartCaption is the game's interface: a caption on the 3DS's chart, or over the window.

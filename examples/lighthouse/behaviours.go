@@ -21,7 +21,7 @@ type Beam struct {
 const beamRadiusShare = 0.18
 
 func (beam *Beam) Start(context *engine.Context) {
-	material := &scene.Material{Name: "beam", Kind: scene.KindUnlit, BaseColor: graphics.Vec4{1, 0.92, 0.6, 0.55},
+	material := &scene.Material{Name: "beam", Kind: scene.UnlitKind, BaseColor: graphics.Vector{1, 0.92, 0.6, 0.55},
 		Additive: true, DoubleSided: true}
 	context.Node.SetMesh(beamCone(float32(beam.Length), float32(beam.Length*beamRadiusShare), material))
 	context.Node.SetMoving(true)
@@ -45,7 +45,7 @@ const (
 )
 
 func (fog *Fog) Start(context *engine.Context) {
-	fog.material = &scene.Material{Name: "fog", Kind: scene.KindUnlit, BaseColor: graphics.Vec4{0.75, 0.8, 0.85, fogOpacity},
+	fog.material = &scene.Material{Name: "fog", Kind: scene.UnlitKind, BaseColor: graphics.Vector{0.75, 0.8, 0.85, fogOpacity},
 		Transparent: true, DoubleSided: true}
 	context.Node.SetMesh(flatDisc(float32(fog.Radius), fog.material))
 }
@@ -61,7 +61,7 @@ type Marker struct {
 }
 
 func (marker *Marker) Start(context *engine.Context) {
-	colour := draw2d.Hex(marker.Colour)
-	material := &scene.Material{Name: "marker", Kind: scene.KindUnlit, BaseColor: graphics.Vec4(colour)}
+	colour := draw2d.MustHex(marker.Colour)
+	material := &scene.Material{Name: "marker", Kind: scene.UnlitKind, BaseColor: graphics.Vector(colour)}
 	context.Node.SetMesh(diamond(material))
 }

@@ -1,8 +1,8 @@
 package engine
 
 import (
-	"github.com/akrck02/go-renderer/ctr"
 	"github.com/akrck02/go-renderer/input"
+	"github.com/akrck02/go-renderer/nintendo3ds"
 )
 
 // The controls a game reads whole rather than as keys: two sticks, how fast the device turns, a
@@ -26,7 +26,7 @@ func (keys *Input) Stick() (x, y float64) {
 	if keys.state == nil {
 		return 0, 0
 	}
-	return keys.state.StickX, keys.state.StickY
+	return keys.state.Stick()
 }
 
 // RightStick is the second stick (a New 3DS's C-stick, a game pad's right stick) from -1 to 1 on
@@ -35,7 +35,7 @@ func (keys *Input) RightStick() (x, y float64) {
 	if keys.state == nil {
 		return 0, 0
 	}
-	return keys.state.RightStickX, keys.state.RightStickY
+	return keys.state.RightStick()
 }
 
 // Turn is how fast a device turns, in degrees a second: about the axis across its screen (Pitch),
@@ -53,7 +53,7 @@ func (keys *Input) Gyroscope() Turn {
 // 320 × 240 pixels), and whether one is on it at all; never without a second screen.
 func (keys *Input) SecondScreenTouch() (x, y int, touching bool) {
 	console := keys.console
-	return console.TouchX, console.TouchY, console.Held&ctr.ButtonTouch != 0
+	return console.TouchX, console.TouchY, console.Held&nintendo3ds.ButtonTouch != 0
 }
 
 // MouseMovement is how far the mouse moved since the last frame, in window pixels: it keeps

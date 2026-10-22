@@ -30,7 +30,7 @@ func HasInterface() bool {
 // some scenes (ScenesOf), where the target UseSurfaces chose places them: those on the main screen
 // in an area of the window, those on the second screen in another (an empty one shows none).
 // Playing another scene asks the scene to be replaced (Scene.TakeReplacement).
-func ShowSurfaces(context *ui.Context, played *Scene, scenes []MenuScene, main, second draw2d.Rect) {
+func ShowSurfaces(context *ui.Context, played *Scene, scenes []MenuScene, main, second draw2d.Rectangle) {
 	menu := Menu{&runner{played: played, menu: scenes}}
 	paintSurfaces(context, menu, main, true)
 	if second.Width == 0 {

@@ -32,7 +32,7 @@ const white = "#ffffff"
 
 // drawLights draws the scene's lights and lights what was drawn before them with them; nothing
 // when the scene has neither lights nor an ambient.
-func (owner *Scene) drawLights(list *draw2d.List, area draw2d.Rect, view View2D) {
+func (owner *Scene) drawLights(list *draw2d.List, area draw2d.Rectangle, view View2D) {
 	owner.lit = owner.collectLights(owner.lit[:0], owner.Root)
 	if len(owner.lit) == 0 && owner.Ambient == nil {
 		return
@@ -66,7 +66,7 @@ func (owner *Scene) collectLights(nodes []*Node, node *Node) []*Node {
 
 // drawLight adds one light: a point light around the node's position, a sprite light over its
 // sprite's place.
-func (owner *Scene) drawLight(list *draw2d.List, area draw2d.Rect, view View2D, node *Node) {
+func (owner *Scene) drawLight(list *draw2d.List, area draw2d.Rectangle, view View2D, node *Node) {
 	light := node.light
 	colour := owner.lightColour(light.Colour, light.Strength())
 	if light.Kind == scenefile.SpriteLight {
@@ -80,7 +80,7 @@ func (owner *Scene) drawLight(list *draw2d.List, area draw2d.Rect, view View2D, 
 	x, y := view.ToScreen(area, node.World().Position)
 	inner, outer := node.LightRadii()
 	scale := float32(view.scale(area))
-	reach := draw2d.Rect{X: x - float32(outer)*scale, Y: y - float32(outer)*scale, Width: 2 * float32(outer) * scale, Height: 2 * float32(outer) * scale}
+	reach := draw2d.Rectangle{X: x - float32(outer)*scale, Y: y - float32(outer)*scale, Width: 2 * float32(outer) * scale, Height: 2 * float32(outer) * scale}
 	if reach.Intersect(area).IsEmpty() {
 		return // shines on nothing in sight
 	}
@@ -135,8 +135,8 @@ func (owner *Scene) pointLight(node *Node) scene.PointLight {
 	inner, outer := node.LightRadii()
 	colour := owner.lightColour(node.light.Colour, node.light.Strength())
 	return scene.PointLight{
-		Position: graphics.Vec4{float32(position.X), float32(position.Y), float32(position.Z), 1},
-		Color:    graphics.Vec4{linear(colour[0]), linear(colour[1]), linear(colour[2]), colour[3]},
+		Position: graphics.Vector{float32(position.X), float32(position.Y), float32(position.Z), 1},
+		Color:    graphics.Vector{linear(colour[0]), linear(colour[1]), linear(colour[2]), colour[3]},
 		Inner:    float32(inner), Outer: float32(outer),
 	}
 }

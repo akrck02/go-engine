@@ -139,7 +139,7 @@ type Transform struct {
 | `func (transform Transform) Forward() Vector` | Forward is the way the thing faces, in its parent's space. |
 | `func (transform Transform) FromParent(point Vector) Vector` | FromParent is where a point given in the parent's space is in the thing's own space: ToParent undone. |
 | `func (transform *Transform) LookAt(target Vector)` | LookAt turns the thing so its Forward points at a target, keeping its Up towards the sky. |
-| `func (transform Transform) Matrix() graphics.Mat4` | Matrix is the transform as go-renderer draws it. |
+| `func (transform Transform) Matrix() graphics.Matrix` | Matrix is the transform as go-renderer draws it. |
 | `func (transform *Transform) Move(offset Vector)` | Move moves the thing by an offset in its parent's space. |
 | `func (transform Transform) Place(child Transform) Transform` | Place is where a child is, placed by its own transform inside the thing this transform places: the child's transform in the thing's parent's space. |
 | `func (transform Transform) Right() Vector` | Right is the thing's right, in its parent's space. |

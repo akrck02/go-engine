@@ -3,9 +3,9 @@
 package engine
 
 import (
-	"github.com/akrck02/go-renderer/ctr"
 	"github.com/akrck02/go-renderer/draw2d"
 	"github.com/akrck02/go-renderer/input"
+	"github.com/akrck02/go-renderer/nintendo3ds"
 	ui "github.com/akrck02/go-ui"
 )
 
@@ -28,7 +28,7 @@ func interfaceFor(game *runner) func(context *ui.Context) {
 			paintSurfaces(context, Menu{game}, game.screen, false) // over the 3D scene and the game's overlay
 			return
 		}
-		context.Paint(ui.Layout{Width: ui.Grow(), Height: ui.Grow()}, func(area draw2d.Rect, list *draw2d.List) {
+		context.Paint(ui.Layout{Width: ui.Grow(), Height: ui.Grow()}, func(area draw2d.Rectangle, list *draw2d.List) {
 			played.Draw2D(list, area, played.View2D())
 		})
 		paintSurfaces(context, Menu{game}, game.screen, true) // the scene fills the screen's column
@@ -45,7 +45,7 @@ func (game *runner) paintOnMainScreen() {}
 func consoleKeys(_ *consoleInput, window *input.State) *input.State { return window }
 
 // readConsole is an empty reading: there is no 3DS here.
-func readConsole() ctr.Reading { return ctr.Reading{} }
+func readConsole() nintendo3ds.Reading { return nintendo3ds.Reading{} }
 
 // startConsole does nothing: there is no 3DS here.
 func startConsole() {}

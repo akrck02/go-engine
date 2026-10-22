@@ -20,12 +20,12 @@ func At(position Vector) Transform {
 }
 
 // Matrix is the transform as go-renderer draws it.
-func (transform Transform) Matrix() graphics.Mat4 {
+func (transform Transform) Matrix() graphics.Matrix {
 	imaginaryX, imaginaryY, imaginaryZ, real := transform.rotation().Parts()
 	return graphics.FromTranslationRotationScale(
-		graphics.Vec4{float32(transform.Position.X), float32(transform.Position.Y), float32(transform.Position.Z), 1},
-		graphics.Vec4{float32(imaginaryX), float32(imaginaryY), float32(imaginaryZ), float32(real)},
-		graphics.Vec4{float32(transform.Scale.X), float32(transform.Scale.Y), float32(transform.Scale.Z), 0},
+		graphics.Vector{float32(transform.Position.X), float32(transform.Position.Y), float32(transform.Position.Z), 1},
+		graphics.Vector{float32(imaginaryX), float32(imaginaryY), float32(imaginaryZ), float32(real)},
+		graphics.Vector{float32(transform.Scale.X), float32(transform.Scale.Y), float32(transform.Scale.Z), 0},
 	)
 }
 

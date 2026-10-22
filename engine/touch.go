@@ -40,19 +40,19 @@ type touchButton struct {
 	key  input.Key
 	icon string
 	name string // what a screen reader calls it
-	area draw2d.Rect
+	area draw2d.Rectangle
 }
 
 // touchLayout is where a phone shows the game and its buttons.
 type touchLayout struct {
-	scene   draw2d.Rect
+	scene   draw2d.Rectangle
 	buttons [4]touchButton
 }
 
 // touchLayoutFor places the game and the buttons on a screen: area is the whole screen, safe the
 // part the system draws nothing over, and aspect the shape the game's camera was made for (width
 // over height; 0 when it says none).
-func touchLayoutFor(area, safe draw2d.Rect, aspect float64) touchLayout {
+func touchLayoutFor(area, safe draw2d.Rectangle, aspect float64) touchLayout {
 	if aspect <= 0 || safe.Width >= safe.Height {
 		band := safe
 		band.Y, band.Height = safe.Y+safe.Height-touchBandHeight, touchBandHeight
@@ -67,10 +67,10 @@ func touchLayoutFor(area, safe draw2d.Rect, aspect float64) touchLayout {
 
 // touchButtonsIn places the buttons in a band across the screen: left and right on its left, B and
 // A on its right, in the middle of its height.
-func touchButtonsIn(band draw2d.Rect) [4]touchButton {
+func touchButtonsIn(band draw2d.Rectangle) [4]touchButton {
 	top := band.Y + (band.Height-touchButtonSide)/2
-	square := func(x float32) draw2d.Rect {
-		return draw2d.Rect{X: x, Y: top, Width: touchButtonSide, Height: touchButtonSide}
+	square := func(x float32) draw2d.Rectangle {
+		return draw2d.Rectangle{X: x, Y: top, Width: touchButtonSide, Height: touchButtonSide}
 	}
 	step := float32(touchButtonSide + touchButtonGap)
 	left := band.X + touchButtonMargin
@@ -87,11 +87,11 @@ func touchButtonsIn(band draw2d.Rect) [4]touchButton {
 // window hands the scene a fresh copy of its input every frame): those held on a keyboard, and
 // those whose button a finger is on, and those a screen reader holds (readerHeld, by button).
 func touchKeys(keys, window *input.State, buttons [4]touchButton, readerHeld [4]bool) *input.State {
-	keys.EndFrame()
+	keys.Feed().EndFrame()
 	for key := input.KeyUnknown + 1; key <= input.KeySuper; key++ { // KeySuper is the last key
-		keys.SetKey(key, window.Down(key) || buttonHeld(window, buttons, readerHeld, key))
+		keys.Feed().SetKey(key, window.Down(key) || buttonHeld(window, buttons, readerHeld, key))
 	}
-	keys.StickX, keys.StickY = window.StickX, window.StickY
+	keys.Feed().SetStick(window.Stick())
 	return keys
 }
 
@@ -136,7 +136,7 @@ func (console *consoleInput) readerHeld() [4]bool {
 }
 
 // touched tells whether a finger is on an area.
-func touched(window *input.State, area draw2d.Rect) bool {
+func touched(window *input.State, area draw2d.Rectangle) bool {
 	for _, finger := range window.Touches() {
 		if area.Contains(float32(finger.X), float32(finger.Y)) {
 			return true

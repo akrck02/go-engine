@@ -38,9 +38,9 @@ var (
 
 // artView is what the Art workspace remembers between frames.
 type artView struct {
-	picture   string      // a picture chosen that is not a sprite or a tileset yet
-	animation int         // the animation chosen, by its place in the sheet
-	canvas    draw2d.Rect // where the picture was drawn, and how large
+	picture   string           // a picture chosen that is not a sprite or a tileset yet
+	animation int              // the animation chosen, by its place in the sheet
+	canvas    draw2d.Rectangle // where the picture was drawn, and how large
 	scale     float32
 	pressing  bool // the button was down over the canvas on the frame before
 	since     time.Time
@@ -161,7 +161,7 @@ func (view *View) artCanvas(context *ui.Context) {
 		context.Text(err.Error(), ui.TextStyle{Color: context.Theme.Warning})
 		return
 	}
-	context.Paint(ui.Layout{Width: ui.Grow(), Height: ui.Grow()}, func(area draw2d.Rect, list *draw2d.List) {
+	context.Paint(ui.Layout{Width: ui.Grow(), Height: ui.Grow()}, func(area draw2d.Rectangle, list *draw2d.List) {
 		list.Rectangle(area, 0, canvasGround, draw2d.Color{}, 0)
 		view.art.canvas, view.art.scale = fitWhole(picture, area)
 		list.Image(picture, view.art.canvas, 0, draw2d.Color{1, 1, 1, 1})
@@ -172,14 +172,14 @@ func (view *View) artCanvas(context *ui.Context) {
 
 // fitWhole is where a picture is drawn in an area, centred, scaled by a whole number so its
 // pixels stay square, and the scale.
-func fitWhole(picture *draw2d.Image, area draw2d.Rect) (draw2d.Rect, float32) {
+func fitWhole(picture *draw2d.Image, area draw2d.Rectangle) (draw2d.Rectangle, float32) {
 	width, height := picture.Size()
 	room := math.Min(float64(area.Width-2*canvasMargin)/float64(max(width, 1)), float64(area.Height-2*canvasMargin)/float64(max(height, 1)))
 	scale := float32(max(math.Floor(room), 1))
 	if room < 1 {
 		scale = float32(room)
 	}
-	shown := draw2d.Rect{Width: float32(width) * scale, Height: float32(height) * scale}
+	shown := draw2d.Rectangle{Width: float32(width) * scale, Height: float32(height) * scale}
 	shown.X, shown.Y = area.X+(area.Width-shown.Width)/2, area.Y+(area.Height-shown.Height)/2
 	return shown, scale
 }
@@ -210,7 +210,7 @@ func (view *View) drawCut(list *draw2d.List) {
 	}
 	cellWidth, cellHeight := view.art.canvas.Width/float32(columns), view.art.canvas.Height/float32(rows)
 	for cell := 0; cell < columns*rows; cell++ {
-		rect := draw2d.Rect{X: view.art.canvas.X + float32(cell%columns)*cellWidth, Y: view.art.canvas.Y + float32(cell/columns)*cellHeight, Width: cellWidth, Height: cellHeight}
+		rect := draw2d.Rectangle{X: view.art.canvas.X + float32(cell%columns)*cellWidth, Y: view.art.canvas.Y + float32(cell/columns)*cellHeight, Width: cellWidth, Height: cellHeight}
 		list.Rectangle(rect, 0, view.cellFill(cell), cutShadow, 1)
 		list.Rectangle(rect, 0, draw2d.Color{}, view.cellLine(cell), view.cellLineWidth(cell))
 		if cellWidth >= 3*frameNumberSize {

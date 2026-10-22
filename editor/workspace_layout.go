@@ -131,14 +131,14 @@ func (view *View) dragTouch(context *ui.Context, device drawing) {
 }
 
 // paintDesign rings the touch control chosen.
-func (view *View) paintDesign(theme *ui.Theme, list *draw2d.List, area draw2d.Rect, device drawing) {
+func (view *View) paintDesign(theme *ui.Theme, list *draw2d.List, area draw2d.Rectangle, device drawing) {
 	index := view.controls.design.selected + touchOffset
 	if index < touchOffset || index >= len(device.controls) {
 		return
 	}
 	each := device.controls[index]
 	shape := device.placed(area, each.x, each.y, each.width, each.height)
-	ring := draw2d.Rect{X: shape.X - designRingAway, Y: shape.Y - designRingAway,
+	ring := draw2d.Rectangle{X: shape.X - designRingAway, Y: shape.Y - designRingAway,
 		Width: shape.Width + 2*designRingAway, Height: shape.Height + 2*designRingAway}
 	list.Rectangle(ring, ring.Width/2, theme.Primary.WithAlpha(0.1), theme.Primary, drawingLine)
 }

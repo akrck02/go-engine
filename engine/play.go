@@ -1,8 +1,8 @@
 package engine
 
 import (
-	"github.com/akrck02/go-renderer/ctr"
 	"github.com/akrck02/go-renderer/input"
+	"github.com/akrck02/go-renderer/nintendo3ds"
 
 	"github.com/akrck02/go-engine/space"
 )
@@ -110,7 +110,7 @@ func (owner *Scene) collectBehaving(nodes []*Node, node *Node) []*Node {
 // Input is the keyboard, the mouse and the controls, as the game reads them.
 type Input struct {
 	state   *input.State
-	console ctr.Reading // the 3DS's controls this frame; empty elsewhere (controls.go)
+	console nintendo3ds.Reading // the 3DS's controls this frame; empty elsewhere (controls.go)
 	// lastKind is the kind of input the player used last (hints.go)
 	lastKind InputKind
 }
@@ -137,8 +137,9 @@ func (keys *Input) Move() space.Vector {
 	x := keys.Axis(KeyLeft, KeyRight) + keys.Axis(KeyA, KeyD)
 	forward := keys.Axis(KeyDown, KeyUp) + keys.Axis(KeyS, KeyW)
 	if keys.state != nil {
-		x += keys.state.StickX
-		forward += keys.state.StickY // up on the stick is forward
+		stickX, stickY := keys.state.Stick()
+		x += stickX
+		forward += stickY // up on the stick is forward
 	}
 	direction := space.NewVector(x, 0, -forward)
 	if direction.Length() > 1 {

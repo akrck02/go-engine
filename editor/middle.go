@@ -94,7 +94,7 @@ func (view *View) playingView(context *ui.Context, played *engine.Scene) {
 	if !played.Is2D() {
 		return
 	}
-	context.Paint(ui.Layout{Width: ui.Grow(), Height: ui.Grow()}, func(area draw2d.Rect, list *draw2d.List) {
+	context.Paint(ui.Layout{Width: ui.Grow(), Height: ui.Grow()}, func(area draw2d.Rectangle, list *draw2d.List) {
 		paintPlaying(played, area, list)
 	})
 }
@@ -176,7 +176,7 @@ func (view *View) leaveCameraButton(context *ui.Context) {
 // of how to move around it.
 func (view *View) sceneView(context *ui.Context) {
 	if view.Editor.Scene.Is2D() {
-		context.Paint(ui.Layout{Width: ui.Grow(), Height: ui.Grow()}, func(area draw2d.Rect, list *draw2d.List) {
+		context.Paint(ui.Layout{Width: ui.Grow(), Height: ui.Grow()}, func(area draw2d.Rectangle, list *draw2d.List) {
 			view.viewport.flat.paint(view.Editor, area, list)
 		})
 		context.Caption("Middle-drag or Hand (H) moves the view · scroll zooms · Select (V) chooses and drags · Paint (B), Erase (E), Fill (G) work on the chosen tile map")

@@ -82,7 +82,7 @@ func TestOnlyTheTilesInSightAreDrawn(test *testing.T) {
 		test.Fatalf("the map's box is %v", size)
 	}
 	var whole, narrow draw2d.List
-	area := draw2d.Rect{Width: 160, Height: 160} // 16 pixels a metre on screen: ten metres
+	area := draw2d.Rectangle{Width: 160, Height: 160} // 16 pixels a metre on screen: ten metres
 	level.DrawContent2D(&whole, area, View2D{Height: 10})
 	// two metres around a point over the floor's left end: two of its tiles
 	level.DrawContent2D(&narrow, area, View2D{Centre: space.NewVector(-2, -1.5, 0), Height: 2})
@@ -107,7 +107,7 @@ func images(list *draw2d.List) int {
 func TestDrawingA2DFrameAllocatesNothing(test *testing.T) {
 	level := tiledLevel(test)
 	var list draw2d.List
-	area := draw2d.Rect{Width: 160, Height: 160}
+	area := draw2d.Rectangle{Width: 160, Height: 160}
 	level.DrawContent2D(&list, area, View2D{Height: 10}) // the tileset is cut once, the list grows once
 	allocations := testing.AllocsPerRun(100, func() {
 		list.Reset()
@@ -147,7 +147,7 @@ func TestAMissingPictureIsTriedOnceAndCostsNothingAfter(test *testing.T) {
 	}}
 	built, _ := Build(fstest.MapFS{}, description)
 	var list draw2d.List
-	area := draw2d.Rect{Width: 100, Height: 100}
+	area := draw2d.Rectangle{Width: 100, Height: 100}
 	built.Draw2D(&list, area, built.View2D())
 	allocations := testing.AllocsPerRun(50, func() {
 		list.Reset()

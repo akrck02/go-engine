@@ -90,14 +90,14 @@ func TestWhatIsLoggedWhilePlayingIsKept(test *testing.T) {
 }
 
 func TestTheNintendo3DSShapeShowsTheSecondScreenUnderTheTopOne(test *testing.T) {
-	top, bottom := consoleScreens(draw2d.Rect{X: 100, Width: 1000, Height: 520})
+	top, bottom := consoleScreens(draw2d.Rectangle{X: 100, Width: 1000, Height: 520})
 	if math.Abs(float64(top.Width/top.Height)-400.0/240) > 1e-3 || math.Abs(float64(bottom.Width/bottom.Height)-320.0/240) > 1e-3 {
 		test.Fatalf("the screens are %v and %v, not the 3DS's shapes", top, bottom)
 	}
 	if bottom.Y < top.Y+top.Height || bottom.Y+bottom.Height > 520 {
 		test.Fatalf("the bottom screen %v is not under the top one %v, inside the area", bottom, top)
 	}
-	if middle := func(area draw2d.Rect) float32 { return area.X + area.Width/2 }; math.Abs(float64(middle(top)-middle(bottom))) > 1e-3 || math.Abs(float64(middle(top)-600)) > 1e-3 {
+	if middle := func(area draw2d.Rectangle) float32 { return area.X + area.Width/2 }; math.Abs(float64(middle(top)-middle(bottom))) > 1e-3 || math.Abs(float64(middle(top)-600)) > 1e-3 {
 		test.Fatalf("the screens %v and %v are not centred one over the other", top, bottom)
 	}
 }

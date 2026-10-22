@@ -4,9 +4,9 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/akrck02/go-renderer/ctr"
 	"github.com/akrck02/go-renderer/draw2d"
 	"github.com/akrck02/go-renderer/input"
+	"github.com/akrck02/go-renderer/nintendo3ds"
 	ui "github.com/akrck02/go-ui"
 	"github.com/akrck02/go-ui/uitest"
 )
@@ -34,7 +34,7 @@ func showSurfaces(test *testing.T, places map[string]map[string]SurfacePlace, ta
 	if problems := UseSurfaces(places, target); len(problems) != 0 {
 		test.Fatal(problems)
 	}
-	whole := draw2d.Rect{Width: gameWidth, Height: gameHeight}
+	whole := draw2d.Rectangle{Width: gameWidth, Height: gameHeight}
 	window, err := uitest.New(func(context *ui.Context) { paintSurfaces(context, Menu{}, whole, false) },
 		uitest.Size(gameWidth, gameHeight), uitest.Test(test))
 	if err != nil {
@@ -45,10 +45,10 @@ func showSurfaces(test *testing.T, places map[string]map[string]SurfacePlace, ta
 }
 
 // shownAt is where a surface's caption was shown, or nothing if it was not.
-func shownAt(window *uitest.Window, name string) (draw2d.Rect, bool) {
+func shownAt(window *uitest.Window, name string) (draw2d.Rectangle, bool) {
 	element, err := window.Element(name + " shown")
 	if err != nil || !element.Visible {
-		return draw2d.Rect{}, false
+		return draw2d.Rectangle{}, false
 	}
 	return element.Rect, true
 }
@@ -115,15 +115,15 @@ func TestAWindowSurfaceOpensAndClosesWithItsAction(test *testing.T) {
 		test.Fatal("the map's window is open before its action")
 	}
 	pressed := input.NewState()
-	pressed.SetKey(input.KeyM, true)
-	frameWith(pressed, ctr.Reading{})
+	pressed.Feed().SetKey(input.KeyM, true)
+	frameWith(pressed, nintendo3ds.Reading{})
 	toggleSurfaces()
 	window.Frame()
 	if _, found := shownAt(window, "Map"); !found {
 		test.Fatal("the map's window does not open with its action")
 	}
-	frameWith(input.NewState(), ctr.Reading{})
-	frameWith(pressed, ctr.Reading{})
+	frameWith(input.NewState(), nintendo3ds.Reading{})
+	frameWith(pressed, nintendo3ds.Reading{})
 	toggleSurfaces()
 	window.Frame()
 	if _, found := shownAt(window, "Map"); found {
@@ -197,7 +197,7 @@ func TestTheGamesInterfaceIsTheSurfaceNamedInterface(test *testing.T) {
 	places := map[string]map[string]SurfacePlace{InterfaceSurface: {DesktopTarget: {Place: OverPlace, Align: "bottom"}}}
 	UseSurfaces(places, DesktopTarget)
 	window, err := uitest.New(func(context *ui.Context) {
-		paintSurfaces(context, Menu{}, draw2d.Rect{Width: gameWidth, Height: gameHeight}, false)
+		paintSurfaces(context, Menu{}, draw2d.Rectangle{Width: gameWidth, Height: gameHeight}, false)
 	}, uitest.Size(gameWidth, gameHeight))
 	if err != nil {
 		test.Fatal(err)
@@ -213,9 +213,9 @@ func TestASheetOpensWithItsActionAndClosesWhenThePlayerDismissesIt(test *testing
 	places := map[string]map[string]SurfacePlace{"Map": {AndroidTarget: {Place: SheetPlace, Action: "map"}}}
 	window := showSurfaces(test, places, AndroidTarget, "Map")
 	pressed := input.NewState()
-	pressed.SetKey(input.KeyM, true)
-	frameWith(input.NewState(), ctr.Reading{})
-	frameWith(pressed, ctr.Reading{})
+	pressed.Feed().SetKey(input.KeyM, true)
+	frameWith(input.NewState(), nintendo3ds.Reading{})
+	frameWith(pressed, nintendo3ds.Reading{})
 	toggleSurfaces()
 	window.Frame()
 	shown, found := shownAt(window, "Map")
@@ -234,7 +234,7 @@ func TestSurfacesOnTheWholeViewOfAPreviewGoOneUnderAnother(test *testing.T) {
 	SetSurface("Map", captionSurface("Map"))
 	SetSurface("Lamp", captionSurface("Lamp"))
 	UseSurfaces(nil, DesktopTarget)
-	preview := draw2d.Rect{X: 100, Y: 50, Width: 640, Height: 360}
+	preview := draw2d.Rectangle{X: 100, Y: 50, Width: 640, Height: 360}
 	window, err := uitest.New(func(context *ui.Context) { paintSurfaces(context, Menu{}, preview, true) },
 		uitest.Size(gameWidth, gameHeight), uitest.Test(test))
 	if err != nil {

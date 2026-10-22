@@ -12,7 +12,7 @@ import (
 // paintSurfaces paints the surfaces placed on the main screen, in an area of it: the whole window
 // in a game, or where a preview shows the game's screen (within is then true, and a surface on the
 // whole view is as large as what it holds, so the rest of the area keeps the mouse).
-func paintSurfaces(context *ui.Context, menu Menu, area draw2d.Rect, within bool) {
+func paintSurfaces(context *ui.Context, menu Menu, area draw2d.Rectangle, within bool) {
 	paintOnWholeView(context, menu, area, within)
 	for index := range surfaces.list {
 		each := &surfaces.list[index]
@@ -41,7 +41,7 @@ func onWholeView(place SurfacePlace) bool {
 
 // paintOnWholeView paints the surfaces laid out on the whole view, one under another: straight on
 // the window's screen, or, within an area, in one layer as large as what they hold.
-func paintOnWholeView(context *ui.Context, menu Menu, area draw2d.Rect, within bool) {
+func paintOnWholeView(context *ui.Context, menu Menu, area draw2d.Rectangle, within bool) {
 	if !within {
 		paintEachOnWholeView(context, menu)
 		return
@@ -66,7 +66,7 @@ func paintEachOnWholeView(context *ui.Context, menu Menu) {
 }
 
 // paintOver paints a surface over the view, aligned to an edge or a corner, or sized.
-func paintOver(context *ui.Context, each *surface, menu Menu, area draw2d.Rect) {
+func paintOver(context *ui.Context, each *surface, menu Menu, area draw2d.Rectangle) {
 	place := each.place
 	across, down, _ := alignment(place.Align)
 	options := ui.LayerOptions{AlignX: across, AlignY: down, Width: sizing(place.Width), Height: sizing(place.Height)}
@@ -80,7 +80,7 @@ func paintOver(context *ui.Context, each *surface, menu Menu, area draw2d.Rect) 
 
 // paintWindow paints a surface in a floating window, titled with its name, which the player can
 // drag; its action closes it.
-func paintWindow(context *ui.Context, each *surface, menu Menu, area draw2d.Rect) {
+func paintWindow(context *ui.Context, each *surface, menu Menu, area draw2d.Rectangle) {
 	place := each.place
 	across, down, _ := alignment(place.Align)
 	x, y := alignedCorner(across, down, area, place.Width, place.Height)
@@ -92,7 +92,7 @@ func paintWindow(context *ui.Context, each *surface, menu Menu, area draw2d.Rect
 
 // paintSheet paints a surface in a sheet from the bottom of the view, over the rest dimmed, and
 // tells whether the player dismissed it.
-func paintSheet(context *ui.Context, each *surface, menu Menu, area draw2d.Rect) (dismissed bool) {
+func paintSheet(context *ui.Context, each *surface, menu Menu, area draw2d.Rectangle) (dismissed bool) {
 	place := each.place
 	width := sizing(place.Width)
 	if place.Width == 0 {

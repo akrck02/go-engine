@@ -250,7 +250,7 @@ func sizing(pixels float32) ui.Sizing {
 
 // alignedCorner is where a box of a size aligned in an area has its top left corner, counted from
 // the area's, keeping a margin from its edges.
-func alignedCorner(across, down ui.Align, area draw2d.Rect, width, height float32) (x, y float32) {
+func alignedCorner(across, down ui.Align, area draw2d.Rectangle, width, height float32) (x, y float32) {
 	between := func(align ui.Align, room, size float32) float32 {
 		switch align {
 		case ui.Center:

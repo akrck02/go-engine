@@ -136,11 +136,11 @@ func TestThePaletteKeepsTheTilesetsColumns(test *testing.T) {
 func clickAt(flat *flatView, editor *Editor, point space.Vector) {
 	x, y := flat.view.ToScreen(flat.area, point)
 	state := input.NewState()
-	state.MoveCursor(float64(x), float64(y))
-	state.SetButton(input.MouseLeft, true)
+	state.Feed().MoveCursor(float64(x), float64(y))
+	state.Feed().SetButton(input.MouseLeft, true)
 	flat.followMouse(editor, state)
-	state.EndFrame()
-	state.SetButton(input.MouseLeft, false)
+	state.Feed().EndFrame()
+	state.Feed().SetButton(input.MouseLeft, false)
 	flat.followMouse(editor, state)
 }
 
@@ -148,7 +148,7 @@ func TestThePaintToolPaintsAndTheSelectToolChooses(test *testing.T) {
 	editor := openTileMap(test)
 	tiles, _ := editor.Selected.Tiles()
 	flat := newFlatView()
-	flat.area = draw2d.Rect{Width: 400, Height: 400}
+	flat.area = draw2d.Rectangle{Width: 400, Height: 400}
 	flat.view.Centre, flat.view.Height = space.NewVector(4, -4, 0), 10
 	editor.Tool, editor.Brush = PaintTool, 1
 	clickAt(flat, editor, space.NewVector(2.5, -1.5, 0))

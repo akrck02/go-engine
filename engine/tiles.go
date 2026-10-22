@@ -103,7 +103,7 @@ func (node *Node) cellBox(column, row int) space.Box {
 }
 
 // drawTiles draws the map's tiles that fall in the area.
-func (owner *Scene) drawTiles(list *draw2d.List, area draw2d.Rect, view View2D, node *Node) {
+func (owner *Scene) drawTiles(list *draw2d.List, area draw2d.Rectangle, view View2D, node *Node) {
 	pictures, err := owner.assets.tileset(node.tileSource())
 	if err != nil {
 		return
@@ -125,7 +125,7 @@ type cell struct{ column, row int }
 
 // cellsInSight are the first and last cells of the map the area shows (the last before the first
 // when none is in sight).
-func (node *Node) cellsInSight(area draw2d.Rect, view View2D) (first, last cell) {
+func (node *Node) cellsInSight(area draw2d.Rectangle, view View2D) (first, last cell) {
 	width, height := node.tileMetres()
 	corner := node.World().Position
 	topLeft := view.FromScreen(area, area.X, area.Y)
@@ -139,10 +139,10 @@ func (node *Node) cellsInSight(area draw2d.Rect, view View2D) (first, last cell)
 }
 
 // screenRect is where a box of the world falls on the screen.
-func screenRect(area draw2d.Rect, view View2D, box space.Box) draw2d.Rect {
+func screenRect(area draw2d.Rectangle, view View2D, box space.Box) draw2d.Rectangle {
 	left, top := view.ToScreen(area, space.NewVector(box.Minimum.X, box.Maximum.Y, 0))
 	right, bottom := view.ToScreen(area, space.NewVector(box.Maximum.X, box.Minimum.Y, 0))
-	return draw2d.Rect{X: left, Y: top, Width: right - left, Height: bottom - top}
+	return draw2d.Rectangle{X: left, Y: top, Width: right - left, Height: bottom - top}
 }
 
 // addTileBodies makes the solid boxes of a tile map: one for each run of solid tiles side by side

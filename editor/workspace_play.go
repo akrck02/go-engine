@@ -151,7 +151,7 @@ func (view *View) stage(context *ui.Context) {
 	}
 	target := view.Editor.Target
 	ink := context.Theme.InkSoft
-	context.Paint(ui.Layout{Width: ui.Grow(), Height: ui.Grow()}, func(area draw2d.Rect, list *draw2d.List) {
+	context.Paint(ui.Layout{Width: ui.Grow(), Height: ui.Grow()}, func(area draw2d.Rectangle, list *draw2d.List) {
 		view.staged = stagedScreens{top: fitted(area, target.Aspect())}
 		if target == Nintendo3DSScreens {
 			view.staged.top, view.staged.bottom = consoleScreens(area)
@@ -178,19 +178,19 @@ var bottomScreenColor = draw2d.Color{0.18, 0.18, 0.2, 1}
 
 // consoleScreens are the 3DS's two screens at their shapes, as large as fit in an area: the top
 // one, and the bottom one centred under it.
-func consoleScreens(area draw2d.Rect) (top, bottom draw2d.Rect) {
+func consoleScreens(area draw2d.Rectangle) (top, bottom draw2d.Rectangle) {
 	scale := min(area.Width/consoleTopWidth, area.Height/(2*consoleScreenTall+consoleHingeTall))
 	middle := area.X + area.Width/2
 	tall := consoleScreenTall * scale
 	first := area.Y + (area.Height-(2*consoleScreenTall+consoleHingeTall)*scale)/2
-	top = draw2d.Rect{X: middle - consoleTopWidth*scale/2, Y: first, Width: consoleTopWidth * scale, Height: tall}
-	bottom = draw2d.Rect{X: middle - consoleBottomWidth*scale/2, Y: first + tall + consoleHingeTall*scale, Width: consoleBottomWidth * scale, Height: tall}
+	top = draw2d.Rectangle{X: middle - consoleTopWidth*scale/2, Y: first, Width: consoleTopWidth * scale, Height: tall}
+	bottom = draw2d.Rectangle{X: middle - consoleBottomWidth*scale/2, Y: first + tall + consoleHingeTall*scale, Width: consoleBottomWidth * scale, Height: tall}
 	return top, bottom
 }
 
 // paintConsole draws a 2D scene played on the 3DS's top screen, and its bottom screen, which the
 // game's interface will have, under it.
-func paintConsole(played *engine.Scene, area draw2d.Rect, ink draw2d.Color, list *draw2d.List) {
+func paintConsole(played *engine.Scene, area draw2d.Rectangle, ink draw2d.Color, list *draw2d.List) {
 	list.Rectangle(area, 0, draw2d.Color{letterboxColor, letterboxColor, letterboxColor, 1}, draw2d.Color{}, 0)
 	top, bottom := consoleScreens(area)
 	paintPlaying(played, top, list)
@@ -201,13 +201,13 @@ func paintConsole(played *engine.Scene, area draw2d.Rect, ink draw2d.Color, list
 
 // paintLetterboxed draws a 2D scene played at a screen's shape, centred in an area, with bars
 // where the shapes differ.
-func paintLetterboxed(played *engine.Scene, area draw2d.Rect, aspect float64, list *draw2d.List) {
+func paintLetterboxed(played *engine.Scene, area draw2d.Rectangle, aspect float64, list *draw2d.List) {
 	list.Rectangle(area, 0, draw2d.Color{letterboxColor, letterboxColor, letterboxColor, 1}, draw2d.Color{}, 0)
 	paintPlaying(played, fitted(area, aspect), list)
 }
 
 // fitted is the largest rectangle of a shape (width over height) centred in an area.
-func fitted(area draw2d.Rect, aspect float64) draw2d.Rect {
+func fitted(area draw2d.Rectangle, aspect float64) draw2d.Rectangle {
 	screen := area
 	if float64(area.Width)/float64(max(area.Height, 1)) > aspect {
 		screen.Width = float32(float64(area.Height) * aspect)

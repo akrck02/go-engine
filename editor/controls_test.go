@@ -121,8 +121,8 @@ func TestControlZInControlsUndoesAndRedoesTheControlsNotTheScene(test *testing.T
 	view.controls.load(editor.Project.Settings)
 	view.controls.addAction("jump", false)
 	state := input.NewState()
-	state.SetKey(input.KeyControl, true)
-	state.SetKey(input.KeyZ, true)
+	state.Feed().SetKey(input.KeyControl, true)
+	state.Feed().SetKey(input.KeyZ, true)
 	view.keys(state)
 	if view.controls.actions["jump"] != nil {
 		test.Fatal("Ctrl+Z in Controls does not undo the action added")
@@ -130,10 +130,10 @@ func TestControlZInControlsUndoesAndRedoesTheControlsNotTheScene(test *testing.T
 	if _, found := editor.Scene.Find("Cube 2"); !found {
 		test.Fatal("Ctrl+Z in Controls undid the scene")
 	}
-	state.SetKey(input.KeyZ, false) // let go of Z, then press it again with Shift
-	state.EndFrame()
-	state.SetKey(input.KeyShift, true)
-	state.SetKey(input.KeyZ, true)
+	state.Feed().SetKey(input.KeyZ, false) // let go of Z, then press it again with Shift
+	state.Feed().EndFrame()
+	state.Feed().SetKey(input.KeyShift, true)
+	state.Feed().SetKey(input.KeyZ, true)
 	view.keys(state)
 	if view.controls.actions["jump"] == nil {
 		test.Fatal("Ctrl+Shift+Z in Controls does not bring the action back")
@@ -149,7 +149,7 @@ func TestAnInputPressedIsCaughtForTheActionHighlighted(test *testing.T) {
 	view.controls.addAction("jump", false)
 	view.controls.highlighted, view.controls.catching = "jump", true
 	state := input.NewState()
-	state.SetKey(input.Key1, true) // a key that would change the workspace
+	state.Feed().SetKey(input.Key1, true) // a key that would change the workspace
 	view.keys(state)
 	if words := view.controls.actions["jump"][engine.WebTarget]; !slices.Equal(words, []string{"1"}) || view.controls.catching {
 		test.Fatalf("the key pressed is caught as %v, still catching %v", words, view.controls.catching)
@@ -162,7 +162,7 @@ func TestAnInputPressedIsCaughtForTheActionHighlighted(test *testing.T) {
 func TestAClickFindsTheControlUnderIt(test *testing.T) {
 	device := consoleDrawing()
 	// an area that shows the drawing at its own size, its units' origin at the window's
-	area := draw2d.Rect{X: device.left - drawingMargin, Y: device.top - drawingMargin,
+	area := draw2d.Rectangle{X: device.left - drawingMargin, Y: device.top - drawingMargin,
 		Width: device.width + 2*drawingMargin, Height: device.height + 2*drawingMargin}
 	index, found := device.controlAt(area, 480, 370) // the X button's centre
 	if !found || device.controls[index].words[0] != "X" {

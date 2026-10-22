@@ -11,7 +11,7 @@ import (
 )
 
 // inside tells whether a rectangle lies in another.
-func inside(inner, outer draw2d.Rect) bool {
+func inside(inner, outer draw2d.Rectangle) bool {
 	return inner.X >= outer.X && inner.Y >= outer.Y &&
 		inner.X+inner.Width <= outer.X+outer.Width && inner.Y+inner.Height <= outer.Y+outer.Height
 }

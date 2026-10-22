@@ -220,7 +220,7 @@ func (node *Node) World() space.Transform {
 }
 
 // worldMatrix is World as go-renderer's matrix, multiplied the way go-renderer walks its nodes.
-func (node *Node) worldMatrix() graphics.Mat4 {
+func (node *Node) worldMatrix() graphics.Matrix {
 	if node.parent == nil {
 		return node.Transform.Matrix()
 	}
@@ -379,7 +379,7 @@ func (node *Node) Bounds() space.Box {
 }
 
 // renderBounds is the world box around a render node's meshes, under a matrix.
-func renderBounds(node *scene.Node, parent graphics.Mat4) space.Box {
+func renderBounds(node *scene.Node, parent graphics.Matrix) space.Box {
 	box := space.EmptyBox()
 	if node.Hidden {
 		return box
@@ -390,7 +390,7 @@ func renderBounds(node *scene.Node, parent graphics.Mat4) space.Box {
 		local := space.Box{Minimum: space.NewVector(float64(minimum[0]), float64(minimum[1]), float64(minimum[2])),
 			Maximum: space.NewVector(float64(maximum[0]), float64(maximum[1]), float64(maximum[2]))}
 		for _, corner := range local.Corners() {
-			point := world.Apply(graphics.Vec4{float32(corner.X), float32(corner.Y), float32(corner.Z), 1})
+			point := world.Apply(graphics.Vector{float32(corner.X), float32(corner.Y), float32(corner.Z), 1})
 			box = box.Grow(space.NewVector(float64(point[0]), float64(point[1]), float64(point[2])))
 		}
 	}

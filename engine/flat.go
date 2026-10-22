@@ -85,7 +85,7 @@ func HeightSeen(settings *scenefile.Camera, aspect float64) float64 {
 }
 
 // scale is how many screen pixels a metre takes in an area.
-func (view View2D) scale(area draw2d.Rect) float64 {
+func (view View2D) scale(area draw2d.Rectangle) float64 {
 	if view.Height <= 0 {
 		return 1
 	}
@@ -93,7 +93,7 @@ func (view View2D) scale(area draw2d.Rect) float64 {
 }
 
 // ToScreen is where a point of the world falls in an area of the screen.
-func (view View2D) ToScreen(area draw2d.Rect, point space.Vector) (x, y float32) {
+func (view View2D) ToScreen(area draw2d.Rectangle, point space.Vector) (x, y float32) {
 	scale := view.scale(area)
 	x = area.X + area.Width/2 + float32((point.X-view.Centre.X)*scale)
 	y = area.Y + area.Height/2 - float32((point.Y-view.Centre.Y)*scale)
@@ -101,13 +101,13 @@ func (view View2D) ToScreen(area draw2d.Rect, point space.Vector) (x, y float32)
 }
 
 // FromScreen is the point of the world under a point of the screen, at Z 0.
-func (view View2D) FromScreen(area draw2d.Rect, x, y float32) space.Vector {
+func (view View2D) FromScreen(area draw2d.Rectangle, x, y float32) space.Vector {
 	scale := view.scale(area)
 	return space.NewVector(view.Centre.X+float64(x-area.X-area.Width/2)/scale, view.Centre.Y-float64(y-area.Y-area.Height/2)/scale, 0)
 }
 
 // MetresAcross is how many metres an area shows from side to side.
-func (view View2D) MetresAcross(area draw2d.Rect) float64 {
+func (view View2D) MetresAcross(area draw2d.Rectangle) float64 {
 	return float64(area.Width) / view.scale(area)
 }
 
@@ -145,26 +145,26 @@ func (node *Node) flatSize() (width, height float64, found bool) {
 
 // Draw2D draws a 2D scene into an area of the screen, as a view sees it: the sky's colour, then
 // its sprites and shapes from the furthest to the nearest, lit by its lights (lights.go).
-func (owner *Scene) Draw2D(list *draw2d.List, area draw2d.Rect, view View2D) {
+func (owner *Scene) Draw2D(list *draw2d.List, area draw2d.Rectangle, view View2D) {
 	if owner.Sky != "" {
-		list.Rectangle(area, 0, draw2d.Hex(owner.Sky), draw2d.Color{}, 0)
+		list.Rectangle(area, 0, draw2d.MustHex(owner.Sky), draw2d.Color{}, 0)
 	}
 	owner.DrawContent2D(list, area, view)
 }
 
 // DrawContent2D draws a 2D scene's sprites and shapes without its sky, lit by its lights: over
 // something of the program's own (the editor's grid).
-func (owner *Scene) DrawContent2D(list *draw2d.List, area draw2d.Rect, view View2D) {
+func (owner *Scene) DrawContent2D(list *draw2d.List, area draw2d.Rectangle, view View2D) {
 	owner.drawContent(list, area, view, true)
 }
 
 // DrawContent2DUnlit draws a 2D scene's sprites and shapes as DrawContent2D does, but without its
 // lights, and a sprite light's sprite as a sprite: what the editor shows to see the colours.
-func (owner *Scene) DrawContent2DUnlit(list *draw2d.List, area draw2d.Rect, view View2D) {
+func (owner *Scene) DrawContent2DUnlit(list *draw2d.List, area draw2d.Rectangle, view View2D) {
 	owner.drawContent(list, area, view, false)
 }
 
-func (owner *Scene) drawContent(list *draw2d.List, area draw2d.Rect, view View2D, lit bool) {
+func (owner *Scene) drawContent(list *draw2d.List, area draw2d.Rectangle, view View2D, lit bool) {
 	if area.Height > 0 {
 		owner.drawnAspect = float64(area.Width) / float64(area.Height)
 	}
@@ -205,7 +205,7 @@ func byDepth(first, second *Node) int {
 	return cmp.Compare(first.World().Position.Z, second.World().Position.Z)
 }
 
-func (owner *Scene) drawFlat(list *draw2d.List, area draw2d.Rect, view View2D, node *Node) {
+func (owner *Scene) drawFlat(list *draw2d.List, area draw2d.Rectangle, view View2D, node *Node) {
 	if node.tiles != nil {
 		owner.drawTiles(list, area, view, node)
 		return
@@ -229,10 +229,10 @@ func (owner *Scene) drawFlat(list *draw2d.List, area draw2d.Rect, view View2D, n
 }
 
 // shownRect is where a node's sprite or shape falls on the screen, if it shows anything.
-func (owner *Scene) shownRect(area draw2d.Rect, view View2D, node *Node) (draw2d.Rect, bool) {
+func (owner *Scene) shownRect(area draw2d.Rectangle, view View2D, node *Node) (draw2d.Rectangle, bool) {
 	box := node.flatBounds()
 	if box.IsEmpty() {
-		return draw2d.Rect{}, false
+		return draw2d.Rectangle{}, false
 	}
 	return screenRect(area, view, box), true
 }
@@ -242,7 +242,7 @@ func (owner *Scene) flatColour(colour string) draw2d.Color {
 	if parsed, found := owner.flatColours[colour]; found {
 		return parsed
 	}
-	parsed := draw2d.Hex(firstColour(colour))
+	parsed := draw2d.MustHex(firstColour(colour))
 	owner.flatColours[colour] = parsed
 	return parsed
 }

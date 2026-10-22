@@ -87,7 +87,7 @@ func showMenuHint(context *engine.Context) {
 
 // drawMenuHint draws the prompt at the bottom left of the screen.
 func drawMenuHint(list *draw2d.List, width, height float32) {
-	list.Text(menuPrompt, 12, height-12, 18, draw2d.Medium, draw2d.Hex("#f5ead0"))
+	list.Text(menuPrompt, 12, height-12, 18, draw2d.Medium, draw2d.MustHex("#f5ead0"))
 }
 ```
 

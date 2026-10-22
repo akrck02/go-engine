@@ -33,10 +33,10 @@ type controlsView struct {
 	highlighted   string // the action whose controls stand out; the rest fade
 	catching      bool   // the next input pressed is added to the highlighted action
 
-	design   touchDesign // the phone's layout, being designed
-	drawings [4]drawing  // each tab's device, made the first time it is shown
-	tags     []edgeTag   // the names at the drawing's edges, kept from frame to frame
-	area     draw2d.Rect // where the drawing was painted last frame
+	design   touchDesign      // the phone's layout, being designed
+	drawings [4]drawing       // each tab's device, made the first time it is shown
+	tags     []edgeTag        // the names at the drawing's edges, kept from frame to frame
+	area     draw2d.Rectangle // where the drawing was painted last frame
 	undo     []controlsSnapshot
 	redo     []controlsSnapshot
 }

@@ -47,7 +47,7 @@ func (keys *Input) noteInputKind() {
 // kindUsedNow is the kind of input used this frame, or NoInputYet when nothing was. Touches come
 // before the mouse because a finger also moves the pointer.
 func (keys *Input) kindUsedNow() InputKind {
-	if keys.console.Held != 0 || keys.console.CircleX != 0 || keys.console.CircleY != 0 {
+	if keys.console.Held != 0 || keys.console.StickX != 0 || keys.console.StickY != 0 {
 		return ConsoleButtons
 	}
 	state := keys.state
@@ -58,7 +58,7 @@ func (keys *Input) kindUsedNow() InputKind {
 		return TouchScreen
 	case padUsed(state):
 		return GamePad
-	case state.HasInput():
+	case state.Feed().HasInput():
 		return KeyboardAndMouse
 	}
 	return NoInputYet
@@ -67,7 +67,9 @@ func (keys *Input) kindUsedNow() InputKind {
 // padUsed tells whether a pad's button went down this frame or a stick is out of its dead zone
 // (Go Renderer reads a stick at rest as 0).
 func padUsed(state *input.State) bool {
-	if state.StickX != 0 || state.StickY != 0 || state.RightStickX != 0 || state.RightStickY != 0 {
+	stickX, stickY := state.Stick()
+	rightX, rightY := state.RightStick()
+	if stickX != 0 || stickY != 0 || rightX != 0 || rightY != 0 {
 		return true
 	}
 	for button := input.PadA; button <= input.PadLeft; button++ {

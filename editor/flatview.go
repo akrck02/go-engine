@@ -3,9 +3,9 @@ package editor
 import (
 	"math"
 
+	"github.com/akrck02/go-renderer/camera"
 	"github.com/akrck02/go-renderer/draw2d"
 	"github.com/akrck02/go-renderer/input"
-	"github.com/akrck02/go-renderer/models"
 	"github.com/akrck02/go-renderer/scene"
 
 	"github.com/akrck02/go-engine/engine"
@@ -20,8 +20,8 @@ import (
 // flatView is the 2D view's state.
 type flatView struct {
 	view     engine.View2D
-	drawing  draw2d.List // the list being painted into, while paint runs
-	area     draw2d.Rect // where the view was last painted
+	drawing  draw2d.List      // the list being painted into, while paint runs
+	area     draw2d.Rectangle // where the view was last painted
 	pressing bool
 	panning  bool
 	dragging []*engine.Node // the nodes a drag moves: every node chosen
@@ -46,7 +46,7 @@ func newFlatView() *flatView {
 
 // Colours of the 2D view's grid and marks.
 var (
-	flatBackground = draw2d.Hex("#3a3f4b")
+	flatBackground = draw2d.MustHex("#3a3f4b")
 	flatGrid       = draw2d.Color{0, 0, 0, 0.1}
 	flatGridFive   = draw2d.Color{0, 0, 0, 0.2}
 	flatAxisX      = draw2d.Color{0.9, 0.3, 0.3, 0.9}
@@ -61,22 +61,22 @@ const lampMarkSize = 16
 
 // step follows the mouse in the 2D view, over the area it was last painted in; it returns what
 // go-renderer shows under the interface: the scene's world, empty in 2D.
-func (flat *flatView) step(editor *Editor, state *input.State) (*scene.Scene, models.Camera) {
+func (flat *flatView) step(editor *Editor, state *input.State) (*scene.Scene, camera.Camera) {
 	if !flat.area.IsEmpty() {
 		flat.followMouse(editor, state)
 	}
-	return editor.Scene.World(), models.Camera{Position: [4]float32{0, 0, 10, 1}, Up: [4]float32{0, 1, 0, 0}}
+	return editor.Scene.World(), camera.Camera{Position: [4]float32{0, 0, 10, 1}, Up: [4]float32{0, 1, 0, 0}}
 }
 
 // paint draws the 2D view into its area of the window (go-ui's Paint, in the middle of the
 // editor): the background, the grid, the scene and the editor's marks.
-func (flat *flatView) paint(editor *Editor, area draw2d.Rect, list *draw2d.List) {
+func (flat *flatView) paint(editor *Editor, area draw2d.Rectangle, list *draw2d.List) {
 	flat.area = area
 	saved := flat.drawing
 	flat.drawing = *list
 	background := flatBackground
 	if editor.Scene.Sky != "" {
-		background = draw2d.Hex(editor.Scene.Sky)
+		background = draw2d.MustHex(editor.Scene.Sky)
 	}
 	flat.drawing.Rectangle(area, 0, background, draw2d.Color{}, 0)
 	flat.drawing.PushClip(area)
@@ -94,7 +94,7 @@ func (flat *flatView) paint(editor *Editor, area draw2d.Rect, list *draw2d.List)
 }
 
 // paintPlaying draws a 2D scene being played, through its camera, into the view's area.
-func paintPlaying(played *engine.Scene, area draw2d.Rect, list *draw2d.List) {
+func paintPlaying(played *engine.Scene, area draw2d.Rectangle, list *draw2d.List) {
 	list.Rectangle(area, 0, flatBackground, draw2d.Color{}, 0)
 	played.Draw2D(list, area, played.View2D())
 }
@@ -250,7 +250,7 @@ func (flat *flatView) drawGrid() {
 		if math.Abs(x) < 1e-9 {
 			colour = flatAxisY
 		}
-		flat.drawing.Rectangle(draw2d.Rect{X: screen, Y: flat.area.Y, Width: 1, Height: flat.area.Height}, 0, colour, draw2d.Color{}, 0)
+		flat.drawing.Rectangle(draw2d.Rectangle{X: screen, Y: flat.area.Y, Width: 1, Height: flat.area.Height}, 0, colour, draw2d.Color{}, 0)
 	}
 	for y := math.Floor(low.Y/step) * step; y <= high.Y; y += step {
 		_, screen := flat.view.ToScreen(flat.area, space.NewVector(0, y, 0))
@@ -261,7 +261,7 @@ func (flat *flatView) drawGrid() {
 		if math.Abs(y) < 1e-9 {
 			colour = flatAxisX
 		}
-		flat.drawing.Rectangle(draw2d.Rect{X: flat.area.X, Y: screen, Width: flat.area.Width, Height: 1}, 0, colour, draw2d.Color{}, 0)
+		flat.drawing.Rectangle(draw2d.Rectangle{X: flat.area.X, Y: screen, Width: flat.area.Width, Height: 1}, 0, colour, draw2d.Color{}, 0)
 	}
 }
 
@@ -283,7 +283,7 @@ func (flat *flatView) drawMarks(editor *Editor) {
 			flat.drawing.Icon(iconLamp, x-lampMarkSize/2, y-lampMarkSize/2, lampMarkSize, lampMark)
 		} else if node.Bounds().IsEmpty() {
 			x, y := flat.view.ToScreen(flat.area, position)
-			flat.drawing.Rectangle(draw2d.Rect{X: x - 5, Y: y - 5, Width: 10, Height: 10}, 5, draw2d.Color{0.95, 0.6, 0.1, 0.9}, draw2d.Color{}, 0)
+			flat.drawing.Rectangle(draw2d.Rectangle{X: x - 5, Y: y - 5, Width: 10, Height: 10}, 5, draw2d.Color{0.95, 0.6, 0.1, 0.9}, draw2d.Color{}, 0)
 		}
 		return true
 	})

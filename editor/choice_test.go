@@ -55,7 +55,7 @@ func TestDraggingMovesEveryNodeChosen(test *testing.T) {
 	editor.Select(square)
 	editor.ToggleChoice(other)
 	flat := newFlatView()
-	flat.area = draw2d.Rect{Width: 400, Height: 400}
+	flat.area = draw2d.Rectangle{Width: 400, Height: 400}
 	flat.view.Centre, flat.view.Height = space.NewVector(1.5, 0, 0), 10
 	dragFrom(flat, editor, space.NewVector(0, 0, 0), space.NewVector(1, 2, 0))
 	if !square.Transform.Position.Near(space.NewVector(1, 2, 1), 1e-6) || !other.Transform.Position.Near(space.NewVector(4, 2, 1), 1e-6) {
@@ -67,14 +67,14 @@ func TestDraggingMovesEveryNodeChosen(test *testing.T) {
 func dragFrom(flat *flatView, editor *Editor, from, to space.Vector) {
 	state := input.NewState()
 	x, y := flat.view.ToScreen(flat.area, from)
-	state.MoveCursor(float64(x), float64(y))
-	state.SetButton(input.MouseLeft, true)
+	state.Feed().MoveCursor(float64(x), float64(y))
+	state.Feed().SetButton(input.MouseLeft, true)
 	flat.followMouse(editor, state)
-	state.EndFrame()
+	state.Feed().EndFrame()
 	x, y = flat.view.ToScreen(flat.area, to)
-	state.MoveCursor(float64(x), float64(y))
+	state.Feed().MoveCursor(float64(x), float64(y))
 	flat.followMouse(editor, state)
-	state.EndFrame()
-	state.SetButton(input.MouseLeft, false)
+	state.Feed().EndFrame()
+	state.Feed().SetButton(input.MouseLeft, false)
 	flat.followMouse(editor, state)
 }

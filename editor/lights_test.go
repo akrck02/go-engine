@@ -60,7 +60,7 @@ func TestTheViewCanBeShownUnlit(test *testing.T) {
 	editor.Add("Light")
 	view := newFlatView()
 	lit, unlit := draw2d.List{}, draw2d.List{}
-	area := draw2d.Rect{Width: 400, Height: 300}
+	area := draw2d.Rectangle{Width: 400, Height: 300}
 	view.paint(editor, area, &lit)
 	view.showLit = false
 	view.paint(editor, area, &unlit)

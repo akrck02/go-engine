@@ -396,7 +396,7 @@ func (view *View) installProgress(context *ui.Context, name string) {
 		return
 	}
 	share := float32(done) / float32(total)
-	context.Paint(ui.Layout{Width: ui.Grow(), Height: ui.Fixed(progressHeight)}, func(area draw2d.Rect, list *draw2d.List) {
+	context.Paint(ui.Layout{Width: ui.Grow(), Height: ui.Fixed(progressHeight)}, func(area draw2d.Rectangle, list *draw2d.List) {
 		list.Rectangle(area, progressRadius, context.Theme.Line, draw2d.Color{}, 0)
 		filled := area
 		filled.Width *= share

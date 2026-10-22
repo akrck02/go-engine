@@ -20,7 +20,7 @@ A game's main registers its behaviours and runs the project it embeds:
 | `func Behaviour[Wanted any](node *Node) (*Wanted, bool)` | Behaviour finds a node's behaviour of a type, while the game runs. |
 | `func BetweenFrames(call func())` | BetweenFrames asks for a call to run once, at the start of the next frame, before anything is drawn: on the 3DS, the system keyboard can take both screens there. |
 | `func BindActions(bindings map[string]map[string][]string, target string) []error` | BindActions reads the actions' bindings (engine.json's actions) for a target, replacing those read before. |
-| `func CameraAt(world space.Transform, settings scenefile.Camera) models.Camera` | CameraAt is go-renderer's camera for a camera placed at a transform with some settings. |
+| `func CameraAt(world space.Transform, settings scenefile.Camera) camera.Camera` | CameraAt is go-renderer's camera for a camera placed at a transform with some settings. |
 | `func CheckInputs(words []string, target string) []error` | CheckInputs tells which of some words a target does not know, each by its code (InputUnknown). |
 | `func DrawOverlay(list *draw2d.List, width, height float32) bool` | DrawOverlay draws the game's 2D over a 3D scene (SetOverlay) into a list, in an area of a width and a height starting at 0, 0; it tells whether the game has any. |
 | `func Fullscreen() bool` | Fullscreen tells whether the game is asked to be on the whole screen. |
@@ -28,8 +28,8 @@ A game's main registers its behaviours and runs the project it embeds:
 | `func HeightSeen(settings *scenefile.Camera, aspect float64) float64` | HeightSeen is the metres a 2D camera sees top to bottom on a screen of a shape (its width over its height): the camera's height (10 when it has none), or more on a screen too narrow for the width it must see. |
 | `func HintOf(words []string, target string, kind InputKind, layout input.PadLayout) string` | HintOf is the hint of an action bound to some words on a target, for a player using a kind of input with a pad of some layout: as ActionHint, for an editor showing a device that is not played. |
 | `func InputLabel(word string, layout input.PadLayout) string` | InputLabel is what a key cap or a button says for a word of engine.json, on a pad of some layout: "Escape" is "Esc", "Pad A" is "✕" on a PlayStation pad, "Touch Jump" is "Jump". |
-| `func PlaceSecondScreen(area *draw2d.Rect)` | PlaceSecondScreen shows the second screen's scene in an area of the window, in window pixels, on a device that has no second screen, with its own sky behind it: a map in a corner of a computer's window, the same scene a 3DS shows below. |
-| `func PlaceSecondScreenOver(area *draw2d.Rect)` | PlaceSecondScreenOver is PlaceSecondScreen with no background: the scene floats over the game's view in its area, as a radar does. |
+| `func PlaceSecondScreen(area *draw2d.Rectangle)` | PlaceSecondScreen shows the second screen's scene in an area of the window, in window pixels, on a device that has no second screen, with its own sky behind it: a map in a corner of a computer's window, the same scene a 3DS shows below. |
+| `func PlaceSecondScreenOver(area *draw2d.Rectangle)` | PlaceSecondScreenOver is PlaceSecondScreen with no background: the scene floats over the game's view in its area, as a radar does. |
 | `func PressedInput(state *input.State, target string) (string, bool)` | PressedInput is the word of an input pressed this frame on a target, if one was: a key, a mouse button or a pad's button (a 3DS's buttons and Android's back cannot be pressed from a computer). |
 | `func Quit()` | Quit ends the game once the frame being played ends. |
 | `func Register(behaviours ...any)` | Register makes behaviours known by their type's name: Register(Spin{}) is "Spin". |
@@ -46,7 +46,7 @@ A game's main registers its behaviours and runs the project it embeds:
 | `func SetPointerCaptured(captured bool)` | SetPointerCaptured holds and hides the pointer, for a game that turns with the mouse, or lets it go (a pause menu): MouseMovement still reads the mouse. |
 | `func SetSecondScreen(shown *Scene)` | SetSecondScreen shows a scene on the second screen, under the game's interface (SetInterface), seen from its main camera; nil leaves the screen to the interface. |
 | `func SetSurface(name string, paint func(context *ui.Context))` | SetSurface makes a game show a surface of its own, by name, painted with Go UI every frame; engine.json's surfaces say where it goes on each target. |
-| `func ShowSurfaces(context *ui.Context, played *Scene, scenes []MenuScene, main, second draw2d.Rect)` | ShowSurfaces builds the game's surfaces (SetSurface, SetInterface) for a scene played, offering some scenes (ScenesOf), where the target UseSurfaces chose places them: those on the main screen in an area of the window, those on the second screen in another (an empty one shows none). |
+| `func ShowSurfaces(context *ui.Context, played *Scene, scenes []MenuScene, main, second draw2d.Rectangle)` | ShowSurfaces builds the game's surfaces (SetSurface, SetInterface) for a scene played, offering some scenes (ScenesOf), where the target UseSurfaces chose places them: those on the main screen in an area of the window, those on the second screen in another (an empty one shows none). |
 | `func TakeQuit() bool` | TakeQuit tells whether the game asked to quit since the last time, and forgets it: one who plays the game elsewhere than Run (the editor's Play) stops it then. |
 | `func TouchWords(control TouchControl) []string` | TouchWords are the words a touch control is bound with: a button's name, a stick's two axes. |
 | `func UseSurfaces(places map[string]map[string]SurfacePlace, target string) []error` | UseSurfaces places the game's surfaces on a target, as engine.json's surfaces say (by surface, then by target); Run does it, and the editor for the target it previews. |
@@ -448,7 +448,7 @@ type Node struct {
 | `func (node *Node) Sprite() string` | Sprite is the picture the node shows in a 2D scene, by its path in the project, or "". |
 | `func (node *Node) StartsWith() string` | StartsWith is the animation the node plays when the scene starts: the one it names, or else its sprite's own first one, or "". |
 | `func (node *Node) Tiles() (*scenefile.TileMap, bool)` | Tiles is the node's tile map, to edit in place; a node that is not one has none. |
-| `func (node *Node) View() models.Camera` | View is what a camera node sees, as go-renderer's camera. |
+| `func (node *Node) View() camera.Camera` | View is what a camera node sees, as go-renderer's camera. |
 | `func (node *Node) Walk(visit func(node *Node) bool)` | Walk calls a function for the node and everything under it, parents before their children; it stops going down a branch when the function returns false. |
 | `func (node *Node) World() space.Transform` | World is where the node is in the world, all its parents' transforms applied. |
 
@@ -484,12 +484,12 @@ type Scene struct {
 | `func Build(files fs.FS, description *scenefile.Scene) (*Scene, error)` | Build makes a scene from its description, finding its models in a project's files. |
 | `func Load(files fs.FS, file string) (*Scene, error)` | Load reads a scene file from a project's files. |
 | `func NewScene(files fs.FS) *Scene` | NewScene is an empty scene, whose models come from a project's files. |
-| `func (owner *Scene) Camera() models.Camera` | Camera is how the scene is seen: from its main camera, or from a little above when it has none. |
+| `func (owner *Scene) Camera() camera.Camera` | Camera is how the scene is seen: from its main camera, or from a little above when it has none. |
 | `func (owner *Scene) CameraBounds(camera *Node) (space.Box, bool)` | CameraBounds is the box a camera's view stays inside while it follows: its own, or the tile maps' together, with no top (an infinite one) unless the camera has a ceiling. |
 | `func (owner *Scene) Describe() *scenefile.Scene` | Describe writes the scene back as its file keeps it. |
-| `func (owner *Scene) Draw2D(list *draw2d.List, area draw2d.Rect, view View2D)` | Draw2D draws a 2D scene into an area of the screen, as a view sees it: the sky's colour, then its sprites and shapes from the furthest to the nearest, lit by its lights (lights.go). |
-| `func (owner *Scene) DrawContent2D(list *draw2d.List, area draw2d.Rect, view View2D)` | DrawContent2D draws a 2D scene's sprites and shapes without its sky, lit by its lights: over something of the program's own (the editor's grid). |
-| `func (owner *Scene) DrawContent2DUnlit(list *draw2d.List, area draw2d.Rect, view View2D)` | DrawContent2DUnlit draws a 2D scene's sprites and shapes as DrawContent2D does, but without its lights, and a sprite light's sprite as a sprite: what the editor shows to see the colours. |
+| `func (owner *Scene) Draw2D(list *draw2d.List, area draw2d.Rectangle, view View2D)` | Draw2D draws a 2D scene into an area of the screen, as a view sees it: the sky's colour, then its sprites and shapes from the furthest to the nearest, lit by its lights (lights.go). |
+| `func (owner *Scene) DrawContent2D(list *draw2d.List, area draw2d.Rectangle, view View2D)` | DrawContent2D draws a 2D scene's sprites and shapes without its sky, lit by its lights: over something of the program's own (the editor's grid). |
+| `func (owner *Scene) DrawContent2DUnlit(list *draw2d.List, area draw2d.Rectangle, view View2D)` | DrawContent2DUnlit draws a 2D scene's sprites and shapes as DrawContent2D does, but without its lights, and a sprite light's sprite as a sprite: what the editor shows to see the colours. |
 | `func (owner *Scene) Find(path string) (*Node, bool)` | Find finds a node by its path from the root, as "Car/Wheel". |
 | `func (owner *Scene) Forget(file string)` | Forget makes the scene read a model or a picture again the next time a node shows it: after the file changed. |
 | `func (owner *Scene) Frames(picture string, sheet *scenefile.SpriteSheet) ([]*draw2d.Image, error)` | Frames are a picture cut into a sheet's frames, numbered from the top left, read and cut once. |
@@ -691,9 +691,9 @@ type View2D struct {
 
 | Function or method | |
 |---|---|
-| `func (view View2D) FromScreen(area draw2d.Rect, x, y float32) space.Vector` | FromScreen is the point of the world under a point of the screen, at Z 0. |
-| `func (view View2D) MetresAcross(area draw2d.Rect) float64` | MetresAcross is how many metres an area shows from side to side. |
-| `func (view View2D) ToScreen(area draw2d.Rect, point space.Vector) (x, y float32)` | ToScreen is where a point of the world falls in an area of the screen. |
+| `func (view View2D) FromScreen(area draw2d.Rectangle, x, y float32) space.Vector` | FromScreen is the point of the world under a point of the screen, at Z 0. |
+| `func (view View2D) MetresAcross(area draw2d.Rectangle) float64` | MetresAcross is how many metres an area shows from side to side. |
+| `func (view View2D) ToScreen(area draw2d.Rectangle, point space.Vector) (x, y float32)` | ToScreen is where a point of the world falls in an area of the screen. |
 
 ---
 

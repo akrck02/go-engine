@@ -5,9 +5,9 @@ package engine
 import (
 	"log/slog"
 
-	"github.com/akrck02/go-renderer/ctr"
 	"github.com/akrck02/go-renderer/draw2d"
 	"github.com/akrck02/go-renderer/input"
+	"github.com/akrck02/go-renderer/nintendo3ds"
 	ui "github.com/akrck02/go-ui"
 )
 
@@ -20,7 +20,7 @@ func drawOver(played *Scene, _ *input.State, flat *draw2d.List) {
 		return
 	}
 	flat.Reset()
-	played.Draw2D(flat, draw2d.Rect{Width: 400, Height: 240}, played.View2D())
+	played.Draw2D(flat, draw2d.Rectangle{Width: 400, Height: 240}, played.View2D())
 	played.World().Overlay.Drawing = flat
 }
 
@@ -75,7 +75,7 @@ func (game *runner) paintOnMainScreen() {
 		return
 	}
 	top.context.Begin(top.state)
-	paintSurfaces(top.context, Menu{game}, draw2d.Rect{Width: topWidth, Height: topHeight}, false)
+	paintSurfaces(top.context, Menu{game}, draw2d.Rectangle{Width: topWidth, Height: topHeight}, false)
 	top.context.End()
 	drawn := top.context.Drawing().Commands
 	if game.played.Is2D() {
@@ -121,14 +121,14 @@ func consoleKeys(console *consoleInput, window *input.State) *input.State {
 }
 
 // readConsole reads the console's controls for this frame.
-func readConsole() ctr.Reading { return ctr.ReadControls() }
+func readConsole() nintendo3ds.Reading { return nintendo3ds.ReadControls() }
 
 // startConsole starts the C-stick and the gyroscope, for the game to read. A console without one
 // (or an emulator) reads it as still, so which started does not matter here.
-func startConsole() { ctr.StartMotionControls() }
+func startConsole() { nintendo3ds.StartMotionControls() }
 
 // stopConsole stops them when the game ends: the gyroscope uses power.
-func stopConsole() { ctr.StopMotionControls() }
+func stopConsole() { nintendo3ds.StopMotionControls() }
 
 // runningTarget is the target this build runs on.
 const runningTarget = Nintendo3DSTarget
