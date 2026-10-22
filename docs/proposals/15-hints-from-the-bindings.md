@@ -1,6 +1,6 @@
 # 15. Hints from the bindings
 
-> Status: planning · Author's approval: proposal ☑ (2026-10-22, "Vale, según el mando") plan ☐
+> Status: building · Author's approval: proposal ☑ (2026-10-22, "Vale, según el mando") plan ☑ (2026-10-22, "Si")
 
 ## Why
 
