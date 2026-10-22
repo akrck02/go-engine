@@ -30,7 +30,8 @@ browser, so what you give them holds for both.
 - **Click a control** of the device: a panel opens beside it. Pick an action, or type a new
   name and create it there. A button presses; a stick has two axes, across and up and down, each
   with its own action.
-- **The cards** say which controls do each action; click one to see its controls stand out.
+- **The cards** say which controls do each action, and the hint a player of the device shown
+  reads for it (see below); click one to see its controls stand out.
   The pencil renames it, the next icon switches it between pressing and an axis.
 - **Every change is kept** in `engine.json` at once. Ctrl+Z undoes the last one.
 
@@ -67,13 +68,35 @@ before the first. It changes when the player picks up another device, not when t
 `context.Input.ActionHint` puts it all together: the label of the action's first input of the kind
 in use, or of its first input when none is of that kind. With `menu` bound to `Tab` and `Pad Start`,
 it is "Tab" at the keyboard, "Start" with an Xbox pad and "Options" with a PlayStation pad; on a
-3DS, it names the 3DS's own button. It allocates nothing, so a game can ask for it every frame:
+3DS, it names the 3DS's own button. It allocates nothing, so a game can ask for it every frame.
+The game below reads it before the behaviours (`engine.BeforeBehaviours(showMenuHint)`) and draws
+it over the scene (`engine.SetOverlay(drawMenuHint)`); it builds the words only when the hint
+changes, so a frame allocates nothing either:
 
 ```go
-func (keeper *Keeper) Update(context *engine.Context) {
-	keeper.Prompt.Text = context.Input.ActionHint("menu") + " menu"
+// menuHint and menuPrompt are what the game shows for its menu, worked out again only when the
+// hint changes, so a frame allocates nothing.
+var menuHint, menuPrompt string
+
+// showMenuHint runs before the behaviours, every frame.
+func showMenuHint(context *engine.Context) {
+	if hint := context.Input.ActionHint("menu"); hint != menuHint {
+		menuHint, menuPrompt = hint, hint+" menu"
+	}
+}
+
+// drawMenuHint draws the prompt at the bottom left of the screen.
+func drawMenuHint(list *draw2d.List, width, height float32) {
+	list.Text(menuPrompt, 12, height-12, 18, draw2d.Medium, draw2d.Hex("#f5ead0"))
 }
 ```
+
+At the keyboard it draws "Tab menu"; once a PlayStation pad is pressed, "Options menu" (the
+engine's tests run this code). Where and how a hint appears is the game's choice: the engine never
+draws one by itself.
+
+The **Controls** workspace shows each action's hint on its card, for the device shown, so you see
+what a player will read.
 
 ## Design a phone's controls
 

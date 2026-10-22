@@ -65,7 +65,7 @@ func (view *View) actionsColumn(context *ui.Context) {
 }
 
 // actionCard is an action: its name, buttons to rename it, to switch its kind and to remove it,
-// and the controls of the device shown that do it. Clicking it makes its controls stand out.
+// the hint a player of the device shown reads, and the controls of the device shown that do it. Clicking it makes its controls stand out.
 func (view *View) actionCard(context *ui.Context, device drawing, name string) {
 	controls := &view.controls
 	context.Push(name)
@@ -81,10 +81,21 @@ func (view *View) actionCard(context *ui.Context, device drawing, name string) {
 	layout := ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Padding: ui.PadXY(12, 10), Gap: 6}
 	if context.Clickable("card", layout, looks, func() {
 		view.actionTitle(context, name)
+		actionHint(context, controls.hintOf(name))
 		view.actionChips(context, device, name)
 	}) {
 		controls.highlighted = toggled(controls.highlighted, name)
 	}
+}
+
+// actionHint is what a player of the device shown reads for an action (Input.ActionHint), when
+// the device has an input for it.
+func actionHint(context *ui.Context, hint string) {
+	if hint == "" {
+		return
+	}
+	theme := context.Theme
+	context.Text("Hint: "+hint, ui.TextStyle{Color: theme.InkSoft, Size: theme.SmallTextSize})
 }
 
 // toggled is a name, or none when it was the one already.

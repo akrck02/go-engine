@@ -82,7 +82,7 @@ vary by driver, while the vendor in the GUID does not. Pictures of the buttons: 
 - [x] T3 — `InputLabel` for every kind of word and each pad layout · `engine/inputlabels.go` · R2, R5 · table test
 - [x] T4 — the last kind of input used, `Input.LastInputKind` · `engine/hints.go` · R3 · test: a key, a pad's button, a touch
 - [x] T5 — `Input.ActionHint` · R4, R5 · tests on a computer with keyboard and pad, and on the 3DS; no allocation
-- [ ] T6 — the hint on each action's card in Controls; a *Hints* section in the actions guide · `editor`, `docs` · R6 · capture; the guide's code compiled in a test
+- [x] T6 — the hint on each action's card in Controls; a *Hints* section in the actions guide · `editor`, `docs` · R6 · capture; the guide's code compiled in a test
 
 ## Result
 

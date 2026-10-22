@@ -155,3 +155,16 @@ func TestReadingAHintAllocatesNothing(test *testing.T) {
 		test.Fatalf("reading a hint allocates %v times", allocations)
 	}
 }
+
+func TestAHintOfSomeWordsNamesTheFirstOfTheKindAsked(test *testing.T) {
+	words := []string{"Tab", "Pad Start", "Not A Key"}
+	if hint := HintOf(words, DesktopTarget, GamePad, input.NintendoLayout); hint != "+" {
+		test.Fatalf("with a Nintendo pad the hint is %q", hint)
+	}
+	if hint := HintOf(words, DesktopTarget, TouchScreen, input.XboxLayout); hint != "Tab" {
+		test.Fatalf("with no word of the kind the hint is %q", hint)
+	}
+	if hint := HintOf([]string{"Not A Key"}, DesktopTarget, GamePad, input.XboxLayout); hint != "" {
+		test.Fatalf("with no word the target knows the hint is %q", hint)
+	}
+}

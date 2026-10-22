@@ -282,3 +282,24 @@ func TestAnAxisWithNoInputsIsStillAnAxisWhenTheProjectOpensAgain(test *testing.T
 		test.Fatal("an axis with no inputs comes back as a press")
 	}
 }
+
+func TestAnActionsCardHintsAsAPlayerOfTheDeviceShownReadsIt(test *testing.T) {
+	controls := controlsWith(map[string]map[string][]string{
+		"menu": {"desktop": {"Tab", "Pad Start"}, "nintendo3ds": {"Start"}, "android": {"Back"}},
+		"jump": {"desktop": {"Pad A"}},
+	})
+	cases := []struct {
+		tab          int
+		action, want string
+	}{
+		{0, "menu", "Start"}, {1, "menu", "Tab"}, {2, "menu", "Start"}, {3, "menu", "Back"},
+		{1, "jump", "A"}, // no key bound: the first input
+		{2, "jump", ""},  // not bound on the 3DS
+	}
+	for _, each := range cases {
+		controls.showTab(each.tab)
+		if hint := controls.hintOf(each.action); hint != each.want {
+			test.Errorf("on %s, %s hints %q, want %q", deviceTabs[each.tab].label, each.action, hint, each.want)
+		}
+	}
+}

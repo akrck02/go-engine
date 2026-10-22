@@ -110,3 +110,23 @@ func kindOfInput(kind inputKind) InputKind {
 	}
 	return ConsoleButtons
 }
+
+// HintOf is the hint of an action bound to some words on a target, for a player using a kind of
+// input with a pad of some layout: as ActionHint, for an editor showing a device that is not
+// played. Words the target does not know are passed over; with none it knows, the hint is "".
+func HintOf(words []string, target string, kind InputKind, layout input.PadLayout) string {
+	first := ""
+	for _, word := range words {
+		bound, err := readWord(word, target)
+		if err != nil {
+			continue // CheckInputs reports it; a hint names what the target has
+		}
+		if kindOfInput(bound.kind) == kind {
+			return InputLabel(word, layout)
+		}
+		if first == "" {
+			first = word
+		}
+	}
+	return InputLabel(first, layout)
+}
