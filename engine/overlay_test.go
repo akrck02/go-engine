@@ -71,6 +71,13 @@ func TestTheSecondScreensSceneIsPlacedInACornerOfTheWindow(test *testing.T) {
 	if view.Below == nil || view.Below.Area == nil || *view.Below.Area != corner {
 		test.Fatalf("the second screen's scene is placed at %+v", view.Below)
 	}
+	if view.Below.Over {
+		test.Fatal("a second screen placed with its own sky is drawn over the view")
+	}
+	PlaceSecondScreenOver(&corner)
+	if view = game.step(input.NewState(), 1.0/60); !view.Below.Over || *view.Below.Area != corner {
+		test.Fatal("a second screen placed over the view is not drawn over it")
+	}
 	PlaceSecondScreen(nil)
 	if view = game.step(input.NewState(), 1.0/60); view.Below.Area != nil {
 		test.Fatal("a second screen placed nowhere still has an area")

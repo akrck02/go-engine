@@ -21,18 +21,27 @@ var secondScene *Scene
 var secondPlace struct {
 	area   draw2d.Rect
 	placed bool
+	over   bool // drawn over the game's view, with no background of its own
 }
 
 // PlaceSecondScreen shows the second screen's scene in an area of the window, in window pixels, on
-// a device that has no second screen: a radar in a corner of a computer's window, the same scene
-// a 3DS shows below. nil shows it nowhere, as by default. A device with a second screen ignores
-// it. Call it again when the window's size changes (each frame is fine: it allocates nothing).
-func PlaceSecondScreen(area *draw2d.Rect) {
+// a device that has no second screen, with its own sky behind it: a map in a corner of a
+// computer's window, the same scene a 3DS shows below. nil shows it nowhere, as by default. A
+// device with a second screen ignores it. Call it again when the window's size changes (each
+// frame is fine: it allocates nothing).
+func PlaceSecondScreen(area *draw2d.Rect) { placeSecondScreen(area, false) }
+
+// PlaceSecondScreenOver is PlaceSecondScreen with no background: the scene floats over the game's
+// view in its area, as a radar does.
+func PlaceSecondScreenOver(area *draw2d.Rect) { placeSecondScreen(area, true) }
+
+// placeSecondScreen keeps where the second screen's scene goes, and whether over the view.
+func placeSecondScreen(area *draw2d.Rect, over bool) {
 	if area == nil {
 		secondPlace.placed = false
 		return
 	}
-	secondPlace.area, secondPlace.placed = *area, true
+	secondPlace.area, secondPlace.placed, secondPlace.over = *area, true, over
 }
 
 // SetSecondScreen shows a scene on the second screen, under the game's interface (SetInterface),
@@ -60,7 +69,7 @@ func (game *runner) playSecondScreen(seconds float64, keys *input.State) *window
 	game.below = window.BelowView{World: secondScene.World(), Camera: secondScene.Camera()}
 	if secondPlace.placed {
 		game.belowArea = secondPlace.area
-		game.below.Area = &game.belowArea
+		game.below.Area, game.below.Over = &game.belowArea, secondPlace.over
 	}
 	return &game.below
 }

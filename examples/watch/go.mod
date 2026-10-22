@@ -4,11 +4,11 @@ go 1.25.6
 
 require (
 	github.com/akrck02/go-engine v0.0.0
-	github.com/akrck02/go-ui v0.1.2-0.20261021230348-a604ccd5b0ca
+	github.com/akrck02/go-ui v0.1.2-0.20261022092922-95aedb28739e
 )
 
 require (
-	github.com/akrck02/go-renderer v0.2.1-0.20261021230256-a5337a49c634 // indirect
+	github.com/akrck02/go-renderer v0.2.1-0.20261022092847-057ed3e43b93 // indirect
 	github.com/go-gl/gl v0.0.0-20260331235117-4566fea9a276 // indirect
 	github.com/go-gl/glfw/v3.4/glfw v0.1.0-pre.1 // indirect
 	golang.org/x/image v0.45.0 // indirect
