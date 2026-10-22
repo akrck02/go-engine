@@ -3,6 +3,7 @@ package editor
 import (
 	"math"
 
+	"github.com/akrck02/go-renderer/draw2d"
 	"github.com/akrck02/go-renderer/graphics"
 	"github.com/akrck02/go-renderer/scene"
 
@@ -40,7 +41,7 @@ func (view *viewport) showLampReach(chosen *engine.Node) {
 }
 
 // addRing adds a level ring of straight pieces round a point.
-func (view *viewport) addRing(centre space.Vector, radius float64, colour graphics.Vec4) {
+func (view *viewport) addRing(centre space.Vector, radius float64, colour graphics.Vector) {
 	thick := math.Max(thinnestRingMetres, radius*ringThickness)
 	piece := 2 * math.Pi * radius / ringSegments
 	for segment := range ringSegments {
@@ -52,21 +53,21 @@ func (view *viewport) addRing(centre space.Vector, radius float64, colour graphi
 
 // turnedLine is a thin box of a length, standing at a point, turned round the vertical so that
 // it runs along a ring at an angle.
-func (view *viewport) turnedLine(middle space.Vector, angle, length, thick float64, colour graphics.Vec4) *scene.Node {
+func (view *viewport) turnedLine(middle space.Vector, angle, length, thick float64, colour graphics.Vector) *scene.Node {
 	line := view.lineNode(space.NewVector(0, 0, 0), space.NewVector(thick, thick, length), colour)
-	place := graphics.Translate(graphics.Vec4{float32(middle.X), float32(middle.Y), float32(middle.Z), 0})
+	place := graphics.Translate(graphics.Vector{float32(middle.X), float32(middle.Y), float32(middle.Z), 0})
 	line.Transform = place.Multiply(graphics.RotateY(-angle)).Multiply(line.Transform)
 	return line
 }
 
 // lampRingColour is a light's colour as the rings show it: linear, opaque.
-func lampRingColour(colour string) graphics.Vec4 {
+func lampRingColour(colour string) graphics.Vector {
 	if colour == "" {
 		colour = "#ffffff"
 	}
-	parsed, valid := scene.ColorFromHex(colour)
-	if !valid {
-		return chosenColor
+	parsed, err := draw2d.ParseHex(colour)
+	if err != nil {
+		return chosenColor // a colour that is not one shows as the chosen lamp's
 	}
-	return parsed
+	return graphics.Vector{parsed[0], parsed[1], parsed[2], 1}
 }

@@ -13,7 +13,7 @@ import (
 // viewOver is a 2D view 400 pixels square, ten metres high, centred on a point.
 func viewOver(centre space.Vector) *flatView {
 	flat := newFlatView()
-	flat.area = draw2d.Rect{Width: 400, Height: 400}
+	flat.area = draw2d.Rectangle{Width: 400, Height: 400}
 	flat.view.Centre, flat.view.Height = centre, 10
 	return flat
 }
@@ -21,20 +21,20 @@ func viewOver(centre space.Vector) *flatView {
 // press holds a button over a point of the view for a frame, with keys held too.
 func press(flat *flatView, editor *Editor, state *input.State, button input.MouseButton, point space.Vector, held ...input.Key) {
 	for _, key := range held {
-		state.SetKey(key, true)
+		state.Feed().SetKey(key, true)
 	}
 	x, y := flat.view.ToScreen(flat.area, point)
-	state.MoveCursor(float64(x), float64(y))
-	state.SetButton(button, true)
+	state.Feed().MoveCursor(float64(x), float64(y))
+	state.Feed().SetButton(button, true)
 	flat.followMouse(editor, state)
-	state.EndFrame()
+	state.Feed().EndFrame()
 }
 
 // release lets a button go where the pointer is.
 func release(flat *flatView, editor *Editor, state *input.State, button input.MouseButton) {
-	state.SetButton(button, false)
+	state.Feed().SetButton(button, false)
 	flat.followMouse(editor, state)
-	state.EndFrame()
+	state.Feed().EndFrame()
 }
 
 func TestTheRightButtonErasesWithATileTool(test *testing.T) {
@@ -95,7 +95,7 @@ func TestShiftClickJoinsTheChoiceAndABackgroundClickLetsGo(test *testing.T) {
 	if len(editor.AllChosen()) != 2 {
 		test.Fatalf("a shift-click chose %d nodes", len(editor.AllChosen()))
 	}
-	state.SetKey(input.KeyShift, false)
+	state.Feed().SetKey(input.KeyShift, false)
 	press(flat, editor, state, input.MouseLeft, space.NewVector(1.5, 4, 0))
 	release(flat, editor, state, input.MouseLeft)
 	if editor.Selected != nil && editor.Selected.Name != "Camera" {

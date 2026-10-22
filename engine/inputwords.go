@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/akrck02/go-engine/failure"
-	"github.com/akrck02/go-renderer/ctr"
 	"github.com/akrck02/go-renderer/input"
+	"github.com/akrck02/go-renderer/nintendo3ds"
 )
 
 // The words engine.json binds actions with, read for one target: "Space", "Mouse Left",
@@ -66,9 +66,9 @@ var padWords = map[string]input.PadButton{"A": input.PadA, "B": input.PadB, "X":
 	"Up": input.PadUp, "Right": input.PadRight, "Down": input.PadDown, "Left": input.PadLeft}
 
 // consoleWords are a 3DS's buttons.
-var consoleWords = map[string]ctr.Buttons{"A": ctr.ButtonA, "B": ctr.ButtonB, "X": ctr.ButtonX, "Y": ctr.ButtonY,
-	"L": ctr.ButtonL, "R": ctr.ButtonR, "ZL": ctr.ButtonZL, "ZR": ctr.ButtonZR, "Start": ctr.ButtonStart,
-	"Select": ctr.ButtonSelect, "Up": ctr.ButtonUp, "Down": ctr.ButtonDown, "Left": ctr.ButtonLeft, "Right": ctr.ButtonRight}
+var consoleWords = map[string]nintendo3ds.Buttons{"A": nintendo3ds.ButtonA, "B": nintendo3ds.ButtonB, "X": nintendo3ds.ButtonX, "Y": nintendo3ds.ButtonY,
+	"L": nintendo3ds.ButtonL, "R": nintendo3ds.ButtonR, "ZL": nintendo3ds.ButtonZL, "ZR": nintendo3ds.ButtonZR, "Start": nintendo3ds.ButtonStart,
+	"Select": nintendo3ds.ButtonSelect, "Up": nintendo3ds.ButtonUp, "Down": nintendo3ds.ButtonDown, "Left": nintendo3ds.ButtonLeft, "Right": nintendo3ds.ButtonRight}
 
 // keyWords are the keyboard's keys by their names.
 var keyWords = keyNames()

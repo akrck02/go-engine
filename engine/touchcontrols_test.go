@@ -9,7 +9,7 @@ import (
 )
 
 // A phone held sideways, its safe part 1000 by 500 layout pixels.
-var sidewaysSafe = draw2d.Rect{X: 40, Width: 1000, Height: 500}
+var sidewaysSafe = draw2d.Rectangle{X: 40, Width: 1000, Height: 500}
 
 // someTouchControls are a stick on the left and a button on the right.
 func someTouchControls() []TouchControl {
@@ -22,7 +22,7 @@ func someTouchControls() []TouchControl {
 func TestATouchControlIsPlacedAsSharesOfTheScreen(test *testing.T) {
 	useTouchControls(someTouchControls())
 	placeTouchControls(sidewaysSafe)
-	want := draw2d.Rect{X: 40 + 800 - 50, Y: 350 - 50, Width: 100, Height: 100}
+	want := draw2d.Rectangle{X: 40 + 800 - 50, Y: 350 - 50, Width: 100, Height: 100}
 	if touchPanel.areas[1] != want {
 		test.Fatalf("the button is at %v, not %v", touchPanel.areas[1], want)
 	}
@@ -84,7 +84,7 @@ func TestReadingTouchControlsAllocatesNothing(test *testing.T) {
 
 func TestATouchControlIsAsBigUprightAndStaysOnTheScreen(test *testing.T) {
 	useTouchControls(someTouchControls())
-	upright := draw2d.Rect{Width: 500, Height: 1000}
+	upright := draw2d.Rectangle{Width: 500, Height: 1000}
 	placeTouchControls(upright)
 	stick := touchPanel.areas[0]
 	if stick.Width != 0.4*500 {

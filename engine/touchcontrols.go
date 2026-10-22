@@ -83,15 +83,15 @@ const (
 // read by the actions and kept from frame to frame without allocating.
 var touchPanel struct {
 	controls []TouchControl
-	areas    []draw2d.Rect // where each was drawn last, in the window
-	held     []bool        // a finger is on a button, or on a stick
-	axes     [][2]float64  // a stick's axes, from -1 to 1, up positive
+	areas    []draw2d.Rectangle // where each was drawn last, in the window
+	held     []bool             // a finger is on a button, or on a stick
+	axes     [][2]float64       // a stick's axes, from -1 to 1, up positive
 }
 
 // useTouchControls makes some touch controls the game's.
 func useTouchControls(controls []TouchControl) {
 	touchPanel.controls = controls
-	touchPanel.areas = make([]draw2d.Rect, len(controls))
+	touchPanel.areas = make([]draw2d.Rectangle, len(controls))
 	touchPanel.held = make([]bool, len(controls))
 	touchPanel.axes = make([][2]float64, len(controls))
 }
@@ -99,13 +99,13 @@ func useTouchControls(controls []TouchControl) {
 // placeTouchControls works out where each touch control goes on a screen's safe part: its size a
 // share of the screen's shorter side, so it is as big held upright as held sideways, and kept
 // whole on the screen.
-func placeTouchControls(safe draw2d.Rect) {
+func placeTouchControls(safe draw2d.Rectangle) {
 	shorter := min(safe.Width, safe.Height)
 	for index, control := range touchPanel.controls {
 		side := min(control.Size*shorter, shorter)
 		centreX := min(max(safe.X+control.X*safe.Width, safe.X+side/2), safe.X+safe.Width-side/2)
 		centreY := min(max(safe.Y+control.Y*safe.Height, safe.Y+side/2), safe.Y+safe.Height-side/2)
-		touchPanel.areas[index] = draw2d.Rect{X: centreX - side/2, Y: centreY - side/2, Width: side, Height: side}
+		touchPanel.areas[index] = draw2d.Rectangle{X: centreX - side/2, Y: centreY - side/2, Width: side, Height: side}
 	}
 }
 
@@ -180,10 +180,10 @@ func drawTouchControls(list *draw2d.List) {
 }
 
 // drawTouchKnob draws a stick's knob, moved as far as its axes say.
-func drawTouchKnob(list *draw2d.List, area draw2d.Rect, axes [2]float64, ink draw2d.Color) {
+func drawTouchKnob(list *draw2d.List, area draw2d.Rectangle, axes [2]float64, ink draw2d.Color) {
 	knob := area.Width * touchKnobShare
 	radius := area.Width / 2
 	centreX := area.X + radius + float32(axes[0])*(radius-knob/2)
 	centreY := area.Y + radius - float32(axes[1])*(radius-knob/2)
-	list.Rectangle(draw2d.Rect{X: centreX - knob/2, Y: centreY - knob/2, Width: knob, Height: knob}, knob/2, ink, draw2d.Color{}, 0)
+	list.Rectangle(draw2d.Rectangle{X: centreX - knob/2, Y: centreY - knob/2, Width: knob, Height: knob}, knob/2, ink, draw2d.Color{}, 0)
 }

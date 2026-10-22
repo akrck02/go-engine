@@ -88,6 +88,10 @@ phone (its Log button).
   screen, a height gives a surface that much of it.
 - **Read the scene menu.** `engine.SetInterface` gets the game's `Menu` (its scenes, the one
   playing); a surface that needs it is the interface.
+- **The game's own fonts.** `engine.SetFonts(overlay.Fonts{Regular: pixelFont})` before `Run`
+  draws all the game's text in them: its drawing over the scene, its surfaces and the second
+  screen, on every target. `engine.TextMeasurer()` measures a line in those fonts, for a layout of
+  the game's own.
 
 ---
 

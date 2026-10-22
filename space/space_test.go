@@ -41,7 +41,7 @@ func TestATransformMatchesGoRenderersMatrix(test *testing.T) {
 	transform := Transform{Position: NewVector(1, 2, 3), Rotation: (Angles{10, 20, 30}).Rotation(), Scale: NewVector(2, 3, 4)}
 	local := NewVector(0.5, -1, 2)
 	want := transform.ToParent(local)
-	got := transform.Matrix().Apply(graphics.Vec4{float32(local.X), float32(local.Y), float32(local.Z), 1})
+	got := transform.Matrix().Apply(graphics.Vector{float32(local.X), float32(local.Y), float32(local.Z), 1})
 	if !want.Near(NewVector(float64(got[0]), float64(got[1]), float64(got[2])), 1e-4) {
 		test.Fatalf("the matrix puts the point at %v, the transform at %v", got, want)
 	}

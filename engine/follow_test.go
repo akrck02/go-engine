@@ -32,7 +32,7 @@ func followedLevelWith(test *testing.T, camera *scenefile.Camera) *Scene {
 	}
 	built.Start()
 	var list draw2d.List
-	built.DrawContent2D(&list, draw2d.Rect{Width: 100, Height: 100}, built.View2D()) // a square screen
+	built.DrawContent2D(&list, draw2d.Rectangle{Width: 100, Height: 100}, built.View2D()) // a square screen
 	return built
 }
 
@@ -124,11 +124,11 @@ func TestACamerasBoundsAreOpenAboveUnlessItHasACeiling(test *testing.T) {
 func TestANarrowScreenSeesMoreHeightToKeepTheCamerasWidth(test *testing.T) {
 	level := followedLevelWith(test, &scenefile.Camera{Projection: scenefile.Orthographic, Height: 4, Width: 4})
 	var list draw2d.List
-	level.DrawContent2D(&list, draw2d.Rect{Width: 50, Height: 100}, level.View2D()) // twice as tall as wide
+	level.DrawContent2D(&list, draw2d.Rectangle{Width: 50, Height: 100}, level.View2D()) // twice as tall as wide
 	if view := level.View2D(); math.Abs(view.Height-8) > 1e-9 {
 		test.Fatalf("a screen half as wide as tall sees %v metres high, not 8", view.Height)
 	}
-	level.DrawContent2D(&list, draw2d.Rect{Width: 200, Height: 100}, level.View2D())
+	level.DrawContent2D(&list, draw2d.Rectangle{Width: 200, Height: 100}, level.View2D())
 	if view := level.View2D(); view.Height != 4 {
 		test.Fatalf("a wide screen sees %v metres high, not the camera's 4", view.Height)
 	}

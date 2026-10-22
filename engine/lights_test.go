@@ -40,7 +40,7 @@ func kinds(list *draw2d.List) []draw2d.Kind {
 func TestAnUnlitSceneDrawsNoLight(test *testing.T) {
 	scene := walkerScene(test)
 	var list draw2d.List
-	scene.DrawContent2D(&list, draw2d.Rect{Width: 80, Height: 80}, View2D{Height: 10})
+	scene.DrawContent2D(&list, draw2d.Rectangle{Width: 80, Height: 80}, View2D{Height: 10})
 	for _, kind := range kinds(&list) {
 		if kind == draw2d.LightingKind || kind == draw2d.PointLightKind {
 			test.Fatalf("a scene with no lights drew %v", kinds(&list))
@@ -52,7 +52,7 @@ func TestLightsAreDrawnAfterTheSceneAndLightItOverItsAmbient(test *testing.T) {
 	dim := 0.4
 	scene := litScene(test, &scenefile.Ambient{Colour: "#204060", Intensity: &dim})
 	var list draw2d.List
-	area := draw2d.Rect{Width: 80, Height: 80} // ten metres high: eight pixels a metre
+	area := draw2d.Rectangle{Width: 80, Height: 80} // ten metres high: eight pixels a metre
 	scene.DrawContent2D(&list, area, View2D{Height: 10})
 	want := []draw2d.Kind{draw2d.RectangleKind, draw2d.PointLightKind, draw2d.SpriteLightKind, draw2d.LightingKind}
 	got := kinds(&list)
@@ -71,7 +71,7 @@ func TestLightsAreDrawnAfterTheSceneAndLightItOverItsAmbient(test *testing.T) {
 	if lamp.Fill[3] != 1.5 || lamp.Fill[0] != 1 {
 		test.Errorf("the lamp's colour is %v; wanted orange at its intensity", lamp.Fill)
 	}
-	scheme := draw2d.Hex("#204060")
+	scheme := draw2d.MustHex("#204060")
 	if ambient := list.Commands[3].Fill; ambient[3] != 0.4 || ambient[0] != scheme[0] || ambient[2] != scheme[2] {
 		test.Errorf("the ambient is %v; wanted the scene's at 0.4", ambient)
 	}
@@ -80,7 +80,7 @@ func TestLightsAreDrawnAfterTheSceneAndLightItOverItsAmbient(test *testing.T) {
 func TestLightsWithNoAmbientLightTheSceneByDaylight(test *testing.T) {
 	scene := litScene(test, nil)
 	var list draw2d.List
-	scene.DrawContent2D(&list, draw2d.Rect{Width: 80, Height: 80}, View2D{Height: 10})
+	scene.DrawContent2D(&list, draw2d.Rectangle{Width: 80, Height: 80}, View2D{Height: 10})
 	last := list.Commands[len(list.Commands)-1]
 	if last.Kind != draw2d.LightingKind || last.Fill != (draw2d.Color{1, 1, 1, 1}) {
 		test.Fatalf("the last command is %+v; wanted a lighting in plain daylight", last)
@@ -92,7 +92,7 @@ func TestAHiddenLightDoesNotShine(test *testing.T) {
 	lamp, _ := scene.Find("Lamp")
 	lamp.Visible = false
 	var list draw2d.List
-	scene.DrawContent2D(&list, draw2d.Rect{Width: 80, Height: 80}, View2D{Height: 10})
+	scene.DrawContent2D(&list, draw2d.Rectangle{Width: 80, Height: 80}, View2D{Height: 10})
 	for _, kind := range kinds(&list) {
 		if kind == draw2d.PointLightKind {
 			test.Fatal("a hidden lamp still shone")
@@ -114,7 +114,7 @@ func TestASceneKeepsItsLightsWhenWrittenBack(test *testing.T) {
 func TestALitFrameAllocatesNothing(test *testing.T) {
 	scene := litScene(test, nil)
 	var list draw2d.List
-	area := draw2d.Rect{Width: 80, Height: 80}
+	area := draw2d.Rectangle{Width: 80, Height: 80}
 	scene.DrawContent2D(&list, area, View2D{Height: 10})
 	allocations := testing.AllocsPerRun(100, func() {
 		list.Reset()
@@ -182,7 +182,7 @@ func TestALightOutOfSightIsNotDrawn(test *testing.T) {
 	lamp, _ := scene.Find("Lamp")
 	lamp.Transform.Position.X = 100
 	var list draw2d.List
-	scene.DrawContent2D(&list, draw2d.Rect{Width: 80, Height: 80}, View2D{Height: 10})
+	scene.DrawContent2D(&list, draw2d.Rectangle{Width: 80, Height: 80}, View2D{Height: 10})
 	for _, kind := range kinds(&list) {
 		if kind == draw2d.PointLightKind {
 			test.Fatal("a lamp a hundred metres out of sight was drawn")
@@ -193,7 +193,7 @@ func TestALightOutOfSightIsNotDrawn(test *testing.T) {
 func TestUnlitASpriteLightShowsItsSprite(test *testing.T) {
 	scene := litScene(test, nil)
 	var list draw2d.List
-	scene.DrawContent2DUnlit(&list, draw2d.Rect{Width: 80, Height: 80}, View2D{Height: 10})
+	scene.DrawContent2DUnlit(&list, draw2d.Rectangle{Width: 80, Height: 80}, View2D{Height: 10})
 	got := kinds(&list)
 	want := []draw2d.Kind{draw2d.RectangleKind, draw2d.ImageKind}
 	if len(got) != len(want) || got[0] != want[0] || got[1] != want[1] {

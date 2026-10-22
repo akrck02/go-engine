@@ -28,7 +28,7 @@ func showMenuHint(context *engine.Context) {
 
 // drawMenuHint draws the prompt at the bottom left of the screen.
 func drawMenuHint(list *draw2d.List, width, height float32) {
-	list.Text(menuPrompt, 12, height-12, 18, draw2d.Medium, draw2d.Hex("#f5ead0"))
+	list.Text(menuPrompt, 12, height-12, 18, draw2d.Medium, draw2d.MustHex("#f5ead0"))
 }
 
 func ExampleInput_ActionHint() {
@@ -40,13 +40,13 @@ func ExampleInput_ActionHint() {
 	played := engine.NewScene(fstest.MapFS{})
 
 	keyboard := input.NewState()
-	keyboard.SetKey(input.KeyEscape, true)
+	keyboard.Feed().SetKey(input.KeyEscape, true)
 	played.PlayFrame(0.1, keyboard)
 	fmt.Println(menuPrompt)
 
 	pad := input.NewState()
-	pad.SetPadLayout(input.PlayStationLayout)
-	pad.SetPadButton(input.PadA, true)
+	pad.Feed().SetPadLayout(input.PlayStationLayout)
+	pad.Feed().SetPadButton(input.PadA, true)
 	played.PlayFrame(0.1, pad)
 	fmt.Println(menuPrompt)
 	// Output:

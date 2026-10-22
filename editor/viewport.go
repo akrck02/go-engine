@@ -6,7 +6,6 @@ import (
 	"github.com/akrck02/go-renderer/camera"
 	"github.com/akrck02/go-renderer/graphics"
 	"github.com/akrck02/go-renderer/input"
-	"github.com/akrck02/go-renderer/models"
 	"github.com/akrck02/go-renderer/scene"
 
 	"github.com/akrck02/go-engine/engine"
@@ -36,7 +35,7 @@ const clickDistance = 4
 // viewport is the 3D view's state.
 type viewport struct {
 	orbit  *camera.Orbit
-	camera models.Camera
+	camera camera.Lens
 	mode   ViewMode
 	// through is a camera node of the scene to see through instead of the editor's camera.
 	through *engine.Node
@@ -56,34 +55,34 @@ type viewport struct {
 }
 
 func newViewport() *viewport {
-	view := &viewport{orbit: camera.NewOrbit(graphics.Vec4{0, 0, 0, 1}, 14), flat: newFlatView()}
+	view := &viewport{orbit: camera.NewOrbit(graphics.Vector{0, 0, 0, 1}, 14), flat: newFlatView()}
 	view.orbit.Yaw, view.orbit.Pitch = 0.6, 0.55
 	view.orbit.MinimumDistance, view.orbit.MaximumDistance = 0.3, 500
 	view.line = shapes.Cube()
-	view.line.Material = &scene.Material{Name: "line", Kind: scene.KindUnlit, BaseColor: graphics.Vec4{1, 1, 1, 1}}
+	view.line.Material = &scene.Material{Name: "line", Kind: scene.UnlitKind, BaseColor: graphics.Vector{1, 1, 1, 1}}
 	view.gizmos = view.makeGizmos()
 	view.selection = &scene.Node{Name: "selection", Transform: graphics.Identity()}
 	return view
 }
 
 // lineNode is a thin box from one point to another along an axis, in a colour.
-func (view *viewport) lineNode(centre, size space.Vector, colour graphics.Vec4) *scene.Node {
+func (view *viewport) lineNode(centre, size space.Vector, colour graphics.Vector) *scene.Node {
 	mesh := *view.line
-	mesh.Material = &scene.Material{Name: "line", Kind: scene.KindUnlit, BaseColor: colour}
+	mesh.Material = &scene.Material{Name: "line", Kind: scene.UnlitKind, BaseColor: colour}
 	mesh.GPU = nil
-	transform := graphics.Translate(graphics.Vec4{float32(centre.X), float32(centre.Y), float32(centre.Z), 0}).
-		Multiply(graphics.Scale(graphics.Vec4{float32(size.X), float32(size.Y), float32(size.Z), 0}))
+	transform := graphics.Translate(graphics.Vector{float32(centre.X), float32(centre.Y), float32(centre.Z), 0}).
+		Multiply(graphics.Scale(graphics.Vector{float32(size.X), float32(size.Y), float32(size.Z), 0}))
 	return &scene.Node{Name: "line", Transform: transform, Mesh: &mesh}
 }
 
 // gridColour and the axes' colours.
 var (
-	gridColour  = graphics.Vec4{0.35, 0.37, 0.4, 1}
-	gridFive    = graphics.Vec4{0.22, 0.24, 0.27, 1}
-	axisX       = graphics.Vec4{0.86, 0.2, 0.2, 1}
-	axisY       = graphics.Vec4{0.25, 0.7, 0.3, 1}
-	axisZ       = graphics.Vec4{0.2, 0.4, 0.9, 1}
-	chosenColor = graphics.Vec4{1, 0.6, 0.1, 1}
+	gridColour  = graphics.Vector{0.35, 0.37, 0.4, 1}
+	gridFive    = graphics.Vector{0.22, 0.24, 0.27, 1}
+	axisX       = graphics.Vector{0.86, 0.2, 0.2, 1}
+	axisY       = graphics.Vector{0.25, 0.7, 0.3, 1}
+	axisZ       = graphics.Vector{0.2, 0.4, 0.9, 1}
+	chosenColor = graphics.Vector{1, 0.6, 0.1, 1}
 )
 
 // gridExtent is how far the grid reaches from the origin, in metres.
@@ -140,7 +139,7 @@ func (view *viewport) showSelection(chosen *engine.Node) {
 }
 
 // step follows the mouse in the 3D view and places the camera; it returns what to draw.
-func (view *viewport) step(editor *Editor, state *input.State, seconds float64) (*scene.Scene, models.Camera) {
+func (view *viewport) step(editor *Editor, state *input.State, seconds float64) (*scene.Scene, camera.Lens) {
 	if _, playing := editor.PlayingHere(); playing {
 		editor.AdvancePlay(seconds, state)
 		played, _ := editor.PlayingHere()
@@ -279,7 +278,7 @@ func pointAtHeight(origin, direction space.Vector, height float64) (space.Vector
 // frame turns the camera to the chosen node, near enough to see it whole.
 func (view *viewport) frame(chosen *engine.Node) {
 	if chosen == nil {
-		view.orbit.Target, view.orbit.Distance = graphics.Vec4{0, 0, 0, 1}, 14
+		view.orbit.Target, view.orbit.Distance = graphics.Vector{0, 0, 0, 1}, 14
 		return
 	}
 	bounds := chosen.Bounds()
@@ -287,7 +286,7 @@ func (view *viewport) frame(chosen *engine.Node) {
 	if !bounds.IsEmpty() {
 		centre, size = bounds.Centre(), bounds.Size().Length()
 	}
-	view.orbit.Target = graphics.Vec4{float32(centre.X), float32(centre.Y), float32(centre.Z), 1}
+	view.orbit.Target = graphics.Vector{float32(centre.X), float32(centre.Y), float32(centre.Z), 1}
 	view.orbit.Distance = math.Max(size*1.8, 2)
 }
 
@@ -316,7 +315,7 @@ func handInput(state *input.State) *input.State {
 	}
 	panning := state.Unclaimed()
 	if panning.Button(input.MouseLeft) {
-		panning.SetKey(input.KeyShift, true)
+		panning.Feed().SetKey(input.KeyShift, true)
 	}
 	return &panning
 }
@@ -324,17 +323,17 @@ func handInput(state *input.State) *input.State {
 func (view *viewport) isometricInput(state *input.State) *input.State {
 	fixed := state.Unclaimed()
 	if fixed.Button(input.MouseLeft) {
-		fixed.SetKey(input.KeyShift, true)
+		fixed.Feed().SetKey(input.KeyShift, true)
 	}
 	for _, arrow := range []input.Key{input.KeyUp, input.KeyDown, input.KeyLeft, input.KeyRight} {
-		fixed.SetKey(arrow, false)
+		fixed.Feed().SetKey(arrow, false)
 	}
 	return &fixed
 }
 
 // play sees the scene played in the view through its main camera (or the editor's, if it has
 // none).
-func (view *viewport) play(played *engine.Scene, seconds float64) (*scene.Scene, models.Camera) {
+func (view *viewport) play(played *engine.Scene, seconds float64) (*scene.Scene, camera.Lens) {
 	if camera, found := played.MainCamera(); found {
 		return played.World(), camera.View()
 	}

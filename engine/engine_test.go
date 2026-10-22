@@ -214,7 +214,7 @@ func TestA2DSceneDrawsSpritesAtTheirSizeFurthestFirst(test *testing.T) {
 	if view.Height != 8 || !view.Centre.Near(space.NewVector(2, 1, 0), 1e-9) {
 		test.Fatalf("the camera sees %+v", view)
 	}
-	area := draw2d.Rect{Width: 800, Height: 400} // 50 pixels a metre
+	area := draw2d.Rectangle{Width: 800, Height: 400} // 50 pixels a metre
 	if x, y := view.ToScreen(area, space.NewVector(3, 2, 0)); x != 450 || y != 150 {
 		test.Fatalf("a metre right and up of the centre is at %v, %v", x, y)
 	}

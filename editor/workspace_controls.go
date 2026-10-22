@@ -250,7 +250,7 @@ func (view *View) drawingBox(context *ui.Context, device drawing) {
 		hovered = noControl
 	}
 	paint := func() {
-		context.Paint(ui.Layout{Width: ui.Grow(), Height: ui.Grow()}, func(room draw2d.Rect, list *draw2d.List) {
+		context.Paint(ui.Layout{Width: ui.Grow(), Height: ui.Grow()}, func(room draw2d.Rectangle, list *draw2d.List) {
 			controls.area = room
 			view.paintDrawing(&context.Theme, list, room, device, hovered)
 			if controls.design.on {
@@ -284,7 +284,7 @@ func (view *View) controlPanel(context *ui.Context, device drawing, chosen contr
 	y := max(controls.area.Y, shape.Y+shape.Height/2-panelAbove)
 	theme := context.Theme
 	look := ui.Look{Fill: theme.Surface, Border: theme.Line, BorderWidth: 1, Radius: cardRadius, Shadow: true}
-	context.Within(draw2d.Rect{X: x, Y: y, Width: panelWidth, Height: panelTallest}, func() {
+	context.Within(draw2d.Rectangle{X: x, Y: y, Width: panelWidth, Height: panelTallest}, func() {
 		context.Overlay("control", ui.LayerOptions{AlignX: ui.Start, AlignY: ui.Start, Width: ui.Fixed(panelWidth)}, func() {
 			context.Frame(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Padding: ui.Pad(12), Gap: 6}, look, func() {
 				view.controlPanelContent(context, chosen)
@@ -347,7 +347,7 @@ func (view *View) choice(context *ui.Context, name string, color draw2d.Color, c
 	looks := ui.Looks{Normal: normal, Hovered: ui.Look{Radius: 6, Fill: theme.Sunken}, Pressed: ui.Look{Radius: 6, Fill: theme.Line}}
 	layout := ui.Layout{Width: ui.Grow(), Padding: ui.PadXY(8, 5), Gap: 8, AlignY: ui.Center}
 	return context.Clickable(name, layout, looks, func() {
-		context.Paint(ui.Layout{Width: ui.Fixed(choiceDotSize), Height: ui.Fixed(choiceDotSize)}, func(area draw2d.Rect, list *draw2d.List) {
+		context.Paint(ui.Layout{Width: ui.Fixed(choiceDotSize), Height: ui.Fixed(choiceDotSize)}, func(area draw2d.Rectangle, list *draw2d.List) {
 			list.Rectangle(area, choiceDotSize/2, color, theme.ControlLine, 1)
 		})
 		context.Box(ui.Layout{Width: ui.Grow()}, func() { context.Label(name) })

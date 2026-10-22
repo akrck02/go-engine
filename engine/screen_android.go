@@ -1,9 +1,9 @@
 package engine
 
 import (
-	"github.com/akrck02/go-renderer/ctr"
 	"github.com/akrck02/go-renderer/draw2d"
 	"github.com/akrck02/go-renderer/input"
+	"github.com/akrck02/go-renderer/nintendo3ds"
 	ui "github.com/akrck02/go-ui"
 )
 
@@ -21,8 +21,8 @@ func drawOver(*Scene, *input.State, *draw2d.List) {}
 func interfaceFor(game *runner) func(context *ui.Context) {
 	return func(context *ui.Context) {
 		insets := context.Insets()
-		context.Paint(ui.Layout{Width: ui.Grow(), Height: ui.Grow()}, func(area draw2d.Rect, list *draw2d.List) {
-			safe := draw2d.Rect{X: area.X + insets.Left, Y: area.Y + insets.Top,
+		context.Paint(ui.Layout{Width: ui.Grow(), Height: ui.Grow()}, func(area draw2d.Rectangle, list *draw2d.List) {
+			safe := draw2d.Rectangle{X: area.X + insets.Left, Y: area.Y + insets.Top,
 				Width: area.Width - insets.Left - insets.Right, Height: area.Height - insets.Top - insets.Bottom}
 			played := game.played
 			layout := touchLayoutFor(area, safe, played.designedAspect())
@@ -45,7 +45,7 @@ func interfaceFor(game *runner) func(context *ui.Context) {
 		})
 		// the surfaces keep off the system's bars and cut-outs, as the touch controls do
 		screen := game.screen
-		safe := draw2d.Rect{X: insets.Left, Y: insets.Top,
+		safe := draw2d.Rectangle{X: insets.Left, Y: insets.Top,
 			Width: screen.Width - insets.Left - insets.Right, Height: screen.Height - insets.Top - insets.Bottom}
 		paintSurfaces(context, Menu{game}, safe, true)
 		if len(touchPanel.controls) == 0 {
@@ -69,7 +69,7 @@ func consoleKeys(console *consoleInput, window *input.State) *input.State {
 }
 
 // readConsole is an empty reading: there is no 3DS here.
-func readConsole() ctr.Reading { return ctr.Reading{} }
+func readConsole() nintendo3ds.Reading { return nintendo3ds.Reading{} }
 
 // startConsole does nothing: there is no 3DS here.
 func startConsole() {}

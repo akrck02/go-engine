@@ -503,7 +503,7 @@ func colourPicker(context *ui.Context, name string, colour *string) bool {
 	context.Grid(6, func() {
 		for _, each := range swatches {
 			context.Push(each)
-			look := ui.Look{Fill: draw2d.Hex(each), Radius: 4, Border: context.Theme.ControlLine, BorderWidth: 1}
+			look := ui.Look{Fill: draw2d.MustHex(each), Radius: 4, Border: context.Theme.ControlLine, BorderWidth: 1}
 			if each == *colour {
 				look.Border, look.BorderWidth = context.Theme.Primary, 3
 			}

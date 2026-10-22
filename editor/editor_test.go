@@ -1,9 +1,10 @@
 package editor
 
 import (
-	"github.com/akrck02/go-renderer/input"
 	"path/filepath"
 	"testing"
+
+	"github.com/akrck02/go-renderer/input"
 
 	"github.com/akrck02/go-engine/engine"
 	"github.com/akrck02/go-engine/project"

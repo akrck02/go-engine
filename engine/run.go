@@ -6,9 +6,9 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/akrck02/go-renderer/camera"
 	"github.com/akrck02/go-renderer/draw2d"
 	"github.com/akrck02/go-renderer/input"
-	"github.com/akrck02/go-renderer/models"
 	ui "github.com/akrck02/go-ui"
 	"github.com/akrck02/go-ui/window"
 
@@ -128,7 +128,7 @@ func Run(files fs.FS) error {
 	}
 	useTouchControls(settings.TouchControls)
 	game := &runner{played: played, name: settings.Name, keepStart: settings.KeepStart,
-		screen: draw2d.Rect{Width: windowWidth, Height: windowHeight}}
+		screen: draw2d.Rectangle{Width: windowWidth, Height: windowHeight}}
 	if settings.SceneMenu || HasInterface() {
 		game.menu = scenesOf(files)
 	}
@@ -156,10 +156,10 @@ type runner struct {
 	overlay draw2d.List      // the game's drawing over a 3D scene (SetOverlay), made again every frame
 	below   window.BelowView // how the bottom screen's scene is seen this frame (SetSecondScreen)
 	// belowArea is where a device with no second screen shows it this frame (PlaceSecondScreen)
-	belowArea draw2d.Rect
+	belowArea draw2d.Rectangle
 	console   consoleInput     // the console's buttons, as keys
 	view      window.SceneView // what the window shows this frame
-	screen    draw2d.Rect      // the main screen's size, from the window's last frame
+	screen    draw2d.Rectangle // the main screen's size, from the window's last frame
 	context   *ui.Context      // the window's interface
 	top       mainScreen       // the surfaces on a main screen with no interface of its own (screen_nintendo3ds.go)
 	name      string           // the game's
@@ -170,9 +170,8 @@ type runner struct {
 
 // run opens the window and plays until it is closed.
 func (game *runner) run(title string) error {
-	options := window.Options{Title: title, Width: windowWidth, Height: windowHeight, Continuous: true, KeepStart: game.keepStart}
-	options.Scene = game.step
-	context, err := ui.New()
+	options := game.windowOptions(title)
+	context, err := ui.NewInFonts(gameFonts)
 	if err != nil {
 		return err
 	}
@@ -182,10 +181,17 @@ func (game *runner) run(title string) error {
 	return window.RunWith(context, options, interfaceFor(game))
 }
 
+// windowOptions are how the game's window opens: its size, its scene, and the game's fonts.
+func (game *runner) windowOptions(title string) window.Options {
+	options := window.Options{Title: title, Width: windowWidth, Height: windowHeight, Continuous: true, KeepStart: game.keepStart, Fonts: gameFonts}
+	options.Scene = game.step
+	return options
+}
+
 // step moves the game on a frame and gives the window what to show.
 func (game *runner) step(state *input.State, step float64) *window.SceneView {
 	seconds := game.secondsSince(state, step)
-	game.screen = draw2d.Rect{Width: float32(state.WindowWidth), Height: float32(state.WindowHeight)}
+	game.screen = draw2d.Rectangle{Width: float32(state.WindowWidth), Height: float32(state.WindowHeight)}
 	game.console.reading = readConsole()
 	keys := consoleKeys(&game.console, state)
 	state.LockCursor(pointerCaptured)
@@ -232,7 +238,7 @@ func (game *runner) replaceIfAsked() {
 }
 
 // Camera is how the scene is seen: from its main camera, or from a little above when it has none.
-func (owner *Scene) Camera() models.Camera {
+func (owner *Scene) Camera() camera.Lens {
 	if camera, found := owner.MainCamera(); found {
 		return camera.View()
 	}

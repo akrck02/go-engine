@@ -10,7 +10,7 @@ import (
 // triangle is a mesh of one triangle, as a game's code builds one.
 func triangle(name string) *scene.Mesh {
 	return &scene.Mesh{Name: name, Positions: []float32{0, 0, 0, 1, 0, 0, 0, 1, 0}, Normals: []float32{0, 0, 1, 0, 0, 1, 0, 0, 1},
-		Material: &scene.Material{Kind: scene.KindUnlit, BaseColor: [4]float32{1, 1, 1, 1}}}
+		Material: &scene.Material{Kind: scene.UnlitKind, BaseColor: [4]float32{1, 1, 1, 1}}}
 }
 
 // drawnMeshes are the meshes go-renderer draws for a node itself (not its children).

@@ -34,11 +34,11 @@ func level(test *testing.T, file string) *engine.Scene {
 func play(level *engine.Scene, seconds float64, held ...input.Key) {
 	keys := input.NewState()
 	for _, key := range held {
-		keys.SetKey(key, true)
+		keys.Feed().SetKey(key, true)
 	}
 	for played := 0.0; played < seconds; played += frame {
 		level.Update(frame, keys)
-		keys.EndFrame()
+		keys.Feed().EndFrame()
 	}
 }
 

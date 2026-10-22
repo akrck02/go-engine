@@ -4,8 +4,8 @@ import (
 	"math"
 	"sort"
 
-	"github.com/akrck02/go-renderer/ctr"
 	"github.com/akrck02/go-renderer/input"
+	"github.com/akrck02/go-renderer/nintendo3ds"
 )
 
 // A game reads what the player does as actions with names ("fire", "menu", "turn"), each bound in
@@ -123,7 +123,7 @@ func (keys *Input) held(bound boundInput) bool {
 	state := keys.state
 	switch bound.kind {
 	case consoleInput3DS:
-		return keys.console.Held&ctr.Buttons(bound.code) != 0
+		return keys.console.Held&nintendo3ds.Buttons(bound.code) != 0
 	case backInput:
 		return state != nil && state.TakeBack()
 	case touchInput:
@@ -151,13 +151,15 @@ func (keys *Input) stickAxis(axis stickAxis) float64 {
 	if keys.state == nil {
 		return 0
 	}
+	stickX, stickY := keys.state.Stick()
+	rightX, rightY := keys.state.RightStick()
 	switch axis {
 	case mainStickY:
-		return keys.state.StickY
+		return stickY
 	case rightStickX:
-		return keys.state.RightStickX
+		return rightX
 	case rightStickY:
-		return keys.state.RightStickY
+		return rightY
 	}
-	return keys.state.StickX
+	return stickX
 }

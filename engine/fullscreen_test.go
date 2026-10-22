@@ -4,8 +4,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/akrck02/go-renderer/ctr"
 	"github.com/akrck02/go-renderer/input"
+	"github.com/akrck02/go-renderer/nintendo3ds"
 )
 
 func TestEngineJsonStartsAGameOnTheWholeScreenWhereItAsks(test *testing.T) {
@@ -23,12 +23,12 @@ func TestEngineJsonStartsAGameOnTheWholeScreenWhereItAsks(test *testing.T) {
 
 // pressedOnce works the actions out for a frame with some keys held, after one with none.
 func pressedOnce(keys ...input.Key) {
-	frameWith(input.NewState(), ctr.Reading{})
+	frameWith(input.NewState(), nintendo3ds.Reading{})
 	state := input.NewState()
 	for _, key := range keys {
-		state.SetKey(key, true)
+		state.Feed().SetKey(key, true)
 	}
-	frameWith(state, ctr.Reading{})
+	frameWith(state, nintendo3ds.Reading{})
 }
 
 func TestF11AndAltEnterPutTheGameOnTheWholeScreenAndBack(test *testing.T) {

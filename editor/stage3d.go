@@ -2,8 +2,8 @@ package editor
 
 import (
 	"github.com/akrck02/go-engine/engine"
+	"github.com/akrck02/go-renderer/camera"
 	"github.com/akrck02/go-renderer/draw2d"
-	"github.com/akrck02/go-renderer/models"
 	"github.com/akrck02/go-renderer/scene"
 	ui "github.com/akrck02/go-ui"
 	"github.com/akrck02/go-ui/window"
@@ -17,14 +17,14 @@ import (
 
 // stagedScreens are where the stage showed a 3D game last frame, in window pixels: the game's
 // screen, and the 3DS's bottom one (empty for a computer's shape).
-type stagedScreens struct{ top, bottom draw2d.Rect }
+type stagedScreens struct{ top, bottom draw2d.Rectangle }
 
 // stage3D shows a 3D game at its target's shape, with the game's 2D and interface over it.
 func (view *View) stage3D(context *ui.Context, played *engine.Scene) {
 	console := view.Editor.Target == Nintendo3DSScreens
 	_, hasBelow := engine.SecondScreen()
 	ink := context.Theme.InkSoft
-	context.Paint(ui.Layout{Width: ui.Grow(), Height: ui.Grow()}, func(area draw2d.Rect, list *draw2d.List) {
+	context.Paint(ui.Layout{Width: ui.Grow(), Height: ui.Grow()}, func(area draw2d.Rectangle, list *draw2d.List) {
 		view.staged = stagedScreens{top: fitted(area, view.Editor.Target.Aspect())}
 		if console {
 			view.staged.top, view.staged.bottom = consoleScreens(area)
@@ -53,7 +53,7 @@ func (view *View) gameSurfaces(context *ui.Context, played *engine.Scene) {
 
 // playedView is how the window draws a 3D game played in the view: its scene in the stage's screen
 // and, with the 3DS's shape, its bottom scene under it.
-func (view *View) playedView(world *scene.Scene, camera models.Camera) *window.SceneView {
+func (view *View) playedView(world *scene.Scene, camera camera.Lens) *window.SceneView {
 	staged := &view.staged
 	shown := &window.SceneView{World: world, Camera: camera}
 	if staged.top.Width == 0 {
@@ -75,7 +75,7 @@ const gameLayer = -1
 
 // appendMoved adds a list's commands to another, moved into an area, kept inside it, and under the
 // interface.
-func appendMoved(list, moved *draw2d.List, area draw2d.Rect) {
+func appendMoved(list, moved *draw2d.List, area draw2d.Rectangle) {
 	list.PushClip(area)
 	for _, command := range moved.Commands {
 		command.Area.X, command.Area.Y = command.Area.X+area.X, command.Area.Y+area.Y

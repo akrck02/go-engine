@@ -100,7 +100,7 @@ func TestASpriteSheetNodeIsOneFrameLarge(test *testing.T) {
 func TestASpriteFacingLeftIsDrawnMirrored(test *testing.T) {
 	scene := walkerScene(test)
 	hero, _ := scene.Find("Hero")
-	area := draw2d.Rect{Width: 80, Height: 80}
+	area := draw2d.Rectangle{Width: 80, Height: 80}
 	var right, left draw2d.List
 	scene.DrawContent2D(&right, area, View2D{Height: 10})
 	hero.FaceLeft(true)
@@ -114,7 +114,7 @@ func TestASpriteFacingLeftIsDrawnMirrored(test *testing.T) {
 func TestAnimatingAFrameAllocatesNothing(test *testing.T) {
 	scene := walkerScene(test)
 	var list draw2d.List
-	area := draw2d.Rect{Width: 80, Height: 80}
+	area := draw2d.Rectangle{Width: 80, Height: 80}
 	playFor(scene, 1)
 	scene.DrawContent2D(&list, area, View2D{Height: 10})
 	allocations := testing.AllocsPerRun(100, func() {
@@ -149,7 +149,7 @@ func TestANodePlaysTheAnimationsOfTheSpriteItPointsTo(test *testing.T) {
 		test.Fatalf("a frame of the sprite is %v metres, not one", size)
 	}
 	var list draw2d.List
-	built.Draw2D(&list, draw2d.Rect{Width: 100, Height: 100}, built.View2D())
+	built.Draw2D(&list, draw2d.Rectangle{Width: 100, Height: 100}, built.View2D())
 	if list.IsEmpty() {
 		test.Fatal("the sprite was not drawn")
 	}

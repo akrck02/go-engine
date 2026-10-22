@@ -1,15 +1,16 @@
 package engine
 
 import (
+	"bytes"
 	"io/fs"
 	"log/slog"
 	"math"
 	"path"
 
+	"github.com/akrck02/go-renderer/camera"
 	"github.com/akrck02/go-renderer/draw2d"
 	"github.com/akrck02/go-renderer/graphics"
 	"github.com/akrck02/go-renderer/loaders"
-	"github.com/akrck02/go-renderer/models"
 	"github.com/akrck02/go-renderer/scene"
 
 	"github.com/akrck02/go-engine/animation"
@@ -215,7 +216,7 @@ func (owner *Scene) SetSky(colour string) {
 	owner.Sky = colour
 	environment := scene.DefaultEnvironment()
 	if colour != "" {
-		if tint, valid := scene.ColorFromHex(colour); valid {
+		if tint, valid := colourFromHex(colour); valid {
 			environment.SkyZenith, environment.SkyHorizon, environment.FogColor = tint, tint, tint
 			environment.Sky = &scene.Sky{}
 		}
@@ -236,6 +237,16 @@ func (owner *Scene) Sync() {
 // Time is the seconds the scene has been playing.
 func (owner *Scene) Time() float64 { return owner.clock }
 
+// colourFromHex reads a colour written as on a web page ("#rrggbb", "#rgb") as an opaque one;
+// false for anything else.
+func colourFromHex(text string) (graphics.Vector, bool) {
+	colour, err := draw2d.ParseHex(text)
+	if err != nil {
+		return graphics.Vector{}, false // the caller keeps its default colour
+	}
+	return graphics.Vector{colour[0], colour[1], colour[2], 1}, true
+}
+
 // material is the shared material of a colour.
 func (owner *Scene) material(colour string) *scene.Material {
 	if colour == "" {
@@ -244,11 +255,11 @@ func (owner *Scene) material(colour string) *scene.Material {
 	if material, found := owner.materials[colour]; found {
 		return material
 	}
-	tint, valid := scene.ColorFromHex(colour)
+	tint, valid := colourFromHex(colour)
 	if !valid {
-		tint = graphics.Vec4{0.8, 0.8, 0.8, 1}
+		tint = graphics.Vector{0.8, 0.8, 0.8, 1}
 	}
-	material := &scene.Material{Name: colour, Kind: scene.KindLit, BaseColor: tint}
+	material := &scene.Material{Name: colour, Kind: scene.LitKind, BaseColor: tint}
 	owner.materials[colour] = material
 	return material
 }
@@ -259,18 +270,18 @@ func (owner *Scene) helperFor(node *Node) *scene.Node {
 	if node.geometry != nil {
 		return nil
 	}
-	kind, colour, size := "empty", graphics.Vec4{0.95, 0.6, 0.1, 1}, float32(0.25)
+	kind, colour, size := "empty", graphics.Vector{0.95, 0.6, 0.1, 1}, float32(0.25)
 	shape := "sphere"
 	if node.camera != nil {
-		kind, colour, size, shape = "camera", graphics.Vec4{0.15, 0.15, 0.2, 1}, 0.4, "cube"
+		kind, colour, size, shape = "camera", graphics.Vector{0.15, 0.15, 0.2, 1}, 0.4, "cube"
 	}
 	mesh, found := owner.helpers[kind]
 	if !found {
-		mesh = shapes.Mesh(shape, &scene.Material{Name: kind, Kind: scene.KindUnlit, BaseColor: colour})
+		mesh = shapes.Mesh(shape, &scene.Material{Name: kind, Kind: scene.UnlitKind, BaseColor: colour})
 		owner.helpers[kind] = mesh
 	}
 	helper := &scene.Node{Name: kind, Mesh: mesh, Hidden: !owner.Editing,
-		Transform: graphics.Scale(graphics.Vec4{size, size, size, 0})}
+		Transform: graphics.Scale(graphics.Vector{size, size, size, 0})}
 	return helper
 }
 
@@ -296,7 +307,7 @@ func (owner *Scene) MainCamera() (*Node, bool) {
 }
 
 // View is what a camera node sees, as go-renderer's camera.
-func (node *Node) View() models.Camera {
+func (node *Node) View() camera.Lens {
 	world := node.World()
 	settings := scenefile.Camera{Projection: scenefile.Perspective}
 	if node.camera != nil {
@@ -310,14 +321,14 @@ func (node *Node) View() models.Camera {
 }
 
 // CameraAt is go-renderer's camera for a camera placed at a transform with some settings.
-func CameraAt(world space.Transform, settings scenefile.Camera) models.Camera {
+func CameraAt(world space.Transform, settings scenefile.Camera) camera.Lens {
 	position := world.Position
 	target := position.Add(world.Forward().Scale(orDefault(settings.Focus, DefaultFocus)))
 	up := world.Up()
-	view := models.Camera{
-		Position: graphics.Vec4{float32(position.X), float32(position.Y), float32(position.Z), 1},
-		Target:   graphics.Vec4{float32(target.X), float32(target.Y), float32(target.Z), 1},
-		Up:       graphics.Vec4{float32(up.X), float32(up.Y), float32(up.Z), 0},
+	view := camera.Lens{
+		Position: graphics.Vector{float32(position.X), float32(position.Y), float32(position.Z), 1},
+		Target:   graphics.Vector{float32(target.X), float32(target.Y), float32(target.Z), 1},
+		Up:       graphics.Vector{float32(up.X), float32(up.Y), float32(up.Z), 0},
 		Near:     float32(orDefault(settings.Near, DefaultNear)),
 		Far:      float32(orDefault(settings.Far, DefaultFar)),
 	}
@@ -333,7 +344,7 @@ func CameraAt(world space.Transform, settings scenefile.Camera) models.Camera {
 		if fieldOfView <= 0 {
 			fieldOfView = 45
 		}
-		view.FieldOfView = space.Radians(fieldOfView)
+		view.FieldOfViewRadians = float32(space.Radians(fieldOfView))
 	}
 	return view
 }
@@ -433,7 +444,7 @@ func (library *assets) model(file string) (*scene.Scene, error) {
 	if err != nil {
 		return nil, failure.Wrap(ModelNotFound, file, err)
 	}
-	model, err := loaders.ParseSceneGLB(data)
+	model, err := loaders.ReadScene(bytes.NewReader(data))
 	if err != nil {
 		return nil, failure.Wrap(ModelUnreadable, file, err)
 	}

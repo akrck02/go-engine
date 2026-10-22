@@ -34,8 +34,8 @@ const (
 // actionColors are the actions' colours, soft, in the order of their names, again from the first
 // after the last.
 var actionColors = []draw2d.Color{
-	draw2d.Hex("#93b4f5"), draw2d.Hex("#fbb98a"), draw2d.Hex("#86dcb8"), draw2d.Hex("#d3aef7"),
-	draw2d.Hex("#f5a3a3"), draw2d.Hex("#f2d27a"), draw2d.Hex("#8fd6e6"), draw2d.Hex("#f4a9cf"),
+	draw2d.MustHex("#93b4f5"), draw2d.MustHex("#fbb98a"), draw2d.MustHex("#86dcb8"), draw2d.MustHex("#d3aef7"),
+	draw2d.MustHex("#f5a3a3"), draw2d.MustHex("#f2d27a"), draw2d.MustHex("#8fd6e6"), draw2d.MustHex("#f4a9cf"),
 }
 
 // actionColor is an action's colour.
@@ -45,8 +45,8 @@ func (controls *controlsView) actionColor(name string) draw2d.Color {
 }
 
 // fitted is where a drawing's units go in an area: the scale, and where its corner lands.
-func (device drawing) fitted(area draw2d.Rect) (scale, x, y float32) {
-	room := draw2d.Rect{X: area.X + drawingMargin, Y: area.Y + drawingMargin,
+func (device drawing) fitted(area draw2d.Rectangle) (scale, x, y float32) {
+	room := draw2d.Rectangle{X: area.X + drawingMargin, Y: area.Y + drawingMargin,
 		Width: area.Width - 2*drawingMargin, Height: area.Height - 2*drawingMargin}
 	scale = max(min(room.Width/device.width, room.Height/device.height, largestScale), 0.01)
 	x = room.X + (room.Width-device.width*scale)/2 - device.left*scale
@@ -55,20 +55,20 @@ func (device drawing) fitted(area draw2d.Rect) (scale, x, y float32) {
 }
 
 // placed is a rectangle of a drawing's units in the window.
-func (device drawing) placed(area draw2d.Rect, x, y, width, height float32) draw2d.Rect {
+func (device drawing) placed(area draw2d.Rectangle, x, y, width, height float32) draw2d.Rectangle {
 	scale, originX, originY := device.fitted(area)
-	return draw2d.Rect{X: originX + x*scale, Y: originY + y*scale, Width: width * scale, Height: height * scale}
+	return draw2d.Rectangle{X: originX + x*scale, Y: originY + y*scale, Width: width * scale, Height: height * scale}
 }
 
 // unitsAt is a point of the window in a drawing's units.
-func (device drawing) unitsAt(area draw2d.Rect, x, y float32) (float32, float32) {
+func (device drawing) unitsAt(area draw2d.Rectangle, x, y float32) (float32, float32) {
 	scale, originX, originY := device.fitted(area)
 	return (x - originX) / scale, (y - originY) / scale
 }
 
 // controlAt is the control of a drawing under a point of the window, if one is; controls with no
 // words only draw, and are not found.
-func (device drawing) controlAt(area draw2d.Rect, x, y float32) (int, bool) {
+func (device drawing) controlAt(area draw2d.Rectangle, x, y float32) (int, bool) {
 	for index, each := range device.controls {
 		shape := device.placed(area, each.x, each.y, each.width, each.height)
 		if len(each.words) > 0 && shape.Contains(x, y) {
@@ -79,7 +79,7 @@ func (device drawing) controlAt(area draw2d.Rect, x, y float32) (int, bool) {
 }
 
 // paintDrawing paints a device in an area: its outline, then its controls with the actions they do.
-func (view *View) paintDrawing(theme *ui.Theme, list *draw2d.List, area draw2d.Rect, device drawing, hovered int) {
+func (view *View) paintDrawing(theme *ui.Theme, list *draw2d.List, area draw2d.Rectangle, device drawing, hovered int) {
 	scale, originX, originY := device.fitted(area)
 	list.Stroke(device.outline, originX, originY, scale, drawingLine, lineColor(theme))
 	controls := &view.controls
@@ -98,7 +98,7 @@ func lineColor(theme *ui.Theme) draw2d.Color { return theme.InkQuiet.Mix(theme.S
 
 // paintControl paints a control: its outline, in its action's colour when it does one, ringed in
 // the theme's main colour when chosen; its label; and the actions it does, named.
-func (view *View) paintControl(theme *ui.Theme, list *draw2d.List, area draw2d.Rect, device drawing, each control, hovered, chosen bool) {
+func (view *View) paintControl(theme *ui.Theme, list *draw2d.List, area draw2d.Rectangle, device drawing, each control, hovered, chosen bool) {
 	controls := &view.controls
 	scale, _, _ := device.fitted(area)
 	shape := device.placed(area, each.x, each.y, each.width, each.height)
@@ -124,7 +124,7 @@ func (view *View) paintControl(theme *ui.Theme, list *draw2d.List, area draw2d.R
 	list.Rectangle(shape, each.radius*scale, fill.WithAlpha(fill[3]*alpha), border.WithAlpha(border[3]*alpha), width)
 	if each.stick && (each.live || border != draw2d.Transparent) {
 		knob := shape.Width * stickKnobShare
-		inner := draw2d.Rect{X: shape.X + (shape.Width-knob)/2, Y: shape.Y + (shape.Height-knob)/2, Width: knob, Height: knob}
+		inner := draw2d.Rectangle{X: shape.X + (shape.Width-knob)/2, Y: shape.Y + (shape.Height-knob)/2, Width: knob, Height: knob}
 		list.Rectangle(inner, knob/2, draw2d.Transparent, border.WithAlpha(border[3]*alpha), width)
 	}
 	labelSize, labelInk := min(max(shape.Height*0.42, 9), 15), theme.InkQuiet
@@ -147,7 +147,7 @@ type edgeTag struct {
 
 // paintTags names the actions a control does: under it for a key, written at once; at the
 // drawing's edge for the rest, gathered for paintDrawing to spread and write.
-func (view *View) paintTags(theme *ui.Theme, list *draw2d.List, area draw2d.Rect, device drawing, each control, shape draw2d.Rect, alpha float32) {
+func (view *View) paintTags(theme *ui.Theme, list *draw2d.List, area draw2d.Rectangle, device drawing, each control, shape draw2d.Rectangle, alpha float32) {
 	controls := &view.controls
 	row := 0
 	for _, word := range each.words {
@@ -160,9 +160,9 @@ func (view *View) paintTags(theme *ui.Theme, list *draw2d.List, area draw2d.Rect
 		}
 		ink := controls.actionColor(name).Mix(theme.Ink, tagInkShare).WithAlpha(alpha)
 		if each.tags == belowSide {
-			below := draw2d.Rect{X: shape.X, Y: shape.Y + shape.Height + 2 + float32(row)*keyTagSize, Width: shape.Width, Height: keyTagSize}
+			below := draw2d.Rectangle{X: shape.X, Y: shape.Y + shape.Height + 2 + float32(row)*keyTagSize, Width: shape.Width, Height: keyTagSize}
 			width := textWidth(label, keyTagSize) + 6
-			backing := draw2d.Rect{X: below.X + (below.Width-width)/2, Y: below.Y, Width: width, Height: below.Height}
+			backing := draw2d.Rectangle{X: below.X + (below.Width-width)/2, Y: below.Y, Width: width, Height: below.Height}
 			list.Rectangle(backing, keyTagSize/2, theme.Surface, draw2d.Transparent, 0) // over the key below, to be read
 			centredText(list, label, below, keyTagSize, ink, draw2d.Medium)
 			row++
@@ -222,7 +222,7 @@ func paintLeader(list *draw2d.List, fromX, fromY, toX, toY float32, ink draw2d.C
 	length := float32(math.Hypot(float64(acrossX), float64(downY)))
 	for along := float32(0); along < length; along += leaderStep {
 		x, y := fromX+acrossX*along/length, fromY+downY*along/length
-		dot := draw2d.Rect{X: x - leaderDot/2, Y: y - leaderDot/2, Width: leaderDot, Height: leaderDot}
+		dot := draw2d.Rectangle{X: x - leaderDot/2, Y: y - leaderDot/2, Width: leaderDot, Height: leaderDot}
 		list.Rectangle(dot, leaderDot/2, ink, draw2d.Transparent, 0)
 	}
 }
@@ -233,7 +233,7 @@ func textWidth(text string, size float32) float32 {
 }
 
 // centredText writes a line in the middle of an area.
-func centredText(list *draw2d.List, text string, area draw2d.Rect, size float32, color draw2d.Color, weight draw2d.Weight) {
+func centredText(list *draw2d.List, text string, area draw2d.Rectangle, size float32, color draw2d.Color, weight draw2d.Weight) {
 	if text == "" {
 		return
 	}

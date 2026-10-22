@@ -19,7 +19,7 @@ func TestEveryShapeIsAMetreAcrossAndFacesOutwards(test *testing.T) {
 		mesh.ForEachTriangle(func(first, second, third uint32) {
 			corner, next, last := mesh.Vertex(first), mesh.Vertex(second), mesh.Vertex(third)
 			normal := cross(subtract(next, corner), subtract(last, corner))
-			given := graphics.Vec4{mesh.Normals[3*first], mesh.Normals[3*first+1], mesh.Normals[3*first+2]}
+			given := graphics.Vector{mesh.Normals[3*first], mesh.Normals[3*first+1], mesh.Normals[3*first+2]}
 			if length := normal[0]*normal[0] + normal[1]*normal[1] + normal[2]*normal[2]; length > 1e-12 && dot(normal, given) <= 0 {
 				test.Errorf("%s has a triangle facing inwards", name)
 			}
@@ -30,14 +30,14 @@ func TestEveryShapeIsAMetreAcrossAndFacesOutwards(test *testing.T) {
 	}
 }
 
-func subtract(from, other graphics.Vec4) graphics.Vec4 {
-	return graphics.Vec4{from[0] - other[0], from[1] - other[1], from[2] - other[2]}
+func subtract(from, other graphics.Vector) graphics.Vector {
+	return graphics.Vector{from[0] - other[0], from[1] - other[1], from[2] - other[2]}
 }
 
-func cross(first, second graphics.Vec4) graphics.Vec4 {
-	return graphics.Vec4{first[1]*second[2] - first[2]*second[1], first[2]*second[0] - first[0]*second[2], first[0]*second[1] - first[1]*second[0]}
+func cross(first, second graphics.Vector) graphics.Vector {
+	return graphics.Vector{first[1]*second[2] - first[2]*second[1], first[2]*second[0] - first[0]*second[2], first[0]*second[1] - first[1]*second[0]}
 }
 
-func dot(first, second graphics.Vec4) float32 {
+func dot(first, second graphics.Vector) float32 {
 	return first[0]*second[0] + first[1]*second[1] + first[2]*second[2]
 }

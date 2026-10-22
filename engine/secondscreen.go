@@ -19,7 +19,7 @@ var secondScene *Scene
 // secondPlace is where a device with no second screen shows its scene, in window pixels, and
 // whether the game placed it anywhere (PlaceSecondScreen).
 var secondPlace struct {
-	area   draw2d.Rect
+	area   draw2d.Rectangle
 	placed bool
 	over   bool // drawn over the game's view, with no background of its own
 }
@@ -29,14 +29,14 @@ var secondPlace struct {
 // computer's window, the same scene a 3DS shows below. nil shows it nowhere, as by default. A
 // device with a second screen ignores it. Call it again when the window's size changes (each
 // frame is fine: it allocates nothing).
-func PlaceSecondScreen(area *draw2d.Rect) { placeSecondScreen(area, false) }
+func PlaceSecondScreen(area *draw2d.Rectangle) { placeSecondScreen(area, false) }
 
 // PlaceSecondScreenOver is PlaceSecondScreen with no background: the scene floats over the game's
 // view in its area, as a radar does.
-func PlaceSecondScreenOver(area *draw2d.Rect) { placeSecondScreen(area, true) }
+func PlaceSecondScreenOver(area *draw2d.Rectangle) { placeSecondScreen(area, true) }
 
 // placeSecondScreen keeps where the second screen's scene goes, and whether over the view.
-func placeSecondScreen(area *draw2d.Rect, over bool) {
+func placeSecondScreen(area *draw2d.Rectangle, over bool) {
 	if area == nil {
 		secondPlace.placed = false
 		return
