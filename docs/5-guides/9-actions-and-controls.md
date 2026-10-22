@@ -34,6 +34,15 @@ browser, so what you give them holds for both.
   The pencil renames it, the next icon switches it between pressing and an axis.
 - **Every change is kept** in `engine.json` at once. Ctrl+Z undoes the last one.
 
+## Write the hints from the bindings
+
+A game tells the player what each button does: "Tab menu", "Start to pause". Don't write those
+names by hand: the bindings already know them, and the player may have rebound them.
+
+`context.Input.ActionWords("menu")` gives the words an action is bound to on the device played, as
+`engine.json` writes them (`["Tab", "Pad Start"]`), with the player's rebinding. An action not bound
+gives none. The slice is the engine's own, so reading it costs nothing each frame; don't change it.
+
 ## Design a phone's controls
 
 A phone has no buttons of its own, so the game draws them. Until you design some, it shows the

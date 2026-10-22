@@ -36,11 +36,13 @@ A game's main registers its behaviours and runs the project it embeds:
 | `func Run(files fs.FS) error` | Run plays a project, from its files (embedded in the game, or a folder), until its window is closed: on the desktop in a window, on the Nintendo 3DS on the top screen. |
 | `func RunningOn() string` | RunningOn is the name of the target the game runs on now. |
 | `func SaveBindings() error` | SaveBindings keeps the actions the player changed, for the next time the game plays here. |
+| `func SecondScreen() (*Scene, bool)` | SecondScreen is the scene the second screen shows (SetSecondScreen), if any: one who plays the game elsewhere than Run moves it on each frame (Scene.Update) and shows it from Scene.Camera. |
 | `func SetEditor(run func() error)` | SetEditor installs the editor (the editor package does, from a project's editor.go). |
 | `func SetFullscreen(on bool)` | SetFullscreen asks for the game on the whole screen, or in its window again. |
 | `func SetInterface(paint func(context *ui.Context, menu Menu))` | SetInterface makes a game show an interface of its own, with go-ui, in its own look: a menu of its scenes (Menu), a map, its controls, a login form. |
 | `func SetOverlay(paint func(list *draw2d.List, width, height float32))` | SetOverlay sets what the game draws over a 3D scene each frame, in the pixels of the screen it is on (the window's, or the 3DS's top screen, 400 × 240): the list is empty when it is called. |
 | `func SetPointerCaptured(captured bool)` | SetPointerCaptured holds and hides the pointer, for a game that turns with the mouse, or lets it go (a pause menu): MouseMovement still reads the mouse. |
+| `func SetSecondScreen(shown *Scene)` | SetSecondScreen shows a scene on the second screen, under the game's interface (SetInterface), seen from its main camera; nil leaves the screen to the interface. |
 | `func SetSurface(name string, paint func(context *ui.Context))` | SetSurface makes a game show a surface of its own, by name, painted with Go UI every frame; engine.json's surfaces say where it goes on each target. |
 | `func ShowSurfaces(context *ui.Context, played *Scene, scenes []MenuScene, main, second draw2d.Rect)` | ShowSurfaces builds the game's surfaces (SetSurface, SetInterface) for a scene played, offering some scenes (ScenesOf), where the target UseSurfaces chose places them: those on the main screen in an area of the window, those on the second screen in another (an empty one shows none). |
 | `func TakeQuit() bool` | TakeQuit tells whether the game asked to quit since the last time, and forgets it: one who plays the game elsewhere than Run (the editor's Play) stops it then. |
@@ -281,6 +283,7 @@ type Input struct {
 | Function or method | |
 |---|---|
 | `func (keys *Input) Action(name string) ActionState` | Action is an action's state this frame; an action not bound is never held. |
+| `func (keys *Input) ActionWords(name string) []string` | ActionWords are the words an action is bound to on the target played, as engine.json's ("Tab", "Pad Start"), rebinding included; none for an action not bound. |
 | `func (keys *Input) Axis(negative, positive Key) float64` | Axis is -1 while the first key is held, 1 while the second is, 0 with neither or both. |
 | `func (keys *Input) Down(key Key) bool` | Down tells whether a key is held; Pressed whether it went down this frame. |
 | `func (keys *Input) Gyroscope() Turn` | Gyroscope is how fast the device turns (a 3DS's gyroscope); still without one, or in an emulator. |

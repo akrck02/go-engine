@@ -20,9 +20,11 @@ type ActionState struct {
 	Value                   float64
 }
 
-// boundAction is an action's inputs on the target played, and its state.
+// boundAction is an action's inputs on the target played, the words that name them (as
+// engine.json's, in the same order), and its state.
 type boundAction struct {
 	inputs []boundInput
+	words  []string
 	state  ActionState
 }
 
@@ -46,19 +48,29 @@ func BindActions(bindings map[string]map[string][]string, target string) []error
 	actionTable.actions, actionTable.index = make([]boundAction, 0, len(names)), make(map[string]int, len(names))
 	var problems []error
 	for _, name := range names {
-		var bound boundAction
-		for _, word := range bindings[name][target] {
-			input, err := readWord(word, target)
-			if err != nil {
-				problems = append(problems, err)
-				continue
-			}
-			bound.inputs = append(bound.inputs, input)
-		}
+		bound, wrong := readWords(bindings[name][target], target)
+		problems = append(problems, wrong...)
 		actionTable.index[name] = len(actionTable.actions)
 		actionTable.actions = append(actionTable.actions, bound)
 	}
 	return problems
+}
+
+// readWords is an action bound to some words on a target, without the words the target does not
+// know, each reported.
+func readWords(words []string, target string) (boundAction, []error) {
+	var bound boundAction
+	var problems []error
+	for _, word := range words {
+		input, err := readWord(word, target)
+		if err != nil {
+			problems = append(problems, err)
+			continue
+		}
+		bound.inputs = append(bound.inputs, input)
+		bound.words = append(bound.words, word)
+	}
+	return bound, problems
 }
 
 // Action is an action's state this frame; an action not bound is never held.
