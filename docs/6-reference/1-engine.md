@@ -40,6 +40,7 @@ A game's main registers its behaviours and runs the project it embeds:
 | `func SaveBindings() error` | SaveBindings keeps the actions the player changed, for the next time the game plays here. |
 | `func SecondScreen() (*Scene, bool)` | SecondScreen is the scene the second screen shows (SetSecondScreen), if any: one who plays the game elsewhere than Run moves it on each frame (Scene.Update) and shows it from Scene.Camera. |
 | `func SetEditor(run func() error)` | SetEditor installs the editor (the editor package does, from a project's editor.go). |
+| `func SetFonts(fonts overlay.Fonts)` | SetFonts makes the game's text be drawn and measured in these fonts, a font file for each weight (overlay.Fonts: an empty weight keeps the default one). |
 | `func SetFullscreen(on bool)` | SetFullscreen asks for the game on the whole screen, or in its window again. |
 | `func SetInterface(paint func(context *ui.Context, menu Menu))` | SetInterface makes a game show an interface of its own, with go-ui, in its own look: a menu of its scenes (Menu), a map, its controls, a login form. |
 | `func SetOverlay(paint func(list *draw2d.List, width, height float32))` | SetOverlay sets what the game draws over a 3D scene each frame, in the pixels of the screen it is on (the window's, or the 3DS's top screen, 400 × 240): the list is empty when it is called. |
@@ -48,6 +49,7 @@ A game's main registers its behaviours and runs the project it embeds:
 | `func SetSurface(name string, paint func(context *ui.Context))` | SetSurface makes a game show a surface of its own, by name, painted with Go UI every frame; engine.json's surfaces say where it goes on each target. |
 | `func ShowSurfaces(context *ui.Context, played *Scene, scenes []MenuScene, main, second draw2d.Rectangle)` | ShowSurfaces builds the game's surfaces (SetSurface, SetInterface) for a scene played, offering some scenes (ScenesOf), where the target UseSurfaces chose places them: those on the main screen in an area of the window, those on the second screen in another (an empty one shows none). |
 | `func TakeQuit() bool` | TakeQuit tells whether the game asked to quit since the last time, and forgets it: one who plays the game elsewhere than Run (the editor's Play) stops it then. |
+| `func TextMeasurer() (*overlay.Measurer, error)` | TextMeasurer measures text in the game's fonts (SetFonts), as the engine draws it: for a layout of the game's own that has to know a line's width. |
 | `func TouchWords(control TouchControl) []string` | TouchWords are the words a touch control is bound with: a button's name, a stick's two axes. |
 | `func UseSurfaces(places map[string]map[string]SurfacePlace, target string) []error` | UseSurfaces places the game's surfaces on a target, as engine.json's surfaces say (by surface, then by target); Run does it, and the editor for the target it previews. |
 | `func Version() string` | Version says which Go Engine this program was built with: its release and commit, as "v0.0.1 (ba08523)", or "v0.0.1 (77aa001, local)" for a local copy, as the editor's window and the logs show it. |

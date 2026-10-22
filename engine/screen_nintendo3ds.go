@@ -91,7 +91,7 @@ func (game *runner) paintOnMainScreen() {
 
 // start makes the top screen's context, looking as the bottom screen's, and tells whether it could.
 func (top *mainScreen) start(bottom *ui.Context) bool {
-	context, err := ui.New()
+	context, err := ui.NewInFonts(gameFonts)
 	if err != nil {
 		slog.Error("the top screen's surfaces cannot be painted", "error", err)
 		return false

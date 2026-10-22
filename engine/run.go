@@ -170,9 +170,8 @@ type runner struct {
 
 // run opens the window and plays until it is closed.
 func (game *runner) run(title string) error {
-	options := window.Options{Title: title, Width: windowWidth, Height: windowHeight, Continuous: true, KeepStart: game.keepStart}
-	options.Scene = game.step
-	context, err := ui.New()
+	options := game.windowOptions(title)
+	context, err := ui.NewInFonts(gameFonts)
 	if err != nil {
 		return err
 	}
@@ -180,6 +179,13 @@ func (game *runner) run(title string) error {
 	startConsole()
 	defer stopConsole()
 	return window.RunWith(context, options, interfaceFor(game))
+}
+
+// windowOptions are how the game's window opens: its size, its scene, and the game's fonts.
+func (game *runner) windowOptions(title string) window.Options {
+	options := window.Options{Title: title, Width: windowWidth, Height: windowHeight, Continuous: true, KeepStart: game.keepStart, Fonts: gameFonts}
+	options.Scene = game.step
+	return options
 }
 
 // step moves the game on a frame and gives the window what to show.
