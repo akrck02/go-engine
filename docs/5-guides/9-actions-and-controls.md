@@ -64,6 +64,17 @@ hands. `context.Input.LastInputKind()` is the kind of the last input pressed or 
 `KeyboardAndMouse`, `GamePad`, `TouchScreen` or `ConsoleButtons` (a 3DS's), and `NoInputYet`
 before the first. It changes when the player picks up another device, not when they stop.
 
+`context.Input.ActionHint` puts it all together: the label of the action's first input of the kind
+in use, or of its first input when none is of that kind. With `menu` bound to `Tab` and `Pad Start`,
+it is "Tab" at the keyboard, "Start" with an Xbox pad and "Options" with a PlayStation pad; on a
+3DS, it names the 3DS's own button. It allocates nothing, so a game can ask for it every frame:
+
+```go
+func (keeper *Keeper) Update(context *engine.Context) {
+	keeper.Prompt.Text = context.Input.ActionHint("menu") + " menu"
+}
+```
+
 ## Design a phone's controls
 
 A phone has no buttons of its own, so the game draws them. Until you design some, it shows the

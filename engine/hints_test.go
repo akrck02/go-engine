@@ -89,3 +89,69 @@ func TestA3DSsButtonsAreAConsolesOwn(test *testing.T) {
 		test.Fatalf("a 3DS's Start gives %v", kind)
 	}
 }
+
+// hintActions are bindings of a computer with a keyboard and a pad, and of a 3DS.
+var hintActions = map[string]map[string][]string{
+	"menu":  {"desktop": {"Tab", "Pad Start"}, "nintendo3ds": {"Start"}},
+	"climb": {"desktop": {"Pad Up", "W"}},
+}
+
+func TestAHintNamesTheInputOfTheDeviceInThePlayersHands(test *testing.T) {
+	BindActions(hintActions, DesktopTarget)
+	keys := &Input{state: input.NewState()}
+	keys.updateActions()
+	if hint := keys.ActionHint("menu"); hint != "Tab" {
+		test.Fatalf("before any input menu's hint is %q", hint)
+	}
+	keys.state.SetPadButton(input.PadA, true)
+	keys.updateActions()
+	if hint := keys.ActionHint("menu"); hint != "Start" {
+		test.Fatalf("with a pad menu's hint is %q", hint)
+	}
+	keys.state.SetPadLayout(input.PlayStationLayout)
+	if hint := keys.ActionHint("menu"); hint != "Options" {
+		test.Fatalf("with a PlayStation pad menu's hint is %q", hint)
+	}
+	keys.state = input.NewState()
+	keys.state.SetKey(input.KeyEscape, true)
+	keys.updateActions()
+	if hint := keys.ActionHint("climb"); hint != "W" {
+		test.Fatalf("at the keyboard climb's hint is %q", hint)
+	}
+	if hint := keys.ActionHint("jump"); hint != "" {
+		test.Fatalf("an action not bound hints %q", hint)
+	}
+}
+
+func TestAHintOnThe3DSNamesItsOwnButton(test *testing.T) {
+	BindActions(hintActions, Nintendo3DSTarget)
+	keys := &Input{state: input.NewState(), console: ctr.Reading{Held: ctr.ButtonA}}
+	keys.updateActions()
+	if hint := keys.ActionHint("menu"); hint != "Start" {
+		test.Fatalf("menu's hint on a 3DS is %q", hint)
+	}
+}
+
+func TestAHintWhenNoInputOfTheKindIsBoundIsTheFirst(test *testing.T) {
+	BindActions(hintActions, DesktopTarget)
+	keys := &Input{state: input.NewState()}
+	keys.state.SetTouch(1, 10, 10)
+	keys.updateActions()
+	if hint := keys.ActionHint("menu"); hint != "Tab" {
+		test.Fatalf("with a touch, menu's hint is %q", hint)
+	}
+}
+
+func TestReadingAHintAllocatesNothing(test *testing.T) {
+	BindActions(hintActions, DesktopTarget)
+	keys := &Input{state: input.NewState()}
+	keys.state.SetPadButton(input.PadA, true)
+	allocations := testing.AllocsPerRun(100, func() {
+		keys.updateActions()
+		_ = keys.ActionHint("menu")
+		_ = keys.ActionHint("climb")
+	})
+	if allocations != 0 {
+		test.Fatalf("reading a hint allocates %v times", allocations)
+	}
+}

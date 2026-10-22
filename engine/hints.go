@@ -73,3 +73,40 @@ func padUsed(state *input.State) bool {
 	}
 	return false
 }
+
+// ActionHint is what to show a player for an action: the label (InputLabel) of its first input
+// of the kind they used last ("Tab" at the keyboard, "Start" with a pad), or of its first input
+// when none is of that kind; "" for an action not bound. A pad's buttons are named after the pad
+// in their hands.
+func (keys *Input) ActionHint(name string) string {
+	index, found := actionTable.index[name]
+	if !found || len(actionTable.actions[index].words) == 0 {
+		return ""
+	}
+	action := &actionTable.actions[index]
+	chosen := 0
+	for position, bound := range action.inputs {
+		if kindOfInput(bound.kind) == keys.lastKind {
+			chosen = position
+			break
+		}
+	}
+	layout := input.XboxLayout
+	if keys.state != nil {
+		layout = keys.state.PadLayout()
+	}
+	return InputLabel(action.words[chosen], layout)
+}
+
+// kindOfInput is the kind of device an input is on.
+func kindOfInput(kind inputKind) InputKind {
+	switch kind {
+	case keyInput, mouseInput:
+		return KeyboardAndMouse
+	case padInput, stickInput:
+		return GamePad
+	case touchInput, backInput:
+		return TouchScreen
+	}
+	return ConsoleButtons
+}

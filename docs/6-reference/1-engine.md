@@ -284,6 +284,7 @@ type Input struct {
 | Function or method | |
 |---|---|
 | `func (keys *Input) Action(name string) ActionState` | Action is an action's state this frame; an action not bound is never held. |
+| `func (keys *Input) ActionHint(name string) string` | ActionHint is what to show a player for an action: the label (InputLabel) of its first input of the kind they used last ("Tab" at the keyboard, "Start" with a pad), or of its first input when none is of that kind; "" for an action not bound. |
 | `func (keys *Input) ActionWords(name string) []string` | ActionWords are the words an action is bound to on the target played, as engine.json's ("Tab", "Pad Start"), rebinding included; none for an action not bound. |
 | `func (keys *Input) Axis(negative, positive Key) float64` | Axis is -1 while the first key is held, 1 while the second is, 0 with neither or both. |
 | `func (keys *Input) Down(key Key) bool` | Down tells whether a key is held; Pressed whether it went down this frame. |
