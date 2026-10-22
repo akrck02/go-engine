@@ -4,8 +4,8 @@ go 1.25.6
 
 require (
 	github.com/akrck02/go-engine v0.0.0
-	github.com/akrck02/go-renderer v0.2.1-0.20261022092847-057ed3e43b93
-	github.com/akrck02/go-ui v0.1.2-0.20261022092922-95aedb28739e
+	github.com/akrck02/go-renderer v0.2.1-0.20261022102242-dc967092bb13
+	github.com/akrck02/go-ui v0.1.2-0.20261022102448-3f44a7b70a00
 )
 
 require (
