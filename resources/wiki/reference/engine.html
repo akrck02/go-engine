@@ -73,7 +73,12 @@ to its parent, in metres and degrees (see package space).</p>
 
 <tr>
 <td><code>func PlaceSecondScreen(area *draw2d.Rect)</code></td>
-<td>PlaceSecondScreen shows the second screen&rsquo;s scene in an area of the window, in window pixels, on a device that has no second screen: a radar in a corner of a computer&rsquo;s window, the same scene a 3DS shows below.</td>
+<td>PlaceSecondScreen shows the second screen&rsquo;s scene in an area of the window, in window pixels, on a device that has no second screen, with its own sky behind it: a map in a corner of a computer&rsquo;s window, the same scene a 3DS shows below.</td>
+</tr>
+
+<tr>
+<td><code>func PlaceSecondScreenOver(area *draw2d.Rect)</code></td>
+<td>PlaceSecondScreenOver is PlaceSecondScreen with no background: the scene floats over the game&rsquo;s view in its area, as a radar does.</td>
 </tr>
 
 <tr>
@@ -117,11 +122,6 @@ to its parent, in metres and degrees (see package space).</p>
 </tr>
 
 <tr>
-<td><code>func SecondScreen() (*Scene, bool)</code></td>
-<td>SecondScreen is the scene the second screen shows (SetSecondScreen), if any: one who plays the game elsewhere than Run moves it on each frame (Scene.Update) and shows it from Scene.Camera.</td>
-</tr>
-
-<tr>
 <td><code>func SetEditor(run func() error)</code></td>
 <td>SetEditor installs the editor (the editor package does, from a project&rsquo;s editor.go).</td>
 </tr>
@@ -144,11 +144,6 @@ to its parent, in metres and degrees (see package space).</p>
 <tr>
 <td><code>func SetPointerCaptured(captured bool)</code></td>
 <td>SetPointerCaptured holds and hides the pointer, for a game that turns with the mouse, or lets it go (a pause menu): MouseMovement still reads the mouse.</td>
-</tr>
-
-<tr>
-<td><code>func SetSecondScreen(shown *Scene)</code></td>
-<td>SetSecondScreen shows a scene on the second screen, under the game&rsquo;s interface (SetInterface), seen from its main camera; nil leaves the screen to the interface.</td>
 </tr>
 
 <tr>

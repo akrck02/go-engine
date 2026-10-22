@@ -75,7 +75,8 @@ screen, seen from its main camera, with the interface over it: a map that turns,
 <li><strong>The same scene on a computer.</strong> A computer has no second screen, so that scene plays but is
 not shown. <code>engine.PlaceSecondScreen(&amp;area)</code> shows it in an area of the window, in window pixels,
 under the game&rsquo;s own drawing: a radar in a corner. Call it again when the window&rsquo;s size changes;
-<code>nil</code> hides it, and a 3DS ignores it.</li>
+<code>nil</code> hides it, and a 3DS ignores it. <code>engine.PlaceSecondScreenOver(&amp;area)</code> draws it with no sky
+of its own, floating over the game&rsquo;s view.</li>
 <li><strong>Its own pictures.</strong> Read a picture once (<code>draw2d.DecodeImage</code>) and paint it with
 <code>context.Paint</code>; the <a href="https://github.com/akrck02/io-world/tree/main/IoWorldGo" target="_blank">Io World</a> game draws
 its menu of levels from its own bricks this way.</li>
