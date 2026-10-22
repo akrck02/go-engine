@@ -5,7 +5,7 @@ go 1.25.6
 require (
 	github.com/akrck02/go-engine v0.0.0
 	github.com/akrck02/go-renderer v0.2.1-0.20261022102242-dc967092bb13
-	github.com/akrck02/go-ui v0.1.2-0.20261022102448-3f44a7b70a00
+	github.com/akrck02/go-ui v0.1.2-0.20261022103729-6ffa05875f3e
 )
 
 require (
