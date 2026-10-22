@@ -8,7 +8,7 @@ require (
 )
 
 require (
-	github.com/akrck02/go-renderer v0.2.1-0.20261022102242-dc967092bb13 // indirect
+	github.com/akrck02/go-renderer v0.2.1-0.20261022114325-de37e65de89c // indirect
 	github.com/go-gl/gl v0.0.0-20260331235117-4566fea9a276 // indirect
 	github.com/go-gl/glfw/v3.4/glfw v0.1.0-pre.1 // indirect
 	golang.org/x/image v0.45.0 // indirect
