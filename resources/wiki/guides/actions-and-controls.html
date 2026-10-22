@@ -29,10 +29,107 @@ browser, so what you give them holds for both.</p>
 <li><strong>Click a control</strong> of the device: a panel opens beside it. Pick an action, or type a new
 name and create it there. A button presses; a stick has two axes, across and up and down, each
 with its own action.</li>
-<li><strong>The cards</strong> say which controls do each action; click one to see its controls stand out.
+<li><strong>The cards</strong> say which controls do each action, and the hint a player of the device shown
+reads for it (see below); click one to see its controls stand out.
 The pencil renames it, the next icon switches it between pressing and an axis.</li>
 <li><strong>Every change is kept</strong> in <code>engine.json</code> at once. Ctrl+Z undoes the last one.</li>
 </ul>
+
+<h2 id="write-the-hints-from-the-bindings">Write the hints from the bindings</h2>
+
+<p>A game tells the player what each button does: &ldquo;Tab menu&rdquo;, &ldquo;Start to pause&rdquo;. Don&rsquo;t write those
+names by hand: the bindings already know them, and the player may have rebound them.</p>
+
+<p><code>context.Input.ActionWords(&quot;menu&quot;)</code> gives the words an action is bound to on the device played, as
+<code>engine.json</code> writes them (<code>[&quot;Tab&quot;, &quot;Pad Start&quot;]</code>), with the player&rsquo;s rebinding. An action not bound
+gives none. The slice is the engine&rsquo;s own, so reading it costs nothing each frame; don&rsquo;t change it.</p>
+
+<p>A word is what an author writes; a player reads what the key cap or the button says.
+<code>engine.InputLabel(word, layout)</code> turns one into the other:</p>
+
+<table>
+<thead>
+<tr>
+<th>Word</th>
+<th>Label</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>Escape</code>, <code>Page Up</code>, <code>Control</code></td>
+<td>Esc, PgUp, Ctrl</td>
+</tr>
+
+<tr>
+<td><code>Left-</code>, <code>D+</code></td>
+<td>Left, D (a direction&rsquo;s sign dropped)</td>
+</tr>
+
+<tr>
+<td><code>Alt+Enter</code></td>
+<td>Alt+Enter (a combination stays whole)</td>
+</tr>
+
+<tr>
+<td><code>Mouse Left</code>, <code>Stick X</code></td>
+<td>Left click, Stick</td>
+</tr>
+
+<tr>
+<td><code>Touch Jump</code></td>
+<td>Jump</td>
+</tr>
+
+<tr>
+<td><code>Pad A</code></td>
+<td>A on an Xbox pad, ✕ on a PlayStation pad, B on a Nintendo pad</td>
+</tr>
+
+<tr>
+<td><code>Pad Start</code>, <code>Pad Left Shoulder</code></td>
+<td>Start, LB · Options, L1 · +, L</td>
+</tr>
+</tbody>
+</table>
+<p>The layout is the pad&rsquo;s, as Go Renderer tells it from the pad&rsquo;s maker
+(<code>context.Input.State().PadLayout()</code>); a pad it cannot tell is read as an Xbox pad.</p>
+
+<p>A computer may have a keyboard and a pad at once: the hint should name the one in the player&rsquo;s
+hands. <code>context.Input.LastInputKind()</code> is the kind of the last input pressed or moved:
+<code>KeyboardAndMouse</code>, <code>GamePad</code>, <code>TouchScreen</code> or <code>ConsoleButtons</code> (a 3DS&rsquo;s), and <code>NoInputYet</code>
+before the first. It changes when the player picks up another device, not when they stop.</p>
+
+<p><code>context.Input.ActionHint</code> puts it all together: the label of the action&rsquo;s first input of the kind
+in use, or of its first input when none is of that kind. With <code>menu</code> bound to <code>Tab</code> and <code>Pad Start</code>,
+it is &ldquo;Tab&rdquo; at the keyboard, &ldquo;Start&rdquo; with an Xbox pad and &ldquo;Options&rdquo; with a PlayStation pad; on a
+3DS, it names the 3DS&rsquo;s own button. It allocates nothing, so a game can ask for it every frame.
+The game below reads it before the behaviours (<code>engine.BeforeBehaviours(showMenuHint)</code>) and draws
+it over the scene (<code>engine.SetOverlay(drawMenuHint)</code>); it builds the words only when the hint
+changes, so a frame allocates nothing either:</p>
+<pre><code class="language-go"><span class="c1">// menuHint and menuPrompt are what the game shows for its menu, worked out again only when the</span>
+<span class="c1">// hint changes, so a frame allocates nothing.</span>
+<span class="kd">var</span> <span class="nx">menuHint</span><span class="p">,</span> <span class="nx">menuPrompt</span> <span class="kt">string</span>
+
+<span class="c1">// showMenuHint runs before the behaviours, every frame.</span>
+<span class="kd">func</span> <span class="nf">showMenuHint</span><span class="p">(</span><span class="nx">context</span> <span class="o">*</span><span class="nx">engine</span><span class="p">.</span><span class="nx">Context</span><span class="p">)</span> <span class="p">{</span>
+	<span class="k">if</span> <span class="nx">hint</span> <span class="o">:=</span> <span class="nx">context</span><span class="p">.</span><span class="nx">Input</span><span class="p">.</span><span class="nf">ActionHint</span><span class="p">(</span><span class="s">&#34;menu&#34;</span><span class="p">);</span> <span class="nx">hint</span> <span class="o">!=</span> <span class="nx">menuHint</span> <span class="p">{</span>
+		<span class="nx">menuHint</span><span class="p">,</span> <span class="nx">menuPrompt</span> <span class="p">=</span> <span class="nx">hint</span><span class="p">,</span> <span class="nx">hint</span><span class="o">+</span><span class="s">&#34; menu&#34;</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+
+<span class="c1">// drawMenuHint draws the prompt at the bottom left of the screen.</span>
+<span class="kd">func</span> <span class="nf">drawMenuHint</span><span class="p">(</span><span class="nx">list</span> <span class="o">*</span><span class="nx">draw2d</span><span class="p">.</span><span class="nx">List</span><span class="p">,</span> <span class="nx">width</span><span class="p">,</span> <span class="nx">height</span> <span class="kt">float32</span><span class="p">)</span> <span class="p">{</span>
+	<span class="nx">list</span><span class="p">.</span><span class="nf">Text</span><span class="p">(</span><span class="nx">menuPrompt</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="nx">height</span><span class="o">-</span><span class="mi">12</span><span class="p">,</span> <span class="mi">18</span><span class="p">,</span> <span class="nx">draw2d</span><span class="p">.</span><span class="nx">Medium</span><span class="p">,</span> <span class="nx">draw2d</span><span class="p">.</span><span class="nf">Hex</span><span class="p">(</span><span class="s">&#34;#f5ead0&#34;</span><span class="p">))</span>
+<span class="p">}</span>
+</code></pre>
+
+<p>At the keyboard it draws &ldquo;Tab menu&rdquo;; once a PlayStation pad is pressed, &ldquo;Options menu&rdquo; (the
+engine&rsquo;s tests run this code). Where and how a hint appears is the game&rsquo;s choice: the engine never
+draws one by itself.</p>
+
+<p>The <strong>Controls</strong> workspace shows each action&rsquo;s hint on its card, for the device shown, so you see
+what a player will read.</p>
 
 <h2 id="design-a-phone-s-controls">Design a phone&rsquo;s controls</h2>
 

@@ -1,0 +1,104 @@
+<h1 id="14-stable-releases-of-the-engine-and-its-libraries">14. Stable releases of the engine and its libraries</h1>
+
+<blockquote>
+<p>Status: proposed · Author&rsquo;s approval: proposal ☐ plan ☐</p>
+</blockquote>
+
+<h2 id="why">Why</h2>
+
+<p>go-engine is tagged (v0.0.1 to v0.0.3), but it depends on loose commits of Go UI&rsquo;s and Go Renderer&rsquo;s main, not on releases. A game made with a tagged engine can therefore pull libraries nobody released, and nothing proves a version works on every device before it ships:</p>
+
+<ul>
+<li><strong>The libraries are not released.</strong> Go Renderer&rsquo;s last tag is v0.2.0 and Go UI&rsquo;s v0.1.1; since then surfaces, strokes, fullscreen, <code>uitest</code>, <code>uidrive</code> and <code>DrawOver</code> have landed on their main.</li>
+<li><strong><code>-update</code> follows a branch.</strong> It moves a project to go-engine&rsquo;s main, not to its latest release; new projects pin whatever main held.</li>
+<li><strong>Only go-engine runs its tests on every push.</strong> Go UI and Go Renderer only publish their docs; nothing builds the 3DS or Android on a push.</li>
+<li><strong>Devices are checked by hand.</strong> Metal on a Mac, a real 3DS and a real phone are tried when someone remembers to.</li>
+</ul>
+
+<h2 id="what">What</h2>
+
+<table>
+<thead>
+<tr>
+<th>Id</th>
+<th>Requirement</th>
+<th>Check</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>R1</td>
+<td>Go Renderer, Go UI, Go Sound, Go for 3DS and Go UI for Android are released with notes (Go Renderer v0.3.0, Go UI v0.2.0 first) before the engine that needs them</td>
+<td>each repository&rsquo;s release page lists its notes; go-engine&rsquo;s go.mod names only tags</td>
+</tr>
+
+<tr>
+<td>R2</td>
+<td>go-engine is released by tag, with notes that list what changed and what breaks, with what to do (<code>ShowInterface</code> went in proposal 11)</td>
+<td>the release page of each version</td>
+</tr>
+
+<tr>
+<td>R3</td>
+<td><code>-update</code> and new projects take go-engine&rsquo;s latest release; main only when asked (<code>-engine main</code>)</td>
+<td>test: <code>-update</code> with no <code>-engine</code> pins the latest tag</td>
+</tr>
+
+<tr>
+<td>R4</td>
+<td>The editor and a built game say their version from the tag</td>
+<td>test of the version read from the build</td>
+</tr>
+
+<tr>
+<td>R5</td>
+<td>Every repository checks each push: format, vet and tests on Linux, macOS and Windows</td>
+<td>each repository&rsquo;s workflow runs green on a push</td>
+</tr>
+
+<tr>
+<td>R6</td>
+<td>go-engine&rsquo;s checks also build the samples, the 3DS with TinyGo and an Android APK</td>
+<td>the workflow&rsquo;s jobs for each target</td>
+</tr>
+
+<tr>
+<td>R7</td>
+<td>Before a release, scripts drive a sample on the Android emulator and in Azahar and report each step (<code>uidrive</code>), so every device is proven without hands</td>
+<td>a release job runs them and keeps their reports</td>
+</tr>
+
+<tr>
+<td>R8</td>
+<td>A short checklist for what only the author can try: Metal on a Mac, a real 3DS, a real phone</td>
+<td>the checklist in <code>docs/8-contributing</code>, ticked in each release&rsquo;s notes</td>
+</tr>
+
+<tr>
+<td>R9</td>
+<td>While versions are v0.x, the API may change, but never silently: a change that breaks a game is in the notes; v1.0 names what stays stable (<code>engine</code>, engine.json, the scene file)</td>
+<td>the notes of each version; a page on what v1.0 promises</td>
+</tr>
+</tbody>
+</table>
+
+<h2 id="out-of-scope">Out of scope</h2>
+
+<ul>
+<li>Packaging the editor as an installer for each system: the editor is still installed with Go.</li>
+<li>Releasing games: projects already have their own release workflow.</li>
+<li>v1.0 itself: this sets the way to get there.</li>
+</ul>
+
+<h2 id="open-questions-for-the-author">Open questions for the author</h2>
+
+<ol>
+<li><strong>Who tags.</strong> You, by hand after review, or a workflow when a tag is pushed from main?</li>
+<li><strong>How often.</strong> A release when a proposal is done, or on a calendar?</li>
+<li><strong>The devices you test.</strong> Which Mac, 3DS and phone count for the checklist?</li>
+</ol>
+
+<h2 id="result">Result</h2>
+
+<p>Not built yet: waiting for the author&rsquo;s approval of this proposal.</p>

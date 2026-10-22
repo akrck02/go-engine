@@ -1,0 +1,163 @@
+<h1 id="15-hints-from-the-bindings">15. Hints from the bindings</h1>
+
+<blockquote>
+<p>Status: done · Author&rsquo;s approval: proposal ☑ (2026-10-22, &ldquo;Vale, según el mando&rdquo;) plan ☑ (2026-10-22, &ldquo;Si&rdquo;)</p>
+</blockquote>
+
+<h2 id="why">Why</h2>
+
+<p>A game tells the player which button does what: &ldquo;Tab menu&rdquo;, &ldquo;Start to pause&rdquo;, &ldquo;Enter OK · Esc
+back&rdquo;. Today it writes those hints by hand, once for each device, beside the bindings it already
+declared in engine.json. Two copies of one fact drift apart:</p>
+
+<ul>
+<li><strong>A player rebinds an action</strong> (<code>Input.Rebind</code>, kept on the device) and the hint still names the
+old input.</li>
+<li><strong>The author changes engine.json</strong> and forgets one of the hints.</li>
+<li><strong>The player picks up a pad</strong> on a computer, and the hints still name keys.</li>
+</ul>
+
+<p>The engine knows every action&rsquo;s inputs on the target played, rebinding included; it only does not
+say them.</p>
+
+<h2 id="what">What</h2>
+
+<table>
+<thead>
+<tr>
+<th>Id</th>
+<th>Requirement</th>
+<th>Check</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>R1</td>
+<td>A game reads the inputs an action is bound to on the target played, as engine.json&rsquo;s words (<code>Input.ActionWords(&quot;menu&quot;)</code> gives <code>[&quot;Tab&quot;, &quot;Pad Start&quot;]</code>), rebinding included</td>
+<td>tests: the words of a bound action, of one rebound, of one not bound (none)</td>
+</tr>
+
+<tr>
+<td>R2</td>
+<td>A word has a short name a person reads on a key cap or a button (<code>InputLabel(&quot;Escape&quot;)</code> is &ldquo;Esc&rdquo;, <code>&quot;Left-&quot;</code> is &ldquo;Left&rdquo;, <code>&quot;Touch A&quot;</code> is &ldquo;A&rdquo;, <code>&quot;Alt+Enter&quot;</code> stays as it is); a pad&rsquo;s buttons are named as the pad in the player&rsquo;s hands names them: the bottom face button is &ldquo;A&rdquo; on an Xbox pad, &ldquo;✕&rdquo; on a PlayStation pad and &ldquo;B&rdquo; on a Nintendo pad</td>
+<td>a table test of every kind of word, and of each pad&rsquo;s layout</td>
+</tr>
+
+<tr>
+<td>R3</td>
+<td>A game knows which kind of input the player used last (keyboard and mouse, pad, touch, a console&rsquo;s own buttons), so a hint names the inputs of the device in the player&rsquo;s hands</td>
+<td>test: a key, then a pad&rsquo;s button, then a touch, each changes it</td>
+</tr>
+
+<tr>
+<td>R4</td>
+<td>One call gives the hint for the device in use: the short name of the first input of that kind bound to the action (<code>Input.ActionHint(&quot;menu&quot;)</code> is &ldquo;Tab&rdquo; at the keyboard, &ldquo;Start&rdquo; with a pad)</td>
+<td>tests on a computer with a keyboard and a pad, and on the 3DS</td>
+</tr>
+
+<tr>
+<td>R5</td>
+<td>Reading words and hints allocates nothing each frame</td>
+<td><code>testing.AllocsPerRun</code></td>
+</tr>
+
+<tr>
+<td>R6</td>
+<td>The editor&rsquo;s Controls workspace and the guide to actions show how to write hints this way</td>
+<td>the guide&rsquo;s example runs</td>
+</tr>
+</tbody>
+</table>
+
+<h2 id="out-of-scope">Out of scope</h2>
+
+<ul>
+<li>Pictures of buttons (glyphs of a pad&rsquo;s A, a 3DS&rsquo;s Start): text first; pictures need a set of
+icons of their own.</li>
+<li>Translating the names into other languages.</li>
+<li>Hints the engine draws by itself: the game decides where and how they appear.</li>
+</ul>
+
+<h2 id="decisions">Decisions</h2>
+
+<ol>
+<li><strong>Names:</strong> <code>Input.ActionWords</code>, <code>Input.ActionHint</code> and <code>InputLabel</code>, as proposed (&ldquo;Vale&rdquo;).</li>
+<li><strong>A pad&rsquo;s buttons:</strong> named by the pad&rsquo;s own layout when the system tells which pad it is
+(&ldquo;según el mando&rdquo;); a pad it cannot tell is read as an Xbox pad, the layout most pads copy.</li>
+</ol>
+
+<h2 id="design">Design</h2>
+
+<p><strong>Which pad it is (Go Renderer).</strong> GLFW reads every pad by position: its <em>A</em> is always the bottom
+face button. It also gives each pad&rsquo;s GUID, whose vendor says who made it (Sony, Nintendo,
+Microsoft…). <code>input</code> gains <code>PadLayout</code> (<code>XboxLayout</code>, the default; <code>PlayStationLayout</code>;
+<code>NintendoLayout</code>) and <code>State.PadLayout()</code>; the window loop sets it when a pad connects, from the
+vendor in the GUID. The browser loop reads it from the Gamepad API&rsquo;s <code>id</code>, which names the vendor
+too. Android and the 3DS keep the default for now: a 3DS&rsquo;s own buttons are already named by
+Nintendo (<code>A</code>, <code>Start</code>), and Android&rsquo;s pads are a later step.</p>
+
+<p><strong>An action&rsquo;s words (engine).</strong> The action table keeps each action&rsquo;s words beside its inputs, set
+by <code>BindActions</code> and by <code>Rebind</code>. <code>Input.ActionWords(name)</code> returns that slice: no copy, so it
+allocates nothing; the comment says not to change it.</p>
+
+<p><strong>Short names.</strong> <code>InputLabel(word string, layout input.PadLayout) string</code> turns a word into what a
+key cap or a button says: keys by a small table (<code>Escape</code> → <code>Esc</code>, <code>Page Up</code> → <code>PgUp</code>, arrows as
+<code>↑</code>), a pad&rsquo;s face buttons by layout (bottom, right, left, top: <code>A B X Y</code> · <code>✕ ○ □ △</code> · <code>B A Y X</code>),
+its other buttons by name (<code>Start</code>, <code>LB</code>), touch controls by their name, a direction&rsquo;s <code>-</code>/<code>+</code>
+dropped, a combination kept whole. Strings are constants or pieces of the word: nothing allocated.</p>
+
+<p><strong>The device in use.</strong> <code>Input</code> remembers the kind of the last input that was pressed or moved past
+a dead zone: keyboard and mouse, pad, touch, or a console&rsquo;s own buttons
+(<code>Input.LastInputKind()</code>). It is worked out in the frame&rsquo;s update, from the state the engine
+already reads.</p>
+
+<p><strong>One hint.</strong> <code>Input.ActionHint(name)</code> is <code>InputLabel</code> of the first word of the action whose kind
+is the last kind used; when none is of that kind, the first word. On the 3DS every word is a
+console&rsquo;s button, so it is that.</p>
+
+<p><strong>The editor.</strong> Each action&rsquo;s card in Controls shows its hint on the device shown, so the author
+sees what a player will read; the actions guide gains a <em>Hints</em> section with the code.</p>
+
+<p><strong>Alternatives not taken.</strong> Reading a pad&rsquo;s layout from its name (GLFW&rsquo;s <code>GetGamepadName</code>): names
+vary by driver, while the vendor in the GUID does not. Pictures of the buttons: out of scope.</p>
+
+<h2 id="tasks">Tasks</h2>
+
+<ul>
+<li>[x] T1 — Go Renderer: <code>input.PadLayout</code>, <code>State.PadLayout()</code>, set from the pad&rsquo;s vendor on the desktop and in the browser · <code>input</code>, <code>windowloop</code>, <code>browser</code> · R2 · table test of vendors to layouts</li>
+<li>[x] T2 — an action&rsquo;s words kept with it, through binding and rebinding; <code>Input.ActionWords</code> · <code>engine/actions.go</code>, <code>engine/rebind.go</code>, <code>engine/hints.go</code> · R1, R5 · tests: bound, rebound, unbound; no allocation</li>
+<li>[x] T3 — <code>InputLabel</code> for every kind of word and each pad layout · <code>engine/inputlabels.go</code> · R2, R5 · table test</li>
+<li>[x] T4 — the last kind of input used, <code>Input.LastInputKind</code> · <code>engine/hints.go</code> · R3 · test: a key, a pad&rsquo;s button, a touch</li>
+<li>[x] T5 — <code>Input.ActionHint</code> · R4, R5 · tests on a computer with keyboard and pad, and on the 3DS; no allocation</li>
+<li>[x] T6 — the hint on each action&rsquo;s card in Controls; a <em>Hints</em> section in the actions guide · <code>editor</code>, <code>docs</code> · R6 · capture; the guide&rsquo;s code compiled in a test</li>
+</ul>
+
+<h2 id="result">Result</h2>
+
+<p>Built, T1–T6: Go Renderer on <code>feature/pad-layout</code>, the engine on this branch. What was checked,
+and what a person must still check:</p>
+
+<ul>
+<li><strong>R1</strong>: <code>Input.ActionWords</code> keeps an action&rsquo;s words beside its inputs, through <code>BindActions</code> and
+<code>Rebind</code> (words a target does not know are left out, as from the inputs); tests of a bound, a
+rebound and an unbound action.</li>
+<li><strong>R2</strong>: <code>InputLabel</code>, a table test of every kind of word and of each pad&rsquo;s layout. One change
+from the Design: the arrows keep their words (&ldquo;Left&rdquo;, as R2 asks) instead of <code>←</code>, so that a
+hint reads the same as a pad&rsquo;s cross and a 3DS&rsquo;s. Go Renderer tells a pad&rsquo;s layout from the
+vendor in its GUID (GLFW) or in the Gamepad API&rsquo;s id (Chrome&rsquo;s and Firefox&rsquo;s forms): table tests
+of both. Not checked: real Sony, Nintendo and Xbox pads, and a browser (the page&rsquo;s listener for
+<code>gamepadconnected</code> was only built for WebAssembly, not run).</li>
+<li><strong>R3</strong>: <code>Input.LastInputKind</code>; a test of a key, a pad&rsquo;s button, a touch, a stick and a click,
+each changing it, a frame without input keeping it, and a 3DS&rsquo;s button.</li>
+<li><strong>R4</strong>: <code>Input.ActionHint</code>; tests on a computer with a keyboard and a pad (Xbox and
+PlayStation names), with a touch and nothing of its kind, and on a 3DS. <code>HintOf</code> gives the
+same for words not played (the editor&rsquo;s).</li>
+<li><strong>R5</strong>: <code>testing.AllocsPerRun</code> of <code>ActionWords</code>, <code>InputLabel</code> and <code>ActionHint</code> with a frame of
+actions: none. The PlayStation names (✕ ○ □ △) are not in the Go fonts: on a computer they are
+drawn with a system font (Go Renderer&rsquo;s fallback); not seen on screen.</li>
+<li><strong>R6</strong>: each card in Controls shows its hint on the device shown (capture); the guide to actions
+has a <em>Write the hints from the bindings</em> section whose code is <code>ExampleInput_ActionHint</code>, run
+by the tests, and a test checks the guide still shows that code.</li>
+<li>The engine still builds with TinyGo for the 3DS (<code>examples/watch</code>).</li>
+</ul>
