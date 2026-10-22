@@ -26,6 +26,7 @@ A game's main registers its behaviours and runs the project it embeds:
 | `func Fullscreen() bool` | Fullscreen tells whether the game is asked to be on the whole screen. |
 | `func HasInterface() bool` | HasInterface tells whether the game shows a go-ui interface of its own (SetInterface). |
 | `func HeightSeen(settings *scenefile.Camera, aspect float64) float64` | HeightSeen is the metres a 2D camera sees top to bottom on a screen of a shape (its width over its height): the camera's height (10 when it has none), or more on a screen too narrow for the width it must see. |
+| `func InputLabel(word string, layout input.PadLayout) string` | InputLabel is what a key cap or a button says for a word of engine.json, on a pad of some layout: "Escape" is "Esc", "Pad A" is "✕" on a PlayStation pad, "Touch Jump" is "Jump". |
 | `func PlaceSecondScreen(area *draw2d.Rect)` | PlaceSecondScreen shows the second screen's scene in an area of the window, in window pixels, on a device that has no second screen, with its own sky behind it: a map in a corner of a computer's window, the same scene a 3DS shows below. |
 | `func PlaceSecondScreenOver(area *draw2d.Rect)` | PlaceSecondScreenOver is PlaceSecondScreen with no background: the scene floats over the game's view in its area, as a radar does. |
 | `func PressedInput(state *input.State, target string) (string, bool)` | PressedInput is the word of an input pressed this frame on a target, if one was: a key, a mouse button or a pad's button (a 3DS's buttons and Android's back cannot be pressed from a computer). |

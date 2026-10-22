@@ -43,6 +43,22 @@ names by hand: the bindings already know them, and the player may have rebound t
 `engine.json` writes them (`["Tab", "Pad Start"]`), with the player's rebinding. An action not bound
 gives none. The slice is the engine's own, so reading it costs nothing each frame; don't change it.
 
+A word is what an author writes; a player reads what the key cap or the button says.
+`engine.InputLabel(word, layout)` turns one into the other:
+
+| Word | Label |
+|---|---|
+| `Escape`, `Page Up`, `Control` | Esc, PgUp, Ctrl |
+| `Left-`, `D+` | Left, D (a direction's sign dropped) |
+| `Alt+Enter` | Alt+Enter (a combination stays whole) |
+| `Mouse Left`, `Stick X` | Left click, Stick |
+| `Touch Jump` | Jump |
+| `Pad A` | A on an Xbox pad, ✕ on a PlayStation pad, B on a Nintendo pad |
+| `Pad Start`, `Pad Left Shoulder` | Start, LB · Options, L1 · +, L |
+
+The layout is the pad's, as Go Renderer tells it from the pad's maker
+(`context.Input.State().PadLayout()`); a pad it cannot tell is read as an Xbox pad.
+
 ## Design a phone's controls
 
 A phone has no buttons of its own, so the game draws them. Until you design some, it shows the
