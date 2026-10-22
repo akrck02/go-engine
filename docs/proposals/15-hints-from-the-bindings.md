@@ -1,6 +1,6 @@
 # 15. Hints from the bindings
 
-> Status: building · Author's approval: proposal ☑ (2026-10-22, "Vale, según el mando") plan ☑ (2026-10-22, "Si")
+> Status: done · Author's approval: proposal ☑ (2026-10-22, "Vale, según el mando") plan ☑ (2026-10-22, "Si")
 
 ## Why
 
@@ -86,4 +86,27 @@ vary by driver, while the vendor in the GUID does not. Pictures of the buttons: 
 
 ## Result
 
-Not built yet: waiting for the author's approval of this proposal.
+Built, T1–T6: Go Renderer on `feature/pad-layout`, the engine on this branch. What was checked,
+and what a person must still check:
+
+- **R1**: `Input.ActionWords` keeps an action's words beside its inputs, through `BindActions` and
+  `Rebind` (words a target does not know are left out, as from the inputs); tests of a bound, a
+  rebound and an unbound action.
+- **R2**: `InputLabel`, a table test of every kind of word and of each pad's layout. One change
+  from the Design: the arrows keep their words ("Left", as R2 asks) instead of `←`, so that a
+  hint reads the same as a pad's cross and a 3DS's. Go Renderer tells a pad's layout from the
+  vendor in its GUID (GLFW) or in the Gamepad API's id (Chrome's and Firefox's forms): table tests
+  of both. Not checked: real Sony, Nintendo and Xbox pads, and a browser (the page's listener for
+  `gamepadconnected` was only built for WebAssembly, not run).
+- **R3**: `Input.LastInputKind`; a test of a key, a pad's button, a touch, a stick and a click,
+  each changing it, a frame without input keeping it, and a 3DS's button.
+- **R4**: `Input.ActionHint`; tests on a computer with a keyboard and a pad (Xbox and
+  PlayStation names), with a touch and nothing of its kind, and on a 3DS. `HintOf` gives the
+  same for words not played (the editor's).
+- **R5**: `testing.AllocsPerRun` of `ActionWords`, `InputLabel` and `ActionHint` with a frame of
+  actions: none. The PlayStation names (✕ ○ □ △) are not in the Go fonts: on a computer they are
+  drawn with a system font (Go Renderer's fallback); not seen on screen.
+- **R6**: each card in Controls shows its hint on the device shown (capture); the guide to actions
+  has a *Write the hints from the bindings* section whose code is `ExampleInput_ActionHint`, run
+  by the tests, and a test checks the guide still shows that code.
+- The engine still builds with TinyGo for the 3DS (`examples/watch`).

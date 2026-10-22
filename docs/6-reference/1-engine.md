@@ -327,10 +327,14 @@ type InputKind int
 const (
 	// NoInputYet is before the player used anything: a hint names an action's first input.
 	NoInputYet InputKind = iota
+	// KeyboardAndMouse is a computer's keys and mouse buttons.
 	KeyboardAndMouse
+	// GamePad is a pad's buttons and sticks, on a computer or in a browser.
 	GamePad
+	// TouchScreen is a phone's screen and its touch controls (and Android's back).
 	TouchScreen
-	ConsoleButtons // a console's own buttons and sticks (a 3DS's)
+	// ConsoleButtons is a console's own buttons and sticks (a 3DS's).
+	ConsoleButtons
 )
 ```
 

@@ -65,7 +65,8 @@ func (view *View) actionsColumn(context *ui.Context) {
 }
 
 // actionCard is an action: its name, buttons to rename it, to switch its kind and to remove it,
-// the hint a player of the device shown reads, and the controls of the device shown that do it. Clicking it makes its controls stand out.
+// the hint a player of the device shown reads, and the controls of the device shown that do it.
+// Clicking it makes its controls stand out.
 func (view *View) actionCard(context *ui.Context, device drawing, name string) {
 	controls := &view.controls
 	context.Push(name)
