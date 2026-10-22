@@ -238,7 +238,7 @@ func (game *runner) replaceIfAsked() {
 }
 
 // Camera is how the scene is seen: from its main camera, or from a little above when it has none.
-func (owner *Scene) Camera() camera.Camera {
+func (owner *Scene) Camera() camera.Lens {
 	if camera, found := owner.MainCamera(); found {
 		return camera.View()
 	}

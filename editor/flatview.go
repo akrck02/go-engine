@@ -61,11 +61,11 @@ const lampMarkSize = 16
 
 // step follows the mouse in the 2D view, over the area it was last painted in; it returns what
 // go-renderer shows under the interface: the scene's world, empty in 2D.
-func (flat *flatView) step(editor *Editor, state *input.State) (*scene.Scene, camera.Camera) {
+func (flat *flatView) step(editor *Editor, state *input.State) (*scene.Scene, camera.Lens) {
 	if !flat.area.IsEmpty() {
 		flat.followMouse(editor, state)
 	}
-	return editor.Scene.World(), camera.Camera{Position: [4]float32{0, 0, 10, 1}, Up: [4]float32{0, 1, 0, 0}}
+	return editor.Scene.World(), camera.Lens{Position: [4]float32{0, 0, 10, 1}, Up: [4]float32{0, 1, 0, 0}}
 }
 
 // paint draws the 2D view into its area of the window (go-ui's Paint, in the middle of the

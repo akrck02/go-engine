@@ -53,7 +53,7 @@ func (view *View) gameSurfaces(context *ui.Context, played *engine.Scene) {
 
 // playedView is how the window draws a 3D game played in the view: its scene in the stage's screen
 // and, with the 3DS's shape, its bottom scene under it.
-func (view *View) playedView(world *scene.Scene, camera camera.Camera) *window.SceneView {
+func (view *View) playedView(world *scene.Scene, camera camera.Lens) *window.SceneView {
 	staged := &view.staged
 	shown := &window.SceneView{World: world, Camera: camera}
 	if staged.top.Width == 0 {

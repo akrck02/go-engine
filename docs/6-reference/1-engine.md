@@ -20,7 +20,7 @@ A game's main registers its behaviours and runs the project it embeds:
 | `func Behaviour[Wanted any](node *Node) (*Wanted, bool)` | Behaviour finds a node's behaviour of a type, while the game runs. |
 | `func BetweenFrames(call func())` | BetweenFrames asks for a call to run once, at the start of the next frame, before anything is drawn: on the 3DS, the system keyboard can take both screens there. |
 | `func BindActions(bindings map[string]map[string][]string, target string) []error` | BindActions reads the actions' bindings (engine.json's actions) for a target, replacing those read before. |
-| `func CameraAt(world space.Transform, settings scenefile.Camera) camera.Camera` | CameraAt is go-renderer's camera for a camera placed at a transform with some settings. |
+| `func CameraAt(world space.Transform, settings scenefile.Camera) camera.Lens` | CameraAt is go-renderer's camera for a camera placed at a transform with some settings. |
 | `func CheckInputs(words []string, target string) []error` | CheckInputs tells which of some words a target does not know, each by its code (InputUnknown). |
 | `func DrawOverlay(list *draw2d.List, width, height float32) bool` | DrawOverlay draws the game's 2D over a 3D scene (SetOverlay) into a list, in an area of a width and a height starting at 0, 0; it tells whether the game has any. |
 | `func Fullscreen() bool` | Fullscreen tells whether the game is asked to be on the whole screen. |
@@ -450,7 +450,7 @@ type Node struct {
 | `func (node *Node) Sprite() string` | Sprite is the picture the node shows in a 2D scene, by its path in the project, or "". |
 | `func (node *Node) StartsWith() string` | StartsWith is the animation the node plays when the scene starts: the one it names, or else its sprite's own first one, or "". |
 | `func (node *Node) Tiles() (*scenefile.TileMap, bool)` | Tiles is the node's tile map, to edit in place; a node that is not one has none. |
-| `func (node *Node) View() camera.Camera` | View is what a camera node sees, as go-renderer's camera. |
+| `func (node *Node) View() camera.Lens` | View is what a camera node sees, as go-renderer's camera. |
 | `func (node *Node) Walk(visit func(node *Node) bool)` | Walk calls a function for the node and everything under it, parents before their children; it stops going down a branch when the function returns false. |
 | `func (node *Node) World() space.Transform` | World is where the node is in the world, all its parents' transforms applied. |
 
@@ -486,7 +486,7 @@ type Scene struct {
 | `func Build(files fs.FS, description *scenefile.Scene) (*Scene, error)` | Build makes a scene from its description, finding its models in a project's files. |
 | `func Load(files fs.FS, file string) (*Scene, error)` | Load reads a scene file from a project's files. |
 | `func NewScene(files fs.FS) *Scene` | NewScene is an empty scene, whose models come from a project's files. |
-| `func (owner *Scene) Camera() camera.Camera` | Camera is how the scene is seen: from its main camera, or from a little above when it has none. |
+| `func (owner *Scene) Camera() camera.Lens` | Camera is how the scene is seen: from its main camera, or from a little above when it has none. |
 | `func (owner *Scene) CameraBounds(camera *Node) (space.Box, bool)` | CameraBounds is the box a camera's view stays inside while it follows: its own, or the tile maps' together, with no top (an infinite one) unless the camera has a ceiling. |
 | `func (owner *Scene) Describe() *scenefile.Scene` | Describe writes the scene back as its file keeps it. |
 | `func (owner *Scene) Draw2D(list *draw2d.List, area draw2d.Rectangle, view View2D)` | Draw2D draws a 2D scene into an area of the screen, as a view sees it: the sky's colour, then its sprites and shapes from the furthest to the nearest, lit by its lights (lights.go). |

@@ -307,7 +307,7 @@ func (owner *Scene) MainCamera() (*Node, bool) {
 }
 
 // View is what a camera node sees, as go-renderer's camera.
-func (node *Node) View() camera.Camera {
+func (node *Node) View() camera.Lens {
 	world := node.World()
 	settings := scenefile.Camera{Projection: scenefile.Perspective}
 	if node.camera != nil {
@@ -321,11 +321,11 @@ func (node *Node) View() camera.Camera {
 }
 
 // CameraAt is go-renderer's camera for a camera placed at a transform with some settings.
-func CameraAt(world space.Transform, settings scenefile.Camera) camera.Camera {
+func CameraAt(world space.Transform, settings scenefile.Camera) camera.Lens {
 	position := world.Position
 	target := position.Add(world.Forward().Scale(orDefault(settings.Focus, DefaultFocus)))
 	up := world.Up()
-	view := camera.Camera{
+	view := camera.Lens{
 		Position: graphics.Vector{float32(position.X), float32(position.Y), float32(position.Z), 1},
 		Target:   graphics.Vector{float32(target.X), float32(target.Y), float32(target.Z), 1},
 		Up:       graphics.Vector{float32(up.X), float32(up.Y), float32(up.Z), 0},

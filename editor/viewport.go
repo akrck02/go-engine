@@ -35,7 +35,7 @@ const clickDistance = 4
 // viewport is the 3D view's state.
 type viewport struct {
 	orbit  *camera.Orbit
-	camera camera.Camera
+	camera camera.Lens
 	mode   ViewMode
 	// through is a camera node of the scene to see through instead of the editor's camera.
 	through *engine.Node
@@ -139,7 +139,7 @@ func (view *viewport) showSelection(chosen *engine.Node) {
 }
 
 // step follows the mouse in the 3D view and places the camera; it returns what to draw.
-func (view *viewport) step(editor *Editor, state *input.State, seconds float64) (*scene.Scene, camera.Camera) {
+func (view *viewport) step(editor *Editor, state *input.State, seconds float64) (*scene.Scene, camera.Lens) {
 	if _, playing := editor.PlayingHere(); playing {
 		editor.AdvancePlay(seconds, state)
 		played, _ := editor.PlayingHere()
@@ -333,7 +333,7 @@ func (view *viewport) isometricInput(state *input.State) *input.State {
 
 // play sees the scene played in the view through its main camera (or the editor's, if it has
 // none).
-func (view *viewport) play(played *engine.Scene, seconds float64) (*scene.Scene, camera.Camera) {
+func (view *viewport) play(played *engine.Scene, seconds float64) (*scene.Scene, camera.Lens) {
 	if camera, found := played.MainCamera(); found {
 		return played.World(), camera.View()
 	}
