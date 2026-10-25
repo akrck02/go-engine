@@ -60,6 +60,7 @@ type Scene struct {
 	updating    []*Node
 	drawn       []*Node                 // the nodes a 2D frame draws, furthest first
 	lit         []*Node                 // the lights a 2D frame draws
+	ownLights   []scene.PointLight      // the program's own point lights (SetPointLights)
 	flatColours map[string]draw2d.Color // shapes' colours, read from their text once
 	drawnAspect float64                 // the screen's width over its height, as last drawn
 
