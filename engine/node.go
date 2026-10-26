@@ -17,6 +17,7 @@
 package engine
 
 import (
+	"math"
 	"strings"
 
 	"github.com/akrck02/go-renderer/graphics"
@@ -36,8 +37,9 @@ type Node struct {
 
 	shape        string
 	colour       string
-	texture      string  // a built-in texture of the shape, or ""
-	textureScale float64 // its repeats a metre; 0 is 1
+	texture      string     // a built-in texture of the shape, or ""
+	textureScale float64    // its repeats a metre; 0 is 1
+	textureSize  [3]float64 // the scale the shape's UVs were laid for (fitTexture)
 	model        string
 	sprite       string
 	camera       *scenefile.Camera
@@ -337,6 +339,7 @@ func (node *Node) rebuild() {
 		mesh := shapes.Mesh(node.shape, node.scene.material(shapeLook{node.colour, node.texture, node.textureScale}))
 		if mesh != nil {
 			node.geometry = &scene.Node{Name: node.shape, Transform: graphics.Identity(), Mesh: mesh}
+			node.fitTexture(true)
 		}
 	}
 	if node.model != "" {
@@ -414,8 +417,30 @@ func renderBounds(node *scene.Node, parent graphics.Matrix) space.Box {
 	return box
 }
 
+// fitTexture lays a textured shape's UVs in metres of the node as it is scaled, so its texture
+// repeats as often a metre whatever the scale; again only when the scale changed (or when made),
+// into the same memory. A shape without a texture keeps no UVs.
+func (node *Node) fitTexture(made bool) {
+	if node.geometry == nil || node.shape == "" || node.codeMesh != nil {
+		return
+	}
+	mesh := node.geometry.Mesh
+	if node.texture == "" {
+		mesh.UVs = nil
+		return
+	}
+	scale := node.Transform.Scale
+	size := [3]float64{math.Abs(scale.X), math.Abs(scale.Y), math.Abs(scale.Z)}
+	if !made && size == node.textureSize {
+		return
+	}
+	shapes.StretchUVs(mesh, node.shape, size)
+	node.textureSize, mesh.Dirty = size, !made
+}
+
 // sync copies the node's transform and visibility to what go-renderer draws.
 func (node *Node) sync() {
+	node.fitTexture(false)
 	node.render.Transform = node.Transform.Matrix()
 	node.render.Hidden = !node.Visible
 	if node.helper != nil {

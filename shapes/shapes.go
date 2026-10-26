@@ -9,22 +9,24 @@ import (
 	"github.com/akrck02/go-renderer/scene"
 )
 
-// Mesh makes a shape's mesh by name, with a material of a colour; nil for an unknown name.
+// Mesh makes a shape's mesh by name, with a material of a colour, and its UVs for a shape a metre
+// across (see StretchUVs); nil for an unknown name.
 func Mesh(name string, material *scene.Material) *scene.Mesh {
 	var mesh *scene.Mesh
 	switch name {
 	case "cube":
 		mesh = Cube()
 	case "sphere":
-		mesh = Sphere(24, 16)
+		mesh = Sphere(sphereSlices, sphereRings)
 	case "plane":
 		mesh = Plane()
 	case "cylinder":
-		mesh = Cylinder(24)
+		mesh = Cylinder(cylinderSides)
 	default:
 		return nil
 	}
 	mesh.Name, mesh.Material = name, material
+	StretchUVs(mesh, name, [3]float64{1, 1, 1})
 	return mesh
 }
 

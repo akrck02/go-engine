@@ -14,9 +14,10 @@ the plane (flat, facing up) and the cylinder (standing up).
 |---|---|
 | `func Cube() *scene.Mesh` | Cube is a cube a metre a side. |
 | `func Cylinder(sides int) *scene.Mesh` | Cylinder is a cylinder a metre across and a metre high, standing up, of some sides. |
-| `func Mesh(name string, material *scene.Material) *scene.Mesh` | Mesh makes a shape's mesh by name, with a material of a colour; nil for an unknown name. |
+| `func Mesh(name string, material *scene.Material) *scene.Mesh` | Mesh makes a shape's mesh by name, with a material of a colour, and its UVs for a shape a metre across (see StretchUVs); nil for an unknown name. |
 | `func Plane() *scene.Mesh` | Plane is a square a metre a side, lying flat and facing up. |
 | `func Sphere(slices, rings int) *scene.Mesh` | Sphere is a ball a metre across, of some slices around and rings from top to bottom. |
+| `func StretchUVs(mesh *scene.Mesh, name string, size [3]float64)` | StretchUVs writes a shape's UVs for a node of this size (its scale, the shape being a metre across), in metres, into the mesh's UVs, reusing their memory: a node whose scale changes calls it again without allocating. |
 
 ---
 

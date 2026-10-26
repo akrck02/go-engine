@@ -45,3 +45,34 @@ func TestASavedSceneKeepsItsShapesTexture(test *testing.T) {
 		test.Errorf("the saved square wears %q %v times a metre, wanted panels 0.5", node.Texture, node.TextureScale)
 	}
 }
+
+func TestAScaledNodesTextureIsNotStretched(test *testing.T) {
+	description := pavedSquare()
+	description.Nodes[0].Shape, description.Nodes[0].Scale = "cylinder", [3]float64{2, 12, 2}
+	built, err := Build(nil, description)
+	if err != nil {
+		test.Fatal(err)
+	}
+	tower := built.Root.children[0]
+	built.Sync()
+	if tallest := highestV(tower.geometry.Mesh); tallest < 11.99 || tallest > 12.01 {
+		test.Errorf("a 12 m tower's UVs reach %v metres up, wanted 12", tallest)
+	}
+	tower.Transform.Scale.Y = 6
+	built.Sync()
+	if tallest := highestV(tower.geometry.Mesh); tallest < 5.99 || tallest > 6.01 || !tower.geometry.Mesh.Dirty {
+		test.Errorf("after shrinking to 6 m the UVs reach %v metres (sent again: %v)", tallest, tower.geometry.Mesh.Dirty)
+	}
+	allocations := testing.AllocsPerRun(10, built.Sync)
+	if allocations != 0 {
+		test.Errorf("a sync with nothing changed allocates %v times", allocations)
+	}
+}
+
+func highestV(mesh *scene.Mesh) float32 {
+	var highest float32
+	for index := 1; index < len(mesh.UVs); index += 2 {
+		highest = max(highest, mesh.UVs[index])
+	}
+	return highest
+}
