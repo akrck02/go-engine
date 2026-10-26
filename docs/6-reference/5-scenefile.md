@@ -298,11 +298,16 @@ type Node struct {
 	Scale    [3]float64 `json:"scale"`
 	Hidden   bool       `json:"hidden,omitempty"`
 
-	Shape  string  `json:"shape,omitempty"`  // one of Shapes
-	Model  string  `json:"model,omitempty"`  // a model in the project, as "assets/models/tree.glb"
-	Sprite string  `json:"sprite,omitempty"` // in a 2D scene, a picture or a sprite's file, as "assets/sprites/hero.sprite.json"
-	Colour string  `json:"colour,omitempty"` // of a shape, "#rrggbb"
-	Camera *Camera `json:"camera,omitempty"`
+	Shape  string `json:"shape,omitempty"`  // one of Shapes
+	Model  string `json:"model,omitempty"`  // a model in the project, as "assets/models/tree.glb"
+	Sprite string `json:"sprite,omitempty"` // in a 2D scene, a picture or a sprite's file, as "assets/sprites/hero.sprite.json"
+	Colour string `json:"colour,omitempty"` // of a shape, "#rrggbb"
+	// Texture is a built-in texture the shape wears, tinted by its colour ("cobbles", "panels"…, as
+	// go-renderer's scene.BuiltInTextureNames); empty is none.
+	Texture string `json:"texture,omitempty"`
+	// TextureScale is how many times the texture repeats along each metre of the shape; 0 is 1.
+	TextureScale float64 `json:"textureScale,omitempty"`
+	Camera       *Camera `json:"camera,omitempty"`
 
 	Body  *Body        `json:"body,omitempty"`  // in a 2D scene, a body in its physics
 	Sheet *SpriteSheet `json:"sheet,omitempty"` // in a 2D scene, the sprite cut into animated frames

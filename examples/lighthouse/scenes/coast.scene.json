@@ -4,7 +4,7 @@
 	"nodes": [
 		{"name": "Sea", "shape": "plane", "colour": "#16324a", "position": [0, 0, 0], "rotation": [0, 0, 0], "scale": [400, 1, 400]},
 		{"name": "Rock", "shape": "cylinder", "colour": "#4a4a52", "position": [0, 1, 0], "rotation": [0, 0, 0], "scale": [8, 2, 8]},
-		{"name": "Tower", "shape": "cylinder", "colour": "#e8e2d6", "position": [0, 8, 0], "rotation": [0, 0, 0], "scale": [2, 12, 2]},
+		{"name": "Tower", "shape": "cylinder", "colour": "#e8e2d6", "texture": "masonry", "textureScale": 2, "position": [0, 8, 0], "rotation": [0, 0, 0], "scale": [2, 12, 2]},
 		{"name": "Lamp", "position": [0, 14.5, 0], "rotation": [0, 0, 0], "scale": [1, 1, 1],
 			"behaviours": [{"name": "Beam", "fields": {"degreesPerSecond": 40, "length": 60}}]},
 		{"name": "Fog", "position": [0, 3, 0], "rotation": [0, 0, 0], "scale": [1, 1, 1],

@@ -39,6 +39,9 @@ inside; the command writes it, fetches the engine as `go` does any module, and o
 
 **Checkpoint:** the editor shows a coloured cube on a green ground.
 
+A shape's inspector also offers a **Texture**, one of Go Renderer's built-in pictures (cobbles,
+planks, panels, a grid…) tinted by its colour, and how many times it repeats a metre.
+
 <p align="center"><img alt="The editor's Level workspace on the new project: the cube chosen on the green ground, its inspector on the right with a Spin behaviour" src="images/editor-level.png" width="720"></p>
 
 Next time, open the project with `go-engine ~/games/harbour`. On a computer with no screen (a
