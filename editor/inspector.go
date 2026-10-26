@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/akrck02/go-renderer/draw2d"
+	"github.com/akrck02/go-renderer/scene"
 	ui "github.com/akrck02/go-ui"
 
 	"github.com/akrck02/go-engine/engine"
@@ -289,6 +290,35 @@ func (view *View) shapeInspector(context *ui.Context, node *engine.Node) {
 	if colourPicker(context, "Colour", &colour) {
 		node.SetShape(node.Shape(), colour)
 		editor.Changed()
+	}
+	if !editor.Scene.Is2D() {
+		view.textureFields(context, node)
+	}
+}
+
+// textureScaleLimits are the repeats a metre the inspector lets a texture have.
+var textureScaleLimits = numberLimits{0.05, 64, 0.05}
+
+// textureFields choose the built-in texture a 3D shape wears, tinted by its colour, and how many
+// times it repeats a metre.
+func (view *View) textureFields(context *ui.Context, node *engine.Node) {
+	options := append([]string{"None"}, scene.BuiltInTextureNames()...)
+	chosen := max(0, indexOf(options, node.Texture()))
+	scale := node.TextureScale()
+	if scale <= 0 {
+		scale = 1
+	}
+	if context.Select("Texture", &chosen, options) {
+		name := options[chosen]
+		if chosen == 0 {
+			name = ""
+		}
+		node.SetTexture(name, node.TextureScale())
+		view.Editor.Changed()
+	}
+	if node.Texture() != "" && numberField(context, "Texture scale", &scale, textureScaleLimits, "%.2f a metre") {
+		node.SetTexture(node.Texture(), scale)
+		view.Editor.Changed()
 	}
 }
 

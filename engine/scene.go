@@ -42,7 +42,7 @@ type Scene struct {
 
 	world     *scene.Scene
 	assets    *assets
-	materials map[string]*scene.Material
+	materials map[shapeLook]*scene.Material
 	helpers   map[string]*scene.Mesh
 	clock     float64
 	started   bool
@@ -117,7 +117,7 @@ func NewScene(files fs.FS) *Scene { return newSceneWith(newAssets(files)) }
 
 // newSceneWith is an empty scene, with pictures and models already read.
 func newSceneWith(library *assets) *Scene {
-	built := &Scene{world: scene.New(), assets: library, materials: map[string]*scene.Material{}, helpers: map[string]*scene.Mesh{},
+	built := &Scene{world: scene.New(), assets: library, materials: map[shapeLook]*scene.Material{}, helpers: map[string]*scene.Mesh{},
 		flatColours: map[string]draw2d.Color{}}
 	built.Root = newNode(built, "")
 	built.world.Nodes = []*scene.Node{built.Root.render}
@@ -139,6 +139,7 @@ func (owner *Scene) buildNode(description scenefile.Node) (*Node, error) {
 	}
 	node.Visible = !description.Hidden
 	node.shape, node.colour, node.model, node.sprite = description.Shape, description.Colour, description.Model, description.Sprite
+	node.texture, node.textureScale = description.Texture, description.TextureScale
 	node.camera = description.Camera
 	node.body, node.sheet, node.tiles = description.Body.Copy(), description.Sheet.Copy(), description.Tiles.Copy()
 	node.light = description.Light.Copy()
@@ -182,7 +183,7 @@ func (node *Node) Describe() scenefile.Node {
 		Rotation: [3]float64{rounded(angles.X), rounded(angles.Y), rounded(angles.Z)},
 		Scale:    [3]float64{node.Transform.Scale.X, node.Transform.Scale.Y, node.Transform.Scale.Z},
 		Hidden:   !node.Visible,
-		Shape:    node.shape, Colour: node.colour, Model: node.model, Sprite: node.sprite, Camera: node.camera,
+		Shape:    node.shape, Colour: node.colour, Texture: node.texture, TextureScale: node.textureScale, Model: node.model, Sprite: node.sprite, Camera: node.camera,
 		Body: node.body.Copy(), Sheet: node.sheet.Copy(), Tiles: node.tiles.Copy(), Animation: node.startWith,
 		Light:      node.light.Copy(),
 		Behaviours: append([]scenefile.Behaviour(nil), node.Behaviours...),
@@ -248,20 +249,31 @@ func colourFromHex(text string) (graphics.Vector, bool) {
 	return graphics.Vector{colour[0], colour[1], colour[2], 1}, true
 }
 
-// material is the shared material of a colour.
-func (owner *Scene) material(colour string) *scene.Material {
-	if colour == "" {
-		colour = "#c8c8c8"
+// shapeLook is how a shape looks: its colour, and the built-in texture it wears and how often.
+type shapeLook struct {
+	colour       string
+	texture      string
+	textureScale float64
+}
+
+// material is the shared material of a shape's look.
+func (owner *Scene) material(look shapeLook) *scene.Material {
+	if look.colour == "" {
+		look.colour = "#c8c8c8"
 	}
-	if material, found := owner.materials[colour]; found {
+	if material, found := owner.materials[look]; found {
 		return material
 	}
-	tint, valid := colourFromHex(colour)
+	tint, valid := colourFromHex(look.colour)
 	if !valid {
 		tint = graphics.Vector{0.8, 0.8, 0.8, 1}
 	}
-	material := &scene.Material{Name: colour, Kind: scene.LitKind, BaseColor: tint}
-	owner.materials[colour] = material
+	material := &scene.Material{Name: look.colour, Kind: scene.LitKind, BaseColor: tint}
+	if texture, found := scene.BuiltInTexture(look.texture); found {
+		repeats := float32(look.textureScale)
+		material.Texture, material.TextureScale = texture, [2]float32{repeats, repeats}
+	}
+	owner.materials[look] = material
 	return material
 }
 

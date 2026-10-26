@@ -442,6 +442,7 @@ type Node struct {
 | `func (node *Node) SetSheet(sheet *scenefile.SpriteSheet)` | SetSheet cuts the node's sprite into a sheet's frames, or shows it whole again (nil). |
 | `func (node *Node) SetSprite(path string) error` | SetSprite makes the node show a picture of the project's, or a sprite's file, in a 2D scene. |
 | `func (node *Node) SetStartsWith(name string)` | SetStartsWith makes the node start with an animation of its sprite; "" starts with the sprite's own first one. |
+| `func (node *Node) SetTexture(name string, scale float64)` | SetTexture gives the node's shape a built-in texture ("" for none) repeated scale times a metre. |
 | `func (node *Node) SetTiles(tiles *scenefile.TileMap)` | SetTiles makes the node a tile map, or not one (nil). |
 | `func (node *Node) Shape() string` | Shape is the shape the node is ("cube", "sphere", "plane", "cylinder"), or "". |
 | `func (node *Node) Sheet() (*scenefile.SpriteSheet, bool)` | Sheet is the sprite sheet the node's sprite is cut into, to edit in place; a sprite shown whole has none. |
@@ -449,6 +450,8 @@ type Node struct {
 | `func (node *Node) SolidTile(tile int) bool` | SolidTile tells whether bodies stand on a tile of the node's tileset, by its number. |
 | `func (node *Node) Sprite() string` | Sprite is the picture the node shows in a 2D scene, by its path in the project, or "". |
 | `func (node *Node) StartsWith() string` | StartsWith is the animation the node plays when the scene starts: the one it names, or else its sprite's own first one, or "". |
+| `func (node *Node) Texture() string` | Texture is the built-in texture the node's shape wears, or "". |
+| `func (node *Node) TextureScale() float64` | TextureScale is how many times the shape's texture repeats a metre (0 is 1). |
 | `func (node *Node) Tiles() (*scenefile.TileMap, bool)` | Tiles is the node's tile map, to edit in place; a node that is not one has none. |
 | `func (node *Node) View() camera.Lens` | View is what a camera node sees, as go-renderer's camera. |
 | `func (node *Node) Walk(visit func(node *Node) bool)` | Walk calls a function for the node and everything under it, parents before their children; it stops going down a branch when the function returns false. |

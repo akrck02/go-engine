@@ -71,6 +71,7 @@ view elsewhere, as a game's interface always did.
 | `position`, `rotation`, `scale` | 3 numbers | Relative to its parent: metres, degrees (X tilts, Y turns, Z rolls), times its size |
 | `hidden` | yes/no | Hidden, and its children with it |
 | `shape`, `colour` | text | `cube`, `sphere`, `plane` or `cylinder`, in a colour |
+| `texture`, `textureScale` | text, number | A built-in texture the shape wears, tinted by its colour (`cobbles`, `masonry`, `planks`, `panels`, `grid`…), and its repeats a metre (0 is 1) |
 | `model` | text | A model, as `assets/models/house.glb` |
 | `sprite` | text | In 2D, a picture or a sprite file |
 | `animation` | text | The animation its sprite starts with |

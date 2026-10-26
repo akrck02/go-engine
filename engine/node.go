@@ -34,11 +34,13 @@ type Node struct {
 	Transform space.Transform
 	Visible   bool
 
-	shape  string
-	colour string
-	model  string
-	sprite string
-	camera *scenefile.Camera
+	shape        string
+	colour       string
+	texture      string  // a built-in texture of the shape, or ""
+	textureScale float64 // its repeats a metre; 0 is 1
+	model        string
+	sprite       string
+	camera       *scenefile.Camera
 
 	// a 2D scene's parts, kept as the scene file has them
 	body  *scenefile.Body
@@ -233,6 +235,18 @@ func (node *Node) Shape() string { return node.shape }
 // Colour is the colour of the node's shape, "#rrggbb".
 func (node *Node) Colour() string { return node.colour }
 
+// Texture is the built-in texture the node's shape wears, or "".
+func (node *Node) Texture() string { return node.texture }
+
+// TextureScale is how many times the shape's texture repeats a metre (0 is 1).
+func (node *Node) TextureScale() float64 { return node.textureScale }
+
+// SetTexture gives the node's shape a built-in texture ("" for none) repeated scale times a metre.
+func (node *Node) SetTexture(name string, scale float64) {
+	node.texture, node.textureScale = name, scale
+	node.rebuild()
+}
+
 // Model is the model the node shows, by its path in the project, or "".
 func (node *Node) Model() string { return node.model }
 
@@ -320,7 +334,7 @@ func (node *Node) rebuild() {
 		return
 	}
 	if node.shape != "" {
-		mesh := shapes.Mesh(node.shape, node.scene.material(node.colour))
+		mesh := shapes.Mesh(node.shape, node.scene.material(shapeLook{node.colour, node.texture, node.textureScale}))
 		if mesh != nil {
 			node.geometry = &scene.Node{Name: node.shape, Transform: graphics.Identity(), Mesh: mesh}
 		}
