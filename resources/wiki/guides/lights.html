@@ -67,6 +67,14 @@ sprite, so the node keeps its picture and gains the glow.</p>
 <span class="p">}</span>
 </code></pre>
 
+<p>A 3D game that places things on the world itself, without nodes, gives the scene lamps of its own
+with <code>Scene.SetPointLights</code>. It keeps the slice and reads it every frame, so the game moves its
+lamps in place and nothing is allocated:</p>
+<pre><code class="language-go"><span class="nx">lamps</span> <span class="o">:=</span> <span class="nb">make</span><span class="p">([]</span><span class="nx">scene</span><span class="p">.</span><span class="nx">PointLight</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span> <span class="c1">// scene is go-renderer&#39;s scene package</span>
+<span class="nx">context</span><span class="p">.</span><span class="nx">Scene</span><span class="p">.</span><span class="nf">SetPointLights</span><span class="p">(</span><span class="nx">lamps</span><span class="p">)</span>
+<span class="nx">lamps</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="nx">Position</span> <span class="p">=</span> <span class="nx">graphics</span><span class="p">.</span><span class="nx">Vector</span><span class="p">{</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">}</span> <span class="c1">// each frame, where the lamp is now</span>
+</code></pre>
+
 <h2 id="how-much-it-costs">How much it costs</h2>
 
 <p>Lights cost nothing in a scene that has none. In 2D, all of a frame&rsquo;s lights are drawn into one

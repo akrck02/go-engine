@@ -1047,6 +1047,11 @@ and what go-renderer draws of it.</p>
 </tr>
 
 <tr>
+<td><code>func (owner *Scene) SetPointLights(lights []scene.PointLight)</code></td>
+<td>SetPointLights gives a 3D scene point lights of the program&rsquo;s own, besides its lamp nodes: lights it places itself every frame (on things it draws on the world directly), in the world&rsquo;s coordinates, their colours linear and their alpha the intensity, as go-renderer takes them.</td>
+</tr>
+
+<tr>
 <td><code>func (owner *Scene) SetSky(colour string)</code></td>
 <td>SetSky sets the background colour (&ldquo;&rdquo; for a daylight sky).</td>
 </tr>
