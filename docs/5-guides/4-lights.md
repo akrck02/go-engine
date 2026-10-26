@@ -49,6 +49,16 @@ func (alarm *Alarm) Update(context *engine.Context) {
 }
 ```
 
+A 3D game that places things on the world itself, without nodes, gives the scene lamps of its own
+with `Scene.SetPointLights`. It keeps the slice and reads it every frame, so the game moves its
+lamps in place and nothing is allocated:
+
+```go
+lamps := make([]scene.PointLight, 8) // scene is go-renderer's scene package
+context.Scene.SetPointLights(lamps)
+lamps[0].Position = graphics.Vector{2, 1, 0, 1} // each frame, where the lamp is now
+```
+
 ## How much it costs
 
 Lights cost nothing in a scene that has none. In 2D, all of a frame's lights are drawn into one

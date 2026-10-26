@@ -5,6 +5,8 @@ import (
 	"testing/fstest"
 
 	"github.com/akrck02/go-renderer/draw2d"
+	"github.com/akrck02/go-renderer/graphics"
+	"github.com/akrck02/go-renderer/scene"
 
 	"github.com/akrck02/go-engine/scenefile"
 	"github.com/akrck02/go-engine/space"
@@ -207,5 +209,26 @@ func TestA2DLampsReachGrowsWithItsScaleAcrossAndUp(test *testing.T) {
 	lamp.Transform.Scale = space.NewVector(2, 2, 7) // depth means nothing in 2D
 	if inner, outer := lamp.LightRadii(); inner != 1 || outer != 4 {
 		test.Fatalf("the lamp reaches %v to %v; wanted twice its 0.5 to 2", inner, outer)
+	}
+}
+
+func TestAProgramsOwnPointLightsJoinTheLampsAndMoveInPlace(test *testing.T) {
+	world := litScene3D(test, nil)
+	own := []scene.PointLight{{Position: graphics.Vector{10, 1, 0, 1}, Color: graphics.Vector{1, 0, 0, 1}, Inner: 1, Outer: 3}}
+	world.SetPointLights(own)
+	world.Sync()
+	if lights := world.World().Lights; len(lights) != 2 || lights[1].Position[0] != 10 {
+		test.Fatalf("the world has %v; wanted the lamp and the program's light", lights)
+	}
+	own[0].Position[0] = 12 // moved in place, as a program does every frame
+	if allocations := testing.AllocsPerRun(10, world.Sync); allocations != 0 {
+		test.Fatalf("syncing the lights allocates %v times", allocations)
+	}
+	if world.World().Lights[1].Position[0] != 12 {
+		test.Fatal("a program's light moved in place still lights from where it was")
+	}
+	world.SetPointLights(nil)
+	if world.Sync(); len(world.World().Lights) != 1 {
+		test.Fatal("the program's lights stay after they are removed")
 	}
 }

@@ -503,6 +503,7 @@ type Scene struct {
 | `func (owner *Scene) PlayFrame(seconds float64, keys *input.State)` | PlayFrame is a frame of the game's main scene: the calls asked for between frames run, the actions are read (opening and closing the surfaces they open, and the whole screen), the frame hook runs, then the scene moves on (Update). |
 | `func (owner *Scene) SetAmbient(ambient *scenefile.Ambient)` | SetAmbient sets the scene's ambient light (nil for none): in 2D the light that reaches everything; in 3D how strong its sky light is, from 0 (none) to 2 (twice the default). |
 | `func (owner *Scene) SetMode(mode scenefile.Mode)` | SetMode makes the scene 3D or 2D: its nodes show their shapes and models in 3D, or their sprites and flat shapes in 2D. |
+| `func (owner *Scene) SetPointLights(lights []scene.PointLight)` | SetPointLights gives a 3D scene point lights of the program's own, besides its lamp nodes: lights it places itself every frame (on things it draws on the world directly), in the world's coordinates, their colours linear and their alpha the intensity, as go-renderer takes them. |
 | `func (owner *Scene) SetSky(colour string)` | SetSky sets the background colour ("" for a daylight sky). |
 | `func (owner *Scene) SpriteFile(file string) (*scenefile.Sprite, error)` | SpriteFile is a sprite's file of the project's, read once. |
 | `func (owner *Scene) Start() []error` | Start makes the scene's behaviours and runs their Start, once: the engine does it before the first frame. |

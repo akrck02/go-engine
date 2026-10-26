@@ -126,8 +126,15 @@ func (owner *Scene) syncLights() {
 			lights = append(lights, owner.pointLight(node))
 		}
 	}
-	owner.world.Lights = lights
+	owner.world.Lights = append(lights, owner.ownLights...)
 }
+
+// SetPointLights gives a 3D scene point lights of the program's own, besides its lamp nodes: lights
+// it places itself every frame (on things it draws on the world directly), in the world's
+// coordinates, their colours linear and their alpha the intensity, as go-renderer takes them. The
+// slice is kept and read every frame, so change its lights in place to move them: nothing is
+// allocated. nil removes them.
+func (owner *Scene) SetPointLights(lights []scene.PointLight) { owner.ownLights = lights }
 
 // pointLight is a 3D node's light as go-renderer takes it: in the world, its colour linear.
 func (owner *Scene) pointLight(node *Node) scene.PointLight {
